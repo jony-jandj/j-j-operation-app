@@ -4993,9 +4993,9 @@ function createPOsFromSelectedEstimateRows(){
       preApprovedBy:'',
       approvedBy:'',
       splits:[
-        {name:'Adair',pct:50},
-        {name:'Crew Member 2',pct:50},
-        {name:'',pct:0},
+        {name:'Brandon B',pct:50},
+        {name:'Alex M',pct:50},
+        {name:'Jony M',pct:0},
         {name:'',pct:0}
       ]
     });
@@ -5599,9 +5599,9 @@ function syncPOsFromLabor(p,rows=laborLines(p)){
       preApprovedBy:'',
       approvedBy:'',
       splits:[
-        {name:'Adair',pct:50},
-        {name:'Crew Member 2',pct:50},
-        {name:'',pct:0},
+        {name:'Brandon B',pct:50},
+        {name:'Alex M',pct:50},
+        {name:'Jony M',pct:0},
         {name:'',pct:0}
       ]
     });
@@ -5696,7 +5696,19 @@ function updateEstimateFromPOHub(i,key,val){
   renderDashboard();
   renderEstimates();
 
-  if(key==='type' || key==='builderCost'){
+  if(key==='builderCost'){
+    const row=p.estimate[i];
+    const title=estimateRowTitle(row);
+    const existing=p.pos.find(po=>String(po.line||'').trim()===title);
+    if(existing){
+      existing.builderCost=Number(row.builderCost||0);
+      saveState(false);
+    }
+  }
+
+  // Cost type changes need a row refresh because P.O. eligibility changes.
+  // Plain typing does not.
+  if(key==='type'){
     renderPayByLine();
   }
 }
@@ -6081,17 +6093,17 @@ function renderPO(po,i){
       </div>
 
       <div class="po-body-section-title">Crew Split</div>
-      <div class="split-grid">
+      <div class="split-grid" data-po-split-grid="${i}">
         <div class="split-head">Crew Member</div><div class="split-head">Split %</div><div class="split-head">Base Pay</div>
         ${po.splits.map((s,si)=>`
           <input class="input" value="${esc(s.name)}" placeholder="Employee" oninput="updateSplit(${i},${si},'name',this.value)">
           <input class="input" type="number" min="0" max="100" value="${s.pct}" oninput="updateSplit(${i},${si},'pct',this.value)">
-          <div class="money">${money(base*(Number(s.pct||0)/100))}</div>
+          <div class="money" data-split-pay="${si}">${money(base*(Number(s.pct||0)/100))}</div>
         `).join('')}
       </div>
 
-      <div class="split-total ${total===100?'good':'bad'}">P.O. Split Total: ${total}% ${total===100?'✓ Ready':'— must equal 100%'}</div>
-      ${total!==100?'<div class="inline-tip">Adjust the crew percentages until the P.O. split total equals 100%.</div>':''}
+      <div class="split-total ${total===100?'good':'bad'}" data-po-split-total="${i}">P.O. Split Total: ${total}% ${total===100?'✓ Ready':'— must equal 100%'}</div>
+      <div class="inline-tip" data-po-split-tip="${i}" style="${total===100?'display:none':''}">Adjust the crew percentages until the P.O. split total equals 100%.</div>
 
       <div class="approval-trail">
         <div class="approval-step ${po.preApprovedBy?'done':''}">
@@ -6113,8 +6125,8 @@ function renderPO(po,i){
           ? `<button class="btn btn-light" ${canUndoFinalApproval?'':'disabled'} title="${undoHelp}" onclick="event.stopPropagation();undoPOApproval(${i})">Undo Approval</button>`
           : ''
         }
-        <button class="btn btn-navy" ${preApproveDisabled?'disabled':''} title="${preApproveHelp}" onclick="event.stopPropagation();setPOStatus(${i},'Pre-Approved')">Pre-Approve</button>
-        <button class="btn btn-gold" ${approveDisabled?'disabled':''} title="${approveHelp}" onclick="event.stopPropagation();setPOStatus(${i},'Approved')">Approve</button>
+        <button class="btn btn-navy" data-preapprove-po="${i}" ${preApproveDisabled?'disabled':''} title="${preApproveHelp}" onclick="event.stopPropagation();setPOStatus(${i},'Pre-Approved')">Pre-Approve</button>
+        <button class="btn btn-gold" data-approve-po="${i}" ${approveDisabled?'disabled':''} title="${approveHelp}" onclick="event.stopPropagation();setPOStatus(${i},'Approved')">Approve</button>
       </div>
       <div class="role-note">Signed in as ${state.currentUser} · ${currentUser().role}</div>
     </div>
@@ -6212,9 +6224,18 @@ function updateEstimate(i,key,val){
   if(key==='line') p.estimate[i].title=val;
   if(key==='type' && estimateNorm(val)!=='labor') selectedEstimatePORows.delete(i);
 
+  if(key==='builderCost'){
+    const row=p.estimate[i];
+    const title=estimateRowTitle(row);
+    const existing=p.pos.find(po=>String(po.line||'').trim()===title);
+    if(existing){
+      existing.builderCost=Number(row.builderCost||0);
+    }
+  }
+
   saveState(false);
   renderDashboard();
-  if(key==='type' || key==='builderCost') renderPayByLine();
+  if(key==='type') renderPayByLine();
 }
 function deleteEstimate(i){
   selectedProject().estimate.splice(i,1); saveState(false); renderAll(); renderProject();
@@ -6230,9 +6251,9 @@ function generatePOs(){
       line:r.title ?? r.line,builderCost:Number(r.builderCost),status:'Draft',
       preApprovedBy:'',approvedBy:'',
       splits:[
-        {name:'Adair',pct:50},
-        {name:'Crew Member 2',pct:50},
-        {name:'',pct:0},
+        {name:'Brandon B',pct:50},
+        {name:'Alex M',pct:50},
+        {name:'Jony M',pct:0},
         {name:'',pct:0}
       ]
     };
@@ -6240,13 +6261,67 @@ function generatePOs(){
   p.precon[1]=Math.max(p.precon[1],95);
   saveState(false); renderAll(); projectTab='laborpos'; renderProject(); toast('Labor P.O.s generated');
 }
+function refreshSplitCalculations(pi){
+  const po=selectedProject().pos[pi];
+  if(!po) return;
+
+  const base=Number(po.builderCost||0)*0.60;
+  const total=po.splits.reduce((sum,s)=>sum+Number(s.pct||0),0);
+
+  po.splits.forEach((s,si)=>{
+    const pay=document.querySelector(
+      `[data-po-split-grid="${pi}"] [data-split-pay="${si}"]`
+    );
+    if(pay){
+      pay.textContent=money(base*(Number(s.pct||0)/100));
+    }
+  });
+
+  const totalEl=document.querySelector(`[data-po-split-total="${pi}"]`);
+  if(totalEl){
+    totalEl.textContent=`P.O. Split Total: ${total}% ${total===100?'✓ Ready':'— must equal 100%'}`;
+    totalEl.classList.toggle('good',total===100);
+    totalEl.classList.toggle('bad',total!==100);
+  }
+
+  const tip=document.querySelector(`[data-po-split-tip="${pi}"]`);
+  if(tip){
+    tip.style.display=total===100?'none':'';
+  }
+
+  const preBtn=document.querySelector(`[data-preapprove-po="${pi}"]`);
+  if(preBtn){
+    const disabled=!canPreApprove() || total!==100 || po.status!=='Draft';
+    preBtn.disabled=disabled;
+
+    if(!canPreApprove()){
+      preBtn.title='Only Jony or Adair can pre-approve.';
+    }else if(total!==100){
+      preBtn.title='Crew split must total 100% before pre-approval.';
+    }else if(po.status!=='Draft'){
+      preBtn.title='Only Draft P.O.s can be pre-approved.';
+    }else{
+      preBtn.title='Ready for pre-approval.';
+    }
+  }
+}
+
 function updateSplit(pi,si,key,val){
   const po=selectedProject().pos[pi];
-  po.splits[si][key]=key==='pct'?Number(val):val;
+  if(!po || !po.splits[si]) return;
+
+  if(key==='pct'){
+    const n=Number(val);
+    po.splits[si][key]=Number.isFinite(n)?n:0;
+  }else{
+    po.splits[si][key]=val;
+  }
+
+  // Save immediately, including cloud autosave when connected.
   saveState(false);
-  renderProjectPanel();
-  renderDashboard();
-  renderPayByLine();
+
+  // Only update the numbers that changed. Do not rebuild the page.
+  refreshSplitCalculations(pi);
 }
 
 function requestDeletePO(i){

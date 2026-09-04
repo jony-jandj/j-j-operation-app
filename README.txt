@@ -1,22 +1,22 @@
-J&J Operations — Select Estimate Lines for P.O. Splits
+J&J Operations — Typing Jump Fix
 
-New Estimate -> P.O. workflow:
-- Upload Estimate
-- Estimate does NOT automatically create every Labor P.O.
-- A separate P.O. checkbox appears beside each Estimate line
-- Only Cost type = Labor lines can be selected for P.O. creation
-- Select individual Labor lines or use Select All Labor for P.O.
-- Click Create Selected P.O.s
-- Existing P.O.s show Created and cannot be duplicated
-- Delete checkboxes remain separate from P.O. selection
+Fixed the page jump shown in the screen recording.
 
-All prior features remain included:
-- Title + Description Estimate layout
-- New Project
+Changes:
+- Typing crew names in P.O. Splits no longer re-renders the page.
+- Typing crew percentages no longer re-renders the page.
+- Cursor/focus stays in the field while typing.
+- Base Pay updates immediately.
+- P.O. Split Total updates immediately.
+- 100% Ready status updates immediately.
+- Pre-Approve enables/disables immediately based on the 100% total.
+- Autosave still occurs as you type.
+- Editing Builder Cost in Estimate no longer repaints the page on each keystroke.
+
+All prior updates remain included, including:
+- Brandon B / Alex M / Jony M default crew
+- Select Estimate lines for P.O.s
+- Title + Description
 - Printing
-- P.O. bulk actions
-- Pre-Approval / Approval + undo
-- No Markup column
-
-GitHub:
-Upload index.html and service-worker.js and commit directly to main.
+- New Project
+- Undo Approval
