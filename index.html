@@ -2596,6 +2596,52 @@ textarea.estimate-cell-input{
   }
 }
 
+
+.precon-linked-note{
+  display:flex;
+  align-items:flex-start;
+  gap:8px;
+  margin:8px 0 12px;
+  padding:9px 10px;
+  border:1px solid #D8DFE9;
+  border-radius:9px;
+  background:#F8FAFC;
+  color:var(--muted);
+  font-size:10px;
+  line-height:1.4;
+}
+.precon-linked-note b{
+  color:var(--navy);
+}
+.pc-row.linked-precon-row{
+  background:#FAFBFC;
+}
+.pc-row.linked-precon-row .pc-task{
+  cursor:default;
+}
+.pc-row.linked-precon-row input[type="checkbox"]{
+  cursor:not-allowed;
+}
+.linked-precon-badge{
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  margin-top:4px;
+  padding:3px 6px;
+  border-radius:999px;
+  background:#EEF2F7;
+  color:#516075;
+  font-size:8px;
+  font-weight:900;
+  letter-spacing:.01em;
+}
+.linked-precon-badge i{
+  width:6px;
+  height:6px;
+  border-radius:50%;
+  background:var(--gold);
+}
+
 </style>
 
   <meta name="theme-color" content="#14234A">
@@ -3243,6 +3289,160 @@ function ensureProjectColors(){
 ensureProjectColors();
 ensureUserData();
 
+
+/*
+  Linked Preconstruction items
+
+  The earlier section where the work actually happens is the source of truth.
+  Matching Final Ready-to-Start items update automatically and cannot be
+  checked separately. This prevents duplicate checking and keeps Section 8
+  current as Sections 1-7 are completed.
+*/
+const PRECON_LINKS = [
+  {
+    targetSection:7,
+    targetText:'PROJECT COORDINATOR: Final proposal approved',
+    sources:[
+      {section:2,text:'Receive final proposal approval from customer'}
+    ]
+  },
+  {
+    targetSection:7,
+    targetText:'PROJECT COORDINATOR: Scope is clear',
+    sources:[
+      {section:0,text:'Scope of work is clear'},
+      {section:1,text:'Review entire proposal and scope line by line'}
+    ]
+  },
+  {
+    targetSection:7,
+    targetText:'PROJECT COORDINATOR: Budget / allowances are clear',
+    sources:[
+      {section:0,text:'Allowances clearly identified'},
+      {section:1,text:'Review allowances'}
+    ]
+  },
+  {
+    targetSection:7,
+    targetText:'PROJECT COORDINATOR: Selections are complete',
+    sources:[
+      {section:2,text:'Record approved selections'}
+    ]
+  },
+  {
+    targetSection:7,
+    targetText:'PROJECT MANAGER: Crew confirmed',
+    sources:[
+      {section:5,text:'Assign crew'}
+    ]
+  },
+  {
+    targetSection:7,
+    targetText:'PROJECT MANAGER: Subcontractors confirmed',
+    sources:[
+      {section:5,text:'Schedule subcontractors and confirm exact work dates'}
+    ]
+  },
+  {
+    targetSection:7,
+    targetText:'PROJECT MANAGER: Materials confirmed',
+    sources:[
+      {section:4,text:'Confirm critical Day 1 materials are ready'}
+    ]
+  },
+  {
+    targetSection:7,
+    targetText:'PROJECT MANAGER: Deliveries confirmed',
+    sources:[
+      {section:4,text:'Confirm delivery dates'}
+    ]
+  },
+  {
+    targetSection:7,
+    targetText:'PROJECT MANAGER: Schedule confirmed',
+    sources:[
+      {section:5,text:'Review schedule with Project Coordinator'}
+    ]
+  },
+  {
+    targetSection:7,
+    targetText:'PROJECT MANAGER: Customer confirmed',
+    sources:[
+      {section:6,text:'Confirm start date with customer'}
+    ]
+  },
+  {
+    targetSection:7,
+    targetText:'PROJECT MANAGER: Access confirmed',
+    sources:[
+      {section:6,text:'Confirm entry door / access'},
+      {section:6,text:'Confirm work area will be accessible'}
+    ]
+  }
+];
+
+function findPreconItemByText(p,sectionIndex,itemText){
+  const section=p.preconData?.[sectionIndex];
+  if(!section?.items) return null;
+  const itemIndex=section.items.findIndex(item=>item.text===itemText);
+  if(itemIndex<0) return null;
+  return {item:section.items[itemIndex],itemIndex};
+}
+
+function linkedPreconDefinition(si,ii){
+  const definition=PRECON_SECTIONS?.[si]?.items?.[ii];
+  if(!definition) return null;
+  return PRECON_LINKS.find(link=>
+    link.targetSection===si &&
+    link.targetText===definition
+  ) || null;
+}
+
+function linkedPreconSourceLabel(link){
+  const sectionNumbers=[...new Set(link.sources.map(s=>s.section+1))];
+  return `Auto-linked from Section${sectionNumbers.length===1?'':'s'} ${sectionNumbers.join(' + ')}`;
+}
+
+function syncLinkedPreconItems(p){
+  if(!p?.preconData) return;
+
+  PRECON_LINKS.forEach(link=>{
+    const target=findPreconItemByText(p,link.targetSection,link.targetText);
+    if(!target) return;
+
+    const sourceItems=link.sources
+      .map(source=>findPreconItemByText(p,source.section,source.text))
+      .filter(Boolean)
+      .map(x=>x.item);
+
+    // If a source could not be found, leave the target untouched instead of
+    // making an assumption.
+    if(sourceItems.length!==link.sources.length) return;
+
+    const allDone=sourceItems.every(item=>item.done);
+    target.item.done=allDone;
+
+    if(allDone){
+      // Preserve who completed the source work when possible.
+      const checkedNames=sourceItems
+        .map(item=>item.checkedBy)
+        .filter(Boolean);
+      target.item.checkedBy=checkedNames.length
+        ? checkedNames[checkedNames.length-1]
+        : 'Linked';
+    }else{
+      target.item.checkedBy='';
+    }
+  });
+}
+
+function syncAllLinkedPreconstruction(){
+  state.projects.forEach(p=>{
+    syncLinkedPreconItems(p);
+    syncPreconProgress(p);
+  });
+}
+
 function ensurePreconData(){
   state.projects.forEach(p=>{
     if(!Array.isArray(p.precon)) p.precon=PRECON_SECTIONS.map(()=>0);
@@ -3285,6 +3485,7 @@ function ensurePreconData(){
         if(si===0 && typeof s.specialPromises!=='string') s.specialPromises='';
       });
     }
+    syncLinkedPreconItems(p);
     syncPreconProgress(p);
   });
 }
@@ -4332,10 +4533,22 @@ function showPreconOverview(){
 }
 function togglePreconItem(si,ii,val){
   const p=selectedProject();
+
+  if(linkedPreconDefinition(si,ii)){
+    toast('This item updates automatically from an earlier section.');
+    syncLinkedPreconItems(p);
+    renderPreconstruction();
+    return;
+  }
+
   const item=p.preconData[si].items[ii];
   item.done=val;
   item.checkedBy=val ? state.currentUser : '';
+
+  // Any matching downstream Final Ready-to-Start items update immediately.
+  syncLinkedPreconItems(p);
   syncPreconProgress(p);
+
   saveState(false);
   renderDashboard();
   renderPreconstruction();
@@ -4431,14 +4644,16 @@ function preconSectionPrintHTML(p,i,addPageBreak=false){
           </tr>
         </thead>
         <tbody>
-          ${data.items.map(item=>`
+          ${data.items.map((item,ii)=>{
+            const link=linkedPreconDefinition(i,ii);
+            return `
             <tr>
               <td class="center print-check">${item.done?'☑':'☐'}</td>
-              <td>${printSafe(item.text)}</td>
-              <td>${printSafe(item.checkedBy || '')}</td>
+              <td>${printSafe(item.text)}${link?`<div class="print-muted">${printSafe(linkedPreconSourceLabel(link))}</div>`:''}</td>
+              <td>${link?'Auto-linked':printSafe(item.checkedBy || '')}</td>
               <td>${printSafe(item.notes || '')}</td>
-            </tr>
-          `).join('')}
+            </tr>`;
+          }).join('')}
         </tbody>
       </table>
 
@@ -4563,6 +4778,8 @@ function printPreconSection(i){
 function printAllPreconstruction(){
   ensurePreconData();
   const p=selectedProject();
+  syncLinkedPreconItems(p);
+  syncPreconProgress(p);
   launchPrint(
     printProjectHeader(p,'Complete Preconstruction Checklist') +
     PRECON_SECTIONS.map((_,i)=>preconSectionPrintHTML(p,i,i>0)).join('') +
@@ -4597,6 +4814,8 @@ function printAllPOs(){
 function printFullProjectPacket(){
   ensurePreconData();
   const p=selectedProject();
+  syncLinkedPreconItems(p);
+  syncPreconProgress(p);
   const poBlock=p.pos.length
     ? p.pos.map((po,i)=>poPrintHTML(p,po,i,true)).join('')
     : `<section class="print-section print-page-break"><div class="print-section-title"><div><h2>P.O. Splits</h2><p>No P.O. splits have been created for this project.</p></div></div></section>`;
@@ -4612,6 +4831,8 @@ function printFullProjectPacket(){
 function renderPreconstruction(){
   ensurePreconData();
   const p=selectedProject();
+  syncLinkedPreconItems(p);
+  syncPreconProgress(p);
   const overall=projectPct(p);
   const sectionsComplete=p.preconData.filter((s,i)=>s.status==='Complete' || sectionPct(p,i)===100).length;
   const color=projectColorHex(p.color);
@@ -4687,6 +4908,11 @@ function renderPreconstruction(){
         ${USERS.map(u=>`<span><i style="background:${u.color}"></i>${u.name}</span>`).join('')}
       </div>
 
+      <div class="precon-linked-note">
+        <span>↳</span>
+        <div><b>Linked checklist items:</b> matching items in Final Ready-to-Start update automatically as the earlier section is completed. You only check the work once.</div>
+      </div>
+
       <div class="precon-section-list">
         ${PRECON_SECTIONS.map((section,i)=>{
           const data=p.preconData[i];
@@ -4729,13 +4955,24 @@ function renderPreconstruction(){
                   <div class="pc-checklist">
                     ${data.items.map((item,ii)=>{
                       const checkColor=userColor(item.checkedBy);
+                      const link=linkedPreconDefinition(i,ii);
+                      const linkedLabel=link ? linkedPreconSourceLabel(link) : '';
                       return `
-                      <div class="pc-row user-check-row ${item.done&&item.checkedBy?'checked-by-user':''}" style="--checked-user-color:${checkColor}">
+                      <div class="pc-row user-check-row ${item.done&&item.checkedBy?'checked-by-user':''} ${link?'linked-precon-row':''}" style="--checked-user-color:${checkColor}">
                         <label class="pc-task ${item.done?'done':''}">
-                          <input type="checkbox" ${item.done?'checked':''} onchange="togglePreconItem(${i},${ii},this.checked)">
+                          <input
+                            type="checkbox"
+                            ${item.done?'checked':''}
+                            ${link?'disabled':''}
+                            onchange="togglePreconItem(${i},${ii},this.checked)">
                           <span>
                             ${item.text}
-                            ${item.done&&item.checkedBy?`<small class="checked-by-badge"><i class="checked-by-dot"></i>Checked by ${item.checkedBy}</small>`:''}
+                            ${link
+                              ? `<small class="linked-precon-badge"><i></i>${linkedLabel}</small>`
+                              : (item.done&&item.checkedBy
+                                  ? `<small class="checked-by-badge"><i class="checked-by-dot"></i>Checked by ${item.checkedBy}</small>`
+                                  : '')
+                            }
                           </span>
                         </label>
                         <textarea class="input pc-note" placeholder="Notes / details..." oninput="updatePreconNote(${i},${ii},this.value)">${esc(item.notes)}</textarea>
