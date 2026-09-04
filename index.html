@@ -2447,7 +2447,7 @@ body.topbar-collapsed .collapsed-top-controls{
 }
 .estimate-buildertrend{
   width:100%;
-  min-width:1180px;
+  min-width:1120px;
   border-collapse:collapse;
   table-layout:fixed;
 }
@@ -2474,7 +2474,7 @@ body.topbar-collapsed .collapsed-top-controls{
   border-bottom:0;
 }
 .estimate-buildertrend .col-check{width:42px;text-align:center}
-.estimate-buildertrend .col-items{width:210px}
+.estimate-buildertrend .col-title{width:220px}
 .estimate-buildertrend .col-description{width:300px}
 .estimate-buildertrend .col-qty{width:95px}
 .estimate-buildertrend .col-unit{width:95px}
@@ -2534,7 +2534,7 @@ textarea.estimate-cell-input{
 }
 @media(max-width:560px){
   .estimate-buildertrend{
-    min-width:1080px;
+    min-width:1040px;
   }
   .estimate-buildertrend th,
   .estimate-buildertrend td{
@@ -4829,7 +4829,7 @@ function estimateTableHTML(p,mode='hub'){
 
   return `
     <div class="estimate-table-hint">
-      <span>Imported estimate layout: Items · Description · Quantity · Unit · Unit cost · Cost type · Builder Cost</span>
+      <span>Imported estimate layout: Title · Description · Quantity · Unit · Unit cost · Cost type · Builder Cost</span>
       <span>Scroll sideways on phone to see all columns.</span>
     </div>
 
@@ -4838,7 +4838,7 @@ function estimateTableHTML(p,mode='hub'){
         <thead>
           <tr>
             <th class="col-check"></th>
-            <th class="col-items">Items</th>
+            <th class="col-title">Title</th>
             <th class="col-description">Description</th>
             <th class="col-qty">Quantity</th>
             <th class="col-unit">Unit</th>
@@ -4858,9 +4858,9 @@ function estimateTableHTML(p,mode='hub'){
                     onchange="${toggleFn}(${i},this.checked)">
                 </td>
 
-                <td class="col-items">
+                <td class="col-title">
                   <textarea class="estimate-cell-input estimate-item-input" rows="2"
-                    oninput="${updateFn}(${i},'line',this.value)">${esc(r.line)}</textarea>
+                    oninput="${updateFn}(${i},'title',this.value);${updateFn}(${i},'line',this.value)">${esc(r.title)}</textarea>
                 </td>
 
                 <td class="col-description">
@@ -4987,7 +4987,7 @@ function renderPayByLine(){
       </div>
 
       <div class="estimate-upload-note">
-        Upload an Excel or CSV estimate. The app will keep the Buildertrend-style columns — Items, Description, Quantity, Unit, Unit cost, Cost type, and Builder Cost — then use Cost type = Labor to build the labor P.O. splits.
+        Upload an Excel or CSV estimate. The app will pull each line's Title and Description from the estimate and show Title, Description, Quantity, Unit, Unit cost, Cost type, and Builder Cost. Cost type = Labor drives the P.O. splits.
       </div>
 
       <div class="toolbar">
@@ -5175,7 +5175,7 @@ function estimateQuantity(v){
 
 function estimateRowDefaults(r={}){
   return {
-    line:r.line ?? r.item ?? 'New Line Item',
+    title:r.title ?? r.line ?? r.item ?? 'New Line Item',
     description:r.description ?? '',
     quantity:r.quantity ?? '',
     unit:r.unit ?? '',
@@ -5212,7 +5212,7 @@ function findEstimateColumns(rows){
   const maxRows=Math.min(rows.length,40);
 
   const headers={
-    item:['items','item','line item','name'],
+    title:['title','item title','items','item','line item','name'],
     description:['description','work description','scope'],
     quantity:['quantity','qty'],
     unit:['unit','uom'],
@@ -5223,7 +5223,7 @@ function findEstimateColumns(rows){
 
   let best={
     score:-1,rowIndex:-1,
-    itemIndex:-1,descriptionIndex:-1,quantityIndex:-1,unitIndex:-1,
+    titleIndex:-1,descriptionIndex:-1,quantityIndex:-1,unitIndex:-1,
     unitCostIndex:-1,costTypeIndex:-1,builderCostIndex:-1
   };
 
@@ -5245,7 +5245,7 @@ function findEstimateColumns(rows){
 
     const candidate={
       rowIndex:r,
-      itemIndex:findHeader(headers.item),
+      titleIndex:findHeader(headers.title),
       descriptionIndex:findHeader(headers.description),
       quantityIndex:findHeader(headers.quantity),
       unitIndex:findHeader(headers.unit),
@@ -5255,7 +5255,7 @@ function findEstimateColumns(rows){
     };
 
     let score=0;
-    if(candidate.itemIndex>=0) score+=4;
+    if(candidate.titleIndex>=0) score+=4;
     if(candidate.descriptionIndex>=0) score+=2;
     if(candidate.quantityIndex>=0) score+=1;
     if(candidate.unitIndex>=0) score+=1;
@@ -5274,10 +5274,10 @@ function findEstimateColumns(rows){
 function parseEstimateRows(rows){
   const cols=findEstimateColumns(rows);
 
-  if(cols.itemIndex<0 || cols.builderCostIndex<0){
+  if(cols.titleIndex<0 || cols.builderCostIndex<0){
     return {
       items:[],
-      warning:'I could not find the Items and Builder Cost columns in this estimate.'
+      warning:'I could not find the Title and Builder Cost columns in this estimate.'
     };
   }
 
@@ -5286,7 +5286,7 @@ function parseEstimateRows(rows){
   for(let r=cols.rowIndex+1;r<rows.length;r++){
     const row=rows[r]||[];
 
-    const item=estimateCellText(row[cols.itemIndex]);
+    const title=estimateCellText(row[cols.titleIndex]);
     const description=cols.descriptionIndex>=0 ? estimateCellText(row[cols.descriptionIndex]) : '';
     const quantity=cols.quantityIndex>=0 ? estimateQuantity(row[cols.quantityIndex]) : '';
     const unit=cols.unitIndex>=0 ? estimateCellText(row[cols.unitIndex]) : '';
@@ -5294,19 +5294,17 @@ function parseEstimateRows(rows){
     const typeText=cols.costTypeIndex>=0 ? estimateCellText(row[cols.costTypeIndex]) : '';
     const rawBuilderCost=estimateMoney(row[cols.builderCostIndex]);
 
-    if(!item) continue;
+    if(!title) continue;
 
-    const ni=estimateNorm(item);
-    const nd=estimateNorm(description);
+    const nt=estimateNorm(title);
 
     const skipSignals=[
       'totals','subtotal','grand total','estimate total','total estimate',
       'sales tax','tax total','profit','overhead'
     ];
-    if(skipSignals.some(x=>ni===x || ni.startsWith(x))) continue;
+    if(skipSignals.some(x=>nt===x || nt.startsWith(x))) continue;
 
-    // Ignore Buildertrend category/group total rows so costs are not double-counted.
-    // Real estimate line items normally have a cost type, quantity, description, or unit cost.
+    // Ignore category/group total rows so Builder Cost is not double-counted.
     const hasDetail=
       !!typeText ||
       description!=='' ||
@@ -5323,20 +5321,21 @@ function parseEstimateRows(rows){
     if(!Number.isFinite(builderCost)) builderCost=0;
 
     const rowText=row.map(estimateCellText).join(' | ');
-    const isLabor=likelyLaborLine(item + ' ' + description,rowText,typeText);
+    const isLabor=likelyLaborLine(`${title} ${description}`,rowText,typeText);
 
     let normalizedType=typeText.trim();
     if(!normalizedType){
       normalizedType=isLabor?'Labor':'Material';
     }else{
-      const nt=estimateNorm(normalizedType);
-      if(nt==='labor') normalizedType='Labor';
-      else if(nt==='material' || nt==='materials') normalizedType='Material';
-      else if(nt.includes('subcontract')) normalizedType='Subcontractor';
+      const normalizedTypeText=estimateNorm(normalizedType);
+      if(normalizedTypeText==='labor') normalizedType='Labor';
+      else if(normalizedTypeText==='material' || normalizedTypeText==='materials') normalizedType='Material';
+      else if(normalizedTypeText.includes('subcontract')) normalizedType='Subcontractor';
     }
 
     items.push({
-      line:item,
+      title,
+      line:title,
       description,
       quantity,
       unit,
@@ -5353,7 +5352,7 @@ function syncPOsFromLabor(p){
   const labor=laborLines(p);
 
   p.pos=labor.map((r,i)=>{
-    const existing=p.pos.find(x=>x.line===r.line);
+    const existing=p.pos.find(x=>x.line===(r.title ?? r.line));
 
     if(existing){
       existing.builderCost=Number(r.builderCost||0);
@@ -5362,7 +5361,7 @@ function syncPOsFromLabor(p){
 
     return {
       id:`${p.jobNo}-L${String(i+1).padStart(2,'0')}`,
-      line:r.line,
+      line:r.title ?? r.line,
       builderCost:Number(r.builderCost||0),
       status:'Draft',
       preApprovedBy:'',
@@ -5440,7 +5439,7 @@ function loadSampleEstimateFromPOHub(){
   go('paybyline');
 }
 function addEstimateLineFromPOHub(){
-  selectedProject().estimate.push({line:'New Line Item',description:'',quantity:1,unit:'--',unitCost:0,type:'Labor',builderCost:0});
+  selectedProject().estimate.push({title:'New Line Item',line:'New Line Item',description:'',quantity:1,unit:'--',unitCost:0,type:'Labor',builderCost:0});
   saveState(false);
   renderAll();
   poHubView='estimate';
@@ -5454,13 +5453,13 @@ function updateEstimateFromPOHub(i,key,val){
     ? (val===''?'':Number(val))
     : val;
 
-  // Cost type and builder cost affect labor P.O. calculations immediately.
+  if(key==='title') p.estimate[i].line=val;
+  if(key==='line') p.estimate[i].title=val;
+
   saveState(false);
   renderDashboard();
   renderEstimates();
 
-  // Avoid re-rendering the full Estimate table while typing text fields,
-  // which keeps cursor/focus smooth on desktop and iPhone.
   if(key==='type' || key==='builderCost'){
     renderPayByLine();
   }
@@ -5980,7 +5979,7 @@ function loadSampleEstimate(){
   saveState(false); renderAll(); renderProject(); projectTab='estimate'; renderProject();
 }
 function addEstimateLine(){
-  selectedProject().estimate.push({line:'New Line Item',description:'',quantity:1,unit:'--',unitCost:0,type:'Labor',builderCost:0});
+  selectedProject().estimate.push({title:'New Line Item',line:'New Line Item',description:'',quantity:1,unit:'--',unitCost:0,type:'Labor',builderCost:0});
   saveState(false); renderAll(); renderProject();
 }
 function updateEstimate(i,key,val){
@@ -5989,6 +5988,10 @@ function updateEstimate(i,key,val){
   p.estimate[i][key]=numericFields.includes(key)
     ? (val===''?'':Number(val))
     : val;
+
+  if(key==='title') p.estimate[i].line=val;
+  if(key==='line') p.estimate[i].title=val;
+
   saveState(false);
   renderDashboard();
   if(key==='type' || key==='builderCost') renderPayByLine();
@@ -6001,10 +6004,10 @@ function generatePOs(){
   const labor=laborLines(p);
   if(!labor.length){alert('Add labor line items first.');return;}
   p.pos=labor.map((r,i)=>{
-    const existing=p.pos.find(x=>x.line===r.line);
+    const existing=p.pos.find(x=>x.line===(r.title ?? r.line));
     return existing || {
       id:`${p.jobNo}-L${String(i+1).padStart(2,'0')}`,
-      line:r.line,builderCost:Number(r.builderCost),status:'Draft',
+      line:r.title ?? r.line,builderCost:Number(r.builderCost),status:'Draft',
       preApprovedBy:'',approvedBy:'',
       splits:[
         {name:'Adair',pct:50},

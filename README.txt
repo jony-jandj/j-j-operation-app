@@ -1,20 +1,20 @@
-J&J Operations — Combined Update + Undo Approval
+J&J Operations — Estimate Title + Description Update
 
-Includes the prior combined update:
+Estimate columns:
+- Title
+- Description
+- Quantity
+- Unit
+- Unit cost
+- Cost type
+- Builder Cost
+
+Other included features remain:
 - New Project creation
-- Preconstruction / P.O. printing
-- Buildertrend-style Estimate without Markup
-
-New P.O. approval behavior:
-- Jony or Adair: Draft -> Pre-Approved
-- Jony or Adair: Undo Pre-Approval -> Draft
-- Gio: Pre-Approved -> Approved
-- Gio: Undo Approval -> Pre-Approved
-- An Approved P.O. cannot jump directly back to Draft
+- Preconstruction + P.O. printing
+- Buildertrend-style estimate import
+- P.O. pre-approval / approval + undo approval
+- No Markup column
 
 GitHub:
 Upload index.html and service-worker.js and commit directly to main.
-
-Supabase:
-If the shared cloud database is already set up, also run
-JJ_Supabase_Unapprove_Update.sql in the Supabase SQL Editor.
