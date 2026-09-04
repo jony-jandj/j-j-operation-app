@@ -1,0 +1,22 @@
+{
+  "name": "J&J Home Renovations Operations",
+  "short_name": "J&J Operations",
+  "description": "J&J Home Renovations internal operations app",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#F6F7F9",
+  "theme_color": "#14234A",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

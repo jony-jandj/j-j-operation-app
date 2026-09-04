@@ -1,0 +1,3614 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>J&J Operations App Prototype</title>
+<style>
+:root{
+  --navy:#14234A;
+  --navy2:#0F1832;
+  --gold:#B59A62;
+  --gold-soft:#F4EFE5;
+  --bg:#F6F7F9;
+  --card:#FFFFFF;
+  --text:#202633;
+  --muted:#7A8290;
+  --line:#E3E7ED;
+  --green:#2E7A55;
+  --red:#B54A4A;
+  --amber:#9A742B;
+  --shadow:0 7px 22px rgba(20,35,74,.06);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+  background:var(--bg);
+  color:var(--text);
+}
+button,input,select,textarea{font:inherit}
+button{cursor:pointer}
+.app{min-height:100vh}
+header{
+  height:68px;
+  background:var(--navy);
+  color:white;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:0 18px;
+  position:sticky;
+  top:0;
+  z-index:50;
+  box-shadow:0 4px 18px rgba(20,35,74,.15);
+}
+.brand{display:flex;align-items:center;gap:11px;min-width:0}
+.logo{
+  width:40px;height:40px;border-radius:10px;background:#fff;
+  border:2px solid var(--gold);color:var(--gold);
+  display:grid;place-items:center;font-weight:900;flex:none;
+}
+.brand h1{margin:0;font-size:15px}
+.brand small{display:block;color:#D5DAE4;margin-top:2px}
+.header-actions{display:flex;gap:8px}
+.btn{
+  border:0;border-radius:9px;padding:9px 12px;font-weight:800;
+  display:inline-flex;align-items:center;justify-content:center;gap:6px;
+}
+.btn-gold{background:var(--gold);color:#fff}
+.btn-navy{background:var(--navy);color:#fff}
+.btn-light{background:#fff;color:var(--navy);border:1px solid var(--line)}
+.btn-soft{background:var(--gold-soft);color:var(--navy);border:1px solid #E1D3B5}
+.btn-danger{background:#FFF2F2;color:var(--red);border:1px solid #F0D1D1}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.top-nav{
+  background:#fff;
+  border-bottom:1px solid var(--line);
+  padding:8px 18px;
+  display:flex;
+  gap:7px;
+  align-items:center;
+  position:sticky;
+  top:68px;
+  z-index:45;
+  overflow-x:auto;
+}
+.top-nav button{
+  white-space:nowrap;
+  border:1px solid var(--line);
+  background:#fff;
+  color:var(--navy);
+  border-radius:999px;
+  padding:8px 12px;
+  font-size:12px;
+  font-weight:850;
+}
+.top-nav button.active{
+  background:var(--gold-soft);
+  border-color:#DDCBA5;
+}
+.shell{display:flex}
+.sidebar{
+  width:245px;
+  background:#fff;
+  border-right:1px solid var(--line);
+  min-height:calc(100vh - 113px);
+  padding:12px 10px 18px;
+  position:sticky;
+  top:113px;
+  align-self:flex-start;
+}
+.nav-group-title{
+  font-size:10px;
+  text-transform:uppercase;
+  letter-spacing:.9px;
+  color:var(--muted);
+  font-weight:900;
+  padding:8px 9px 7px;
+}
+.project-side-list{display:grid;gap:8px}
+.project-side-wrap{
+  position:relative;
+  background:#fff;
+  border:1px solid var(--line);
+  border-radius:11px;
+  overflow:visible;
+  transition:.12s ease;
+}
+.project-side-wrap:hover{
+  border-color:#CBD2DC;
+}
+.project-side-wrap.active{
+  border-color:#C9B27F;
+  box-shadow:0 0 0 2px rgba(181,154,98,.10);
+}
+.project-side-colorbar{
+  position:absolute;
+  left:0;
+  top:0;
+  bottom:0;
+  width:5px;
+  border-radius:11px 0 0 11px;
+}
+.project-side-main{
+  display:grid;
+  grid-template-columns:1fr 30px;
+  gap:5px;
+  align-items:start;
+  padding:9px 8px 9px 12px;
+}
+.project-side-open{
+  width:100%;
+  min-width:0;
+  text-align:left;
+  border:0;
+  background:transparent;
+  padding:0;
+  color:var(--navy);
+}
+.project-side-open b{
+  display:block;
+  font-size:12px;
+  line-height:1.25;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.project-side-open small{
+  display:block;
+  color:var(--muted);
+  margin-top:3px;
+  font-size:10px;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.project-side-menu-btn{
+  width:28px;
+  height:28px;
+  border:1px solid var(--line);
+  background:#fff;
+  border-radius:8px;
+  color:var(--navy);
+  padding:0;
+  display:grid;
+  place-items:center;
+  font-size:13px;
+  font-weight:900;
+}
+.project-side-menu-btn:hover{
+  background:#F6F7F9;
+}
+.project-side-status{
+  display:flex;
+  justify-content:space-between;
+  gap:8px;
+  align-items:center;
+  margin-top:7px;
+}
+.project-side-status span{
+  font-size:10px;
+  color:var(--muted);
+}
+.project-side-status strong{
+  font-size:10px;
+  color:var(--navy);
+}
+.project-color-menu{
+  display:none;
+  border-top:1px solid #EEF1F4;
+  background:#FAFBFC;
+  padding:9px 10px 10px 12px;
+}
+.project-side-wrap.menu-open .project-color-menu{
+  display:block;
+}
+.project-color-menu-title{
+  font-size:9px;
+  font-weight:900;
+  text-transform:uppercase;
+  letter-spacing:.7px;
+  color:var(--muted);
+  margin-bottom:7px;
+}
+.project-color-options{
+  display:flex;
+  gap:7px;
+  flex-wrap:wrap;
+}
+.project-color-option{
+  width:25px;
+  height:25px;
+  border-radius:7px;
+  border:2px solid #fff;
+  box-shadow:0 0 0 1px #D9DEE6;
+  padding:0;
+}
+.project-color-option.selected{
+  box-shadow:0 0 0 2px var(--navy);
+}
+.project-color-label{
+  margin-top:8px;
+  font-size:10px;
+  color:var(--muted);
+}
+.project-sidebar-helper{
+  font-size:10px;
+  color:var(--muted);
+  padding:0 9px 9px;
+  line-height:1.35;
+}
+.content{flex:1;min-width:0;max-width:1380px;margin:auto;padding:22px 22px 40px}
+.page{display:none}
+.page.active{display:block}
+.mobile-tabs{display:none}
+.page-title{
+  display:flex;justify-content:space-between;gap:16px;align-items:flex-start;margin-bottom:18px;
+}
+.page-title h2{margin:0;color:var(--navy);font-size:27px}
+.page-title p{margin:5px 0 0;color:var(--muted);font-size:13px}
+.eyebrow{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--gold);font-weight:900;margin-bottom:5px}
+.card{
+  background:var(--card);
+  border:1px solid var(--line);
+  border-radius:14px;
+  box-shadow:var(--shadow);
+}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.stat{padding:15px 16px}
+.label{font-size:10px;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);font-weight:900}
+.value{font-size:25px;font-weight:900;color:var(--navy);margin-top:6px}
+.sub{font-size:12px;color:var(--muted);margin-top:4px}
+.section{margin-top:18px}
+.section-head{
+  display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:9px;
+}
+.section-head h3{margin:0;color:var(--navy);font-size:18px}
+.section-head span{font-size:12px;color:var(--muted)}
+.pay-grid{display:grid;grid-template-columns:1.15fr 1fr;gap:12px}
+.pay-card{padding:16px}
+.pay-title{font-size:11px;color:var(--gold);font-weight:900;text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px}
+.pay-row{
+  display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-top:1px solid #EFF1F4;font-size:13px
+}
+.pay-row:first-of-type{border-top:0}
+.pay-row span{color:var(--muted)}
+.pay-row b{color:var(--navy)}
+.projects-card{overflow:hidden}
+.project-head,.project-row{
+  display:grid;
+  grid-template-columns:minmax(210px,1.55fr) .9fr .65fr .8fr .9fr;
+  gap:16px;
+  align-items:center;
+}
+.project-head{
+  padding:10px 16px;background:#F9FAFB;border-bottom:1px solid var(--line)
+}
+.project-head div{font-size:10px;text-transform:uppercase;letter-spacing:.7px;color:var(--muted);font-weight:900}
+.project-row{
+  padding:13px 16px;border-top:1px solid #EFF1F4;cursor:pointer
+}
+.project-row:first-of-type{border-top:0}
+.project-row:hover{background:#FAFBFC}
+.project-name b{display:block;color:var(--navy);font-size:14px}
+.project-name small{color:var(--muted)}
+.percent{font-weight:850;color:var(--navy)}
+.bar{height:6px;background:#EDF0F4;border-radius:999px;overflow:hidden;margin-top:5px}
+.bar div{height:100%;background:var(--gold)}
+.pill{display:inline-flex;padding:5px 8px;border-radius:999px;font-size:11px;font-weight:900}
+.pill-red{background:#FFF1F1;color:var(--red)}
+.pill-green{background:#EAF6EF;color:var(--green)}
+.pill-gold{background:var(--gold-soft);color:#775F2D}
+.mobile-label{display:none}
+.project-banner{
+  padding:14px 16px;
+  background:#fff;
+  border:1px solid var(--line);
+  border-radius:13px;
+  display:flex;justify-content:space-between;gap:12px;align-items:center;
+  margin-bottom:16px;
+}
+.project-banner h3{margin:0;color:var(--navy);font-size:18px}
+.project-banner small{display:block;color:var(--muted);margin-top:3px}
+.project-tabs{
+  display:flex;gap:7px;overflow-x:auto;margin-bottom:16px;padding-bottom:2px
+}
+.project-tabs button{
+  white-space:nowrap;border:1px solid var(--line);background:#fff;color:var(--navy);
+  border-radius:999px;padding:8px 11px;font-size:12px;font-weight:800
+}
+.project-tabs button.active{background:var(--gold-soft);border-color:#DECDA8}
+.project-panel{display:none}
+.project-panel.active{display:block}
+.grid-2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.grid-3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.info-card{padding:15px}
+.info-card h4{margin:0 0 10px;color:var(--navy);font-size:15px}
+.info-line{display:flex;justify-content:space-between;gap:14px;padding:9px 0;border-top:1px solid #EFF1F4;font-size:12px}
+.info-line:first-of-type{border-top:0}
+.info-line span{color:var(--muted)}
+.info-line b{color:var(--navy)}
+.progress-big{height:9px;background:#EDF0F4;border-radius:999px;overflow:hidden;margin-top:8px}
+.progress-big div{height:100%;background:var(--gold)}
+.precon-list{display:grid;gap:10px}
+.precon{
+  padding:13px 14px;display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center
+}
+.precon h4{margin:0;color:var(--navy);font-size:14px}
+.precon p{margin:4px 0 0;color:var(--muted);font-size:11px}
+.precon-actions{display:flex;gap:7px}
+.table-wrap{overflow:auto;border:1px solid var(--line);border-radius:12px;background:#fff}
+table{width:100%;border-collapse:collapse;min-width:760px}
+th{padding:10px;background:#F9FAFB;border-bottom:1px solid var(--line);text-align:left;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.7px}
+td{padding:10px;border-bottom:1px solid #EFF1F4;font-size:12px}
+tr:last-child td{border-bottom:0}
+.input{
+  width:100%;border:1px solid var(--line);border-radius:8px;padding:8px 9px;background:#fff;color:var(--text);outline:none
+}
+.input:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(181,154,98,.12)}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.po-list{display:grid;gap:12px}
+.po{overflow:hidden}
+.po-head{
+  padding:12px 14px;background:#F9FAFB;border-bottom:1px solid var(--line);
+  display:flex;justify-content:space-between;gap:12px;align-items:center
+}
+.po-head h4{margin:0;color:var(--navy);font-size:15px}
+.po-head small{color:var(--muted)}
+.po-body{padding:14px}
+.alloc-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
+.alloc{
+  padding:10px;border:1px solid var(--line);border-radius:10px;background:#FCFDFE
+}
+.alloc span{display:block;font-size:10px;color:var(--muted);font-weight:800;text-transform:uppercase}
+.alloc b{display:block;margin-top:5px;color:var(--navy);font-size:15px}
+.split-grid{
+  display:grid;grid-template-columns:1.2fr .55fr .75fr;gap:7px;align-items:center;margin-top:12px
+}
+.split-head{font-size:10px;color:var(--muted);font-weight:900;text-transform:uppercase}
+.money{font-weight:850;color:var(--navy);font-variant-numeric:tabular-nums}
+.split-total{margin-top:9px;font-size:12px;font-weight:900}
+.good{color:var(--green)}.bad{color:var(--red)}
+.po-actions{display:flex;gap:7px;justify-content:flex-end;flex-wrap:wrap;margin-top:12px}
+.check-list{display:grid;gap:8px}
+.check-item{
+  display:flex;align-items:center;gap:9px;padding:10px 11px;border:1px solid var(--line);border-radius:10px;background:#fff
+}
+.check-item input{width:18px;height:18px;accent-color:var(--gold)}
+.check-item.done span{text-decoration:none;color:#9298A4}
+.note{
+  padding:11px 12px;border-radius:10px;background:#FFFAF0;border:1px solid #E9D8B5;color:#705A2B;font-size:12px;margin-bottom:12px
+}
+.empty{padding:25px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:11px;background:#fff}
+.assistant{
+  position:fixed;right:16px;bottom:16px;width:360px;max-width:calc(100vw - 24px);
+  background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:0 20px 60px rgba(20,35,74,.22);
+  overflow:hidden;z-index:70;display:none
+}
+.assistant.open{display:block}
+.assistant-head{background:var(--navy);color:#fff;padding:12px 13px;display:flex;justify-content:space-between;align-items:center}
+.assistant-body{padding:12px;max-height:360px;overflow:auto}
+.msg{padding:9px 10px;border-radius:10px;font-size:12px;line-height:1.4;margin-bottom:8px}
+.msg.bot{background:#F4F6F9}
+.msg.user{background:var(--gold-soft);margin-left:35px}
+.quick{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+.quick button{border:1px solid var(--line);background:#fff;border-radius:999px;padding:6px 8px;font-size:10px;color:var(--navy)}
+.assistant-foot{display:flex;gap:7px;border-top:1px solid var(--line);padding:9px}
+.fab{
+  position:fixed;right:16px;bottom:16px;background:var(--gold);color:#fff;
+  border:0;border-radius:999px;padding:12px 15px;font-weight:900;z-index:60;
+  box-shadow:0 10px 30px rgba(20,35,74,.18)
+}
+.toast{
+  position:fixed;left:50%;bottom:22px;transform:translateX(-50%);
+  background:var(--navy);color:#fff;padding:9px 12px;border-radius:9px;font-size:12px;font-weight:800;z-index:100
+}
+
+.precon-jump{
+  display:flex;gap:6px;overflow-x:auto;padding:8px 0 2px;margin-bottom:12px
+}
+.precon-jump button{
+  flex:none;width:38px;height:38px;border-radius:9px;border:1px solid var(--line);
+  background:#fff;color:var(--navy);font-weight:900
+}
+.precon-jump button.active{background:var(--navy);color:#fff;border-color:var(--navy)}
+.precon-project-bar{
+  background:#fff;border:1px solid var(--line);border-radius:13px;padding:13px 14px;
+  display:grid;grid-template-columns:1.35fr .75fr .75fr;gap:12px;align-items:end;margin-bottom:12px
+}
+.precon-project-bar h3{margin:0;color:var(--navy);font-size:17px}
+.pc-section{overflow:hidden;margin-bottom:11px}
+.pc-section-head{
+  display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;
+  padding:13px 14px;background:#fff;cursor:pointer
+}
+.pc-number{
+  width:34px;height:34px;border:1px solid var(--gold);border-radius:9px;
+  display:grid;place-items:center;color:var(--navy);font-weight:900
+}
+.pc-section-head h4{margin:0;color:var(--navy);font-size:14px}
+.pc-section-head p{margin:3px 0 0;color:var(--muted);font-size:11px}
+.pc-section-body{border-top:1px solid var(--line);padding:14px;background:#fff}
+.pc-meta{
+  display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:12px
+}
+.pc-meta-box{
+  border:1px solid var(--line);border-radius:9px;padding:9px 10px;background:#FBFCFD
+}
+.pc-meta-box span{
+  display:block;font-size:9px;text-transform:uppercase;letter-spacing:.7px;color:var(--gold);font-weight:900;margin-bottom:4px
+}
+.pc-meta-box b{font-size:11px;color:var(--navy);line-height:1.35}
+.checklist-head{
+  display:grid;grid-template-columns:1.05fr .95fr;gap:10px;padding:7px 9px;
+  background:#F8F9FB;border:1px solid var(--line);border-bottom:0;border-radius:9px 9px 0 0
+}
+.checklist-head div{font-size:9px;text-transform:uppercase;letter-spacing:.7px;font-weight:900;color:var(--muted)}
+.pc-checklist{
+  border:1px solid var(--line);border-radius:0 0 9px 9px;overflow:hidden
+}
+.pc-row{
+  display:grid;grid-template-columns:1.05fr .95fr;gap:10px;padding:9px;
+  border-top:1px solid #EFF1F4;align-items:center
+}
+.pc-row:first-child{border-top:0}
+.pc-task{display:flex;align-items:flex-start;gap:9px;line-height:1.3}
+.pc-task input{width:18px;height:18px;accent-color:var(--gold);flex:none;margin-top:0}
+.pc-task span{font-size:12px;font-weight:700;color:var(--text)}
+.pc-task.done span{text-decoration:none;color:#9298A4}
+.pc-note{min-height:34px;resize:vertical}
+.special-promises{
+  margin-top:12px;border:1px solid #E0D2B5;background:#FFFCF6;border-radius:10px;padding:11px
+}
+.special-promises label{display:block;font-size:10px;font-weight:900;color:var(--gold);text-transform:uppercase;letter-spacing:.7px;margin-bottom:7px}
+.checkpoint{
+  margin-top:12px;border:1px solid var(--line);border-radius:10px;overflow:hidden
+}
+.checkpoint-title{padding:9px 11px;background:#F8F9FB;color:var(--navy);font-size:11px;font-weight:900}
+.status-choices{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:10px}
+.status-btn{
+  border:1px solid var(--line);background:#fff;border-radius:9px;padding:9px;color:var(--navy);font-weight:850
+}
+.status-btn.selected-complete{background:#EAF6EF;border-color:#CDE8D8;color:var(--green)}
+.status-btn.selected-open{background:#FFF2F2;border-color:#F0D1D1;color:var(--red)}
+.checkpoint-fields{
+  display:grid;grid-template-columns:2fr 1fr .7fr .8fr;gap:8px;padding:0 10px 10px
+}
+.mini-link{
+  border:0;background:transparent;color:var(--gold);font-size:10px;font-weight:900;padding:4px 0;margin-top:3px
+}
+
+
+.precon-overview-shell{
+  background:#F3F5F8;
+  border:1px solid var(--line);
+  border-radius:18px;
+  padding:18px;
+}
+.precon-summary-card{
+  background:#fff;
+  border:1px solid var(--line);
+  border-radius:15px;
+  overflow:hidden;
+  margin-bottom:16px;
+  box-shadow:var(--shadow);
+}
+.precon-summary-top{
+  background:var(--navy);
+  color:#fff;
+  padding:14px 16px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+}
+.precon-summary-top h3{
+  margin:0;
+  font-size:17px;
+}
+.precon-summary-top small{
+  display:block;
+  color:#D7DDE8;
+  margin-top:3px;
+}
+.precon-summary-actions{
+  display:flex;
+  gap:7px;
+  flex-wrap:wrap;
+}
+.precon-info-grid{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:10px;
+  padding:14px;
+}
+.precon-info{
+  background:#F7F8FA;
+  border-radius:10px;
+  padding:11px 12px;
+  min-height:66px;
+}
+.precon-info .label{
+  margin-bottom:5px;
+}
+.precon-info b{
+  display:block;
+  color:#202020;
+  font-size:13px;
+  line-height:1.3;
+}
+.precon-section-list{
+  display:grid;
+  gap:9px;
+}
+.precon-overview-row{
+  display:grid;
+  grid-template-columns:56px 1fr auto;
+  align-items:center;
+  min-height:72px;
+  background:#fff;
+  border:1px solid #DCE2EA;
+  border-radius:12px;
+  overflow:hidden;
+  cursor:pointer;
+  transition:.12s ease;
+}
+.precon-overview-row:hover{
+  border-color:#C8D0DC;
+  box-shadow:0 4px 12px rgba(20,35,74,.05);
+}
+.precon-overview-number{
+  align-self:stretch;
+  display:grid;
+  place-items:center;
+  border-right:1px solid var(--gold);
+  color:var(--navy);
+  font-size:22px;
+  font-weight:900;
+}
+.precon-overview-copy{
+  padding:12px 14px;
+}
+.precon-overview-copy h4{
+  margin:0;
+  color:var(--navy);
+  font-size:14px;
+  text-transform:uppercase;
+}
+.precon-overview-copy p{
+  margin:4px 0 0;
+  color:var(--muted);
+  font-size:11px;
+}
+.precon-count{
+  margin-right:14px;
+  background:#F0F3F8;
+  color:var(--navy);
+  border-radius:999px;
+  padding:6px 9px;
+  font-size:11px;
+  font-weight:900;
+  white-space:nowrap;
+}
+.precon-count.complete{
+  background:#EAF6EF;
+  color:var(--green);
+}
+.precon-detail-top{
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+  align-items:center;
+  margin-bottom:10px;
+}
+.precon-detail-top .btn{
+  flex:none;
+}
+@media(max-width:850px){
+  .precon-info-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:560px){
+  .precon-overview-shell{padding:10px;border-radius:13px}
+  .precon-summary-top{align-items:flex-start;flex-direction:column}
+  .precon-info-grid{grid-template-columns:1fr 1fr;padding:10px}
+  .precon-overview-row{grid-template-columns:46px 1fr auto;min-height:68px}
+  .precon-overview-number{font-size:19px}
+  .precon-overview-copy{padding:10px}
+  .precon-overview-copy h4{font-size:12px}
+  .precon-count{margin-right:9px;font-size:10px;padding:5px 7px}
+}
+
+
+.po{
+  overflow:hidden;
+}
+.po-head{
+  cursor:pointer;
+  transition:.12s ease;
+}
+.po-head:hover{
+  background:#F5F7FA;
+}
+.po-summary{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  min-width:0;
+}
+.po-chevron{
+  width:28px;
+  height:28px;
+  border-radius:8px;
+  border:1px solid var(--line);
+  display:grid;
+  place-items:center;
+  color:var(--navy);
+  font-weight:900;
+  background:#fff;
+  flex:none;
+  transition:transform .15s ease;
+}
+.po.expanded .po-chevron{
+  transform:rotate(90deg);
+}
+.po-body{
+  display:none;
+}
+.po.expanded .po-body{
+  display:block;
+}
+.po-quick{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  align-items:center;
+}
+.po-quick span{
+  font-size:11px;
+  color:var(--muted);
+}
+.po-quick b{
+  color:var(--navy);
+}
+.po-expand-note{
+  font-size:10px;
+  color:var(--muted);
+  margin-top:3px;
+}
+@media(max-width:560px){
+  .po-head{
+    align-items:flex-start;
+  }
+  .po-quick{
+    width:100%;
+  }
+}
+
+
+.top-nav-group{
+  position:relative;
+  flex:none;
+}
+.top-nav-group > button{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+}
+.top-nav-dropdown{
+  display:none;
+  position:absolute;
+  top:calc(100% + 6px);
+  left:0;
+  min-width:165px;
+  background:#fff;
+  border:1px solid var(--line);
+  border-radius:10px;
+  box-shadow:0 12px 30px rgba(20,35,74,.14);
+  padding:6px;
+  z-index:80;
+}
+.top-nav-group.open .top-nav-dropdown{
+  display:grid;
+  gap:4px;
+}
+.top-nav-dropdown button{
+  width:100%;
+  text-align:left;
+  border:0;
+  background:#fff;
+  color:var(--navy);
+  border-radius:8px;
+  padding:9px 10px;
+  font-size:12px;
+  font-weight:800;
+}
+.top-nav-dropdown button:hover{
+  background:var(--gold-soft);
+}
+
+
+.project-color-dot{
+  width:10px;
+  height:10px;
+  border-radius:999px;
+  display:inline-block;
+  flex:none;
+  box-shadow:0 0 0 2px #fff,0 0 0 3px rgba(20,35,74,.10);
+}
+.project-row.project-colored{
+  position:relative;
+  padding-left:22px;
+}
+.project-row.project-colored::before{
+  content:"";
+  position:absolute;
+  left:0;
+  top:0;
+  bottom:0;
+  width:8px;
+  background:var(--project-color);
+}
+.project-row.project-colored:hover{
+  background:
+    linear-gradient(90deg,color-mix(in srgb,var(--project-color) 8%, white),#FAFBFC 120px);
+}
+.project-name-line{
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.project-banner.project-colored{
+  position:relative;
+  border-left:9px solid var(--project-color);
+  background:
+    linear-gradient(90deg,color-mix(in srgb,var(--project-color) 8%, white),#fff 180px);
+}
+.project-banner.project-colored h3{
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.precon-summary-card.project-colored{
+  border-left:9px solid var(--project-color);
+}
+.precon-summary-card.project-colored .precon-summary-top{
+  box-shadow:inset 0 -5px 0 var(--project-color);
+}
+.precon-overview-shell.project-colored{
+  border-top:6px solid var(--project-color);
+}
+.precon-overview-row.project-colored{
+  position:relative;
+  border-left:7px solid var(--project-color);
+}
+.precon-overview-row.project-colored .precon-overview-number{
+  color:var(--project-color);
+  border-right-color:var(--project-color);
+}
+.project-side-colorbar{
+  width:10px !important;
+}
+.project-side-wrap{
+  padding-left:5px;
+}
+.project-side-wrap.active{
+  box-shadow:
+    0 0 0 2px rgba(181,154,98,.10),
+    inset 0 0 0 1px var(--project-color);
+}
+.project-side-open b{
+  display:flex;
+  align-items:center;
+  gap:7px;
+}
+.color-key-chip{
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+  padding:5px 8px;
+  border-radius:999px;
+  background:#fff;
+  border:1px solid var(--line);
+  font-size:10px;
+  color:var(--muted);
+  font-weight:800;
+}
+.estimate-project-row,
+.po-project-row{
+  position:relative;
+  padding-left:22px !important;
+}
+.estimate-project-row::before,
+.po-project-row::before{
+  content:"";
+  position:absolute;
+  left:0;
+  top:0;
+  bottom:0;
+  width:8px;
+  background:var(--project-color);
+}
+.estimate-project-row .project-name b,
+.po-project-row .project-name b{
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.project-info-color{
+  border-left:7px solid var(--project-color);
+}
+@media(max-width:560px){
+  .project-row.project-colored,
+  .estimate-project-row,
+  .po-project-row{
+    padding-left:18px !important;
+  }
+}
+
+
+.po-hub-shell{
+  background:#F3F5F8;
+  border:1px solid var(--line);
+  border-radius:18px;
+  padding:18px;
+  border-top:6px solid var(--project-color);
+}
+.po-hub-summary{
+  background:#fff;
+  border:1px solid var(--line);
+  border-left:9px solid var(--project-color);
+  border-radius:15px;
+  overflow:hidden;
+  margin-bottom:14px;
+  box-shadow:var(--shadow);
+}
+.po-hub-summary-top{
+  background:var(--navy);
+  color:#fff;
+  padding:14px 16px;
+  display:flex;
+  justify-content:space-between;
+  gap:12px;
+  align-items:center;
+  box-shadow:inset 0 -5px 0 var(--project-color);
+}
+.po-hub-summary-top h3{margin:0;font-size:17px}
+.po-hub-summary-top small{display:block;color:#D7DDE8;margin-top:3px}
+.po-hub-info{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:10px;
+  padding:14px;
+}
+.po-hub-info-box{
+  background:#F7F8FA;
+  border-radius:10px;
+  padding:11px 12px;
+  min-height:65px;
+}
+.po-hub-info-box b{
+  display:block;
+  color:var(--navy);
+  margin-top:5px;
+  font-size:13px;
+}
+.po-hub-nav{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:9px;
+  margin-bottom:12px;
+}
+.po-hub-nav button{
+  border:1px solid #DCE2EA;
+  background:#fff;
+  color:var(--navy);
+  border-radius:11px;
+  min-height:60px;
+  text-align:left;
+  padding:11px 13px;
+  font-weight:900;
+  position:relative;
+  overflow:hidden;
+}
+.po-hub-nav button::before{
+  content:"";
+  position:absolute;
+  left:0;top:0;bottom:0;width:7px;
+  background:var(--project-color);
+}
+.po-hub-nav button.active{
+  background:var(--gold-soft);
+  border-color:#D8C69E;
+}
+.po-hub-nav button span{
+  display:block;
+  font-size:10px;
+  color:var(--muted);
+  font-weight:700;
+  margin-top:3px;
+}
+.po-hub-toolbar{
+  display:flex;
+  justify-content:space-between;
+  align-items:end;
+  gap:10px;
+  margin:0 2px 10px;
+}
+.po-hub-toolbar > div:first-child{min-width:220px}
+.po-hub-section-title{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+  margin:10px 2px 9px;
+}
+.po-hub-section-title h3{margin:0;color:var(--navy);font-size:17px}
+.po-hub-section-title span{font-size:11px;color:var(--muted)}
+@media(max-width:850px){
+  .po-hub-info{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:560px){
+  .po-hub-shell{padding:10px}
+  .po-hub-summary-top{flex-direction:column;align-items:flex-start}
+  .po-hub-info{grid-template-columns:1fr 1fr;padding:10px}
+  .po-hub-nav{grid-template-columns:1fr}
+  .po-hub-toolbar{align-items:stretch;flex-direction:column}
+  .po-hub-toolbar > div:first-child{min-width:0;width:100%}
+}
+
+
+/* User-friendly polish */
+.help-text{
+  font-size:11px;
+  color:var(--muted);
+  line-height:1.4;
+}
+.context-strip{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+  padding:10px 12px;
+  margin-bottom:14px;
+  background:#fff;
+  border:1px solid var(--line);
+  border-left:7px solid var(--project-color);
+  border-radius:11px;
+}
+.context-strip-main{
+  min-width:0;
+}
+.context-strip-main b{
+  display:block;
+  color:var(--navy);
+  font-size:13px;
+}
+.context-strip-main small{
+  display:block;
+  color:var(--muted);
+  margin-top:2px;
+}
+.context-strip-actions{
+  display:flex;
+  gap:7px;
+  flex-wrap:wrap;
+}
+.quick-action-row{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  margin:10px 0 14px;
+}
+.quick-action{
+  border:1px solid var(--line);
+  background:#fff;
+  color:var(--navy);
+  border-radius:9px;
+  padding:8px 10px;
+  font-size:11px;
+  font-weight:850;
+}
+.quick-action.primary{
+  background:var(--gold-soft);
+  border-color:#DDCBA5;
+}
+.section-step-note{
+  padding:9px 11px;
+  background:#F8F9FB;
+  border:1px solid var(--line);
+  border-radius:9px;
+  font-size:11px;
+  color:var(--muted);
+  margin-bottom:10px;
+}
+.po-head{
+  gap:14px;
+}
+.po-open-button{
+  border:1px solid var(--line);
+  background:#fff;
+  color:var(--navy);
+  border-radius:8px;
+  padding:7px 9px;
+  font-size:10px;
+  font-weight:900;
+}
+.po.expanded .po-open-button{
+  background:var(--gold-soft);
+  border-color:#DCC99E;
+}
+.po-quick{
+  justify-content:flex-end;
+}
+.po-title-area{
+  min-width:0;
+}
+.po-title-area h4{
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.po-body-section-title{
+  font-size:10px;
+  text-transform:uppercase;
+  letter-spacing:.7px;
+  color:var(--muted);
+  font-weight:900;
+  margin:14px 0 7px;
+}
+.inline-tip{
+  padding:8px 10px;
+  border-radius:8px;
+  background:#FFFCF5;
+  border:1px solid #E8D9B9;
+  color:#6D592F;
+  font-size:11px;
+  margin-top:10px;
+}
+.precon-overview-row .precon-overview-copy p{
+  max-width:850px;
+}
+.precon-overview-row{
+  cursor:pointer;
+}
+.continue-btn{
+  background:var(--gold);
+  color:#fff;
+  border:0;
+  border-radius:9px;
+  padding:9px 12px;
+  font-weight:900;
+}
+.project-side-open{
+  cursor:pointer;
+}
+.project-side-wrap.active .project-side-open b{
+  color:var(--navy);
+}
+.sidebar-section-divider{
+  height:1px;
+  background:#EFF1F4;
+  margin:10px 6px;
+}
+.empty strong{
+  display:block;
+  color:var(--navy);
+  margin-bottom:5px;
+}
+@media(max-width:700px){
+  .context-strip{
+    align-items:flex-start;
+    flex-direction:column;
+  }
+  .context-strip-actions{
+    width:100%;
+  }
+  .context-strip-actions .btn{
+    flex:1;
+  }
+  .po-head{
+    align-items:flex-start;
+    flex-direction:column;
+  }
+  .po-quick{
+    width:100%;
+    justify-content:flex-start;
+  }
+}
+
+
+.user-switcher{
+  display:flex;
+  align-items:center;
+  gap:7px;
+  padding:5px 7px 5px 9px;
+  border:1px solid rgba(255,255,255,.20);
+  border-radius:9px;
+  background:rgba(255,255,255,.08);
+}
+.user-switcher span{
+  font-size:10px;
+  color:#D7DCE6;
+  text-transform:uppercase;
+  letter-spacing:.7px;
+  font-weight:900;
+}
+.user-switcher select{
+  border:0;
+  outline:none;
+  background:#fff;
+  color:var(--navy);
+  border-radius:7px;
+  padding:6px 8px;
+  font-size:12px;
+  font-weight:850;
+}
+.approval-trail{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  margin-top:11px;
+}
+.approval-step{
+  flex:1;
+  min-width:160px;
+  border:1px solid var(--line);
+  border-radius:9px;
+  padding:9px 10px;
+  background:#FAFBFC;
+}
+.approval-step span{
+  display:block;
+  font-size:9px;
+  text-transform:uppercase;
+  letter-spacing:.7px;
+  color:var(--muted);
+  font-weight:900;
+}
+.approval-step b{
+  display:block;
+  margin-top:4px;
+  color:var(--navy);
+  font-size:11px;
+}
+.approval-step.done{
+  background:#F3F8F5;
+  border-color:#D3E8DB;
+}
+.role-note{
+  font-size:10px;
+  color:var(--muted);
+  margin-top:8px;
+  text-align:right;
+}
+@media(max-width:700px){
+  .user-switcher span{display:none}
+  .user-switcher{padding:4px}
+}
+
+
+.precon-accordion{
+  background:#fff;
+  border:1px solid #DCE2EA;
+  border-left:7px solid var(--project-color);
+  border-radius:12px;
+  overflow:hidden;
+}
+.precon-accordion + .precon-accordion{
+  margin-top:9px;
+}
+.precon-overview-row{
+  border:0 !important;
+  border-left:0 !important;
+  border-radius:0 !important;
+  box-shadow:none !important;
+}
+.precon-overview-row.expanded{
+  background:#FAFBFC;
+}
+.precon-accordion-chevron{
+  width:28px;
+  height:28px;
+  border:1px solid var(--line);
+  border-radius:8px;
+  display:grid;
+  place-items:center;
+  background:#fff;
+  color:var(--navy);
+  font-size:18px;
+  font-weight:900;
+  transition:transform .15s ease;
+  margin-right:12px;
+}
+.precon-accordion.expanded .precon-accordion-chevron{
+  transform:rotate(90deg);
+}
+.precon-inline-body{
+  border-top:1px solid var(--line);
+  padding:14px;
+  background:#fff;
+}
+.precon-inline-top{
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+  align-items:center;
+  margin-bottom:10px;
+}
+.precon-inline-top b{
+  color:var(--navy);
+  font-size:12px;
+}
+.precon-inline-top span{
+  font-size:11px;
+  color:var(--muted);
+}
+@media(max-width:560px){
+  .precon-accordion-chevron{
+    margin-right:8px;
+    width:25px;
+    height:25px;
+  }
+}
+
+
+.user-check-row{
+  position:relative;
+}
+.user-check-row.checked-by-user{
+  border-left:5px solid var(--checked-user-color);
+  background:linear-gradient(90deg,color-mix(in srgb,var(--checked-user-color) 8%, white),#fff 90px);
+}
+.user-check-row .pc-task input{
+  accent-color:var(--checked-user-color,var(--gold));
+}
+.checked-by-badge{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  margin-top:5px;
+  font-size:9px;
+  font-weight:900;
+  color:var(--checked-user-color);
+  text-transform:uppercase;
+  letter-spacing:.45px;
+}
+.checked-by-dot{
+  width:8px;
+  height:8px;
+  border-radius:999px;
+  background:var(--checked-user-color);
+  flex:none;
+}
+.user-color-legend{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  align-items:center;
+  margin:8px 0 12px;
+}
+.user-color-legend span{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:5px 8px;
+  border:1px solid var(--line);
+  border-radius:999px;
+  background:#fff;
+  color:var(--muted);
+  font-size:10px;
+  font-weight:800;
+}
+.user-color-legend i{
+  width:9px;
+  height:9px;
+  border-radius:999px;
+  display:inline-block;
+}
+.ready-user-check{
+  position:relative;
+  border-left:5px solid transparent;
+}
+.ready-user-check.checked-by-user{
+  border-left-color:var(--checked-user-color);
+  background:linear-gradient(90deg,color-mix(in srgb,var(--checked-user-color) 8%, white),#fff 85px);
+}
+.ready-user-check input{
+  accent-color:var(--checked-user-color,var(--gold));
+}
+.ready-user-meta{
+  margin-left:auto;
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  font-size:9px;
+  color:var(--checked-user-color);
+  font-weight:900;
+  text-transform:uppercase;
+}
+
+
+.po-bulk-toolbar{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  flex-wrap:wrap;
+  padding:10px 12px;
+  margin-bottom:10px;
+  background:#fff;
+  border:1px solid var(--line);
+  border-radius:11px;
+}
+.po-select-all{
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+  padding-right:10px;
+  margin-right:2px;
+  border-right:1px solid var(--line);
+  color:var(--navy);
+  font-size:11px;
+  font-weight:900;
+}
+.po-select-all input,.po-row-select{
+  width:18px;
+  height:18px;
+  accent-color:var(--gold);
+}
+.po-bulk-count{
+  font-size:11px;
+  color:var(--muted);
+  font-weight:800;
+  margin-left:auto;
+}
+.po-bulk-confirm{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  flex-wrap:wrap;
+  padding:9px 11px;
+  margin-bottom:10px;
+  border:1px solid #F0D1D1;
+  background:#FFF7F7;
+  border-radius:10px;
+  font-size:11px;
+  color:var(--red);
+  font-weight:800;
+}
+.po-head-select{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  flex:none;
+}
+.po.po-selected{
+  border-color:#D6C08D;
+  box-shadow:0 0 0 2px rgba(181,154,98,.18);
+}
+@media(max-width:700px){
+  .po-bulk-count{width:100%;margin-left:0}
+  .po-select-all{border-right:0;padding-right:0}
+}
+
+
+.estimate-select{
+  width:18px;
+  height:18px;
+  accent-color:var(--gold);
+}
+.estimate-bulk-bar{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  flex-wrap:wrap;
+  margin-bottom:10px;
+  padding:9px 11px;
+  background:#fff;
+  border:1px solid var(--line);
+  border-radius:10px;
+}
+.estimate-select-all{
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+  font-size:11px;
+  font-weight:900;
+  color:var(--navy);
+}
+.estimate-selected-row{
+  background:#FFFDF8;
+}
+.estimate-delete-confirm{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  flex-wrap:wrap;
+  margin-bottom:10px;
+  padding:9px 11px;
+  border:1px solid #F0D1D1;
+  border-radius:10px;
+  background:#FFF7F7;
+  color:var(--red);
+  font-size:11px;
+  font-weight:800;
+}
+
+@media(max-width:980px){
+  .precon-project-bar{grid-template-columns:1fr 1fr}
+  .precon-project-bar > div:first-child{grid-column:1/-1}
+  .checkpoint-fields{grid-template-columns:1fr 1fr}
+  .sidebar{display:none}
+  .content{padding:16px}
+}
+@media(max-width:850px){
+  .stats{grid-template-columns:repeat(2,1fr)}
+  .pay-grid,.grid-2,.grid-3{grid-template-columns:1fr}
+  .project-head{display:none}
+  .project-row{grid-template-columns:1fr 1fr;gap:11px}
+  .project-name{grid-column:1/-1}
+  .mobile-label{display:block;font-size:9px;color:var(--muted);font-weight:900;text-transform:uppercase;margin-bottom:2px}
+  .alloc-grid{grid-template-columns:repeat(2,1fr)}
+}
+@media(max-width:560px){
+  header{height:62px;padding:0 12px}
+  .brand small{display:none}
+  .header-actions .save-desktop{display:none}
+  .content{padding:12px}
+  .page-title{flex-direction:column}
+  .page-title h2{font-size:23px}
+  .project-row{grid-template-columns:1fr}
+  .project-name{grid-column:auto}
+  .project-banner{align-items:flex-start;flex-direction:column}
+  .precon{grid-template-columns:1fr}
+  .pc-meta{grid-template-columns:1fr}
+  .checklist-head{display:none}
+  .pc-row{grid-template-columns:1fr}
+  .checkpoint-fields{grid-template-columns:1fr}
+  .precon-project-bar{grid-template-columns:1fr}
+  .precon-project-bar > div:first-child{grid-column:auto}
+  .split-grid{grid-template-columns:1fr .55fr .75fr}
+}
+</style>
+
+  <meta name="theme-color" content="#14234A">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="J&J Operations">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+
+</head>
+<body>
+<div class="app">
+<header>
+  <div class="brand">
+    <div class="logo">J&J</div>
+    <div><h1>J&J Home Renovations</h1><small>Operations App Prototype</small></div>
+  </div>
+  <div class="header-actions">
+    <div class="user-switcher">
+      <span>User</span>
+      <select id="currentUserSelect" onchange="setCurrentUser(this.value)">
+        <option value="Jony">Jony</option>
+        <option value="Adair">Adair</option>
+        <option value="Gio">Gio</option>
+      </select>
+    </div>
+    <button class="btn btn-light save-desktop" onclick="saveState()">Save</button>
+    <button class="btn btn-light" onclick="exportAppBackup()">Export Backup</button>
+<button class="btn btn-light" onclick="openBackupImport()">Import Backup</button>
+<input id="backupImportInput" type="file" accept=".json,application/json" style="display:none" onchange="importAppBackup(this)">
+<button class="btn btn-gold" onclick="openAssistant()">J&J Assistant</button>
+  </div>
+</header>
+
+<div class="top-nav" id="topNav"></div>
+
+<div class="shell">
+  <aside class="sidebar">
+    <div class="nav-group-title">Projects</div>
+    <div class="project-sidebar-helper">Click a project to switch jobs. Use the arrow to assign its color.</div>
+    <div class="project-side-list" id="projectSideList"></div>
+  </aside>
+
+  <main class="content">
+    <section id="dashboard" class="page active"></section>
+    <section id="preconstruction" class="page"></section>
+    <section id="estimates" class="page"></section>
+    <section id="paybyline" class="page"></section>
+    <section id="project" class="page"></section>
+  </main>
+</div>
+
+<div id="assistant" class="assistant">
+  <div class="assistant-head">
+    <b>J&J Assistant</b>
+    <button class="btn" style="background:transparent;color:white;padding:2px 6px" onclick="closeAssistant()">✕</button>
+  </div>
+  <div class="assistant-body" id="assistantBody">
+    <div class="msg bot">Prototype assistant. In the real app this would use the selected project's estimate, P.O.s, notes, selections, schedule, and files.</div>
+    <div class="quick">
+      <button onclick="quickAsk('What is still open?')">What is still open?</button>
+      <button onclick="quickAsk('Summarize labor budget')">Labor budget</button>
+      <button onclick="quickAsk('Is this project ready to start?')">Ready to start?</button>
+    </div>
+  </div>
+  <div class="assistant-foot">
+    <input id="assistantInput" class="input" placeholder="Ask about the project..." onkeydown="if(event.key==='Enter')sendAssistant()">
+    <button class="btn btn-gold" onclick="sendAssistant()">Send</button>
+  </div>
+</div>
+<button class="fab" onclick="openAssistant()">✦ J&J Assistant</button>
+</div>
+
+<script>
+const NAV = [
+  ['dashboard','Dashboard'],
+  ['preconstruction','Preconstruction']
+];
+
+const PRECON_SECTIONS = [
+  {
+    title:'Sales → Project Coordinator',
+    goal:'A complete, accurate handoff so the project can be reviewed and selections can begin.',
+    doneMeans:'Project Coordinator has enough information to understand exactly what was sold.',
+    handoff:'Sales → Project Coordinator',
+    watchFor:'A sales promise, pricing issue, or missing agreement needs clarification before or during handoff.',
+    items:[
+      'Contract signed',
+      'Initial payment / deposit requirements completed',
+      'Include bids',
+      'Scope of work is clear',
+      'Allowances clearly identified',
+      'Exclusions are clear',
+      'Customer contact information is correct',
+      'Photos, measurements, estimates and sales notes uploaded',
+      'Potential problem areas communicated',
+      'Handoff drawings / sketches to Project Coordinator',
+      'Have 3D renderings ready, or clearly hand off rendering needs to the Project Coordinator',
+      'Project Coordinator notified that job is ready for review'
+    ]
+  },
+  {
+    title:'Project Review',
+    goal:'Turn the sold project into something J&J can prepare and build.',
+    doneMeans:'No major question remains about what J&J is supposed to build.',
+    handoff:'Project Coordinator → Customer Selections',
+    watchFor:'The sold scope, pricing, or promise cannot be confirmed.',
+    items:[
+      'Review entire proposal and scope line by line',
+      'Review allowances',
+      'Review Sales notes / promises',
+      'Review existing photos and measurements',
+      'Identify missing information',
+      'Identify measurements that need verification',
+      'Create list of customer selections needed',
+      'Identify possible scope / change-order concerns',
+      'Ask Sales necessary questions',
+      'Complete any required 3D renderings not completed during Sales',
+      'Create necessary P.O.s from proposal',
+      'Send out bids to subcontractors',
+      'Give subcontractors an estimated week their work should be ready',
+      'Introduce Project Manager to project',
+      'Determine what must happen before planning'
+    ]
+  },
+  {
+    title:'Customer Selections + Final Approval',
+    goal:'Lock in customer decisions before detailed planning and ordering.',
+    doneMeans:'J&J knows exactly what is being installed and the customer has approved the final proposal.',
+    handoff:'Project Coordinator → Project Manager for detailed planning',
+    watchFor:'A selection changes scope, exceeds allowance, does not fit, or requires a customer decision.',
+    items:[
+      'Build complete selection list',
+      'Determine allowance for each selection',
+      'Find / send appropriate options',
+      'Receive customer selections',
+      'Verify product dimensions',
+      'Verify product compatibility',
+      'Verify selections match project scope',
+      'Compare selections to allowances',
+      'Identify upgrades / credits',
+      'Approve or deny subcontractor bids',
+      'Update proposal if needed',
+      'Send final proposal',
+      'Receive final proposal approval from customer',
+      'Record approved selections',
+      'Give Project Manager final selection information'
+    ]
+  },
+  {
+    title:'Plan the Job',
+    goal:'Build the field execution plan before scheduling the crew.',
+    doneMeans:'Project Manager can explain how the project will be built from Day 1 through completion.',
+    handoff:'Project Coordinator → Project Manager for materials and ordering',
+    watchFor:'The plan requires a scope, budget, design, or customer-approved change.',
+    items:[
+      'Complete final field measurements',
+      'Compare measurements against approved selections',
+      'Create project plans/specs from documents, drawings, and approved selections',
+      'Establish work sequence and assign P.O.s',
+      'Determine demo requirements',
+      'Determine protection / setup requirements',
+      'Determine crew size',
+      'Identify specialty trades',
+      'Identify plumbing needs',
+      'Identify electrical needs',
+      'Identify HVAC needs',
+      'Confirm permit requirements',
+      'Confirm inspection requirements',
+      'Determine dumpster / debris plan',
+      'Consider material storage plan',
+      'Identify special tools / equipment',
+      'Discuss potential problem areas',
+      'Project Manager can explain the complete scope'
+    ]
+  },
+  {
+    title:'Materials + Ordering',
+    goal:'Have the right material, in the right quantity, at the right time.',
+    doneMeans:'Material problems should not be the reason the crew cannot work.',
+    handoff:'Project Manager → Build the Schedule',
+    watchFor:'Selection does not fit, product is unavailable, substitution is required, cost changes significantly, or scope must change.',
+    items:[
+      'Build complete material list',
+      'Separate rough materials from finish materials',
+      'Verify quantities',
+      'Verify model / SKU when applicable',
+      'Verify dimensions',
+      'Verify colors / finishes',
+      'Verify customer selections',
+      'Check stock and availability',
+      'Identify long-lead items',
+      'Order long-lead items first',
+      'Order approved finish materials',
+      'Plan rough-material purchases',
+      'Confirm delivery dates',
+      'Confirm pickup dates',
+      'Track backorders',
+      'Check delivered items when practical',
+      'Report damaged / missing / wrong items',
+      'Confirm critical Day 1 materials are ready'
+    ]
+  },
+  {
+    title:'Build the Schedule',
+    goal:'Create a realistic schedule based on labor, materials, trades, and work order.',
+    doneMeans:'Everyone knows who needs to be where, when, and what they are expected to accomplish.',
+    handoff:'Project Manager → Customer Start Confirmation',
+    watchFor:'Crew, material, trade, or inspection conflicts could delay the project or change the expected timeline.',
+    items:[
+      'Confirm target start date',
+      'Confirm material availability',
+      'Determine realistic project duration',
+      'Assign crew',
+      'Schedule subcontractors and confirm exact work dates',
+      'Schedule inspections',
+      'Coordinate deliveries',
+      'Plan the first week of work',
+      'Make sure each trade is scheduled in the correct order so nobody is waiting on someone else',
+      'Add / update project in Buildertrend',
+      'Update crew schedule',
+      'Review schedule with Project Coordinator',
+      'Identify conflicts before confirming start'
+    ]
+  },
+  {
+    title:'Customer Start Confirmation',
+    goal:'Make sure the customer and jobsite are ready before Day 1.',
+    doneMeans:'The crew can arrive and begin work without avoidable access, parking, storage, or communication problems.',
+    handoff:'Project Manager → Final Ready-to-Start Check',
+    watchFor:'Customer is not ready, access is unresolved, or a customer concern could prevent the crew from starting.',
+    items:[
+      'Confirm start date with customer',
+      'Confirm expected arrival time',
+      'Confirm driveway / parking',
+      'Confirm entry door / access',
+      'Discuss alarm / code / key if applicable',
+      'Discuss pets if applicable',
+      'Confirm work area will be accessible',
+      'Confirm material storage location',
+      'Confirm dumpster location if applicable',
+      'Explain what happens on Day 1',
+      'Give customer schedule expectations',
+      'Confirm Project Manager as day-to-day contact',
+      'Resolve pre-start customer questions'
+    ]
+  },
+  {
+    title:'Final Ready-to-Start Check',
+    goal:'Make the final go / no-go decision before the crew starts.',
+    doneMeans:'All critical items are complete or every non-critical open item has a clear follow-up.',
+    handoff:'Project is ready for Day 1',
+    watchFor:'Any critical item could prevent productive work on Day 1.',
+    items:[
+      'PROJECT COORDINATOR: Final proposal approved',
+      'PROJECT COORDINATOR: Scope is clear',
+      'PROJECT COORDINATOR: Budget / allowances are clear',
+      'PROJECT COORDINATOR: Selections are complete',
+      'PROJECT COORDINATOR: Major decisions are complete',
+      'PROJECT COORDINATOR: No unresolved customer issue',
+      'PROJECT MANAGER: Crew confirmed',
+      'PROJECT MANAGER: Subcontractors confirmed',
+      'PROJECT MANAGER: Materials confirmed',
+      'PROJECT MANAGER: Deliveries confirmed',
+      'PROJECT MANAGER: Schedule confirmed',
+      'PROJECT MANAGER: Customer confirmed',
+      'PROJECT MANAGER: Access confirmed',
+      'PROJECT MANAGER: Jobsite logistics confirmed'
+    ]
+  }
+];
+
+const preconNames = PRECON_SECTIONS.map(x=>x.title);
+
+const defaultState = {
+  currentUser:'Jony',
+  selectedProjectId:1,
+  projects:[
+    {
+      id:1,name:'Adam & Tracey',type:'Primary Bathroom Remodel',jobNo:'JJ-1042',start:'Sep 8, 2026',
+      coordinator:'Jony',manager:'Adair',issues:2,precon:[100,92,82,65,58,45,20,0],
+      estimate:[
+        {line:'Demo / Protection',type:'Labor',builderCost:1800},
+        {line:'Framing',type:'Labor',builderCost:2550},
+        {line:'Plumbing Labor',type:'Labor',builderCost:3200},
+        {line:'Electrical Labor',type:'Labor',builderCost:1800},
+        {line:'Drywall',type:'Labor',builderCost:2100},
+        {line:'Tile Labor',type:'Labor',builderCost:4200},
+        {line:'Painting',type:'Labor',builderCost:1600},
+        {line:'Finish Carpentry',type:'Labor',builderCost:1450},
+        {line:'Rough Materials',type:'Material',builderCost:3100},
+        {line:'Finish Materials',type:'Material',builderCost:6900}
+      ],
+      pos:[],
+      readyChecklist:[
+        {text:'Final proposal approved',done:true},
+        {text:'Scope is clear',done:true},
+        {text:'Selections complete',done:false},
+        {text:'Crew confirmed',done:true},
+        {text:'Subcontractors confirmed',done:false},
+        {text:'Materials confirmed',done:false},
+        {text:'Customer confirmed',done:false},
+        {text:'Access confirmed',done:true}
+      ]
+    },
+    {
+      id:2,name:'Mary Anne & Raymond',type:'Two Bathroom Remodels',jobNo:'JJ-1046',start:'Sep 15, 2026',
+      coordinator:'Jony',manager:'Adair',issues:4,precon:[100,72,55,35,25,10,0,0],estimate:[],pos:[],
+      readyChecklist:[
+        {text:'Final proposal approved',done:true},{text:'Scope is clear',done:true},{text:'Selections complete',done:false},
+        {text:'Crew confirmed',done:false},{text:'Subcontractors confirmed',done:false},{text:'Materials confirmed',done:false},
+        {text:'Customer confirmed',done:false},{text:'Access confirmed',done:false}
+      ]
+    },
+    {
+      id:3,name:'Alyssa & Ashley',type:'Basement + Bathroom',jobNo:'JJ-1039',start:'Sep 4, 2026',
+      coordinator:'Jony',manager:'Adair',issues:1,precon:[100,100,100,100,100,100,92,75],estimate:[],pos:[],
+      readyChecklist:[
+        {text:'Final proposal approved',done:true},{text:'Scope is clear',done:true},{text:'Selections complete',done:true},
+        {text:'Crew confirmed',done:true},{text:'Subcontractors confirmed',done:true},{text:'Materials confirmed',done:true},
+        {text:'Customer confirmed',done:true},{text:'Access confirmed',done:false}
+      ]
+    },
+    {
+      id:4,name:'Chad & Andrea',type:'Bathroom Remodel',jobNo:'JJ-1036',start:'Sep 2, 2026',
+      coordinator:'Jony',manager:'Adair',issues:0,precon:[100,100,100,100,100,100,100,100],estimate:[],pos:[],
+      readyChecklist:[
+        {text:'Final proposal approved',done:true},{text:'Scope is clear',done:true},{text:'Selections complete',done:true},
+        {text:'Crew confirmed',done:true},{text:'Subcontractors confirmed',done:true},{text:'Materials confirmed',done:true},
+        {text:'Customer confirmed',done:true},{text:'Access confirmed',done:true}
+      ]
+    }
+  ]
+};
+
+let state = JSON.parse(localStorage.getItem('jj_full_proto')||'null') || structuredClone(defaultState);
+let projectTab='overview';
+let openPreconSection=0;
+let openPreconAccordion=null;
+let preconView='overview';
+let openPOIndex=null;
+let poHubView='splits';
+let openProjectColorMenu=null;
+let deletePOIndex=null;
+let selectedPOIds=new Set();
+let bulkDeletePending=false;
+let selectedEstimateRows=new Set();
+let estimateDeletePending=false;
+let poMenuOpen=false;
+
+
+const USERS = [
+  {name:'Jony',role:'Pre-Approver',color:'#4E78B7'},
+  {name:'Adair',role:'Pre-Approver',color:'#B59A62'},
+  {name:'Gio',role:'Final Approver',color:'#4F8A68'}
+];
+
+function userColor(name){
+  return USERS.find(u=>u.name===name)?.color || '#8B929D';
+}
+function userInitial(name){
+  return (name || '?').trim().charAt(0).toUpperCase();
+}
+function poNeedsReviewForCurrentUser(po){
+  if(state.currentUser==='Gio') return po.status==='Pre-Approved';
+  return po.status==='Draft';
+}
+function reviewStageLabel(){
+  return state.currentUser==='Gio' ? 'Pre-Approved → Approved' : 'Draft → Pre-Approved';
+}
+
+function ensureUserData(){
+  if(!USERS.some(u=>u.name===state.currentUser)) state.currentUser='Jony';
+
+  state.projects.forEach(p=>{
+    (p.readyChecklist||[]).forEach(item=>{
+      if(typeof item.checkedBy!=='string') item.checkedBy='';
+    });
+
+    (p.pos||[]).forEach(po=>{
+      // Migrate the previous prototype's status names.
+      if(po.status==='Complete'){
+        po.status='Approved';
+        if(!po.approvedBy) po.approvedBy='Gio';
+      }else if(po.status==='Approved' && !po.preApprovedBy && !po.approvedBy){
+        po.status='Pre-Approved';
+      }
+
+      if(typeof po.preApprovedBy!=='string') po.preApprovedBy='';
+      if(typeof po.approvedBy!=='string') po.approvedBy='';
+    });
+  });
+}
+
+function currentUser(){
+  return USERS.find(u=>u.name===state.currentUser) || USERS[0];
+}
+function canPreApprove(){
+  return state.currentUser==='Jony' || state.currentUser==='Adair';
+}
+function canFinalApprove(){
+  return state.currentUser==='Gio';
+}
+function setCurrentUser(name){
+  if(!USERS.some(u=>u.name===name)) return;
+  state.currentUser=name;
+  saveState(false);
+  renderAll();
+  const sel=document.getElementById('currentUserSelect');
+  if(sel) sel.value=name;
+  toast(`Signed in as ${name}`);
+}
+function syncUserSelector(){
+  const sel=document.getElementById('currentUserSelect');
+  if(sel) sel.value=state.currentUser;
+}
+function poStatusClass(status){
+  if(status==='Approved') return 'pill-green';
+  if(status==='Pre-Approved') return 'pill-gold';
+  return 'pill-red';
+}
+
+const PROJECT_COLORS = [
+  {key:'navy',label:'Navy',hex:'#14234A'},
+  {key:'gold',label:'Gold',hex:'#B59A62'},
+  {key:'blue',label:'Blue',hex:'#4E78B7'},
+  {key:'green',label:'Green',hex:'#4F8A68'},
+  {key:'orange',label:'Orange',hex:'#C98245'},
+  {key:'red',label:'Red',hex:'#B75B5B'},
+  {key:'purple',label:'Purple',hex:'#7966A8'},
+  {key:'gray',label:'Gray',hex:'#8B929D'}
+];
+
+function ensureProjectColors(){
+  const defaults=['navy','gold','blue','green'];
+  state.projects.forEach((p,i)=>{
+    if(!PROJECT_COLORS.some(c=>c.key===p.color)) p.color=defaults[i % defaults.length];
+  });
+}
+ensureProjectColors();
+ensureUserData();
+
+function ensurePreconData(){
+  state.projects.forEach(p=>{
+    if(!Array.isArray(p.precon)) p.precon=PRECON_SECTIONS.map(()=>0);
+    if(!Array.isArray(p.preconData) || p.preconData.length!==PRECON_SECTIONS.length){
+      p.preconData=PRECON_SECTIONS.map((section,si)=>{
+        const oldPct=Number(p.precon[si]||0);
+        const completedCount=Math.round(section.items.length*(oldPct/100));
+        return {
+          status: oldPct===100 ? 'Complete' : 'Open Issue',
+          nextAction:'',
+          followupBy:'',
+          initials:'',
+          date:'',
+          specialPromises: si===0 ? '' : undefined,
+          items:section.items.map((text,ii)=>({
+            text,
+            done:ii<completedCount,
+            notes:'',
+            checkedBy:''
+          }))
+        };
+      });
+    }else{
+      p.preconData.forEach((s,si)=>{
+        const definition=PRECON_SECTIONS[si];
+        if(!Array.isArray(s.items)) s.items=[];
+        definition.items.forEach((itemText,ii)=>{
+          if(!s.items[ii]) s.items[ii]={text:itemText,done:false,notes:''};
+          s.items[ii].text=itemText;
+          if(typeof s.items[ii].done!=='boolean') s.items[ii].done=false;
+          if(typeof s.items[ii].notes!=='string') s.items[ii].notes='';
+          if(typeof s.items[ii].checkedBy!=='string') s.items[ii].checkedBy='';
+        });
+        s.items=s.items.slice(0,definition.items.length);
+        if(!s.status) s.status='Open Issue';
+        if(typeof s.nextAction!=='string') s.nextAction='';
+        if(typeof s.followupBy!=='string') s.followupBy='';
+        if(typeof s.initials!=='string') s.initials='';
+        if(typeof s.date!=='string') s.date='';
+        if(si===0 && typeof s.specialPromises!=='string') s.specialPromises='';
+      });
+    }
+    syncPreconProgress(p);
+  });
+}
+ensurePreconData();
+
+function selectedProject(){ return state.projects.find(p=>p.id===state.selectedProjectId) || state.projects[0]; }
+function avg(arr){ return arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : 0; }
+function money(v){ return '$'+Number(v||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function sectionPct(p,i){
+  const items=p.preconData?.[i]?.items||[];
+  return items.length ? Math.round((items.filter(x=>x.done).length/items.length)*100) : Number(p.precon?.[i]||0);
+}
+function syncPreconProgress(p){
+  if(!p.preconData) return;
+  p.precon=PRECON_SECTIONS.map((_,i)=>sectionPct(p,i));
+}
+function projectPct(p){ syncPreconProgress(p); return Math.round(avg(p.precon)); }
+function laborLines(p){ return p.estimate.filter(x=>x.type==='Labor'); }
+function laborBuilderCost(p){ return laborLines(p).reduce((s,x)=>s+Number(x.builderCost||0),0); }
+function poBase(p){ return p.pos.reduce((s,x)=>s+x.builderCost*.60,0); }
+function poBonus(p){ return p.pos.reduce((s,x)=>s+x.builderCost*.05,0); }
+function poReserve(p){ return p.pos.reduce((s,x)=>s+x.builderCost*.35,0); }
+function ready(p){ return p.readyChecklist.length && p.readyChecklist.every(x=>x.done); }
+
+function buildNav(){
+  topNav.innerHTML =
+    `<button data-nav="dashboard" onclick="go('dashboard')">Dashboard</button>` +
+    `<button data-nav="preconstruction" onclick="openPreconstructionForProject(state.selectedProjectId)">Preconstruction</button>` +
+    `<button data-nav="paybyline" onclick="openPOHub('splits');return false;">P.Os</button>`;
+
+  const activePage=document.querySelector('.page.active')?.id;
+  document.querySelectorAll('[data-nav]').forEach(x=>x.classList.remove('active'));
+
+  if(activePage==='dashboard'){
+    document.querySelector('[data-nav="dashboard"]')?.classList.add('active');
+  }else if(activePage==='preconstruction'){
+    document.querySelector('[data-nav="preconstruction"]')?.classList.add('active');
+  }else if(activePage==='paybyline' || activePage==='estimates'){
+    document.querySelector('[data-nav="paybyline"]')?.classList.add('active');
+  }
+
+  buildProjectSidebar();
+}
+
+
+function openProjectFromSidebar(id){
+  const currentPage=document.querySelector('.page.active')?.id;
+
+  if(currentPage==='preconstruction'){
+    state.selectedProjectId=Number(id);
+    openPreconSection=0;
+    openPreconAccordion=null;
+    preconView='overview';
+    ensurePreconData();
+    saveState(false);
+    renderAll();
+    go('preconstruction');
+    return;
+  }
+
+  if(currentPage==='paybyline' || currentPage==='estimates'){
+    const keepView=poHubView==='estimate'?'estimate':'splits';
+    state.selectedProjectId=Number(id);
+    poHubView=keepView;
+    openPOIndex=null;
+    deletePOIndex=null;
+    selectedPOIds.clear();
+    bulkDeletePending=false;
+    selectedEstimateRows.clear();
+    estimateDeletePending=false;
+    saveState(false);
+    renderAll();
+    renderPayByLine();
+    go('paybyline');
+    return;
+  }
+
+  openProject(Number(id));
+}
+
+function projectColorHex(key){
+  return PROJECT_COLORS.find(c=>c.key===key)?.hex || '#14234A';
+}
+function toggleProjectColorMenu(id,event){
+  if(event) event.stopPropagation();
+  openProjectColorMenu = Number(openProjectColorMenu)===Number(id) ? null : Number(id);
+  buildProjectSidebar();
+}
+function setProjectColor(id,colorKey,event){
+  if(event) event.stopPropagation();
+  const p=state.projects.find(x=>Number(x.id)===Number(id));
+  if(!p) return;
+  p.color=colorKey;
+  openProjectColorMenu=null;
+  saveState(false);
+  buildProjectSidebar();
+  renderDashboard();
+  renderPreconstruction();
+  renderEstimates();
+  renderPayByLine();
+  renderProject();
+}
+function buildProjectSidebar(){
+  const list=document.getElementById('projectSideList');
+  if(!list) return;
+  ensureProjectColors();
+
+  list.innerHTML = state.projects.map(p=>{
+    const pct=projectPct(p);
+    const isActive=Number(p.id)===Number(state.selectedProjectId);
+    const menuOpen=Number(openProjectColorMenu)===Number(p.id);
+    const color=projectColorHex(p.color);
+
+    return `<div class="project-side-wrap ${isActive?'active':''} ${menuOpen?'menu-open':''}" style="--project-color:${color}">
+      <div class="project-side-colorbar" style="background:${color}"></div>
+
+      <div class="project-side-main">
+        <button class="project-side-open" onclick="openProjectFromSidebar(${p.id})">
+          <b><span class="project-color-dot" style="background:${color}"></span>${p.name}</b>
+          <small>${p.type}</small>
+          <div class="project-side-status">
+            <span>${p.issues} open issue${p.issues===1?'':'s'}</span>
+            <strong>${pct}%</strong>
+          </div>
+        </button>
+
+        <button class="project-side-menu-btn" title="Project color" onclick="toggleProjectColorMenu(${p.id},event)">
+          ${menuOpen?'▲':'▼'}
+        </button>
+      </div>
+
+      <div class="project-color-menu" onclick="event.stopPropagation()">
+        <div class="project-color-menu-title">Project Color</div>
+        <div class="project-color-options">
+          ${PROJECT_COLORS.map(c=>`
+            <button
+              class="project-color-option ${p.color===c.key?'selected':''}"
+              style="background:${c.hex}"
+              title="${c.label}"
+              onclick="setProjectColor(${p.id},'${c.key}',event)">
+            </button>
+          `).join('')}
+        </div>
+        <div class="project-color-label">${PROJECT_COLORS.find(c=>c.key===p.color)?.label || 'Navy'}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function go(id){
+  document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  buildNav();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function openProject(id){
+  state.selectedProjectId=id;
+  projectTab='overview';
+  renderProject();
+  buildProjectSidebar();
+  go('project');
+  document.querySelectorAll('[data-nav]').forEach(x=>x.classList.remove('active'));
+}
+
+
+function exportAppBackup(){
+  try{
+    saveState(false);
+
+    const backup={
+      app:'J&J Home Renovations Operations Prototype',
+      version:1,
+      exportedAt:new Date().toISOString(),
+      localStorageKey:'jj_full_proto',
+      data:state
+    };
+
+    const blob=new Blob([JSON.stringify(backup,null,2)],{type:'application/json'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    const stamp=new Date().toISOString().slice(0,10);
+
+    a.href=url;
+    a.download=`JJ_Operations_Backup_${stamp}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+
+    toast('Backup exported');
+  }catch(err){
+    console.error(err);
+    alert('Could not export the backup. Please try again.');
+  }
+}
+
+function openBackupImport(){
+  const input=document.getElementById('backupImportInput');
+  if(!input){
+    alert('Backup import control could not be found.');
+    return;
+  }
+  input.value='';
+  input.click();
+}
+
+function importAppBackup(input){
+  const file=input?.files?.[0];
+  if(!file) return;
+
+  const reader=new FileReader();
+
+  reader.onload=function(){
+    try{
+      const parsed=JSON.parse(reader.result);
+      const importedState=parsed && parsed.data ? parsed.data : parsed;
+
+      if(!importedState || !Array.isArray(importedState.projects)){
+        throw new Error('Invalid backup format');
+      }
+
+      const ok=confirm(
+        `Import this backup?\n\n` +
+        `Projects found: ${importedState.projects.length}\n` +
+        `This will replace the information currently saved in this browser.`
+      );
+
+      if(!ok){
+        input.value='';
+        return;
+      }
+
+      state=importedState;
+
+      if(typeof ensureUserData==='function') ensureUserData();
+      if(typeof ensurePreconData==='function') ensurePreconData();
+
+      localStorage.setItem('jj_full_proto',JSON.stringify(state));
+
+      if(typeof selectedPOIds!=='undefined') selectedPOIds.clear();
+      if(typeof selectedEstimateRows!=='undefined') selectedEstimateRows.clear();
+      if(typeof bulkDeletePending!=='undefined') bulkDeletePending=false;
+      if(typeof estimateDeletePending!=='undefined') estimateDeletePending=false;
+      if(typeof deletePOIndex!=='undefined') deletePOIndex=null;
+      if(typeof openPOIndex!=='undefined') openPOIndex=null;
+      if(typeof openPreconAccordion!=='undefined') openPreconAccordion=null;
+
+      renderAll();
+      buildNav();
+      go('dashboard');
+
+      toast('Backup imported');
+    }catch(err){
+      console.error(err);
+      alert('That file is not a valid J&J Operations backup.');
+    }finally{
+      input.value='';
+    }
+  };
+
+  reader.onerror=function(){
+    alert('The backup file could not be read.');
+    input.value='';
+  };
+
+  reader.readAsText(file);
+}
+
+function saveState(show=true){
+  localStorage.setItem('jj_full_proto',JSON.stringify(state));
+  if(show) toast('Saved on this device');
+}
+function toast(text){
+  const el=document.createElement('div'); el.className='toast'; el.textContent=text;
+  document.body.appendChild(el); setTimeout(()=>el.remove(),1400);
+}
+
+function renderDashboard(){
+  ensureUserData();
+
+  const active=state.projects.length;
+  const readyCount=state.projects.filter(ready).length;
+  const issues=state.projects.reduce((s,p)=>s+p.issues,0);
+  const avgComplete=Math.round(avg(state.projects.map(projectPct)));
+  const allPOs=state.projects.flatMap(p=>p.pos);
+  const drafts=allPOs.filter(x=>x.status==='Draft').length;
+  const preApproved=allPOs.filter(x=>x.status==='Pre-Approved').length;
+  const approved=allPOs.filter(x=>x.status==='Approved').length;
+  const builder=state.projects.reduce((s,p)=>s+laborBuilderCost(p),0);
+  const splitsBad=allPOs.filter(po=>poNeedsReviewForCurrentUser(po)).length;
+
+  dashboard.innerHTML=`
+    <div class="page-title">
+      <div><div class="eyebrow">Company Overview</div><h2>Dashboard</h2><p>Active projects and labor at a glance.</p></div>
+      <button class="btn btn-gold" onclick="alert('New Project form would open here.')">+ New Project</button>
+    </div>
+
+    <div class="stats">
+      <div class="card stat"><div class="label">Active Projects</div><div class="value">${active}</div></div>
+      <div class="card stat"><div class="label">Ready to Start</div><div class="value">${readyCount}</div></div>
+      <div class="card stat"><div class="label">Open Issues</div><div class="value">${issues}</div></div>
+      <div class="card stat"><div class="label">Average Complete</div><div class="value">${avgComplete}%</div></div>
+    </div>
+
+    <div class="section">
+      <div class="section-head"><h3>Active Projects</h3><span>Tap a project to open it</span></div>
+      <div class="card projects-card">
+        <div class="project-head"><div>Project</div><div>Complete</div><div>Issues</div><div>Start</div><div>Labor</div></div>
+        ${state.projects.map(p=>{
+          const pct=projectPct(p), posCount=p.pos.length, laborCount=laborLines(p).length;
+          const color=projectColorHex(p.color);
+          return `<div class="project-row project-colored" style="--project-color:${color}" onclick="openProject(${p.id})">
+            <div class="project-name"><div class="project-name-line"><span class="project-color-dot" style="background:${color}"></span><b>${p.name}</b></div><small>${p.type}</small></div>
+            <div><div class="mobile-label">Complete</div><div class="percent">${pct}%</div><div class="bar"><div style="width:${pct}%"></div></div><button class="mini-link" onclick="event.stopPropagation();openPreconstructionForProject(${p.id})">Open checklist</button></div>
+            <div><div class="mobile-label">Issues</div><span class="pill ${p.issues?'pill-red':'pill-green'}">${p.issues} Open</span></div>
+            <div><div class="mobile-label">Start</div><div class="percent">${p.start.replace(', 2026','')}</div></div>
+            <div><div class="mobile-label">Labor</div><span class="pill ${ready(p)?'pill-green':'pill-gold'}">${posCount} / ${laborCount||posCount} P.O.s</span></div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-head"><h3>P.O. Splits Overview</h3><button class="btn btn-light" onclick="openPOHub('splits')">Open P.O. Splits</button></div>
+      <div class="pay-grid">
+        <div class="card pay-card">
+          <div class="pay-title">P.O. Status</div>
+          <div class="pay-row"><span>Active P.O.s</span><b>${allPOs.length}</b></div>
+          <div class="pay-row"><span>Draft</span><b>${drafts}</b></div>
+          <div class="pay-row"><span>Pre-Approved</span><b>${preApproved}</b></div>
+          <div class="pay-row"><span>Approved</span><b>${approved}</b></div>
+          <div class="pay-row"><span>Labor Builder Cost</span><b>${money(builder)}</b></div>
+        </div>
+        <div class="card pay-card">
+          <div class="pay-title">P.O. Splits</div>
+          <div class="pay-row"><span>Base Crew Payout</span><b>${money(state.projects.reduce((s,p)=>s+poBase(p),0))}</b></div>
+          <div class="pay-row"><span>Touch-up Bonus</span><b>${money(state.projects.reduce((s,p)=>s+poBonus(p),0))}</b></div>
+          <div class="pay-row"><span>Reserve</span><b>${money(state.projects.reduce((s,p)=>s+poReserve(p),0))}</b></div>
+          <div class="pay-row">
+            <span>Splits Needing Review <small style="display:block;color:var(--muted);font-weight:600;margin-top:2px">${reviewStageLabel()}</small></span>
+            <b style="color:${splitsBad?'var(--red)':'var(--green)'}">${splitsBad}</b>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+
+
+function firstOpenPreconSection(p){
+  ensurePreconData();
+  for(let i=0;i<PRECON_SECTIONS.length;i++){
+    if(sectionPct(p,i)<100 || p.preconData[i].status!=='Complete') return i;
+  }
+  return 7;
+}
+function continuePreconstruction(){
+  const p=selectedProject();
+  openPreconSection=firstOpenPreconSection(p);
+  openPreconAccordion=openPreconSection;
+  preconView='overview';
+  renderPreconstruction();
+}
+function expandAllPOs(){
+  const p=selectedProject();
+  if(!p.pos.length) return;
+  openPOIndex='all';
+  poHubView='splits';
+  renderPayByLine();
+}
+function collapseAllPOs(){
+  openPOIndex=null;
+  poHubView='splits';
+  renderPayByLine();
+}
+
+function openPreconstructionForProject(id){
+  state.selectedProjectId=Number(id);
+  openPreconSection=0;
+  openPreconAccordion=null;
+  preconView='overview';
+  ensurePreconData();
+  renderPreconstruction();
+  go('preconstruction');
+}
+function setPreconProject(id){
+  state.selectedProjectId=Number(id);
+  openPreconSection=0;
+  openPreconAccordion=null;
+  preconView='overview';
+  ensurePreconData();
+  saveState(false);
+  renderAll();
+  buildProjectSidebar();
+  go('preconstruction');
+}
+function setOpenPreconSection(i){
+  openPreconSection=i;
+  openPreconAccordion = openPreconAccordion===i ? null : i;
+  preconView='overview';
+  renderPreconstruction();
+}
+function showPreconOverview(){
+  openPreconAccordion=null;
+  preconView='overview';
+  renderPreconstruction();
+}
+function togglePreconItem(si,ii,val){
+  const p=selectedProject();
+  const item=p.preconData[si].items[ii];
+  item.done=val;
+  item.checkedBy=val ? state.currentUser : '';
+  syncPreconProgress(p);
+  saveState(false);
+  renderDashboard();
+  renderPreconstruction();
+  renderProject();
+}
+function updatePreconNote(si,ii,val){
+  selectedProject().preconData[si].items[ii].notes=val;
+  saveState(false);
+}
+function setPreconStatus(si,status){
+  selectedProject().preconData[si].status=status;
+  saveState(false);
+  renderPreconstruction();
+}
+function updatePreconField(si,key,val){
+  selectedProject().preconData[si][key]=val;
+  saveState(false);
+}
+function updateSpecialPromises(val){
+  selectedProject().preconData[0].specialPromises=val;
+  saveState(false);
+}
+function renderPreconstruction(){
+  ensurePreconData();
+  const p=selectedProject();
+  const overall=projectPct(p);
+  const sectionsComplete=p.preconData.filter((s,i)=>s.status==='Complete' || sectionPct(p,i)===100).length;
+  const color=projectColorHex(p.color);
+
+  preconstruction.innerHTML=`
+    <div class="page-title">
+      <div>
+        <div class="eyebrow">Main Checklist</div>
+        <h2>Preconstruction</h2>
+        <p>Open any section, work through the checklist, then close it when you're done.</p>
+      </div>
+      <button class="continue-btn" onclick="continuePreconstruction()">Continue Checklist</button>
+    </div>
+
+    <div class="precon-overview-shell project-colored" style="--project-color:${color}">
+      <div class="precon-summary-card project-colored" style="--project-color:${color}">
+        <div class="precon-summary-top">
+          <div>
+            <h3>${p.name}</h3>
+            <small>${p.type} · ${p.jobNo}</small>
+          </div>
+          <div class="precon-summary-actions">
+            <button class="btn btn-light" onclick="openProject(${p.id})">Open Full Project</button>
+          </div>
+        </div>
+
+        <div class="precon-info-grid">
+          <div class="precon-info">
+            <div class="label">Project</div>
+            <b>${p.name}</b>
+          </div>
+          <div class="precon-info">
+            <div class="label">Job #</div>
+            <b>${p.jobNo}</b>
+          </div>
+          <div class="precon-info">
+            <div class="label">Projected Start</div>
+            <b>${p.start}</b>
+          </div>
+          <div class="precon-info">
+            <div class="label">Sections Complete</div>
+            <b>${sectionsComplete} of 8</b>
+          </div>
+          <div class="precon-info">
+            <div class="label">Project Coordinator</div>
+            <b>${p.coordinator}</b>
+          </div>
+          <div class="precon-info">
+            <div class="label">Project Manager</div>
+            <b>${p.manager}</b>
+          </div>
+          <div class="precon-info">
+            <div class="label">Open Issues</div>
+            <b>${p.issues}</b>
+          </div>
+          <div class="precon-info">
+            <div class="label">Overall Complete</div>
+            <b>${overall}%</b>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;justify-content:flex-end;gap:10px;align-items:center;margin:0 2px 10px">
+        <div class="sub">Use the Projects sidebar to switch jobs · ${overall}% overall complete</div>
+      </div>
+
+      <div class="section-step-note">How to use it: open a section → check off completed items → add notes where needed → mark the section COMPLETE or OPEN ISSUE → close the section.</div>
+      <div class="user-color-legend">
+        ${USERS.map(u=>`<span><i style="background:${u.color}"></i>${u.name}</span>`).join('')}
+      </div>
+
+      <div class="precon-section-list">
+        ${PRECON_SECTIONS.map((section,i)=>{
+          const data=p.preconData[i];
+          const done=data.items.filter(x=>x.done).length;
+          const total=data.items.length;
+          const complete=data.status==='Complete' || done===total;
+          const expanded=openPreconAccordion===i;
+          const pct=sectionPct(p,i);
+
+          return `
+            <div class="precon-accordion ${expanded?'expanded':''}" style="--project-color:${color}">
+              <div class="precon-overview-row ${expanded?'expanded':''}" onclick="setOpenPreconSection(${i})">
+                <div class="precon-overview-number">${i+1}</div>
+                <div class="precon-overview-copy">
+                  <h4>${section.title}</h4>
+                  <p>${section.goal}</p>
+                </div>
+                <div style="display:flex;align-items:center">
+                  <div class="precon-count ${complete?'complete':''}">
+                    ${complete?'COMPLETE':`${done}/${total}`}
+                  </div>
+                  <div class="precon-accordion-chevron">›</div>
+                </div>
+              </div>
+
+              ${expanded ? `
+                <div class="precon-inline-body">
+                  <div class="precon-inline-top">
+                    <b>Section ${i+1} of 8 · ${pct}% complete</b>
+                    <span>${data.status}</span>
+                  </div>
+
+                  <div class="pc-meta">
+                    <div class="pc-meta-box"><span>Done Means</span><b>${section.doneMeans}</b></div>
+                    <div class="pc-meta-box"><span>Handoff</span><b>${section.handoff}</b></div>
+                    <div class="pc-meta-box" style="grid-column:1/-1"><span>Watch For</span><b>${section.watchFor}</b></div>
+                  </div>
+
+                  <div class="checklist-head"><div>Main Checklist</div><div>Notes / Details</div></div>
+                  <div class="pc-checklist">
+                    ${data.items.map((item,ii)=>{
+                      const checkColor=userColor(item.checkedBy);
+                      return `
+                      <div class="pc-row user-check-row ${item.done&&item.checkedBy?'checked-by-user':''}" style="--checked-user-color:${checkColor}">
+                        <label class="pc-task ${item.done?'done':''}">
+                          <input type="checkbox" ${item.done?'checked':''} onchange="togglePreconItem(${i},${ii},this.checked)">
+                          <span>
+                            ${item.text}
+                            ${item.done&&item.checkedBy?`<small class="checked-by-badge"><i class="checked-by-dot"></i>Checked by ${item.checkedBy}</small>`:''}
+                          </span>
+                        </label>
+                        <textarea class="input pc-note" placeholder="Notes / details..." oninput="updatePreconNote(${i},${ii},this.value)">${esc(item.notes)}</textarea>
+                      </div>`;
+                    }).join('')}
+                  </div>
+
+                  ${i===0?`
+                    <div class="special-promises">
+                      <label>Customer Requests / Special Promises Documented</label>
+                      <textarea class="input" rows="3" placeholder="Notes, messages, calls, agreements, etc." oninput="updateSpecialPromises(this.value)">${esc(data.specialPromises||'')}</textarea>
+                    </div>`:''}
+
+                  <div class="checkpoint">
+                    <div class="checkpoint-title">SECTION CHECKPOINT</div>
+                    <div class="status-choices">
+                      <button class="status-btn ${data.status==='Complete'?'selected-complete':''}" onclick="setPreconStatus(${i},'Complete')">✓ COMPLETE</button>
+                      <button class="status-btn ${data.status==='Open Issue'?'selected-open':''}" onclick="setPreconStatus(${i},'Open Issue')">! OPEN ISSUE</button>
+                    </div>
+
+                    <div style="padding:0 10px 8px">
+                      <div class="label" style="margin-bottom:5px">Open Issue / Next Action</div>
+                      <input class="input" value="${esc(data.nextAction)}" placeholder="What still needs follow-up?" oninput="updatePreconField(${i},'nextAction',this.value)">
+                    </div>
+
+                    <div class="checkpoint-fields">
+                      <div>
+                        <div class="label" style="margin-bottom:5px">Follow-up By</div>
+                        <input class="input" value="${esc(data.followupBy)}" oninput="updatePreconField(${i},'followupBy',this.value)">
+                      </div>
+                      <div>
+                        <div class="label" style="margin-bottom:5px">Employee Initials</div>
+                        <input class="input" value="${esc(data.initials)}" oninput="updatePreconField(${i},'initials',this.value)">
+                      </div>
+                      <div>
+                        <div class="label" style="margin-bottom:5px">Date</div>
+                        <input class="input" type="date" value="${esc(data.date)}" oninput="updatePreconField(${i},'date',this.value)">
+                      </div>
+                      <div style="display:flex;align-items:end">
+                        <button class="btn btn-gold" style="width:100%" onclick="saveState()">Save Section</button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="po-actions" style="margin-top:10px">
+                    <button class="btn btn-light" onclick="setOpenPreconSection(${i})">Close Section</button>
+                  </div>
+                </div>
+              ` : ''}
+            </div>`;
+        }).join('')}
+      </div>
+    </div>
+
+    <div class="sub" style="text-align:center;margin-top:8px">Every section must be marked COMPLETE or OPEN ISSUE before handoff.</div>
+  `;
+}
+
+function renderEstimates(){
+  const projectsWithEstimate=state.projects.filter(p=>p.estimate.length);
+  const estimateTotal=state.projects.reduce((sum,p)=>sum+p.estimate.reduce((s,r)=>s+Number(r.builderCost||0),0),0);
+  const laborTotal=state.projects.reduce((sum,p)=>sum+laborBuilderCost(p),0);
+  const materialTotal=estimateTotal-laborTotal;
+
+  estimates.innerHTML=`
+    <div class="page-title">
+      <div>
+        <div class="eyebrow">P.Os</div>
+        <h2>Estimates</h2>
+        <p>Project estimates and builder-cost line items.</p>
+      </div>
+    </div>
+
+    <div class="stats">
+      <div class="card stat"><div class="label">Projects With Estimates</div><div class="value">${projectsWithEstimate.length}</div></div>
+      <div class="card stat"><div class="label">Total Builder Cost</div><div class="value">${money(estimateTotal)}</div></div>
+      <div class="card stat"><div class="label">Labor</div><div class="value">${money(laborTotal)}</div></div>
+      <div class="card stat"><div class="label">Materials</div><div class="value">${money(materialTotal)}</div></div>
+    </div>
+
+    <div class="section">
+      <div class="section-head"><h3>Project Estimates</h3><span>Open a project to edit its estimate</span></div>
+      <div class="card projects-card">
+        <div class="project-head" style="grid-template-columns:1.5fr .8fr .8fr .8fr .7fr">
+          <div>Project</div><div>Line Items</div><div>Labor</div><div>Total</div><div></div>
+        </div>
+        ${state.projects.map(p=>{
+          const total=p.estimate.reduce((s,r)=>s+Number(r.builderCost||0),0);
+          const color=projectColorHex(p.color);
+          return `<div class="project-row estimate-project-row" style="grid-template-columns:1.5fr .8fr .8fr .8fr .7fr;--project-color:${color}">
+            <div class="project-name"><b><span class="project-color-dot" style="background:${color}"></span>${p.name}</b><small>${p.type}</small></div>
+            <div><div class="mobile-label">Line Items</div><div class="percent">${p.estimate.length}</div></div>
+            <div><div class="mobile-label">Labor</div><div class="money">${money(laborBuilderCost(p))}</div></div>
+            <div><div class="mobile-label">Total</div><div class="money">${money(total)}</div></div>
+            <div><button class="btn btn-light" onclick="openProjectPOHub(${p.id},'estimate')">Open Estimate</button></div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>
+  `;
+}
+
+
+function openProjectPOHub(id,view='splits'){
+  state.selectedProjectId=Number(id);
+  saveState(false);
+  renderAll();
+  openPOHub(view);
+}
+
+function openPOHub(view='splits'){
+  poHubView = view === 'estimate' ? 'estimate' : 'splits';
+  openPOIndex = null;
+  deletePOIndex = null;
+  selectedPOIds.clear();
+  bulkDeletePending=false;
+  selectedEstimateRows.clear();
+  estimateDeletePending=false;
+  ensureUserData();
+  renderPayByLine();
+  go('paybyline');
+}
+
+function setPOHubView(view){
+  poHubView = view === 'estimate' ? 'estimate' : 'splits';
+  openPOIndex = null;
+  deletePOIndex = null;
+  selectedPOIds.clear();
+  bulkDeletePending=false;
+  selectedEstimateRows.clear();
+  estimateDeletePending=false;
+  renderPayByLine();
+  go('paybyline');
+}
+
+function renderPayByLine(){
+  const p=selectedProject();
+  const color=projectColorHex(p.color);
+  const estimateTotal=p.estimate.reduce((s,r)=>s+Number(r.builderCost||0),0);
+  const laborTotal=laborBuilderCost(p);
+  const materialTotal=estimateTotal-laborTotal;
+  ensureUserData();
+  const draftCount=p.pos.filter(x=>x.status==='Draft').length;
+  const preApprovedCount=p.pos.filter(x=>x.status==='Pre-Approved').length;
+  const approvedCount=p.pos.filter(x=>x.status==='Approved').length;
+  const splitReview=p.pos.filter(po=>poNeedsReviewForCurrentUser(po)).length;
+
+  const header=`
+    <div class="page-title">
+      <div>
+        <div class="eyebrow">Project P.Os</div>
+        <h2>P.O. Splits</h2>
+        <p>Start with the estimate, then generate and manage the labor splits here.</p>
+      </div>
+    </div>
+
+    <div class="po-hub-shell" style="--project-color:${color}">
+      <div class="po-hub-summary" style="--project-color:${color}">
+        <div class="po-hub-summary-top" style="--project-color:${color}">
+          <div>
+            <h3><span class="project-color-dot" style="background:${color};margin-right:8px"></span>${p.name}</h3>
+            <small>${p.type} · ${p.jobNo}</small>
+          </div>
+          <button class="btn btn-light" onclick="openProject(${p.id})">Open Full Project</button>
+        </div>
+
+        <div class="po-hub-info">
+          <div class="po-hub-info-box">
+            <div class="label">Estimate Total</div>
+            <b>${money(estimateTotal)}</b>
+          </div>
+          <div class="po-hub-info-box">
+            <div class="label">Labor Builder Cost</div>
+            <b>${money(laborTotal)}</b>
+          </div>
+          <div class="po-hub-info-box">
+            <div class="label">P.O. Splits</div>
+            <b>${p.pos.length}</b>
+          </div>
+          <div class="po-hub-info-box">
+            <div class="label">Splits to Review</div>
+            <b style="color:${splitReview?'var(--red)':'var(--green)'}">${splitReview}</b>
+            <small style="display:block;margin-top:4px;color:var(--muted)">${reviewStageLabel()}</small>
+          </div>
+        </div>
+      </div>
+
+      <div class="po-hub-toolbar">
+        <div class="help-text">Use the Projects sidebar to switch jobs.</div>
+        <div class="color-key-chip"><span class="project-color-dot" style="background:${color}"></span>${p.name}</div>
+      </div>
+
+      <div class="po-hub-nav" style="--project-color:${color}">
+        <button class="${poHubView==='splits'?'active':''}" onclick="setPOHubView('splits')">
+          P.O. Splits
+          <span>${p.pos.length} P.O.s · ${preApprovedCount} pre-approved · ${approvedCount} approved</span>
+        </button>
+        <button class="${poHubView==='estimate'?'active':''}" onclick="setPOHubView('estimate')">
+          Estimate
+          <span>${p.estimate.length} line items · ${money(estimateTotal)} builder cost</span>
+        </button>
+      </div>
+
+  `;
+
+  if(poHubView==='estimate'){
+    paybyline.innerHTML = header + `
+      <div class="po-hub-section-title">
+        <h3>Estimate</h3>
+        <span>Builder-cost line items</span>
+      </div>
+
+      <div class="toolbar">
+        <button class="btn btn-navy" onclick="loadSampleEstimateFromPOHub()">Load Sample Estimate</button>
+        <button class="btn btn-light" onclick="addEstimateLineFromPOHub()">+ Add Line</button>
+        <button class="btn btn-gold" onclick="generatePOsFromPOHub()">Generate P.O. Splits</button>
+      </div>
+
+      ${p.estimate.length?`
+        <div class="estimate-bulk-bar">
+          <label class="estimate-select-all">
+            <input class="estimate-select" type="checkbox"
+              ${p.estimate.length && p.estimate.every((_,i)=>selectedEstimateRows.has(i))?'checked':''}
+              onchange="toggleAllEstimateRows(this.checked)">
+            Select All
+          </label>
+          <button class="btn btn-danger" style="padding:8px 10px;font-size:11px" onclick="requestEstimateBulkDelete()">Delete Selected</button>
+          <span class="sub">${selectedEstimateRows.size} selected</span>
+        </div>
+
+        ${estimateDeletePending?`
+          <div class="estimate-delete-confirm">
+            Delete ${selectedEstimateRows.size} selected estimate line${selectedEstimateRows.size===1?'':'s'}?
+            <button class="btn btn-danger" style="padding:7px 9px;font-size:10px" onclick="confirmEstimateBulkDelete()">Confirm Delete</button>
+            <button class="btn btn-light" style="padding:7px 9px;font-size:10px" onclick="cancelEstimateBulkDelete()">Cancel</button>
+          </div>
+        `:''}
+
+        <div class="table-wrap"><table>
+          <thead><tr><th style="width:42px"></th><th>Line Item</th><th>Type</th><th>Builder Cost</th><th></th></tr></thead>
+          <tbody>
+            ${p.estimate.map((r,i)=>`
+              <tr class="${selectedEstimateRows.has(i)?'estimate-selected-row':''}">
+                <td style="text-align:center">
+                  <input class="estimate-select" type="checkbox" ${selectedEstimateRows.has(i)?'checked':''} onchange="toggleEstimateSelection(${i},this.checked)">
+                </td>
+                <td><input class="input" value="${esc(r.line)}" oninput="updateEstimateFromPOHub(${i},'line',this.value)"></td>
+                <td>
+                  <select class="input" onchange="updateEstimateFromPOHub(${i},'type',this.value)">
+                    <option ${r.type==='Labor'?'selected':''}>Labor</option>
+                    <option ${r.type==='Material'?'selected':''}>Material</option>
+                  </select>
+                </td>
+                <td><input class="input" type="number" value="${r.builderCost}" oninput="updateEstimateFromPOHub(${i},'builderCost',this.value)"></td>
+                <td><button class="btn btn-danger" onclick="deleteEstimateFromPOHub(${i})">Remove</button></td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table></div>
+      `:`<div class="empty">No estimate loaded yet.<br><br><button class="btn btn-navy" onclick="loadSampleEstimateFromPOHub()">Load Sample Estimate</button></div>`}
+
+      <div class="stats" style="margin-top:12px">
+        <div class="card stat"><div class="label">Estimate Total</div><div class="value">${money(estimateTotal)}</div></div>
+        <div class="card stat"><div class="label">Labor</div><div class="value">${money(laborTotal)}</div></div>
+        <div class="card stat"><div class="label">Materials</div><div class="value">${money(materialTotal)}</div></div>
+        <div class="card stat"><div class="label">Labor Lines</div><div class="value">${laborLines(p).length}</div></div>
+      </div>
+    </div>`;
+    return;
+  }
+
+  paybyline.innerHTML = header + `
+    <div class="po-hub-section-title">
+      <h3>P.O. Splits</h3>
+      <span>Select one or more P.O.s for bulk actions</span>
+    </div>
+
+    <div class="po-bulk-toolbar">
+      <label class="po-select-all">
+        <input type="checkbox"
+          ${p.pos.length && p.pos.every(po=>selectedPOIds.has(po.id))?'checked':''}
+          onchange="toggleSelectAllPOs(this.checked)">
+        Select All
+      </label>
+
+      <button class="quick-action" onclick="expandAllPOs()">Expand All P.Os</button>
+      <button class="quick-action" onclick="collapseAllPOs()">Collapse P.O.s</button>
+      <button class="quick-action" onclick="applyBulkSplit(2)">2-Way Pay Split</button>
+      <button class="quick-action" onclick="applyBulkSplit(3)">3-Way Pay Split</button>
+      <button class="quick-action" onclick="applyBulkSplit(4)">4-Way Pay Split</button>
+      <button class="quick-action" onclick="bulkPreApprove()">Pre-Approve</button>
+      <button class="quick-action primary" onclick="bulkApprove()">Approve</button>
+      <button class="btn btn-danger" style="padding:8px 10px;font-size:11px" onclick="requestBulkDelete()">Delete Selected</button>
+      <div class="po-bulk-count">${selectedPOs().length} selected</div>
+    </div>
+
+    ${bulkDeletePending ? `
+      <div class="po-bulk-confirm">
+        Delete ${selectedPOs().length} selected P.O.${selectedPOs().length===1?'':'s'}?
+        <button class="btn btn-danger" style="padding:7px 9px;font-size:10px" onclick="confirmBulkDelete()">Confirm Delete</button>
+        <button class="btn btn-light" style="padding:7px 9px;font-size:10px" onclick="cancelBulkDelete()">Cancel</button>
+      </div>
+    ` : ''}
+
+    <div class="stats" style="margin-bottom:12px">
+      <div class="card stat"><div class="label">Base Crew · 60%</div><div class="value">${money(poBase(p))}</div></div>
+      <div class="card stat"><div class="label">Touch-up · 5%</div><div class="value">${money(poBonus(p))}</div></div>
+      <div class="card stat"><div class="label">Reserve · 35%</div><div class="value">${money(poReserve(p))}</div></div>
+      <div class="card stat"><div class="label">Pre-Approved</div><div class="value">${preApprovedCount}</div></div>
+    </div>
+
+    ${p.pos.length
+      ? `<div class="po-list">${p.pos.map((po,i)=>renderPO(po,i)).join('')}</div>`
+      : `<div class="empty">
+          <strong>No P.O. splits generated yet.</strong>
+          Review the estimate first, then generate the labor P.O. splits.<br><br>
+          <button class="btn btn-light" onclick="setPOHubView('estimate')">Open Estimate</button>
+          <button class="btn btn-gold" onclick="generatePOsFromPOHub()">Generate P.O. Splits</button>
+        </div>`
+    }
+    </div>
+  `;
+}
+
+
+function toggleEstimateSelection(i,checked){
+  if(checked) selectedEstimateRows.add(i);
+  else selectedEstimateRows.delete(i);
+  estimateDeletePending=false;
+  renderPayByLine();
+}
+
+function toggleAllEstimateRows(checked){
+  const p=selectedProject();
+  selectedEstimateRows.clear();
+  if(checked) p.estimate.forEach((_,i)=>selectedEstimateRows.add(i));
+  estimateDeletePending=false;
+  renderPayByLine();
+}
+
+function requestEstimateBulkDelete(){
+  if(!selectedEstimateRows.size){
+    toast('Select at least one estimate line.');
+    return;
+  }
+  estimateDeletePending=true;
+  renderPayByLine();
+}
+
+function cancelEstimateBulkDelete(){
+  estimateDeletePending=false;
+  renderPayByLine();
+}
+
+function confirmEstimateBulkDelete(){
+  const p=selectedProject();
+  const indexes=[...selectedEstimateRows].sort((a,b)=>b-a);
+
+  indexes.forEach(i=>{
+    if(i>=0 && i<p.estimate.length) p.estimate.splice(i,1);
+  });
+
+  const count=indexes.length;
+  selectedEstimateRows.clear();
+  estimateDeletePending=false;
+
+  saveState(false);
+  renderAll();
+  poHubView='estimate';
+  renderPayByLine();
+  go('paybyline');
+  toast(`${count} estimate line${count===1?'':'s'} deleted`);
+}
+
+function loadSampleEstimateFromPOHub(){
+  loadSampleEstimate();
+  poHubView='estimate';
+  renderPayByLine();
+  go('paybyline');
+}
+function addEstimateLineFromPOHub(){
+  selectedProject().estimate.push({line:'New Line Item',type:'Labor',builderCost:0});
+  saveState(false);
+  renderAll();
+  poHubView='estimate';
+  renderPayByLine();
+  go('paybyline');
+}
+function updateEstimateFromPOHub(i,key,val){
+  const p=selectedProject();
+  p.estimate[i][key]=key==='builderCost'?Number(val):val;
+  saveState(false);
+  renderDashboard();
+  renderEstimates();
+  renderPayByLine();
+}
+function deleteEstimateFromPOHub(i){
+  selectedProject().estimate.splice(i,1);
+  selectedEstimateRows.clear();
+  estimateDeletePending=false;
+  saveState(false);
+  renderAll();
+  poHubView='estimate';
+  renderPayByLine();
+  go('paybyline');
+}
+function generatePOsFromPOHub(){
+  const p=selectedProject();
+  const labor=laborLines(p);
+  if(!labor.length){
+    poHubView='estimate';
+    renderPayByLine();
+    alert('Add labor line items to the estimate first.');
+    return;
+  }
+
+  p.pos=labor.map((r,i)=>{
+    const existing=p.pos.find(x=>x.line===r.line);
+    return existing || {
+      id:`${p.jobNo}-L${String(i+1).padStart(2,'0')}`,
+      line:r.line,
+      builderCost:Number(r.builderCost),
+      status:'Draft',
+      preApprovedBy:'',
+      approvedBy:'',
+      splits:[
+        {name:'Adair',pct:50},
+        {name:'Crew Member 2',pct:50},
+        {name:'',pct:0},
+        {name:'',pct:0}
+      ]
+    };
+  });
+
+  p.precon[1]=Math.max(p.precon[1],95);
+  saveState(false);
+  renderAll();
+  poHubView='splits';
+  openPOIndex=null;
+  renderPayByLine();
+  go('paybyline');
+  toast('P.O. Splits generated');
+}
+
+function renderProject(){
+  if(projectTab==='estimate'){
+    openPOHub('estimate');
+    return;
+  }
+  if(projectTab==='laborpos' || projectTab==='pos'){
+    openPOHub('splits');
+    return;
+  }
+
+  const p=selectedProject();
+  const projectColor=projectColorHex(p.color);
+  project.innerHTML=`
+    <div class="project-banner project-colored" style="--project-color:${projectColor}">
+      <div><div class="eyebrow">Project</div><h3><span class="project-color-dot" style="background:${projectColor}"></span>${p.name}</h3><small>${p.type} · ${p.jobNo} · Projected start ${p.start}</small></div>
+      <button class="btn btn-light" onclick="go('dashboard')">← Dashboard</button>
+    </div>
+    <div class="project-tabs">
+      ${[
+        ['overview','Overview'],['precon','Preconstruction'],['estimate','Estimate'],['laborpos','P.O. Splits'],
+        ['files','Files'],['jobcost','Job Cost']
+      ].map(([id,label])=>`<button class="${projectTab===id?'active':''}" style="${projectTab===id?`border-color:${projectColor};box-shadow:inset 0 -3px 0 ${projectColor}`:''}" onclick="setProjectTab('${id}')">${label}</button>`).join('')}
+    </div>
+    <div id="projectContent"></div>
+  `;
+  renderProjectPanel();
+}
+
+function setProjectTab(id){
+  if(id==='precon'){
+    openPreconstructionForProject(selectedProject().id);
+    return;
+  }
+  if(id==='estimate'){
+    openPOHub('estimate');
+    return;
+  }
+  if(id==='laborpos'){
+    openPOHub('splits');
+    return;
+  }
+  projectTab=id;
+  renderProject();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function renderProjectPanel(){
+  const p=selectedProject();
+  const c=document.getElementById('projectContent');
+  if(projectTab==='overview'){
+    const pct=projectPct(p);
+    c.innerHTML=`
+      <div class="stats">
+        <div class="card stat"><div class="label">Preconstruction</div><div class="value">${pct}%</div></div>
+        <div class="card stat"><div class="label">Open Issues</div><div class="value">${p.issues}</div></div>
+        <div class="card stat"><div class="label">P.O. Splits</div><div class="value">${p.pos.length}</div></div>
+        <div class="card stat"><div class="label">Ready to Start</div><div class="value">${ready(p)?'YES':'NO'}</div></div>
+      </div>
+      <div class="section grid-2">
+        <div class="card info-card project-info-color" style="--project-color:${projectColorHex(p.color)}">
+          <h4>Project Info</h4>
+          <div class="info-line"><span>Project Coordinator</span><b>${p.coordinator}</b></div>
+          <div class="info-line"><span>Project Manager</span><b>${p.manager}</b></div>
+          <div class="info-line"><span>Projected Start</span><b>${p.start}</b></div>
+          <div class="info-line"><span>Job #</span><b>${p.jobNo}</b></div>
+        </div>
+        <div class="card info-card">
+          <h4>Labor Snapshot</h4>
+          <div class="info-line"><span>Labor Builder Cost</span><b>${money(laborBuilderCost(p))}</b></div>
+          <div class="info-line"><span>Base Crew Payout</span><b>${money(poBase(p))}</b></div>
+          <div class="info-line"><span>Touch-up Bonus</span><b>${money(poBonus(p))}</b></div>
+          <div class="info-line"><span>Reserve</span><b>${money(poReserve(p))}</b></div>
+        </div>
+      </div>
+    `;
+  } else if(projectTab==='precon'){
+    c.innerHTML=`
+      <div class="card info-card">
+        <h4>Preconstruction Main Checklist</h4>
+        <div class="sub">The detailed 8-section checklist now has its own main navigation section so it is faster to get to.</div>
+        <div style="margin-top:12px"><button class="btn btn-gold" onclick="openPreconstructionForProject(${p.id})">Open Preconstruction Checklist</button></div>
+      </div>
+    `;
+  } else if(projectTab==='estimate'){
+    c.innerHTML=`
+      <div class="note">This prototype supports manual line items and a sample estimate. The production version can be built to read your actual estimate spreadsheet format.</div>
+      <div class="toolbar">
+        <button class="btn btn-navy" onclick="loadSampleEstimate()">Load Sample Estimate</button>
+        <button class="btn btn-light" onclick="addEstimateLine()">+ Add Line</button>
+        <button class="btn btn-gold" onclick="generatePOs()">Generate Labor P.O.s</button>
+      </div>
+      ${p.estimate.length?`
+      <div class="estimate-bulk-bar">
+        <label class="estimate-select-all">
+          <input class="estimate-select" type="checkbox"
+            ${p.estimate.length && p.estimate.every((_,i)=>selectedEstimateRows.has(i))?'checked':''}
+            onchange="toggleAllEstimateRowsProject(this.checked)">
+          Select All
+        </label>
+        <button class="btn btn-danger" style="padding:8px 10px;font-size:11px" onclick="requestEstimateBulkDeleteProject()">Delete Selected</button>
+        <span class="sub">${selectedEstimateRows.size} selected</span>
+      </div>
+
+      ${estimateDeletePending?`
+        <div class="estimate-delete-confirm">
+          Delete ${selectedEstimateRows.size} selected estimate line${selectedEstimateRows.size===1?'':'s'}?
+          <button class="btn btn-danger" style="padding:7px 9px;font-size:10px" onclick="confirmEstimateBulkDeleteProject()">Confirm Delete</button>
+          <button class="btn btn-light" style="padding:7px 9px;font-size:10px" onclick="cancelEstimateBulkDeleteProject()">Cancel</button>
+        </div>
+      `:''}
+
+      <div class="table-wrap"><table>
+        <thead><tr><th style="width:42px"></th><th>Line Item</th><th>Type</th><th>Builder Cost</th><th></th></tr></thead>
+        <tbody>${p.estimate.map((r,i)=>`<tr class="${selectedEstimateRows.has(i)?'estimate-selected-row':''}">
+          <td style="text-align:center"><input class="estimate-select" type="checkbox" ${selectedEstimateRows.has(i)?'checked':''} onchange="toggleEstimateSelectionProject(${i},this.checked)"></td>
+          <td><input class="input" value="${esc(r.line)}" oninput="updateEstimate(${i},'line',this.value)"></td>
+          <td><select class="input" onchange="updateEstimate(${i},'type',this.value)">
+            <option ${r.type==='Labor'?'selected':''}>Labor</option><option ${r.type==='Material'?'selected':''}>Material</option>
+          </select></td>
+          <td><input class="input" type="number" value="${r.builderCost}" oninput="updateEstimate(${i},'builderCost',this.value)"></td>
+          <td><button class="btn btn-danger" onclick="deleteEstimate(${i})">Remove</button></td>
+        </tr>`).join('')}</tbody>
+      </table></div>`:`<div class="empty">No estimate loaded yet.<br><br><button class="btn btn-navy" onclick="loadSampleEstimate()">Load Sample Estimate</button></div>`}
+    `;
+  } else if(projectTab==='laborpos'){
+    c.innerHTML = p.pos.length ? `<div class="po-list">${p.pos.map((po,i)=>renderPO(po,i)).join('')}</div>` :
+      `<div class="empty">No Labor P.O.s yet.<br><br><button class="btn btn-navy" onclick="openPOHub('estimate')">Go to Estimate</button></div>`;
+  } else if(projectTab==='schedule'){
+    c.innerHTML=`
+      <div class="note">The Project Manager can use approved P.O.s to build the work sequence and assign crews.</div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Order</th><th>Work</th><th>Assigned Crew</th><th>P.O. Status</th></tr></thead>
+        <tbody>${p.pos.length?p.pos.map((po,i)=>`<tr>
+          <td>${i+1}</td><td><b>${po.line}</b></td><td>${po.splits.filter(x=>x.pct>0&&x.name).map(x=>x.name).join(', ')||'Unassigned'}</td>
+          <td><span class="pill ${poStatusClass(po.status)}">${po.status}</span></td>
+        </tr>`).join(''):'<tr><td colspan="4">Generate Labor P.O.s first.</td></tr>'}</tbody>
+      </table></div>
+    `;
+  } else if(projectTab==='files'){
+    c.innerHTML=`
+      <div class="grid-3">
+        ${['Proposal + Estimate','Selections','Bids + Subcontractors','Drawings / Plans','3D Renderings','Photos'].map(x=>`
+          <div class="card info-card"><h4>${x}</h4><div class="sub">File upload would live here.</div><div style="margin-top:12px"><button class="btn btn-light" disabled>Upload</button></div></div>`).join('')}
+      </div>
+    `;
+  } else if(projectTab==='jobcost'){
+    c.innerHTML=`
+      <div class="stats">
+        <div class="card stat"><div class="label">Labor Builder Cost</div><div class="value">${money(laborBuilderCost(p))}</div></div>
+        <div class="card stat"><div class="label">Base Crew Payout</div><div class="value">${money(poBase(p))}</div></div>
+        <div class="card stat"><div class="label">Touch-up Bonus</div><div class="value">${money(poBonus(p))}</div></div>
+        <div class="card stat"><div class="label">Reserve</div><div class="value">${money(poReserve(p))}</div></div>
+      </div>
+      <div class="section card info-card">
+        <h4>Ready-to-Start Check</h4>
+        <div class="check-list">
+          ${p.readyChecklist.map((x,i)=>{
+            const checkColor=userColor(x.checkedBy);
+            return `<label class="check-item ready-user-check ${x.done?'done':''} ${x.done&&x.checkedBy?'checked-by-user':''}" style="--checked-user-color:${checkColor}">
+              <input type="checkbox" ${x.done?'checked':''} onchange="toggleReady(${i},this.checked)">
+              <span>${x.text}</span>
+              ${x.done&&x.checkedBy?`<span class="ready-user-meta"><i class="checked-by-dot"></i>${x.checkedBy}</span>`:''}
+            </label>`;
+          }).join('')}
+        </div>
+      </div>
+    `;
+  }
+}
+
+
+function selectedPOs(){
+  const p=selectedProject();
+  return p.pos.filter(po=>selectedPOIds.has(po.id));
+}
+function isPOSelected(po){
+  return selectedPOIds.has(po.id);
+}
+function togglePOSelection(id,checked){
+  if(checked) selectedPOIds.add(id);
+  else selectedPOIds.delete(id);
+  bulkDeletePending=false;
+  renderPayByLine();
+}
+function toggleSelectAllPOs(checked){
+  const p=selectedProject();
+  if(checked) p.pos.forEach(po=>selectedPOIds.add(po.id));
+  else selectedPOIds.clear();
+  bulkDeletePending=false;
+  renderPayByLine();
+}
+function requestBulkDelete(){
+  if(!selectedPOs().length){ toast('Select at least one P.O.'); return; }
+  bulkDeletePending=true;
+  renderPayByLine();
+}
+function cancelBulkDelete(){
+  bulkDeletePending=false;
+  renderPayByLine();
+}
+function confirmBulkDelete(){
+  const p=selectedProject();
+  const ids=new Set(selectedPOs().map(po=>po.id));
+  if(!ids.size) return;
+  p.pos=p.pos.filter(po=>!ids.has(po.id));
+  selectedPOIds.clear();
+  bulkDeletePending=false;
+  openPOIndex=null;
+  saveState(false);
+  renderAll();
+  poHubView='splits';
+  renderPayByLine();
+  go('paybyline');
+  toast(`${ids.size} P.O.${ids.size===1?'':'s'} deleted`);
+}
+function bulkPreApprove(){
+  const items=selectedPOs();
+  if(!items.length){ toast('Select at least one P.O.'); return; }
+  if(!canPreApprove()){ alert('Only Jony or Adair can pre-approve P.O.s.'); return; }
+
+  let updated=0, skipped=0;
+  items.forEach(po=>{
+    const total=po.splits.reduce((s,x)=>s+Number(x.pct||0),0);
+    if(total===100 && po.status!=='Approved'){
+      po.status='Pre-Approved';
+      po.preApprovedBy=state.currentUser;
+      po.approvedBy='';
+      updated++;
+    }else skipped++;
+  });
+
+  saveState(false);
+  renderAll();
+  renderPayByLine();
+  toast(skipped ? `${updated} pre-approved · ${skipped} skipped` : `${updated} pre-approved`);
+}
+function bulkApprove(){
+  const items=selectedPOs();
+  if(!items.length){ toast('Select at least one P.O.'); return; }
+  if(!canFinalApprove()){ alert('Only Gio can approve P.O.s.'); return; }
+
+  let updated=0, skipped=0;
+  items.forEach(po=>{
+    if(po.status==='Pre-Approved'){
+      po.status='Approved';
+      po.approvedBy='Gio';
+      updated++;
+    }else skipped++;
+  });
+
+  saveState(false);
+  renderAll();
+  renderPayByLine();
+  toast(skipped ? `${updated} approved · ${skipped} need pre-approval` : `${updated} approved`);
+}
+function applyBulkSplit(count){
+  const items=selectedPOs();
+  if(!items.length){ toast('Select at least one P.O.'); return; }
+
+  items.forEach(po=>{
+    while(po.splits.length<4) po.splits.push({name:'',pct:0});
+    if(count===2){
+      po.splits[0].pct=50;
+      po.splits[1].pct=50;
+      po.splits[2].pct=0;
+      po.splits[3].pct=0;
+    }else if(count===3){
+      po.splits[0].pct=33.34;
+      po.splits[1].pct=33.33;
+      po.splits[2].pct=33.33;
+      po.splits[3].pct=0;
+    }else{
+      po.splits[0].pct=25;
+      po.splits[1].pct=25;
+      po.splits[2].pct=25;
+      po.splits[3].pct=25;
+    }
+  });
+
+  saveState(false);
+  openPOIndex='all';
+  renderAll();
+  poHubView='splits';
+  renderPayByLine();
+  go('paybyline');
+  toast(`${count}-way split applied to ${items.length} P.O.${items.length===1?'':'s'}`);
+}
+
+function togglePO(i){
+  if(openPOIndex==='all'){
+    openPOIndex=i;
+  }else{
+    openPOIndex = openPOIndex===i ? null : i;
+  }
+
+  if(document.getElementById('paybyline')?.classList.contains('active')){
+    poHubView='splits';
+    renderPayByLine();
+  }else{
+    renderProjectPanel();
+  }
+}
+function renderPO(po,i){
+  ensureUserData();
+
+  const base=po.builderCost*.60, cleanup=po.builderCost*.05, reserve=po.builderCost*.35;
+  const total=po.splits.reduce((s,x)=>s+Number(x.pct||0),0);
+  const assigned=po.splits.filter(x=>Number(x.pct||0)>0 && x.name).map(x=>`${x.name} ${x.pct}%`).join(' · ') || 'No crew assigned';
+  const expanded=openPOIndex==='all' || openPOIndex===i;
+
+  const preApproveDisabled=!canPreApprove() || total!==100 || po.status==='Approved';
+  const approveDisabled=!canFinalApprove() || po.status!=='Pre-Approved';
+
+  const preApproveHelp = canPreApprove()
+    ? (total===100 ? 'Jony or Adair can pre-approve this P.O.' : 'Split must equal 100% before pre-approval.')
+    : 'Only Jony or Adair can pre-approve.';
+
+  const approveHelp = canFinalApprove()
+    ? (po.status==='Pre-Approved' ? 'Ready for Gio final approval.' : 'P.O. must be pre-approved first.')
+    : 'Only Gio can give final approval.';
+
+  return `<div class="card po ${expanded?'expanded':''} ${isPOSelected(po)?'po-selected':''}">
+    <div class="po-head" onclick="togglePO(${i})">
+      <div class="po-summary">
+        <div class="po-head-select" onclick="event.stopPropagation()">
+          <input class="po-row-select" type="checkbox" ${isPOSelected(po)?'checked':''} onchange="togglePOSelection('${po.id}',this.checked)">
+        </div>
+        <div class="po-chevron">›</div>
+        <div class="po-title-area">
+          <h4>${po.line}</h4>
+          <small>${po.id} · Builder Cost ${money(po.builderCost)}</small>
+          <div class="po-expand-note">${expanded?'Open — click again to collapse':'Click to review crew split'}</div>
+        </div>
+      </div>
+
+      <div class="po-quick">
+        <span><b>${money(base)}</b> base</span>
+        <span><b>${total}%</b> split</span>
+        <span class="pill ${poStatusClass(po.status)}">${po.status}</span>
+        ${deletePOIndex===i
+          ? `<button class="btn btn-danger" style="padding:7px 9px;font-size:10px" onclick="event.stopPropagation();confirmDeletePO(${i})">Confirm Delete</button>
+             <button class="btn btn-light" style="padding:7px 9px;font-size:10px" onclick="event.stopPropagation();cancelDeletePO()">Cancel</button>`
+          : `<button class="btn btn-danger" style="padding:7px 9px;font-size:10px" onclick="event.stopPropagation();requestDeletePO(${i})">Delete</button>`
+        }
+        <button class="po-open-button" onclick="event.stopPropagation();togglePO(${i})">${expanded?'Close':'Open'}</button>
+      </div>
+    </div>
+
+    <div class="po-body">
+      <div class="alloc-grid">
+        <div class="alloc"><span>Base Crew · 60%</span><b>${money(base)}</b></div>
+        <div class="alloc"><span>Touch-up · 5%</span><b>${money(cleanup)}</b></div>
+        <div class="alloc"><span>Reserve · 35%</span><b>${money(reserve)}</b></div>
+      </div>
+
+      <div class="section-head" style="margin:14px 0 7px">
+        <h3 style="font-size:13px">P.O. Split</h3>
+        <span>${assigned}</span>
+      </div>
+
+      <div class="po-body-section-title">Crew Split</div>
+      <div class="split-grid">
+        <div class="split-head">Crew Member</div><div class="split-head">Split %</div><div class="split-head">Base Pay</div>
+        ${po.splits.map((s,si)=>`
+          <input class="input" value="${esc(s.name)}" placeholder="Employee" oninput="updateSplit(${i},${si},'name',this.value)">
+          <input class="input" type="number" min="0" max="100" value="${s.pct}" oninput="updateSplit(${i},${si},'pct',this.value)">
+          <div class="money">${money(base*(Number(s.pct||0)/100))}</div>
+        `).join('')}
+      </div>
+
+      <div class="split-total ${total===100?'good':'bad'}">P.O. Split Total: ${total}% ${total===100?'✓ Ready':'— must equal 100%'}</div>
+      ${total!==100?'<div class="inline-tip">Adjust the crew percentages until the P.O. split total equals 100%.</div>':''}
+
+      <div class="approval-trail">
+        <div class="approval-step ${po.preApprovedBy?'done':''}">
+          <span>Pre-Approval</span>
+          <b>${po.preApprovedBy ? `Pre-Approved by ${po.preApprovedBy}` : 'Waiting for Jony or Adair'}</b>
+        </div>
+        <div class="approval-step ${po.approvedBy?'done':''}">
+          <span>Final Approval</span>
+          <b>${po.approvedBy ? `Approved by ${po.approvedBy}` : 'Waiting for Gio'}</b>
+        </div>
+      </div>
+
+      <div class="po-actions">
+        <button class="btn btn-light" onclick="event.stopPropagation();setPOStatus(${i},'Draft')">Draft</button>
+        <button class="btn btn-navy" ${preApproveDisabled?'disabled':''} title="${preApproveHelp}" onclick="event.stopPropagation();setPOStatus(${i},'Pre-Approved')">Pre-Approve</button>
+        <button class="btn btn-gold" ${approveDisabled?'disabled':''} title="${approveHelp}" onclick="event.stopPropagation();setPOStatus(${i},'Approved')">Approve</button>
+      </div>
+      <div class="role-note">Signed in as ${state.currentUser} · ${currentUser().role}</div>
+    </div>
+  </div>`;
+}
+
+function togglePrecon(i){
+  const p=selectedProject();
+  const s=p.preconData[i];
+  const makeComplete=sectionPct(p,i)!==100;
+  s.items.forEach(x=>x.done=makeComplete);
+  s.status=makeComplete?'Complete':'Open Issue';
+  syncPreconProgress(p);
+  saveState(false); renderAll(); renderProject();
+}
+
+function toggleEstimateSelectionProject(i,checked){
+  if(checked) selectedEstimateRows.add(i);
+  else selectedEstimateRows.delete(i);
+  estimateDeletePending=false;
+  projectTab='estimate';
+  renderProject();
+}
+
+function toggleAllEstimateRowsProject(checked){
+  const p=selectedProject();
+  selectedEstimateRows.clear();
+  if(checked) p.estimate.forEach((_,i)=>selectedEstimateRows.add(i));
+  estimateDeletePending=false;
+  projectTab='estimate';
+  renderProject();
+}
+
+function requestEstimateBulkDeleteProject(){
+  if(!selectedEstimateRows.size){
+    toast('Select at least one estimate line.');
+    return;
+  }
+  estimateDeletePending=true;
+  projectTab='estimate';
+  renderProject();
+}
+
+function cancelEstimateBulkDeleteProject(){
+  estimateDeletePending=false;
+  projectTab='estimate';
+  renderProject();
+}
+
+function confirmEstimateBulkDeleteProject(){
+  const p=selectedProject();
+  const indexes=[...selectedEstimateRows].sort((a,b)=>b-a);
+  indexes.forEach(i=>{
+    if(i>=0 && i<p.estimate.length) p.estimate.splice(i,1);
+  });
+
+  const count=indexes.length;
+  selectedEstimateRows.clear();
+  estimateDeletePending=false;
+  saveState(false);
+  renderAll();
+  projectTab='estimate';
+  renderProject();
+  toast(`${count} estimate line${count===1?'':'s'} deleted`);
+}
+
+function loadSampleEstimate(){
+  const p=selectedProject();
+  p.estimate=[
+    {line:'Demo / Protection',type:'Labor',builderCost:1800},
+    {line:'Framing',type:'Labor',builderCost:2550},
+    {line:'Plumbing Labor',type:'Labor',builderCost:3200},
+    {line:'Electrical Labor',type:'Labor',builderCost:1800},
+    {line:'Drywall',type:'Labor',builderCost:2100},
+    {line:'Tile Labor',type:'Labor',builderCost:4200},
+    {line:'Painting',type:'Labor',builderCost:1600},
+    {line:'Finish Carpentry',type:'Labor',builderCost:1450},
+    {line:'Rough Materials',type:'Material',builderCost:3100},
+    {line:'Finish Materials',type:'Material',builderCost:6900}
+  ];
+  saveState(false); renderAll(); renderProject(); projectTab='estimate'; renderProject();
+}
+function addEstimateLine(){
+  selectedProject().estimate.push({line:'New Line Item',type:'Labor',builderCost:0});
+  saveState(false); renderAll(); renderProject();
+}
+function updateEstimate(i,key,val){
+  const p=selectedProject();
+  p.estimate[i][key]=key==='builderCost'?Number(val):val;
+  saveState(false); renderDashboard(); renderPayByLine();
+}
+function deleteEstimate(i){
+  selectedProject().estimate.splice(i,1); saveState(false); renderAll(); renderProject();
+}
+function generatePOs(){
+  const p=selectedProject();
+  const labor=laborLines(p);
+  if(!labor.length){alert('Add labor line items first.');return;}
+  p.pos=labor.map((r,i)=>{
+    const existing=p.pos.find(x=>x.line===r.line);
+    return existing || {
+      id:`${p.jobNo}-L${String(i+1).padStart(2,'0')}`,
+      line:r.line,builderCost:Number(r.builderCost),status:'Draft',
+      preApprovedBy:'',approvedBy:'',
+      splits:[
+        {name:'Adair',pct:50},
+        {name:'Crew Member 2',pct:50},
+        {name:'',pct:0},
+        {name:'',pct:0}
+      ]
+    };
+  });
+  p.precon[1]=Math.max(p.precon[1],95);
+  saveState(false); renderAll(); projectTab='laborpos'; renderProject(); toast('Labor P.O.s generated');
+}
+function updateSplit(pi,si,key,val){
+  const po=selectedProject().pos[pi];
+  po.splits[si][key]=key==='pct'?Number(val):val;
+  saveState(false);
+  renderProjectPanel();
+  renderDashboard();
+  renderPayByLine();
+}
+
+function requestDeletePO(i){
+  deletePOIndex=i;
+  renderPayByLine();
+}
+
+function cancelDeletePO(){
+  deletePOIndex=null;
+  renderPayByLine();
+}
+
+function confirmDeletePO(i){
+  const p=selectedProject();
+  const po=p.pos[i];
+  if(!po) return;
+
+  selectedPOIds.delete(po.id);
+  p.pos.splice(i,1);
+  deletePOIndex=null;
+  openPOIndex=null;
+
+  saveState(false);
+  renderAll();
+  poHubView='splits';
+  renderPayByLine();
+  go('paybyline');
+  toast('P.O. deleted');
+}
+
+
+function setPOStatus(i,status){
+  ensureUserData();
+  const po=selectedProject().pos[i];
+  if(!po) return;
+
+  const splitTotal=po.splits.reduce((s,x)=>s+Number(x.pct||0),0);
+
+  if(status==='Draft'){
+    po.status='Draft';
+    po.preApprovedBy='';
+    po.approvedBy='';
+  }else if(status==='Pre-Approved'){
+    if(!canPreApprove()){
+      alert('Only Jony or Adair can pre-approve a P.O.');
+      return;
+    }
+    if(splitTotal!==100){
+      alert('The P.O. split must equal 100% before it can be pre-approved.');
+      return;
+    }
+    po.status='Pre-Approved';
+    po.preApprovedBy=state.currentUser;
+    po.approvedBy='';
+  }else if(status==='Approved'){
+    if(!canFinalApprove()){
+      alert('Only Gio can give final approval.');
+      return;
+    }
+    if(po.status!=='Pre-Approved'){
+      alert('Jony or Adair must pre-approve this P.O. before Gio can approve it.');
+      return;
+    }
+    po.status='Approved';
+    po.approvedBy='Gio';
+  }
+
+  saveState(false);
+  renderAll();
+
+  if(document.getElementById('paybyline')?.classList.contains('active')){
+    poHubView='splits';
+    renderPayByLine();
+    go('paybyline');
+  }else{
+    projectTab='laborpos';
+    renderProject();
+  }
+}
+function toggleReady(i,val){
+  const item=selectedProject().readyChecklist[i];
+  item.done=val;
+  item.checkedBy=val ? state.currentUser : '';
+  saveState(false);
+  renderAll();
+  renderProject();
+  projectTab='jobcost';
+  renderProject();
+}
+function esc(s){ return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+
+function openAssistant(){ assistant.classList.add('open'); }
+function closeAssistant(){ assistant.classList.remove('open'); }
+function quickAsk(q){ assistantInput.value=q; sendAssistant(); }
+function sendAssistant(){
+  const q=assistantInput.value.trim(); if(!q)return;
+  assistantBody.innerHTML+=`<div class="msg user">${esc(q)}</div>`;
+  assistantInput.value='';
+  const p=selectedProject();
+  let answer='This is a prototype response. In the real app, ChatGPT would use the live project data.';
+  const l=q.toLowerCase();
+  if(l.includes('labor')&&l.includes('budget')){
+    answer=`${p.name} currently has ${money(laborBuilderCost(p))} in labor builder cost, ${money(poBase(p))} in base crew payout, ${money(poBonus(p))} in touch-up bonus, and ${money(poReserve(p))} in reserve.`;
+  }else if(l.includes('still open')){
+    const incomplete=p.readyChecklist.filter(x=>!x.done).map(x=>x.text);
+    answer=`${p.issues} project issues are open. Ready-to-start items still open: ${incomplete.join(', ')||'none'}.`;
+  }else if(l.includes('ready')&&l.includes('start')){
+    answer=ready(p)?`${p.name} is ready to start based on the prototype checklist.`:`Not yet. ${p.readyChecklist.filter(x=>!x.done).length} ready-to-start items are still incomplete.`;
+  }
+  setTimeout(()=>{
+    assistantBody.innerHTML+=`<div class="msg bot">${esc(answer)}</div>`;
+    assistantBody.scrollTop=assistantBody.scrollHeight;
+  },180);
+}
+
+function renderAll(){
+  ensurePreconData();
+  ensureProjectColors();
+  ensureUserData();
+  renderDashboard();
+  renderPreconstruction();
+  renderEstimates();
+  renderPayByLine();
+  renderProject();
+  buildProjectSidebar();
+  syncUserSelector();
+}
+buildNav();
+renderAll();
+syncUserSelector();
+</script>
+
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./service-worker.js').catch(err => {
+      console.warn('Service worker registration failed:', err);
+    });
+  });
+}
+</script>
+
+</body>
+</html>
