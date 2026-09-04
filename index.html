@@ -2642,6 +2642,88 @@ textarea.estimate-cell-input{
   background:var(--gold);
 }
 
+
+.precon-responsibilities{
+  margin:12px 0 4px;
+  border:1px solid #D8DFE9;
+  border-radius:9px;
+  background:#FAFBFC;
+  overflow:hidden;
+}
+.precon-responsibilities summary{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  list-style:none;
+  cursor:pointer;
+  padding:9px 11px;
+  color:var(--navy);
+  font-size:10px;
+  font-weight:900;
+  user-select:none;
+}
+.precon-responsibilities summary::-webkit-details-marker{
+  display:none;
+}
+.precon-responsibilities summary::after{
+  content:'›';
+  font-size:18px;
+  line-height:1;
+  color:var(--gold);
+  transform:rotate(90deg);
+  transition:transform .15s ease;
+}
+.precon-responsibilities[open] summary::after{
+  transform:rotate(-90deg);
+}
+.precon-responsibilities .responsibility-hint{
+  color:var(--muted);
+  font-size:9px;
+  font-weight:700;
+  margin-left:auto;
+}
+.precon-responsibility-body{
+  border-top:1px solid #E4E8EF;
+  padding:8px 11px 10px;
+  display:grid;
+  gap:7px;
+}
+.precon-responsibility-row{
+  display:grid;
+  grid-template-columns:92px 1fr;
+  gap:9px;
+  align-items:start;
+  font-size:10px;
+  line-height:1.35;
+}
+.precon-responsibility-row span{
+  color:#9A7B3F;
+  font-size:8px;
+  font-weight:900;
+  text-transform:uppercase;
+  letter-spacing:.05em;
+}
+.precon-responsibility-row b{
+  color:var(--navy);
+  font-size:10px;
+  font-weight:800;
+}
+@media(max-width:560px){
+  .precon-responsibilities summary{
+    padding:8px 9px;
+  }
+  .precon-responsibilities .responsibility-hint{
+    display:none;
+  }
+  .precon-responsibility-body{
+    padding:8px 9px 9px;
+  }
+  .precon-responsibility-row{
+    grid-template-columns:78px 1fr;
+  }
+}
+
 </style>
 
   <meta name="theme-color" content="#14234A">
@@ -4945,12 +5027,6 @@ function renderPreconstruction(){
                     <span>${data.status}</span>
                   </div>
 
-                  <div class="pc-meta">
-                    <div class="pc-meta-box"><span>Done Means</span><b>${section.doneMeans}</b></div>
-                    <div class="pc-meta-box"><span>Handoff</span><b>${section.handoff}</b></div>
-                    <div class="pc-meta-box" style="grid-column:1/-1"><span>Watch For</span><b>${section.watchFor}</b></div>
-                  </div>
-
                   <div class="checklist-head"><div>Main Checklist</div><div>Notes / Details</div></div>
                   <div class="pc-checklist">
                     ${data.items.map((item,ii)=>{
@@ -4985,6 +5061,27 @@ function renderPreconstruction(){
                       <label>Customer Requests / Special Promises Documented</label>
                       <textarea class="input" rows="3" placeholder="Notes, messages, calls, agreements, etc." oninput="updateSpecialPromises(this.value)">${esc(data.specialPromises||'')}</textarea>
                     </div>`:''}
+
+                  <details class="precon-responsibilities">
+                    <summary>
+                      <span>Responsibilities & Handoff</span>
+                      <span class="responsibility-hint">Done means · Handoff · Watch for</span>
+                    </summary>
+                    <div class="precon-responsibility-body">
+                      <div class="precon-responsibility-row">
+                        <span>Done Means</span>
+                        <b>${section.doneMeans}</b>
+                      </div>
+                      <div class="precon-responsibility-row">
+                        <span>Handoff</span>
+                        <b>${section.handoff}</b>
+                      </div>
+                      <div class="precon-responsibility-row">
+                        <span>Watch For</span>
+                        <b>${section.watchFor}</b>
+                      </div>
+                    </div>
+                  </details>
 
                   <div class="checkpoint">
                     <div class="checkpoint-title">SECTION CHECKPOINT</div>
