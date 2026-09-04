@@ -2209,6 +2209,339 @@ body.topbar-collapsed .collapsed-top-controls{
   }
 }
 
+
+.page-title-actions{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  justify-content:flex-end;
+  align-items:center;
+}
+.print-root{
+  display:none;
+}
+
+@media print{
+  @page{
+    size:auto;
+    margin:.45in;
+  }
+
+  body.printing > *:not(#printRoot){
+    display:none!important;
+  }
+
+  body.printing #printRoot{
+    display:block!important;
+  }
+
+  #printRoot{
+    font-family:Arial,Helvetica,sans-serif;
+    color:#111;
+    background:#fff;
+    font-size:10.5pt;
+    line-height:1.35;
+  }
+
+  .print-doc-header{
+    border-bottom:3px solid #14234A;
+    padding-bottom:10px;
+    margin-bottom:16px;
+  }
+  .print-brand{
+    display:flex;
+    justify-content:space-between;
+    gap:20px;
+    align-items:flex-start;
+  }
+  .print-brand h1{
+    margin:0;
+    color:#14234A;
+    font-size:18pt;
+  }
+  .print-brand .gold{
+    color:#8B7443;
+    font-weight:700;
+  }
+  .print-project-meta{
+    margin-top:8px;
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:6px 12px;
+    font-size:9pt;
+  }
+  .print-project-meta span{
+    display:block;
+    color:#666;
+    font-size:7.5pt;
+    text-transform:uppercase;
+    letter-spacing:.04em;
+  }
+  .print-project-meta b{
+    color:#111;
+  }
+
+  .print-section{
+    break-inside:avoid;
+    margin-bottom:18px;
+  }
+  .print-page-break{
+    break-before:page;
+  }
+  .print-section-title{
+    display:flex;
+    justify-content:space-between;
+    gap:16px;
+    align-items:flex-start;
+    border-left:5px solid #B59A62;
+    background:#F4F5F7;
+    padding:9px 10px;
+    margin-bottom:9px;
+  }
+  .print-section-title h2,
+  .print-section-title h3{
+    margin:0;
+    color:#14234A;
+  }
+  .print-section-title p{
+    margin:3px 0 0;
+    color:#555;
+  }
+  .print-status{
+    white-space:nowrap;
+    font-weight:700;
+    color:#14234A;
+  }
+
+  .print-meta-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:7px;
+    margin-bottom:9px;
+  }
+  .print-meta-box{
+    border:1px solid #D8DDE5;
+    padding:7px;
+    border-radius:5px;
+  }
+  .print-meta-box.full{
+    grid-column:1/-1;
+  }
+  .print-meta-box span{
+    display:block;
+    color:#666;
+    text-transform:uppercase;
+    font-size:7.5pt;
+    font-weight:700;
+    margin-bottom:2px;
+  }
+
+  .print-table{
+    width:100%;
+    border-collapse:collapse;
+    margin:7px 0 10px;
+  }
+  .print-table th{
+    text-align:left;
+    background:#14234A;
+    color:#fff;
+    padding:6px;
+    font-size:8pt;
+  }
+  .print-table td{
+    border:1px solid #D8DDE5;
+    padding:6px;
+    vertical-align:top;
+  }
+  .print-table .center{
+    text-align:center;
+  }
+  .print-table .right{
+    text-align:right;
+  }
+  .print-check{
+    font-size:13pt;
+    line-height:1;
+  }
+  .print-muted{
+    color:#666;
+    font-size:8.5pt;
+  }
+  .print-note{
+    border:1px solid #D8DDE5;
+    padding:7px;
+    margin-top:7px;
+    border-radius:5px;
+  }
+  .print-note b{
+    color:#14234A;
+  }
+
+  .print-alloc-grid{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:7px;
+    margin:8px 0;
+  }
+  .print-alloc{
+    border:1px solid #D8DDE5;
+    border-radius:5px;
+    padding:7px;
+  }
+  .print-alloc span{
+    display:block;
+    color:#666;
+    font-size:8pt;
+  }
+  .print-alloc b{
+    color:#14234A;
+    font-size:11pt;
+  }
+  .print-approval{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:7px;
+    margin-top:9px;
+  }
+  .print-approval > div{
+    border:1px solid #D8DDE5;
+    border-radius:5px;
+    padding:7px;
+  }
+  .print-approval span{
+    display:block;
+    color:#666;
+    font-size:8pt;
+  }
+  .print-footer{
+    margin-top:16px;
+    padding-top:8px;
+    border-top:1px solid #D8DDE5;
+    color:#777;
+    text-align:right;
+    font-size:8pt;
+  }
+}
+
+@media(max-width:560px){
+  .page-title-actions{
+    width:100%;
+    justify-content:flex-start;
+  }
+  .page-title-actions .btn,
+  .page-title-actions .continue-btn{
+    flex:1;
+    min-width:0;
+    padding:8px 9px;
+    font-size:9px;
+  }
+}
+
+
+.estimate-buildertrend-wrap{
+  overflow:auto;
+  border:1px solid var(--line);
+  border-radius:10px;
+  background:#fff;
+  -webkit-overflow-scrolling:touch;
+}
+.estimate-buildertrend{
+  width:100%;
+  min-width:1180px;
+  border-collapse:collapse;
+  table-layout:fixed;
+}
+.estimate-buildertrend th{
+  position:sticky;
+  top:0;
+  z-index:3;
+  background:#fff;
+  color:#20242C;
+  font-size:10px;
+  font-weight:900;
+  text-align:left;
+  padding:10px 8px;
+  border-bottom:1px solid #D9DFE8;
+  white-space:nowrap;
+}
+.estimate-buildertrend td{
+  padding:8px;
+  border-bottom:1px solid #D9DFE8;
+  vertical-align:top;
+  background:#fff;
+}
+.estimate-buildertrend tr:last-child td{
+  border-bottom:0;
+}
+.estimate-buildertrend .col-check{width:42px;text-align:center}
+.estimate-buildertrend .col-items{width:210px}
+.estimate-buildertrend .col-description{width:300px}
+.estimate-buildertrend .col-qty{width:95px}
+.estimate-buildertrend .col-unit{width:95px}
+.estimate-buildertrend .col-unit-cost{width:120px}
+.estimate-buildertrend .col-cost-type{width:135px}
+.estimate-buildertrend .col-builder-cost{width:130px}
+
+.estimate-cell-input{
+  width:100%;
+  border:1px solid transparent;
+  background:transparent;
+  border-radius:6px;
+  padding:6px 7px;
+  color:var(--navy);
+  font:inherit;
+  min-height:34px;
+}
+.estimate-cell-input:hover,
+.estimate-cell-input:focus{
+  border-color:#CBD3DF;
+  background:#FAFBFC;
+  outline:none;
+}
+textarea.estimate-cell-input{
+  resize:vertical;
+  min-height:48px;
+  line-height:1.3;
+}
+.estimate-item-input{
+  color:#0B57C7;
+  font-weight:800;
+}
+.estimate-number{
+  text-align:right;
+}
+.estimate-buildertrend .cost-type-cell{
+  background:#F5F7FA;
+}
+.estimate-buildertrend .builder-cost-cell{
+  font-weight:900;
+}
+.estimate-buildertrend .selected-row td{
+  background:#FFFDF7;
+}
+.estimate-buildertrend .selected-row .cost-type-cell{
+  background:#F8F4E8;
+}
+.estimate-table-hint{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  flex-wrap:wrap;
+  margin:8px 0 10px;
+  color:var(--muted);
+  font-size:10px;
+}
+@media(max-width:560px){
+  .estimate-buildertrend{
+    min-width:1080px;
+  }
+  .estimate-buildertrend th,
+  .estimate-buildertrend td{
+    padding:7px 6px;
+  }
+}
+
 </style>
 
   <meta name="theme-color" content="#14234A">
@@ -2222,6 +2555,7 @@ body.topbar-collapsed .collapsed-top-controls{
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
+<div id="printRoot" class="print-root"></div>
 
 <div id="loginOverlay" class="login-overlay">
   <div class="login-card">
@@ -2748,7 +3082,7 @@ function poNeedsReviewForCurrentUser(po){
   return po.status==='Draft';
 }
 function reviewStageLabel(){
-  return state.currentUser==='Gio' ? 'Pre-Approved → Approved' : 'Draft → Pre-Approved';
+  return state.currentUser==='Gio' ? 'Pre-Approved ↔ Approved' : 'Draft ↔ Pre-Approved';
 }
 
 function ensureUserData(){
@@ -2913,7 +3247,7 @@ function syncPreconProgress(p){
   p.precon=PRECON_SECTIONS.map((_,i)=>sectionPct(p,i));
 }
 function projectPct(p){ syncPreconProgress(p); return Math.round(avg(p.precon)); }
-function laborLines(p){ return p.estimate.filter(x=>x.type==='Labor'); }
+function laborLines(p){ return p.estimate.filter(x=>estimateNorm(x.type)==='labor'); }
 function laborBuilderCost(p){ return laborLines(p).reduce((s,x)=>s+Number(x.builderCost||0),0); }
 function poBase(p){ return p.pos.reduce((s,x)=>s+x.builderCost*.60,0); }
 function poBonus(p){ return p.pos.reduce((s,x)=>s+x.builderCost*.05,0); }
@@ -3966,6 +4300,257 @@ function updateSpecialPromises(val){
   selectedProject().preconData[0].specialPromises=val;
   saveState(false);
 }
+
+function printSafe(v){
+  return esc(String(v ?? ''));
+}
+
+function printProjectHeader(p,title){
+  return `
+    <div class="print-doc-header">
+      <div class="print-brand">
+        <div>
+          <h1>J&J Home Renovations</h1>
+          <div class="gold">${printSafe(title)}</div>
+        </div>
+        <div class="print-muted">Printed ${new Date().toLocaleString()}</div>
+      </div>
+      <div class="print-project-meta">
+        <div><span>Project</span><b>${printSafe(p.name)}</b></div>
+        <div><span>Job #</span><b>${printSafe(p.jobNo)}</b></div>
+        <div><span>Project Type</span><b>${printSafe(p.type)}</b></div>
+        <div><span>Projected Start</span><b>${printSafe(p.start)}</b></div>
+        <div><span>Project Coordinator</span><b>${printSafe(p.coordinator)}</b></div>
+        <div><span>Project Manager</span><b>${printSafe(p.manager)}</b></div>
+        <div><span>Preconstruction</span><b>${projectPct(p)}%</b></div>
+        <div><span>Open Issues</span><b>${printSafe(p.issues)}</b></div>
+      </div>
+    </div>`;
+}
+
+function preconSectionPrintHTML(p,i,addPageBreak=false){
+  const section=PRECON_SECTIONS[i];
+  const data=p.preconData[i];
+  if(!section || !data) return '';
+
+  const done=data.items.filter(x=>x.done).length;
+  const total=data.items.length;
+  const pct=sectionPct(p,i);
+  const status=data.status || (done===total && total ? 'Complete' : 'Not Marked');
+
+  return `
+    <section class="print-section ${addPageBreak?'print-page-break':''}">
+      <div class="print-section-title">
+        <div>
+          <h2>${i+1}. ${printSafe(section.title)}</h2>
+          <p>${printSafe(section.goal)}</p>
+        </div>
+        <div class="print-status">${pct}% · ${printSafe(status)}</div>
+      </div>
+
+      <div class="print-meta-grid">
+        <div class="print-meta-box">
+          <span>Done Means</span>
+          ${printSafe(section.doneMeans)}
+        </div>
+        <div class="print-meta-box">
+          <span>Handoff</span>
+          ${printSafe(section.handoff)}
+        </div>
+        <div class="print-meta-box full">
+          <span>Watch For</span>
+          ${printSafe(section.watchFor)}
+        </div>
+      </div>
+
+      <table class="print-table">
+        <thead>
+          <tr>
+            <th style="width:7%">Done</th>
+            <th style="width:43%">Checklist Item</th>
+            <th style="width:18%">Checked By</th>
+            <th>Notes / Details</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${data.items.map(item=>`
+            <tr>
+              <td class="center print-check">${item.done?'☑':'☐'}</td>
+              <td>${printSafe(item.text)}</td>
+              <td>${printSafe(item.checkedBy || '')}</td>
+              <td>${printSafe(item.notes || '')}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+
+      ${i===0 && data.specialPromises ? `
+        <div class="print-note">
+          <b>Customer Requests / Special Promises</b><br>
+          ${printSafe(data.specialPromises)}
+        </div>` : ''}
+
+      <div class="print-meta-grid" style="margin-top:9px">
+        <div class="print-meta-box full">
+          <span>Open Issue / Next Action</span>
+          ${printSafe(data.nextAction || '')}
+        </div>
+        <div class="print-meta-box">
+          <span>Follow-up By</span>
+          ${printSafe(data.followupBy || '')}
+        </div>
+        <div class="print-meta-box">
+          <span>Employee Initials / Date</span>
+          ${printSafe(data.initials || '')}${data.date ? ` · ${printSafe(data.date)}` : ''}
+        </div>
+      </div>
+    </section>`;
+}
+
+function poPrintHTML(p,po,index,addPageBreak=false){
+  const base=Number(po.builderCost||0)*.60;
+  const touch=Number(po.builderCost||0)*.05;
+  const reserve=Number(po.builderCost||0)*.35;
+  const total=po.splits.reduce((s,x)=>s+Number(x.pct||0),0);
+
+  return `
+    <section class="print-section ${addPageBreak?'print-page-break':''}">
+      <div class="print-section-title">
+        <div>
+          <h2>P.O. ${index+1}: ${printSafe(po.line)}</h2>
+          <p>${printSafe(po.id)} · Builder Cost ${money(po.builderCost)}</p>
+        </div>
+        <div class="print-status">${printSafe(po.status)}</div>
+      </div>
+
+      <div class="print-alloc-grid">
+        <div class="print-alloc"><span>Base Crew · 60%</span><b>${money(base)}</b></div>
+        <div class="print-alloc"><span>Touch-up · 5%</span><b>${money(touch)}</b></div>
+        <div class="print-alloc"><span>Reserve · 35%</span><b>${money(reserve)}</b></div>
+      </div>
+
+      <table class="print-table">
+        <thead>
+          <tr>
+            <th>Crew Member</th>
+            <th style="width:18%">Split %</th>
+            <th style="width:24%">Base Pay</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${po.splits.filter(s=>s.name || Number(s.pct||0)>0).map(s=>`
+            <tr>
+              <td>${printSafe(s.name || '')}</td>
+              <td>${printSafe(s.pct)}%</td>
+              <td>${money(base*(Number(s.pct||0)/100))}</td>
+            </tr>
+          `).join('')}
+          <tr>
+            <td><b>Total</b></td>
+            <td><b>${total}%</b></td>
+            <td></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="print-approval">
+        <div>
+          <span>Pre-Approval</span>
+          <b>${po.preApprovedBy ? `Pre-Approved by ${printSafe(po.preApprovedBy)}` : 'Waiting for Jony or Adair'}</b>
+        </div>
+        <div>
+          <span>Final Approval</span>
+          <b>${po.approvedBy ? `Approved by ${printSafe(po.approvedBy)}` : 'Waiting for Gio'}</b>
+        </div>
+      </div>
+    </section>`;
+}
+
+function launchPrint(html){
+  const root=document.getElementById('printRoot');
+  if(!root) return;
+
+  root.innerHTML=html;
+  document.body.classList.add('printing');
+
+  const cleanup=()=>{
+    document.body.classList.remove('printing');
+    root.innerHTML='';
+    window.removeEventListener('afterprint',cleanup);
+  };
+
+  window.addEventListener('afterprint',cleanup);
+
+  // A short delay makes iPhone/Safari render the print layout before opening print preview.
+  setTimeout(()=>{
+    window.print();
+    setTimeout(()=>{
+      if(document.body.classList.contains('printing')){
+        cleanup();
+      }
+    },1500);
+  },60);
+}
+
+function printPreconSection(i){
+  ensurePreconData();
+  const p=selectedProject();
+  launchPrint(
+    printProjectHeader(p,`Preconstruction · Section ${i+1}`) +
+    preconSectionPrintHTML(p,i,false) +
+    `<div class="print-footer">J&J Home Renovations · ${printSafe(p.jobNo)}</div>`
+  );
+}
+
+function printAllPreconstruction(){
+  ensurePreconData();
+  const p=selectedProject();
+  launchPrint(
+    printProjectHeader(p,'Complete Preconstruction Checklist') +
+    PRECON_SECTIONS.map((_,i)=>preconSectionPrintHTML(p,i,i>0)).join('') +
+    `<div class="print-footer">J&J Home Renovations · ${printSafe(p.jobNo)}</div>`
+  );
+}
+
+function printSinglePO(i){
+  const p=selectedProject();
+  const po=p.pos[i];
+  if(!po) return;
+  launchPrint(
+    printProjectHeader(p,'P.O. Split') +
+    poPrintHTML(p,po,i,false) +
+    `<div class="print-footer">J&J Home Renovations · ${printSafe(p.jobNo)}</div>`
+  );
+}
+
+function printAllPOs(){
+  const p=selectedProject();
+  if(!p.pos.length){
+    toast('No P.O. splits to print.');
+    return;
+  }
+  launchPrint(
+    printProjectHeader(p,'All P.O. Splits') +
+    p.pos.map((po,i)=>poPrintHTML(p,po,i,i>0)).join('') +
+    `<div class="print-footer">J&J Home Renovations · ${printSafe(p.jobNo)}</div>`
+  );
+}
+
+function printFullProjectPacket(){
+  ensurePreconData();
+  const p=selectedProject();
+  const poBlock=p.pos.length
+    ? p.pos.map((po,i)=>poPrintHTML(p,po,i,true)).join('')
+    : `<section class="print-section print-page-break"><div class="print-section-title"><div><h2>P.O. Splits</h2><p>No P.O. splits have been created for this project.</p></div></div></section>`;
+
+  launchPrint(
+    printProjectHeader(p,'Preconstruction + P.O. Split Packet') +
+    PRECON_SECTIONS.map((_,i)=>preconSectionPrintHTML(p,i,i>0)).join('') +
+    poBlock +
+    `<div class="print-footer">J&J Home Renovations · ${printSafe(p.jobNo)}</div>`
+  );
+}
+
 function renderPreconstruction(){
   ensurePreconData();
   const p=selectedProject();
@@ -3980,7 +4565,11 @@ function renderPreconstruction(){
         <h2>Preconstruction</h2>
         <p>Open any section, work through the checklist, then close it when you're done.</p>
       </div>
-      <button class="continue-btn" onclick="continuePreconstruction()">Continue Checklist</button>
+      <div class="page-title-actions">
+        <button class="btn btn-light" onclick="printAllPreconstruction()">Print All Preconstruction</button>
+        <button class="btn btn-light" onclick="printFullProjectPacket()">Print All Together</button>
+        <button class="continue-btn" onclick="continuePreconstruction()">Continue Checklist</button>
+      </div>
     </div>
 
     <div class="precon-overview-shell project-colored" style="--project-color:${color}">
@@ -4134,6 +4723,7 @@ function renderPreconstruction(){
                   </div>
 
                   <div class="po-actions" style="margin-top:10px">
+                    <button class="btn btn-light" onclick="printPreconSection(${i})">Print This Section</button>
                     <button class="btn btn-light" onclick="setOpenPreconSection(${i})">Close Section</button>
                   </div>
                 </div>
@@ -4224,6 +4814,97 @@ function setPOHubView(view){
   go('paybyline');
 }
 
+
+function estimateTypeOptions(current){
+  const values=['Labor','Material','Subcontractor','Other'];
+  const safe=current || 'Other';
+  if(!values.includes(safe)) values.push(safe);
+  return values.map(v=>`<option value="${esc(v)}" ${v===safe?'selected':''}>${esc(v)}</option>`).join('');
+}
+
+function estimateTableHTML(p,mode='hub'){
+  const isProject=mode==='project';
+  const toggleFn=isProject?'toggleEstimateSelectionProject':'toggleEstimateSelection';
+  const updateFn=isProject?'updateEstimate':'updateEstimateFromPOHub';
+
+  return `
+    <div class="estimate-table-hint">
+      <span>Imported estimate layout: Items · Description · Quantity · Unit · Unit cost · Cost type · Builder Cost</span>
+      <span>Scroll sideways on phone to see all columns.</span>
+    </div>
+
+    <div class="estimate-buildertrend-wrap">
+      <table class="estimate-buildertrend">
+        <thead>
+          <tr>
+            <th class="col-check"></th>
+            <th class="col-items">Items</th>
+            <th class="col-description">Description</th>
+            <th class="col-qty">Quantity</th>
+            <th class="col-unit">Unit</th>
+            <th class="col-unit-cost">Unit cost</th>
+            <th class="col-cost-type">Cost type</th>
+            <th class="col-builder-cost">Builder Cost</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${p.estimate.map((raw,i)=>{
+            const r=estimateRowDefaults(raw);
+            const selected=selectedEstimateRows.has(i);
+            return `
+              <tr class="${selected?'selected-row':''}">
+                <td class="col-check">
+                  <input class="estimate-select" type="checkbox" ${selected?'checked':''}
+                    onchange="${toggleFn}(${i},this.checked)">
+                </td>
+
+                <td class="col-items">
+                  <textarea class="estimate-cell-input estimate-item-input" rows="2"
+                    oninput="${updateFn}(${i},'line',this.value)">${esc(r.line)}</textarea>
+                </td>
+
+                <td class="col-description">
+                  <textarea class="estimate-cell-input" rows="2"
+                    oninput="${updateFn}(${i},'description',this.value)">${esc(r.description)}</textarea>
+                </td>
+
+                <td class="col-qty">
+                  <input class="estimate-cell-input estimate-number" type="number" step="any"
+                    value="${esc(r.quantity)}"
+                    oninput="${updateFn}(${i},'quantity',this.value)">
+                </td>
+
+                <td class="col-unit">
+                  <input class="estimate-cell-input"
+                    value="${esc(r.unit)}"
+                    oninput="${updateFn}(${i},'unit',this.value)">
+                </td>
+
+                <td class="col-unit-cost">
+                  <input class="estimate-cell-input estimate-number" type="number" step="0.01"
+                    value="${esc(r.unitCost)}"
+                    oninput="${updateFn}(${i},'unitCost',this.value)">
+                </td>
+
+                <td class="col-cost-type cost-type-cell">
+                  <select class="estimate-cell-input"
+                    onchange="${updateFn}(${i},'type',this.value)">
+                    ${estimateTypeOptions(r.type)}
+                  </select>
+                </td>
+
+                <td class="col-builder-cost builder-cost-cell">
+                  <input class="estimate-cell-input estimate-number" type="number" step="0.01"
+                    value="${esc(r.builderCost)}"
+                    oninput="${updateFn}(${i},'builderCost',this.value)">
+                </td>
+              </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>`;
+}
+
 function renderPayByLine(){
   const p=selectedProject();
   const color=projectColorHex(p.color);
@@ -4242,6 +4923,10 @@ function renderPayByLine(){
         <div class="eyebrow">Project P.Os</div>
         <h2>P.O. Splits</h2>
         <p>Start with the estimate, then generate and manage the labor splits here.</p>
+      </div>
+      <div class="page-title-actions">
+        <button class="btn btn-light" onclick="printAllPOs()">Print All P.Os</button>
+        <button class="btn btn-light" onclick="printFullProjectPacket()">Print All Together</button>
       </div>
     </div>
 
@@ -4302,7 +4987,7 @@ function renderPayByLine(){
       </div>
 
       <div class="estimate-upload-note">
-        Upload an Excel or CSV estimate. The app will import the estimate, identify labor lines, and build the labor P.O. splits automatically. You can still change any line between Labor and Material before reviewing the P.O.s.
+        Upload an Excel or CSV estimate. The app will keep the Buildertrend-style columns — Items, Description, Quantity, Unit, Unit cost, Cost type, and Builder Cost — then use Cost type = Labor to build the labor P.O. splits.
       </div>
 
       <div class="toolbar">
@@ -4331,27 +5016,7 @@ function renderPayByLine(){
           </div>
         `:''}
 
-        <div class="table-wrap"><table>
-          <thead><tr><th style="width:42px"></th><th>Line Item</th><th>Type</th><th>Builder Cost</th><th></th></tr></thead>
-          <tbody>
-            ${p.estimate.map((r,i)=>`
-              <tr class="${selectedEstimateRows.has(i)?'estimate-selected-row':''}">
-                <td style="text-align:center">
-                  <input class="estimate-select" type="checkbox" ${selectedEstimateRows.has(i)?'checked':''} onchange="toggleEstimateSelection(${i},this.checked)">
-                </td>
-                <td><input class="input" value="${esc(r.line)}" oninput="updateEstimateFromPOHub(${i},'line',this.value)"></td>
-                <td>
-                  <select class="input" onchange="updateEstimateFromPOHub(${i},'type',this.value)">
-                    <option ${r.type==='Labor'?'selected':''}>Labor</option>
-                    <option ${r.type==='Material'?'selected':''}>Material</option>
-                  </select>
-                </td>
-                <td><input class="input" type="number" value="${r.builderCost}" oninput="updateEstimateFromPOHub(${i},'builderCost',this.value)"></td>
-                <td><button class="btn btn-danger" onclick="deleteEstimateFromPOHub(${i})">Remove</button></td>
-              </tr>
-            `).join('')}
-          </tbody>
-        </table></div>
+${estimateTableHTML(p,'hub')}
       `:`<div class="empty">No estimate loaded yet.<br><br><button class="btn btn-navy" onclick="openEstimateUpload()">Upload Estimate</button></div>`}
 
       <div class="stats" style="margin-top:12px">
@@ -4501,6 +5166,25 @@ function estimateMoney(v){
   return negative ? -n : n;
 }
 
+
+function estimateQuantity(v){
+  if(v===null || v===undefined || v==='') return '';
+  const n=Number(String(v).replace(/,/g,''));
+  return Number.isFinite(n) ? n : estimateCellText(v);
+}
+
+function estimateRowDefaults(r={}){
+  return {
+    line:r.line ?? r.item ?? 'New Line Item',
+    description:r.description ?? '',
+    quantity:r.quantity ?? '',
+    unit:r.unit ?? '',
+    unitCost:r.unitCost ?? '',
+    type:r.type ?? r.costType ?? 'Labor',
+    builderCost:Number(r.builderCost ?? 0)
+  };
+}
+
 function likelyLaborLine(description,rowText,typeText){
   const d=estimateNorm(description);
   const all=estimateNorm(rowText);
@@ -4525,41 +5209,62 @@ function likelyLaborLine(description,rowText,typeText){
 }
 
 function findEstimateColumns(rows){
-  const maxRows=Math.min(rows.length,30);
-  const lineHeaders=['line item','item','description','work description','scope','name','cost code'];
-  const costHeaders=['builder cost','estimated cost','total cost','cost','amount','unit cost'];
-  const typeHeaders=['cost type','item type','type','category'];
+  const maxRows=Math.min(rows.length,40);
 
-  let best={score:-1,rowIndex:-1,lineIndex:-1,costIndex:-1,typeIndex:-1};
+  const headers={
+    item:['items','item','line item','name'],
+    description:['description','work description','scope'],
+    quantity:['quantity','qty'],
+    unit:['unit','uom'],
+    unitCost:['unit cost','unit price'],
+    costType:['cost type','item type','type','category'],
+    builderCost:['builder cost','estimated cost','total cost','amount','cost']
+  };
+
+  let best={
+    score:-1,rowIndex:-1,
+    itemIndex:-1,descriptionIndex:-1,quantityIndex:-1,unitIndex:-1,
+    unitCostIndex:-1,costTypeIndex:-1,builderCostIndex:-1
+  };
 
   for(let r=0;r<maxRows;r++){
     const row=rows[r]||[];
     const normalized=row.map(estimateNorm);
 
-    const findIndexByHeaders=(headers)=>{
-      for(const h of headers){
+    const findHeader=(candidates)=>{
+      for(const h of candidates){
         const exact=normalized.findIndex(v=>v===h);
         if(exact>=0) return exact;
       }
-      for(const h of headers){
+      for(const h of candidates){
         const partial=normalized.findIndex(v=>v.includes(h));
         if(partial>=0) return partial;
       }
       return -1;
     };
 
-    const li=findIndexByHeaders(lineHeaders);
-    const ci=findIndexByHeaders(costHeaders);
-    const ti=findIndexByHeaders(typeHeaders);
+    const candidate={
+      rowIndex:r,
+      itemIndex:findHeader(headers.item),
+      descriptionIndex:findHeader(headers.description),
+      quantityIndex:findHeader(headers.quantity),
+      unitIndex:findHeader(headers.unit),
+      unitCostIndex:findHeader(headers.unitCost),
+      costTypeIndex:findHeader(headers.costType),
+      builderCostIndex:findHeader(headers.builderCost)
+    };
 
     let score=0;
-    if(li>=0) score+=3;
-    if(ci>=0) score+=3;
-    if(ti>=0) score+=1;
-    if(normalized.some(v=>v.includes('estimate'))) score+=0.25;
+    if(candidate.itemIndex>=0) score+=4;
+    if(candidate.descriptionIndex>=0) score+=2;
+    if(candidate.quantityIndex>=0) score+=1;
+    if(candidate.unitIndex>=0) score+=1;
+    if(candidate.unitCostIndex>=0) score+=2;
+    if(candidate.costTypeIndex>=0) score+=3;
+    if(candidate.builderCostIndex>=0) score+=4;
 
     if(score>best.score){
-      best={score,rowIndex:r,lineIndex:li,costIndex:ci,typeIndex:ti};
+      best={...candidate,score};
     }
   }
 
@@ -4569,10 +5274,10 @@ function findEstimateColumns(rows){
 function parseEstimateRows(rows){
   const cols=findEstimateColumns(rows);
 
-  if(cols.lineIndex<0 || cols.costIndex<0){
+  if(cols.itemIndex<0 || cols.builderCostIndex<0){
     return {
       items:[],
-      warning:'I could not find the Line Item/Description and Cost columns in this estimate.'
+      warning:'I could not find the Items and Builder Cost columns in this estimate.'
     };
   }
 
@@ -4580,28 +5285,64 @@ function parseEstimateRows(rows){
 
   for(let r=cols.rowIndex+1;r<rows.length;r++){
     const row=rows[r]||[];
-    const description=estimateCellText(row[cols.lineIndex]);
-    const cost=estimateMoney(row[cols.costIndex]);
 
-    if(!description || !Number.isFinite(cost)) continue;
+    const item=estimateCellText(row[cols.itemIndex]);
+    const description=cols.descriptionIndex>=0 ? estimateCellText(row[cols.descriptionIndex]) : '';
+    const quantity=cols.quantityIndex>=0 ? estimateQuantity(row[cols.quantityIndex]) : '';
+    const unit=cols.unitIndex>=0 ? estimateCellText(row[cols.unitIndex]) : '';
+    const unitCost=cols.unitCostIndex>=0 ? estimateMoney(row[cols.unitCostIndex]) : NaN;
+    const typeText=cols.costTypeIndex>=0 ? estimateCellText(row[cols.costTypeIndex]) : '';
+    const rawBuilderCost=estimateMoney(row[cols.builderCostIndex]);
 
+    if(!item) continue;
+
+    const ni=estimateNorm(item);
     const nd=estimateNorm(description);
-    if(!nd) continue;
 
     const skipSignals=[
-      'subtotal','grand total','estimate total','total estimate','markup',
+      'totals','subtotal','grand total','estimate total','total estimate',
       'sales tax','tax total','profit','overhead'
     ];
-    if(skipSignals.some(x=>nd===x || nd.startsWith(x))) continue;
+    if(skipSignals.some(x=>ni===x || ni.startsWith(x))) continue;
 
-    const typeText=cols.typeIndex>=0 ? estimateCellText(row[cols.typeIndex]) : '';
+    // Ignore Buildertrend category/group total rows so costs are not double-counted.
+    // Real estimate line items normally have a cost type, quantity, description, or unit cost.
+    const hasDetail=
+      !!typeText ||
+      description!=='' ||
+      quantity!=='' ||
+      Number.isFinite(unitCost);
+
+    if(!hasDetail) continue;
+
+    let builderCost=rawBuilderCost;
+    if(!Number.isFinite(builderCost) && Number.isFinite(unitCost)){
+      const q=Number(quantity);
+      builderCost=Number.isFinite(q) && q!==0 ? unitCost*q : unitCost;
+    }
+    if(!Number.isFinite(builderCost)) builderCost=0;
+
     const rowText=row.map(estimateCellText).join(' | ');
-    const isLabor=likelyLaborLine(description,rowText,typeText);
+    const isLabor=likelyLaborLine(item + ' ' + description,rowText,typeText);
+
+    let normalizedType=typeText.trim();
+    if(!normalizedType){
+      normalizedType=isLabor?'Labor':'Material';
+    }else{
+      const nt=estimateNorm(normalizedType);
+      if(nt==='labor') normalizedType='Labor';
+      else if(nt==='material' || nt==='materials') normalizedType='Material';
+      else if(nt.includes('subcontract')) normalizedType='Subcontractor';
+    }
 
     items.push({
-      line:description,
-      type:isLabor?'Labor':'Material',
-      builderCost:Number(cost)
+      line:item,
+      description,
+      quantity,
+      unit,
+      unitCost:Number.isFinite(unitCost)?Number(unitCost):'',
+      type:normalizedType,
+      builderCost:Number(builderCost)
     });
   }
 
@@ -4699,7 +5440,7 @@ function loadSampleEstimateFromPOHub(){
   go('paybyline');
 }
 function addEstimateLineFromPOHub(){
-  selectedProject().estimate.push({line:'New Line Item',type:'Labor',builderCost:0});
+  selectedProject().estimate.push({line:'New Line Item',description:'',quantity:1,unit:'--',unitCost:0,type:'Labor',builderCost:0});
   saveState(false);
   renderAll();
   poHubView='estimate';
@@ -4708,11 +5449,21 @@ function addEstimateLineFromPOHub(){
 }
 function updateEstimateFromPOHub(i,key,val){
   const p=selectedProject();
-  p.estimate[i][key]=key==='builderCost'?Number(val):val;
+  const numericFields=['builderCost','unitCost','quantity'];
+  p.estimate[i][key]=numericFields.includes(key)
+    ? (val===''?'':Number(val))
+    : val;
+
+  // Cost type and builder cost affect labor P.O. calculations immediately.
   saveState(false);
   renderDashboard();
   renderEstimates();
-  renderPayByLine();
+
+  // Avoid re-rendering the full Estimate table while typing text fields,
+  // which keeps cursor/focus smooth on desktop and iPhone.
+  if(key==='type' || key==='builderCost'){
+    renderPayByLine();
+  }
 }
 function deleteEstimateFromPOHub(i){
   selectedProject().estimate.splice(i,1);
@@ -4858,18 +5609,7 @@ function renderProjectPanel(){
         </div>
       `:''}
 
-      <div class="table-wrap"><table>
-        <thead><tr><th style="width:42px"></th><th>Line Item</th><th>Type</th><th>Builder Cost</th><th></th></tr></thead>
-        <tbody>${p.estimate.map((r,i)=>`<tr class="${selectedEstimateRows.has(i)?'estimate-selected-row':''}">
-          <td style="text-align:center"><input class="estimate-select" type="checkbox" ${selectedEstimateRows.has(i)?'checked':''} onchange="toggleEstimateSelectionProject(${i},this.checked)"></td>
-          <td><input class="input" value="${esc(r.line)}" oninput="updateEstimate(${i},'line',this.value)"></td>
-          <td><select class="input" onchange="updateEstimate(${i},'type',this.value)">
-            <option ${r.type==='Labor'?'selected':''}>Labor</option><option ${r.type==='Material'?'selected':''}>Material</option>
-          </select></td>
-          <td><input class="input" type="number" value="${r.builderCost}" oninput="updateEstimate(${i},'builderCost',this.value)"></td>
-          <td><button class="btn btn-danger" onclick="deleteEstimate(${i})">Remove</button></td>
-        </tr>`).join('')}</tbody>
-      </table></div>`:`<div class="empty">No estimate loaded yet.<br><br><button class="btn btn-navy" onclick="openEstimateUpload()">Upload Estimate</button></div>`}
+${estimateTableHTML(p,'project')}`:`<div class="empty">No estimate loaded yet.<br><br><button class="btn btn-navy" onclick="openEstimateUpload()">Upload Estimate</button></div>`}
     `;
   } else if(projectTab==='laborpos'){
     c.innerHTML = p.pos.length ? `<div class="po-list">${p.pos.map((po,i)=>renderPO(po,i)).join('')}</div>` :
@@ -5057,7 +5797,7 @@ function renderPO(po,i){
   const assigned=po.splits.filter(x=>Number(x.pct||0)>0 && x.name).map(x=>`${x.name} ${x.pct}%`).join(' · ') || 'No crew assigned';
   const expanded=openPOIndex==='all' || openPOIndex===i;
 
-  const preApproveDisabled=!canPreApprove() || total!==100 || po.status==='Approved';
+  const preApproveDisabled=!canPreApprove() || total!==100 || po.status!=='Draft';
   const approveDisabled=!canFinalApprove() || po.status!=='Pre-Approved';
 
   const preApproveHelp = canPreApprove()
@@ -5067,6 +5807,20 @@ function renderPO(po,i){
   const approveHelp = canFinalApprove()
     ? (po.status==='Pre-Approved' ? 'Ready for Gio final approval.' : 'P.O. must be pre-approved first.')
     : 'Only Gio can give final approval.';
+
+  const canUndoPreApproval=po.status==='Pre-Approved' && canPreApprove();
+  const canUndoFinalApproval=po.status==='Approved' && canFinalApprove();
+
+  const undoHelp =
+    po.status==='Approved'
+      ? (canFinalApprove()
+          ? 'Gio can return this P.O. to Pre-Approved.'
+          : 'Only Gio can undo final approval.')
+      : (po.status==='Pre-Approved'
+          ? (canPreApprove()
+              ? 'Jony or Adair can return this P.O. to Draft.'
+              : 'Only Jony or Adair can undo pre-approval.')
+          : '');
 
   return `<div class="card po ${expanded?'expanded':''} ${isPOSelected(po)?'po-selected':''}">
     <div class="po-head" onclick="togglePO(${i})">
@@ -5086,6 +5840,7 @@ function renderPO(po,i){
         <span><b>${money(base)}</b> base</span>
         <span><b>${total}%</b> split</span>
         <span class="pill ${poStatusClass(po.status)}">${po.status}</span>
+        <button class="btn btn-light" style="padding:7px 9px;font-size:10px" onclick="event.stopPropagation();printSinglePO(${i})">Print</button>
         ${deletePOIndex===i
           ? `<button class="btn btn-danger" style="padding:7px 9px;font-size:10px" onclick="event.stopPropagation();confirmDeletePO(${i})">Confirm Delete</button>
              <button class="btn btn-light" style="padding:7px 9px;font-size:10px" onclick="event.stopPropagation();cancelDeletePO()">Cancel</button>`
@@ -5132,7 +5887,14 @@ function renderPO(po,i){
       </div>
 
       <div class="po-actions">
-        <button class="btn btn-light" onclick="event.stopPropagation();setPOStatus(${i},'Draft')">Draft</button>
+        ${po.status==='Pre-Approved'
+          ? `<button class="btn btn-light" ${canUndoPreApproval?'':'disabled'} title="${undoHelp}" onclick="event.stopPropagation();undoPOApproval(${i})">Undo Pre-Approval</button>`
+          : ''
+        }
+        ${po.status==='Approved'
+          ? `<button class="btn btn-light" ${canUndoFinalApproval?'':'disabled'} title="${undoHelp}" onclick="event.stopPropagation();undoPOApproval(${i})">Undo Approval</button>`
+          : ''
+        }
         <button class="btn btn-navy" ${preApproveDisabled?'disabled':''} title="${preApproveHelp}" onclick="event.stopPropagation();setPOStatus(${i},'Pre-Approved')">Pre-Approve</button>
         <button class="btn btn-gold" ${approveDisabled?'disabled':''} title="${approveHelp}" onclick="event.stopPropagation();setPOStatus(${i},'Approved')">Approve</button>
       </div>
@@ -5218,13 +5980,18 @@ function loadSampleEstimate(){
   saveState(false); renderAll(); renderProject(); projectTab='estimate'; renderProject();
 }
 function addEstimateLine(){
-  selectedProject().estimate.push({line:'New Line Item',type:'Labor',builderCost:0});
+  selectedProject().estimate.push({line:'New Line Item',description:'',quantity:1,unit:'--',unitCost:0,type:'Labor',builderCost:0});
   saveState(false); renderAll(); renderProject();
 }
 function updateEstimate(i,key,val){
   const p=selectedProject();
-  p.estimate[i][key]=key==='builderCost'?Number(val):val;
-  saveState(false); renderDashboard(); renderPayByLine();
+  const numericFields=['builderCost','unitCost','quantity'];
+  p.estimate[i][key]=numericFields.includes(key)
+    ? (val===''?'':Number(val))
+    : val;
+  saveState(false);
+  renderDashboard();
+  if(key==='type' || key==='builderCost') renderPayByLine();
 }
 function deleteEstimate(i){
   selectedProject().estimate.splice(i,1); saveState(false); renderAll(); renderProject();
@@ -5288,6 +6055,48 @@ function confirmDeletePO(i){
 }
 
 
+
+function undoPOApproval(i){
+  ensureUserData();
+  const po=selectedProject().pos[i];
+  if(!po) return;
+
+  if(po.status==='Approved'){
+    if(!canFinalApprove()){
+      alert('Only Gio can undo final approval.');
+      return;
+    }
+
+    po.status='Pre-Approved';
+    po.approvedBy='';
+    toast('Approval removed — P.O. returned to Pre-Approved');
+  }else if(po.status==='Pre-Approved'){
+    if(!canPreApprove()){
+      alert('Only Jony or Adair can undo pre-approval.');
+      return;
+    }
+
+    po.status='Draft';
+    po.preApprovedBy='';
+    po.approvedBy='';
+    toast('Pre-approval removed — P.O. returned to Draft');
+  }else{
+    return;
+  }
+
+  saveState(false);
+  renderAll();
+
+  if(document.getElementById('paybyline')?.classList.contains('active')){
+    poHubView='splits';
+    renderPayByLine();
+    go('paybyline');
+  }else{
+    projectTab='laborpos';
+    renderProject();
+  }
+}
+
 function setPOStatus(i,status){
   ensureUserData();
   const po=selectedProject().pos[i];
@@ -5296,6 +6105,14 @@ function setPOStatus(i,status){
   const splitTotal=po.splits.reduce((s,x)=>s+Number(x.pct||0),0);
 
   if(status==='Draft'){
+    if(po.status==='Approved'){
+      alert('Gio must undo final approval first.');
+      return;
+    }
+    if(po.status==='Pre-Approved' && !canPreApprove()){
+      alert('Only Jony or Adair can return a pre-approved P.O. to Draft.');
+      return;
+    }
     po.status='Draft';
     po.preApprovedBy='';
     po.approvedBy='';

@@ -1,31 +1,20 @@
-J&J Operations PWA
+J&J Operations — Combined Update + Undo Approval
 
-This package is ready to host as a static web app.
+Includes the prior combined update:
+- New Project creation
+- Preconstruction / P.O. printing
+- Buildertrend-style Estimate without Markup
 
-Files:
-- index.html — current J&J Operations prototype
-- manifest.webmanifest — installable PWA configuration
-- service-worker.js — offline/app-shell caching
-- icons/ — app icons
+New P.O. approval behavior:
+- Jony or Adair: Draft -> Pre-Approved
+- Jony or Adair: Undo Pre-Approval -> Draft
+- Gio: Pre-Approved -> Approved
+- Gio: Undo Approval -> Pre-Approved
+- An Approved P.O. cannot jump directly back to Draft
 
-Important current limitation:
-This version still stores project data locally in each user's browser.
-Jony, Adair, and Gio can all open/install the app, but their changes will NOT sync
-with each other until the shared database + login phase is added.
+GitHub:
+Upload index.html and service-worker.js and commit directly to main.
 
-Recommended next step:
-Host this folder, then add authentication and a shared database while keeping the same URL.
-
-
-Update 2026-09-03
-- Immediate user selection for Jony, Adair, or Gio
-- Jobs can be deleted from the project sidebar
-- Estimate page uses Upload Estimate instead of sample estimate
-- Supports .xls, .xlsx, and .csv estimate uploads
-- Imported estimate lines are classified as Labor or Material
-- Labor lines automatically create/update P.O. Splits
-- P.O approval permissions remain Jony/Adair pre-approve, Gio approve
-
-Note:
-The current sign-in is still prototype identity selection, not password authentication.
-Shared live data still requires the future database/login phase.
+Supabase:
+If the shared cloud database is already set up, also run
+JJ_Supabase_Unapprove_Update.sql in the Supabase SQL Editor.
