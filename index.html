@@ -2542,6 +2542,60 @@ textarea.estimate-cell-input{
   }
 }
 
+
+.estimate-po-toolbar{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  flex-wrap:wrap;
+  padding:10px 11px;
+  margin:10px 0;
+  background:#F8FAFC;
+  border:1px solid #D8DFE9;
+  border-radius:10px;
+}
+.estimate-po-toolbar .po-selection-count{
+  margin-left:auto;
+  color:var(--muted);
+  font-size:10px;
+  font-weight:800;
+}
+.estimate-po-check{
+  width:18px;
+  height:18px;
+  accent-color:var(--gold);
+}
+.estimate-buildertrend .col-po{
+  width:62px;
+  text-align:center;
+}
+.estimate-buildertrend .col-delete{
+  width:62px;
+  text-align:center;
+}
+.estimate-po-created{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-width:44px;
+  padding:4px 6px;
+  border-radius:999px;
+  background:#EAF4EE;
+  color:#3E6F54;
+  font-size:8px;
+  font-weight:900;
+  text-transform:uppercase;
+}
+.estimate-po-disabled{
+  opacity:.35;
+}
+@media(max-width:560px){
+  .estimate-po-toolbar .po-selection-count{
+    width:100%;
+    margin-left:0;
+  }
+}
+
 </style>
 
   <meta name="theme-color" content="#14234A">
@@ -3061,6 +3115,7 @@ let deletePOIndex=null;
 let selectedPOIds=new Set();
 let bulkDeletePending=false;
 let selectedEstimateRows=new Set();
+let selectedEstimatePORows=new Set();
 let estimateDeletePending=false;
 let poMenuOpen=false;
 
@@ -3376,6 +3431,7 @@ function openProjectFromSidebar(id){
     selectedPOIds.clear();
     bulkDeletePending=false;
     selectedEstimateRows.clear();
+    selectedEstimatePORows.clear();
     estimateDeletePending=false;
     saveState(false);
     renderAll();
@@ -3568,6 +3624,7 @@ function createNewProject(){
   openPOIndex=null;
   selectedPOIds.clear();
   selectedEstimateRows.clear();
+  selectedEstimatePORows.clear();
 
   saveState(false);
   closeNewProject();
@@ -3750,6 +3807,7 @@ function importAppBackup(input){
 
       if(typeof selectedPOIds!=='undefined') selectedPOIds.clear();
       if(typeof selectedEstimateRows!=='undefined') selectedEstimateRows.clear();
+      if(typeof selectedEstimatePORows!=='undefined') selectedEstimatePORows.clear();
       if(typeof bulkDeletePending!=='undefined') bulkDeletePending=false;
       if(typeof estimateDeletePending!=='undefined') estimateDeletePending=false;
       if(typeof deletePOIndex!=='undefined') deletePOIndex=null;
@@ -4099,9 +4157,9 @@ function projectNextAction(p){
 
   if(!p.pos?.length && laborLines(p).length){
     return {
-      title:'Generate P.O. Splits',
-      detail:`${laborLines(p).length} labor line${laborLines(p).length===1?'':'s'} ready`,
-      label:'Create P.Os',
+      title:'Select P.O. Lines',
+      detail:`${laborLines(p).length} Labor line${laborLines(p).length===1?'':'s'} available in the Estimate`,
+      label:'Open Estimate',
       action:`openProjectPOHub(${p.id},'estimate')`
     };
   }
@@ -4822,6 +4880,145 @@ function estimateTypeOptions(current){
   return values.map(v=>`<option value="${esc(v)}" ${v===safe?'selected':''}>${esc(v)}</option>`).join('');
 }
 
+
+function estimateRowTitle(row){
+  return String(row?.title ?? row?.line ?? '').trim();
+}
+
+function estimateRowHasPO(p,row){
+  const title=estimateRowTitle(row);
+  if(!title) return false;
+  return (p.pos||[]).some(po=>String(po.line||'').trim()===title);
+}
+
+function eligibleEstimatePOIndexes(p){
+  const indexes=[];
+  p.estimate.forEach((row,i)=>{
+    const isLabor=estimateNorm(row.type)==='labor';
+    const alreadyCreated=estimateRowHasPO(p,row);
+    if(isLabor && !alreadyCreated) indexes.push(i);
+  });
+  return indexes;
+}
+
+function selectedEstimatePOCount(){
+  return [...selectedEstimatePORows].filter(i=>{
+    const p=selectedProject();
+    const row=p.estimate[i];
+    return row && estimateNorm(row.type)==='labor' && !estimateRowHasPO(p,row);
+  }).length;
+}
+
+function toggleEstimatePOSelection(i,checked){
+  const p=selectedProject();
+  const row=p.estimate[i];
+  if(!row) return;
+
+  if(estimateNorm(row.type)!=='labor'){
+    toast('Only Labor lines can create P.O. Splits.');
+    selectedEstimatePORows.delete(i);
+    renderPayByLine();
+    return;
+  }
+
+  if(estimateRowHasPO(p,row)){
+    selectedEstimatePORows.delete(i);
+    toast('That P.O. already exists.');
+    renderPayByLine();
+    return;
+  }
+
+  if(checked) selectedEstimatePORows.add(i);
+  else selectedEstimatePORows.delete(i);
+
+  renderPayByLine();
+}
+
+function toggleAllLaborForPO(checked){
+  const p=selectedProject();
+  selectedEstimatePORows.clear();
+
+  if(checked){
+    eligibleEstimatePOIndexes(p).forEach(i=>selectedEstimatePORows.add(i));
+  }
+
+  renderPayByLine();
+}
+
+function clearEstimatePOSelection(){
+  selectedEstimatePORows.clear();
+  renderPayByLine();
+}
+
+function nextProjectPOId(p){
+  let n=1;
+  const used=new Set((p.pos||[]).map(po=>String(po.id||'')));
+
+  while(used.has(`${p.jobNo}-L${String(n).padStart(2,'0')}`)){
+    n++;
+  }
+
+  return `${p.jobNo}-L${String(n).padStart(2,'0')}`;
+}
+
+function createPOsFromSelectedEstimateRows(){
+  const p=selectedProject();
+
+  const indexes=[...selectedEstimatePORows]
+    .sort((a,b)=>a-b)
+    .filter(i=>{
+      const row=p.estimate[i];
+      return row &&
+        estimateNorm(row.type)==='labor' &&
+        !estimateRowHasPO(p,row);
+    });
+
+  if(!indexes.length){
+    toast('Select at least one Labor line for P.O. Splits.');
+    return;
+  }
+
+  let created=0;
+
+  indexes.forEach(i=>{
+    const row=p.estimate[i];
+    const title=estimateRowTitle(row);
+    if(!title || estimateRowHasPO(p,row)) return;
+
+    p.pos.push({
+      id:nextProjectPOId(p),
+      line:title,
+      builderCost:Number(row.builderCost||0),
+      status:'Draft',
+      preApprovedBy:'',
+      approvedBy:'',
+      splits:[
+        {name:'Adair',pct:50},
+        {name:'Crew Member 2',pct:50},
+        {name:'',pct:0},
+        {name:'',pct:0}
+      ]
+    });
+
+    created++;
+  });
+
+  selectedEstimatePORows.clear();
+
+  if(p.precon?.length>1){
+    p.precon[1]=Math.max(Number(p.precon[1]||0),95);
+  }
+
+  saveState(false);
+  renderAll();
+  poHubView='splits';
+  openPOIndex=null;
+  renderPayByLine();
+  go('paybyline');
+
+  toast(`${created} P.O. Split${created===1?'':'s'} created`);
+}
+
 function estimateTableHTML(p,mode='hub'){
   const isProject=mode==='project';
   const toggleFn=isProject?'toggleEstimateSelectionProject':'toggleEstimateSelection';
@@ -4837,7 +5034,8 @@ function estimateTableHTML(p,mode='hub'){
       <table class="estimate-buildertrend">
         <thead>
           <tr>
-            <th class="col-check"></th>
+            <th class="col-delete">Delete</th>
+            <th class="col-po">P.O.</th>
             <th class="col-title">Title</th>
             <th class="col-description">Description</th>
             <th class="col-qty">Quantity</th>
@@ -4851,11 +5049,27 @@ function estimateTableHTML(p,mode='hub'){
           ${p.estimate.map((raw,i)=>{
             const r=estimateRowDefaults(raw);
             const selected=selectedEstimateRows.has(i);
+            const poSelected=selectedEstimatePORows.has(i);
+            const poEligible=estimateNorm(r.type)==='labor';
+            const poCreated=estimateRowHasPO(p,raw);
+
             return `
               <tr class="${selected?'selected-row':''}">
-                <td class="col-check">
+                <td class="col-delete">
                   <input class="estimate-select" type="checkbox" ${selected?'checked':''}
                     onchange="${toggleFn}(${i},this.checked)">
+                </td>
+
+                <td class="col-po">
+                  ${poCreated
+                    ? `<span class="estimate-po-created">Created</span>`
+                    : `<input class="estimate-po-check ${poEligible?'':'estimate-po-disabled'}"
+                        type="checkbox"
+                        ${poSelected?'checked':''}
+                        ${poEligible?'':'disabled'}
+                        title="${poEligible?'Select this Labor line for a P.O. Split':'Change Cost type to Labor to create a P.O.'}"
+                        onchange="toggleEstimatePOSelection(${i},this.checked)">`
+                  }
                 </td>
 
                 <td class="col-title">
@@ -4987,14 +5201,31 @@ function renderPayByLine(){
       </div>
 
       <div class="estimate-upload-note">
-        Upload an Excel or CSV estimate. The app will pull each line's Title and Description from the estimate and show Title, Description, Quantity, Unit, Unit cost, Cost type, and Builder Cost. Cost type = Labor drives the P.O. splits.
+        Upload an Excel or CSV estimate. The app will pull Title, Description, Quantity, Unit, Unit cost, Cost type, and Builder Cost. After upload, use the P.O. checkbox to choose only the Labor lines you want turned into P.O. Splits.
       </div>
 
       <div class="toolbar">
         <button class="btn btn-navy" onclick="openEstimateUpload()">Upload Estimate</button>
         <button class="btn btn-light" onclick="addEstimateLineFromPOHub()">+ Add Line</button>
-        <button class="btn btn-gold" onclick="generatePOsFromPOHub()">Generate P.O. Splits</button>
       </div>
+
+      ${p.estimate.length ? `
+        <div class="estimate-po-toolbar">
+          <label class="estimate-select-all">
+            <input class="estimate-po-check" type="checkbox"
+              ${eligibleEstimatePOIndexes(p).length &&
+                eligibleEstimatePOIndexes(p).every(i=>selectedEstimatePORows.has(i))
+                  ? 'checked' : ''}
+              onchange="toggleAllLaborForPO(this.checked)">
+            Select All Labor for P.O.
+          </label>
+
+          <button class="btn btn-light" onclick="clearEstimatePOSelection()">Clear P.O. Selection</button>
+          <button class="btn btn-gold" onclick="createPOsFromSelectedEstimateRows()">Create Selected P.O.s</button>
+
+          <span class="po-selection-count">${selectedEstimatePOCount()} selected for P.O.</span>
+        </div>
+      ` : ''}
 
       ${p.estimate.length?`
         <div class="estimate-bulk-bar">
@@ -5073,9 +5304,8 @@ ${estimateTableHTML(p,'hub')}
       ? `<div class="po-list">${p.pos.map((po,i)=>renderPO(po,i)).join('')}</div>`
       : `<div class="empty">
           <strong>No P.O. splits generated yet.</strong>
-          Review the estimate first, then generate the labor P.O. splits.<br><br>
-          <button class="btn btn-light" onclick="setPOHubView('estimate')">Open Estimate</button>
-          <button class="btn btn-gold" onclick="generatePOsFromPOHub()">Generate P.O. Splits</button>
+          Open the Estimate and check the Labor lines you want to turn into P.O. Splits.<br><br>
+          <button class="btn btn-gold" onclick="setPOHubView('estimate')">Select Estimate Lines</button>
         </div>`
     }
     </div>
@@ -5122,6 +5352,7 @@ function confirmEstimateBulkDelete(){
 
   const count=indexes.length;
   selectedEstimateRows.clear();
+  selectedEstimatePORows.clear();
   estimateDeletePending=false;
 
   saveState(false);
@@ -5348,20 +5579,21 @@ function parseEstimateRows(rows){
   return {items,warning:''};
 }
 
-function syncPOsFromLabor(p){
-  const labor=laborLines(p);
+function syncPOsFromLabor(p,rows=laborLines(p)){
+  let created=0;
 
-  p.pos=labor.map((r,i)=>{
-    const existing=p.pos.find(x=>x.line===(r.title ?? r.line));
+  rows.forEach(r=>{
+    const line=r.title ?? r.line;
+    const existing=p.pos.find(x=>x.line===line);
 
     if(existing){
       existing.builderCost=Number(r.builderCost||0);
-      return existing;
+      return;
     }
 
-    return {
-      id:`${p.jobNo}-L${String(i+1).padStart(2,'0')}`,
-      line:r.title ?? r.line,
+    p.pos.push({
+      id:nextProjectPOId(p),
+      line,
       builderCost:Number(r.builderCost||0),
       status:'Draft',
       preApprovedBy:'',
@@ -5372,10 +5604,12 @@ function syncPOsFromLabor(p){
         {name:'',pct:0},
         {name:'',pct:0}
       ]
-    };
+    });
+
+    created++;
   });
 
-  return labor.length;
+  return created;
 }
 
 async function importEstimateFile(input){
@@ -5406,8 +5640,9 @@ async function importEstimateFile(input){
     const p=selectedProject();
     p.estimate=parsed.items;
 
-    const laborCount=syncPOsFromLabor(p);
+    const laborCount=laborLines(p).length;
     selectedEstimateRows.clear();
+    selectedEstimatePORows.clear();
     selectedPOIds.clear();
     estimateDeletePending=false;
     bulkDeletePending=false;
@@ -5419,10 +5654,10 @@ async function importEstimateFile(input){
     renderPayByLine();
     go('paybyline');
 
-    toast(`Estimate uploaded · ${parsed.items.length} lines · ${laborCount} labor P.O.${laborCount===1?'':'s'} ready`);
+    toast(`Estimate uploaded · ${parsed.items.length} lines · ${laborCount} Labor line${laborCount===1?'':'s'} available for P.O. selection`);
 
     if(!laborCount){
-      alert('The estimate was imported, but no labor lines were identified automatically. Change the Type column to Labor for any labor rows, then click Generate P.O. Splits.');
+      alert('The estimate was imported, but no Labor lines were identified. Change Cost type to Labor on the lines you want to use for P.O. Splits.');
     }
   }catch(err){
     console.error(err);
@@ -5455,6 +5690,7 @@ function updateEstimateFromPOHub(i,key,val){
 
   if(key==='title') p.estimate[i].line=val;
   if(key==='line') p.estimate[i].title=val;
+  if(key==='type' && estimateNorm(val)!=='labor') selectedEstimatePORows.delete(i);
 
   saveState(false);
   renderDashboard();
@@ -5467,6 +5703,7 @@ function updateEstimateFromPOHub(i,key,val){
 function deleteEstimateFromPOHub(i){
   selectedProject().estimate.splice(i,1);
   selectedEstimateRows.clear();
+  selectedEstimatePORows.clear();
   estimateDeletePending=false;
   saveState(false);
   renderAll();
@@ -5475,25 +5712,7 @@ function deleteEstimateFromPOHub(i){
   go('paybyline');
 }
 function generatePOsFromPOHub(){
-  const p=selectedProject();
-  const labor=laborLines(p);
-  if(!labor.length){
-    poHubView='estimate';
-    renderPayByLine();
-    alert('Add labor line items to the estimate first.');
-    return;
-  }
-
-  syncPOsFromLabor(p);
-
-  p.precon[1]=Math.max(p.precon[1],95);
-  saveState(false);
-  renderAll();
-  poHubView='splits';
-  openPOIndex=null;
-  renderPayByLine();
-  go('paybyline');
-  toast('P.O. Splits generated');
+  createPOsFromSelectedEstimateRows();
 }
 
 function renderProject(){
@@ -5991,6 +6210,7 @@ function updateEstimate(i,key,val){
 
   if(key==='title') p.estimate[i].line=val;
   if(key==='line') p.estimate[i].title=val;
+  if(key==='type' && estimateNorm(val)!=='labor') selectedEstimatePORows.delete(i);
 
   saveState(false);
   renderDashboard();
