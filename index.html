@@ -2093,6 +2093,122 @@ body.topbar-collapsed .collapsed-top-controls{
   }
 }
 
+
+.new-project-modal{
+  display:none;
+  position:fixed;
+  inset:0;
+  z-index:100001;
+  background:rgba(10,18,40,.70);
+  padding:18px;
+  align-items:center;
+  justify-content:center;
+}
+.new-project-modal.open{display:flex}
+.new-project-card{
+  width:min(620px,100%);
+  max-height:92vh;
+  overflow:auto;
+  background:#fff;
+  border-radius:16px;
+  padding:20px;
+  box-shadow:0 24px 70px rgba(0,0,0,.28);
+}
+.new-project-head{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:14px;
+}
+.new-project-head h3{
+  margin:3px 0 0;
+  color:var(--navy);
+  font-size:23px;
+}
+.new-project-head > button{
+  border:0;
+  width:34px;
+  height:34px;
+  border-radius:9px;
+  background:#F1F3F6;
+  color:var(--navy);
+  cursor:pointer;
+  font-size:20px;
+}
+.new-project-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+}
+.new-project-grid .full{grid-column:1/-1}
+.new-project-grid label{
+  display:block;
+  color:var(--navy);
+  font-size:10px;
+  font-weight:900;
+  margin-bottom:5px;
+}
+.new-project-colors{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+}
+.new-project-color{
+  width:31px;
+  height:31px;
+  border-radius:9px;
+  border:3px solid transparent;
+  cursor:pointer;
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,.08);
+}
+.new-project-color.selected{
+  border-color:#fff;
+  outline:2px solid var(--navy);
+}
+.new-project-message{
+  min-height:16px;
+  margin-top:10px;
+  font-size:10px;
+  color:var(--red);
+  font-weight:700;
+}
+.new-project-actions{
+  display:flex;
+  justify-content:flex-end;
+  gap:8px;
+  margin-top:10px;
+}
+
+@media(max-width:560px){
+  .new-project-modal{
+    padding:8px;
+    align-items:flex-end;
+  }
+  .new-project-card{
+    width:100%;
+    max-height:94vh;
+    border-radius:16px 16px 8px 8px;
+    padding:15px;
+  }
+  .new-project-grid{
+    grid-template-columns:1fr;
+    gap:10px;
+  }
+  .new-project-grid .full{grid-column:auto}
+  .new-project-actions{
+    position:sticky;
+    bottom:-15px;
+    margin:12px -15px -15px;
+    padding:10px 15px 15px;
+    background:#fff;
+    border-top:1px solid var(--line);
+  }
+  .new-project-actions .btn{
+    flex:1;
+  }
+}
+
 </style>
 
   <meta name="theme-color" content="#14234A">
@@ -2181,6 +2297,72 @@ body.topbar-collapsed .collapsed-top-controls{
   </div>
 </div>
 
+
+
+<div id="newProjectModal" class="new-project-modal">
+  <div class="new-project-card">
+    <div class="new-project-head">
+      <div>
+        <div class="eyebrow">New Job</div>
+        <h3>Create Project</h3>
+      </div>
+      <button onclick="closeNewProject()">×</button>
+    </div>
+
+    <div class="new-project-grid">
+      <div class="full">
+        <label>Customer / Project Name</label>
+        <input id="newProjectName" class="input" placeholder="Example: Smith Family">
+      </div>
+
+      <div class="full">
+        <label>Project Type</label>
+        <input id="newProjectType" class="input" placeholder="Example: Primary Bathroom Remodel">
+      </div>
+
+      <div>
+        <label>Job #</label>
+        <input id="newProjectJobNo" class="input" placeholder="JJ-1047">
+      </div>
+
+      <div>
+        <label>Projected Start</label>
+        <input id="newProjectStart" class="input" type="date">
+      </div>
+
+      <div>
+        <label>Project Coordinator</label>
+        <select id="newProjectCoordinator" class="input">
+          <option value="Jony">Jony</option>
+          <option value="Adair">Adair</option>
+          <option value="Gio">Gio</option>
+        </select>
+      </div>
+
+      <div>
+        <label>Project Manager</label>
+        <select id="newProjectManager" class="input">
+          <option value="Adair">Adair</option>
+          <option value="Jony">Jony</option>
+          <option value="Gio">Gio</option>
+        </select>
+      </div>
+
+      <div class="full">
+        <label>Project Color</label>
+        <div id="newProjectColors" class="new-project-colors"></div>
+        <input id="newProjectColor" type="hidden" value="navy">
+      </div>
+    </div>
+
+    <div id="newProjectMessage" class="new-project-message"></div>
+
+    <div class="new-project-actions">
+      <button class="btn btn-light" onclick="closeNewProject()">Cancel</button>
+      <button class="btn btn-gold" onclick="createNewProject()">Create Job</button>
+    </div>
+  </div>
+</div>
 
 <input id="estimateUploadInput"
        type="file"
@@ -2911,6 +3093,157 @@ function confirmDeleteProject(id,event){
   toast(`${project.name} deleted`);
 }
 
+
+function nextProjectId(){
+  return state.projects.length
+    ? Math.max(...state.projects.map(p=>Number(p.id)||0))+1
+    : 1;
+}
+
+function suggestedJobNumber(){
+  const nums=state.projects
+    .map(p=>String(p.jobNo||'').match(/(\d+)/))
+    .filter(Boolean)
+    .map(m=>Number(m[1]))
+    .filter(Number.isFinite);
+
+  const next=nums.length ? Math.max(...nums)+1 : 1001;
+  return `JJ-${next}`;
+}
+
+function formatProjectStart(dateValue){
+  if(!dateValue) return 'TBD';
+  const d=new Date(`${dateValue}T12:00:00`);
+  if(Number.isNaN(d.getTime())) return dateValue;
+  return d.toLocaleDateString('en-US',{
+    month:'short',
+    day:'numeric',
+    year:'numeric'
+  });
+}
+
+function renderNewProjectColors(selected='navy'){
+  const el=document.getElementById('newProjectColors');
+  if(!el) return;
+
+  el.innerHTML=PROJECT_COLORS.map(c=>`
+    <button
+      type="button"
+      class="new-project-color ${c.key===selected?'selected':''}"
+      style="background:${c.hex}"
+      title="${c.label}"
+      onclick="selectNewProjectColor('${c.key}')">
+    </button>
+  `).join('');
+}
+
+function selectNewProjectColor(key){
+  const input=document.getElementById('newProjectColor');
+  if(input) input.value=key;
+  renderNewProjectColors(key);
+}
+
+function openNewProject(){
+  const modal=document.getElementById('newProjectModal');
+  if(!modal) return;
+
+  document.getElementById('newProjectName').value='';
+  document.getElementById('newProjectType').value='';
+  document.getElementById('newProjectJobNo').value=suggestedJobNumber();
+  document.getElementById('newProjectStart').value='';
+  document.getElementById('newProjectCoordinator').value='Jony';
+  document.getElementById('newProjectManager').value='Adair';
+  document.getElementById('newProjectMessage').textContent='';
+
+  const suggestedColor=PROJECT_COLORS[state.projects.length % PROJECT_COLORS.length]?.key || 'navy';
+  document.getElementById('newProjectColor').value=suggestedColor;
+  renderNewProjectColors(suggestedColor);
+
+  modal.classList.add('open');
+  setTimeout(()=>document.getElementById('newProjectName')?.focus(),50);
+}
+
+function closeNewProject(){
+  document.getElementById('newProjectModal')?.classList.remove('open');
+}
+
+function createNewProject(){
+  const name=document.getElementById('newProjectName')?.value.trim();
+  const type=document.getElementById('newProjectType')?.value.trim();
+  const jobNo=document.getElementById('newProjectJobNo')?.value.trim();
+  const startValue=document.getElementById('newProjectStart')?.value;
+  const coordinator=document.getElementById('newProjectCoordinator')?.value || 'Jony';
+  const manager=document.getElementById('newProjectManager')?.value || 'Adair';
+  const color=document.getElementById('newProjectColor')?.value || 'navy';
+  const msg=document.getElementById('newProjectMessage');
+
+  if(!name){
+    if(msg) msg.textContent='Enter the customer or project name.';
+    return;
+  }
+
+  if(!type){
+    if(msg) msg.textContent='Enter the project type.';
+    return;
+  }
+
+  if(!jobNo){
+    if(msg) msg.textContent='Enter a job number.';
+    return;
+  }
+
+  if(state.projects.some(p=>String(p.jobNo||'').toLowerCase()===jobNo.toLowerCase())){
+    if(msg) msg.textContent='That job number is already being used.';
+    return;
+  }
+
+  const project={
+    id:nextProjectId(),
+    name,
+    type,
+    jobNo,
+    start:formatProjectStart(startValue),
+    coordinator,
+    manager,
+    issues:0,
+    color,
+    precon:PRECON_SECTIONS.map(()=>0),
+    estimate:[],
+    pos:[],
+    readyChecklist:[
+      {text:'Final proposal approved',done:false,checkedBy:''},
+      {text:'Scope is clear',done:false,checkedBy:''},
+      {text:'Selections complete',done:false,checkedBy:''},
+      {text:'Crew confirmed',done:false,checkedBy:''},
+      {text:'Subcontractors confirmed',done:false,checkedBy:''},
+      {text:'Materials confirmed',done:false,checkedBy:''},
+      {text:'Customer confirmed',done:false,checkedBy:''},
+      {text:'Access confirmed',done:false,checkedBy:''}
+    ]
+  };
+
+  state.projects.push(project);
+  state.selectedProjectId=project.id;
+
+  // Build a clean, zero-percent preconstruction checklist for the new job.
+  ensureProjectColors();
+  ensurePreconData();
+
+  openPreconSection=0;
+  openPreconAccordion=null;
+  openPOIndex=null;
+  selectedPOIds.clear();
+  selectedEstimateRows.clear();
+
+  saveState(false);
+  closeNewProject();
+  renderAll();
+  buildNav();
+  openProject(project.id);
+
+  toast(`${project.name} created`);
+}
+
 function projectColorHex(key){
   return PROJECT_COLORS.find(c=>c.key===key)?.hex || '#14234A';
 }
@@ -3489,7 +3822,7 @@ function renderDashboard(){
   dashboard.innerHTML=`
     <div class="page-title">
       <div><div class="eyebrow">Company Overview</div><h2>Dashboard</h2><p>Active projects and labor at a glance.</p></div>
-      <button class="btn btn-gold" onclick="alert('New Project form would open here.')">+ New Project</button>
+      <button class="btn btn-gold" onclick="openNewProject()">+ New Project</button>
     </div>
 
     ${nextActionCard(companyNextAction())}
@@ -5022,6 +5355,13 @@ function toggleMobileTools(){
 function closeMobileTools(){
   document.getElementById('mobileToolsMenu')?.classList.remove('open');
 }
+
+document.addEventListener('keydown',function(e){
+  if(e.key==='Escape'){
+    closeNewProject();
+  }
+});
+
 document.addEventListener('click',function(e){
   const menu=document.getElementById('mobileToolsMenu');
   const button=e.target.closest?.('.mobile-tools-button');
