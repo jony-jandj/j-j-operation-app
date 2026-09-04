@@ -1,0 +1,26 @@
+J&J CLOUD SETUP — NEXT STEPS
+
+1. Create a Supabase project.
+2. Open Supabase -> SQL Editor.
+3. Paste and run JJ_Supabase_Setup.sql.
+4. In Authentication -> Users, create accounts for:
+   - Jony
+   - Adair
+   - Gio
+5. Copy each user's UUID into the three profile INSERT lines at the bottom of the SQL file and run those INSERTs.
+6. In Supabase project settings, copy:
+   - Project URL
+   - Publishable / anon key
+7. Open the J&J app.
+8. Open the menu -> Cloud Setup.
+9. Paste the Project URL and publishable key.
+10. Sign in with a J&J account.
+
+After that:
+- normal changes auto-save after about 0.45 seconds
+- other signed-in devices receive updates through Supabase Realtime
+- the top of the app shows Saving / Saved / Live / Offline
+- P.O. status transitions are checked in the database by the signed-in user's role
+
+Important:
+Never put the Supabase service_role key in this app. Only use the browser-safe publishable/anon key.
