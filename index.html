@@ -1435,6 +1435,131 @@ tr:last-child td{border-bottom:0}
   font-weight:800;
 }
 
+
+.login-overlay{
+  position:fixed;
+  inset:0;
+  z-index:99999;
+  background:rgba(10,18,40,.96);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:20px;
+}
+.login-overlay.hidden{display:none}
+.login-card{
+  width:min(460px,100%);
+  background:#fff;
+  border-radius:18px;
+  padding:28px;
+  box-shadow:0 24px 80px rgba(0,0,0,.35);
+  text-align:center;
+}
+.login-logo{
+  width:64px;
+  height:64px;
+  border-radius:16px;
+  display:grid;
+  place-items:center;
+  margin:0 auto 14px;
+  background:var(--navy);
+  color:#fff;
+  border:2px solid var(--gold);
+  font-size:22px;
+  font-weight:900;
+}
+.login-card h2{
+  color:var(--navy);
+  margin:6px 0 8px;
+  font-size:27px;
+}
+.login-card p{
+  color:var(--muted);
+  margin:0 auto 18px;
+  max-width:360px;
+  line-height:1.45;
+}
+.login-users{
+  display:grid;
+  gap:9px;
+}
+.login-users button{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  width:100%;
+  border:1px solid var(--line);
+  border-left:6px solid var(--user-color);
+  background:#fff;
+  border-radius:12px;
+  padding:13px 14px;
+  cursor:pointer;
+  text-align:left;
+}
+.login-users button:hover{
+  background:#F8F9FB;
+}
+.login-user-dot{
+  width:14px;
+  height:14px;
+  border-radius:50%;
+  background:var(--user-color);
+  flex:none;
+}
+.login-users b{
+  display:block;
+  color:var(--navy);
+  font-size:14px;
+}
+.login-users small{
+  color:var(--muted);
+  font-size:10px;
+}
+.login-note{
+  margin-top:14px;
+  color:var(--muted);
+  font-size:10px;
+}
+
+.project-delete-area{
+  margin-top:10px;
+  padding-top:10px;
+  border-top:1px solid var(--line);
+}
+.project-delete-btn{
+  width:100%;
+  border:1px solid #E4B9B9;
+  background:#FFF7F7;
+  color:var(--red);
+  border-radius:8px;
+  padding:8px 10px;
+  font-size:10px;
+  font-weight:900;
+  cursor:pointer;
+}
+.project-delete-confirm{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:6px;
+}
+.project-delete-confirm button{
+  border-radius:8px;
+  padding:8px;
+  font-size:10px;
+  font-weight:900;
+  cursor:pointer;
+}
+.estimate-upload-note{
+  margin:8px 0 12px;
+  padding:9px 11px;
+  border:1px solid var(--line);
+  background:#FAFBFC;
+  border-radius:9px;
+  color:var(--muted);
+  font-size:10px;
+  line-height:1.4;
+}
+
 @media(max-width:980px){
   .precon-project-bar{grid-template-columns:1fr 1fr}
   .precon-project-bar > div:first-child{grid-column:1/-1}
@@ -1479,8 +1604,42 @@ tr:last-child td{border-bottom:0}
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
 
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
 <body>
+
+<div id="loginOverlay" class="login-overlay">
+  <div class="login-card">
+    <div class="login-logo">J&J</div>
+    <div class="eyebrow">J&J Home Renovations</div>
+    <h2>Who is signing in?</h2>
+    <p>Select your name so checklist items and P.O. approvals are recorded correctly.</p>
+
+    <div class="login-users">
+      <button onclick="signInAs('Jony')" style="--user-color:#4E78B7">
+        <span class="login-user-dot"></span>
+        <span><b>Jony</b><small>Pre-Approver</small></span>
+      </button>
+      <button onclick="signInAs('Adair')" style="--user-color:#B59A62">
+        <span class="login-user-dot"></span>
+        <span><b>Adair</b><small>Pre-Approver</small></span>
+      </button>
+      <button onclick="signInAs('Gio')" style="--user-color:#4F8A68">
+        <span class="login-user-dot"></span>
+        <span><b>Gio</b><small>Final Approver</small></span>
+      </button>
+    </div>
+
+    <div class="login-note">Prototype sign-in — no password required yet.</div>
+  </div>
+</div>
+
+<input id="estimateUploadInput"
+       type="file"
+       accept=".xls,.xlsx,.csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv"
+       style="display:none"
+       onchange="importEstimateFile(this)">
+
 <div class="app">
 <header>
   <div class="brand">
@@ -1813,6 +1972,7 @@ let preconView='overview';
 let openPOIndex=null;
 let poHubView='splits';
 let openProjectColorMenu=null;
+let deleteProjectPendingId=null;
 let deletePOIndex=null;
 let selectedPOIds=new Set();
 let bulkDeletePending=false;
@@ -1873,9 +2033,41 @@ function canPreApprove(){
 function canFinalApprove(){
   return state.currentUser==='Gio';
 }
+
+function signInAs(name){
+  if(!USERS.some(u=>u.name===name)) return;
+  state.currentUser=name;
+  sessionStorage.setItem('jj_session_user',name);
+  saveState(false);
+  syncUserSelector();
+
+  const overlay=document.getElementById('loginOverlay');
+  if(overlay) overlay.classList.add('hidden');
+
+  renderAll();
+  toast(`Signed in as ${name}`);
+}
+
+function requireUserSignIn(){
+  const sessionUser=sessionStorage.getItem('jj_session_user');
+  const overlay=document.getElementById('loginOverlay');
+
+  if(sessionUser && USERS.some(u=>u.name===sessionUser)){
+    state.currentUser=sessionUser;
+    saveState(false);
+    if(overlay) overlay.classList.add('hidden');
+    syncUserSelector();
+    renderAll();
+    return;
+  }
+
+  if(overlay) overlay.classList.remove('hidden');
+}
+
 function setCurrentUser(name){
   if(!USERS.some(u=>u.name===name)) return;
   state.currentUser=name;
+  sessionStorage.setItem('jj_session_user',name);
   saveState(false);
   renderAll();
   const sel=document.getElementById('currentUserSelect');
@@ -2034,6 +2226,46 @@ function openProjectFromSidebar(id){
   openProject(Number(id));
 }
 
+
+function requestDeleteProject(id,event){
+  if(event) event.stopPropagation();
+  deleteProjectPendingId=Number(id);
+  buildProjectSidebar();
+}
+
+function cancelDeleteProject(event){
+  if(event) event.stopPropagation();
+  deleteProjectPendingId=null;
+  buildProjectSidebar();
+}
+
+function confirmDeleteProject(id,event){
+  if(event) event.stopPropagation();
+
+  if(state.projects.length<=1){
+    alert('Keep at least one job in the app.');
+    deleteProjectPendingId=null;
+    buildProjectSidebar();
+    return;
+  }
+
+  const project=state.projects.find(p=>Number(p.id)===Number(id));
+  if(!project) return;
+
+  state.projects=state.projects.filter(p=>Number(p.id)!==Number(id));
+
+  if(Number(state.selectedProjectId)===Number(id)){
+    state.selectedProjectId=state.projects[0].id;
+  }
+
+  deleteProjectPendingId=null;
+  openProjectColorMenu=null;
+  saveState(false);
+  renderAll();
+  go('dashboard');
+  toast(`${project.name} deleted`);
+}
+
 function projectColorHex(key){
   return PROJECT_COLORS.find(c=>c.key===key)?.hex || '#14234A';
 }
@@ -2098,6 +2330,16 @@ function buildProjectSidebar(){
           `).join('')}
         </div>
         <div class="project-color-label">${PROJECT_COLORS.find(c=>c.key===p.color)?.label || 'Navy'}</div>
+
+        <div class="project-delete-area">
+          ${Number(deleteProjectPendingId)===Number(p.id)
+            ? `<div class="project-delete-confirm">
+                 <button class="project-delete-btn" onclick="confirmDeleteProject(${p.id},event)">Confirm Delete</button>
+                 <button class="btn btn-light" onclick="cancelDeleteProject(event)">Cancel</button>
+               </div>`
+            : `<button class="project-delete-btn" onclick="requestDeleteProject(${p.id},event)">Delete Job</button>`
+          }
+        </div>
       </div>
     </div>`;
   }).join('');
@@ -2726,8 +2968,12 @@ function renderPayByLine(){
         <span>Builder-cost line items</span>
       </div>
 
+      <div class="estimate-upload-note">
+        Upload an Excel or CSV estimate. The app will import the estimate, identify labor lines, and build the labor P.O. splits automatically. You can still change any line between Labor and Material before reviewing the P.O.s.
+      </div>
+
       <div class="toolbar">
-        <button class="btn btn-navy" onclick="loadSampleEstimateFromPOHub()">Load Sample Estimate</button>
+        <button class="btn btn-navy" onclick="openEstimateUpload()">Upload Estimate</button>
         <button class="btn btn-light" onclick="addEstimateLineFromPOHub()">+ Add Line</button>
         <button class="btn btn-gold" onclick="generatePOsFromPOHub()">Generate P.O. Splits</button>
       </div>
@@ -2773,7 +3019,7 @@ function renderPayByLine(){
             `).join('')}
           </tbody>
         </table></div>
-      `:`<div class="empty">No estimate loaded yet.<br><br><button class="btn btn-navy" onclick="loadSampleEstimateFromPOHub()">Load Sample Estimate</button></div>`}
+      `:`<div class="empty">No estimate loaded yet.<br><br><button class="btn btn-navy" onclick="openEstimateUpload()">Upload Estimate</button></div>`}
 
       <div class="stats" style="margin-top:12px">
         <div class="card stat"><div class="label">Estimate Total</div><div class="value">${money(estimateTotal)}</div></div>
@@ -2888,6 +3134,231 @@ function confirmEstimateBulkDelete(){
   toast(`${count} estimate line${count===1?'':'s'} deleted`);
 }
 
+
+function openEstimateUpload(){
+  const input=document.getElementById('estimateUploadInput');
+  if(!input) return;
+  input.value='';
+  input.click();
+}
+
+function estimateCellText(v){
+  return String(v??'').trim();
+}
+
+function estimateNorm(v){
+  return estimateCellText(v)
+    .toLowerCase()
+    .replace(/[_\-]+/g,' ')
+    .replace(/\s+/g,' ')
+    .trim();
+}
+
+function estimateMoney(v){
+  if(typeof v==='number' && Number.isFinite(v)) return v;
+
+  let s=estimateCellText(v);
+  if(!s) return NaN;
+
+  const negative=/^\(.*\)$/.test(s);
+  s=s.replace(/[,$%\s]/g,'').replace(/[()]/g,'');
+  const n=Number(s);
+
+  if(!Number.isFinite(n)) return NaN;
+  return negative ? -n : n;
+}
+
+function likelyLaborLine(description,rowText,typeText){
+  const d=estimateNorm(description);
+  const all=estimateNorm(rowText);
+  const t=estimateNorm(typeText);
+
+  if(t.includes('labor') || all.includes(' labor')) return true;
+
+  const materialSignals=[
+    'material','materials','allowance','fixture','fixtures','vanity','hardware',
+    'cabinet','cabinets','appliance','tile material','flooring material',
+    'rough material','finish material','permit','dumpster'
+  ];
+  if(materialSignals.some(x=>d.includes(x) || t.includes(x))) return false;
+
+  const strongLabor=[
+    'demo / protection','demo and protection','demolition','framing','drywall',
+    'painting','finish carpentry','trim carpentry','rough carpentry',
+    'tile labor','plumbing labor','electrical labor','hvac labor',
+    'flooring labor','installation labor','install labor'
+  ];
+  return strongLabor.some(x=>d===x || d.includes(x));
+}
+
+function findEstimateColumns(rows){
+  const maxRows=Math.min(rows.length,30);
+  const lineHeaders=['line item','item','description','work description','scope','name','cost code'];
+  const costHeaders=['builder cost','estimated cost','total cost','cost','amount','unit cost'];
+  const typeHeaders=['cost type','item type','type','category'];
+
+  let best={score:-1,rowIndex:-1,lineIndex:-1,costIndex:-1,typeIndex:-1};
+
+  for(let r=0;r<maxRows;r++){
+    const row=rows[r]||[];
+    const normalized=row.map(estimateNorm);
+
+    const findIndexByHeaders=(headers)=>{
+      for(const h of headers){
+        const exact=normalized.findIndex(v=>v===h);
+        if(exact>=0) return exact;
+      }
+      for(const h of headers){
+        const partial=normalized.findIndex(v=>v.includes(h));
+        if(partial>=0) return partial;
+      }
+      return -1;
+    };
+
+    const li=findIndexByHeaders(lineHeaders);
+    const ci=findIndexByHeaders(costHeaders);
+    const ti=findIndexByHeaders(typeHeaders);
+
+    let score=0;
+    if(li>=0) score+=3;
+    if(ci>=0) score+=3;
+    if(ti>=0) score+=1;
+    if(normalized.some(v=>v.includes('estimate'))) score+=0.25;
+
+    if(score>best.score){
+      best={score,rowIndex:r,lineIndex:li,costIndex:ci,typeIndex:ti};
+    }
+  }
+
+  return best;
+}
+
+function parseEstimateRows(rows){
+  const cols=findEstimateColumns(rows);
+
+  if(cols.lineIndex<0 || cols.costIndex<0){
+    return {
+      items:[],
+      warning:'I could not find the Line Item/Description and Cost columns in this estimate.'
+    };
+  }
+
+  const items=[];
+
+  for(let r=cols.rowIndex+1;r<rows.length;r++){
+    const row=rows[r]||[];
+    const description=estimateCellText(row[cols.lineIndex]);
+    const cost=estimateMoney(row[cols.costIndex]);
+
+    if(!description || !Number.isFinite(cost)) continue;
+
+    const nd=estimateNorm(description);
+    if(!nd) continue;
+
+    const skipSignals=[
+      'subtotal','grand total','estimate total','total estimate','markup',
+      'sales tax','tax total','profit','overhead'
+    ];
+    if(skipSignals.some(x=>nd===x || nd.startsWith(x))) continue;
+
+    const typeText=cols.typeIndex>=0 ? estimateCellText(row[cols.typeIndex]) : '';
+    const rowText=row.map(estimateCellText).join(' | ');
+    const isLabor=likelyLaborLine(description,rowText,typeText);
+
+    items.push({
+      line:description,
+      type:isLabor?'Labor':'Material',
+      builderCost:Number(cost)
+    });
+  }
+
+  return {items,warning:''};
+}
+
+function syncPOsFromLabor(p){
+  const labor=laborLines(p);
+
+  p.pos=labor.map((r,i)=>{
+    const existing=p.pos.find(x=>x.line===r.line);
+
+    if(existing){
+      existing.builderCost=Number(r.builderCost||0);
+      return existing;
+    }
+
+    return {
+      id:`${p.jobNo}-L${String(i+1).padStart(2,'0')}`,
+      line:r.line,
+      builderCost:Number(r.builderCost||0),
+      status:'Draft',
+      preApprovedBy:'',
+      approvedBy:'',
+      splits:[
+        {name:'Adair',pct:50},
+        {name:'Crew Member 2',pct:50},
+        {name:'',pct:0},
+        {name:'',pct:0}
+      ]
+    };
+  });
+
+  return labor.length;
+}
+
+async function importEstimateFile(input){
+  const file=input?.files?.[0];
+  if(!file) return;
+
+  try{
+    if(typeof XLSX==='undefined'){
+      throw new Error('Spreadsheet reader did not load. Make sure you are connected to the internet and refresh the app.');
+    }
+
+    const data=await file.arrayBuffer();
+    const workbook=XLSX.read(data,{type:'array'});
+    const sheet=workbook.Sheets[workbook.SheetNames[0]];
+    const rows=XLSX.utils.sheet_to_json(sheet,{
+      header:1,
+      defval:'',
+      raw:true,
+      blankrows:false
+    });
+
+    const parsed=parseEstimateRows(rows);
+
+    if(!parsed.items.length){
+      throw new Error(parsed.warning || 'No usable estimate line items were found.');
+    }
+
+    const p=selectedProject();
+    p.estimate=parsed.items;
+
+    const laborCount=syncPOsFromLabor(p);
+    selectedEstimateRows.clear();
+    selectedPOIds.clear();
+    estimateDeletePending=false;
+    bulkDeletePending=false;
+    openPOIndex=null;
+
+    saveState(false);
+    renderAll();
+    poHubView='estimate';
+    renderPayByLine();
+    go('paybyline');
+
+    toast(`Estimate uploaded · ${parsed.items.length} lines · ${laborCount} labor P.O.${laborCount===1?'':'s'} ready`);
+
+    if(!laborCount){
+      alert('The estimate was imported, but no labor lines were identified automatically. Change the Type column to Labor for any labor rows, then click Generate P.O. Splits.');
+    }
+  }catch(err){
+    console.error(err);
+    alert(`Estimate upload failed.\n\n${err.message || 'Please try a different Excel or CSV file.'}`);
+  }finally{
+    input.value='';
+  }
+}
+
 function loadSampleEstimateFromPOHub(){
   loadSampleEstimate();
   poHubView='estimate';
@@ -2930,23 +3401,7 @@ function generatePOsFromPOHub(){
     return;
   }
 
-  p.pos=labor.map((r,i)=>{
-    const existing=p.pos.find(x=>x.line===r.line);
-    return existing || {
-      id:`${p.jobNo}-L${String(i+1).padStart(2,'0')}`,
-      line:r.line,
-      builderCost:Number(r.builderCost),
-      status:'Draft',
-      preApprovedBy:'',
-      approvedBy:'',
-      splits:[
-        {name:'Adair',pct:50},
-        {name:'Crew Member 2',pct:50},
-        {name:'',pct:0},
-        {name:'',pct:0}
-      ]
-    };
-  });
+  syncPOsFromLabor(p);
 
   p.precon[1]=Math.max(p.precon[1],95);
   saveState(false);
@@ -3045,7 +3500,7 @@ function renderProjectPanel(){
     c.innerHTML=`
       <div class="note">This prototype supports manual line items and a sample estimate. The production version can be built to read your actual estimate spreadsheet format.</div>
       <div class="toolbar">
-        <button class="btn btn-navy" onclick="loadSampleEstimate()">Load Sample Estimate</button>
+        <button class="btn btn-navy" onclick="openEstimateUpload()">Upload Estimate</button>
         <button class="btn btn-light" onclick="addEstimateLine()">+ Add Line</button>
         <button class="btn btn-gold" onclick="generatePOs()">Generate Labor P.O.s</button>
       </div>
@@ -3080,7 +3535,7 @@ function renderProjectPanel(){
           <td><input class="input" type="number" value="${r.builderCost}" oninput="updateEstimate(${i},'builderCost',this.value)"></td>
           <td><button class="btn btn-danger" onclick="deleteEstimate(${i})">Remove</button></td>
         </tr>`).join('')}</tbody>
-      </table></div>`:`<div class="empty">No estimate loaded yet.<br><br><button class="btn btn-navy" onclick="loadSampleEstimate()">Load Sample Estimate</button></div>`}
+      </table></div>`:`<div class="empty">No estimate loaded yet.<br><br><button class="btn btn-navy" onclick="openEstimateUpload()">Upload Estimate</button></div>`}
     `;
   } else if(projectTab==='laborpos'){
     c.innerHTML = p.pos.length ? `<div class="po-list">${p.pos.map((po,i)=>renderPO(po,i)).join('')}</div>` :
@@ -3598,6 +4053,7 @@ function renderAll(){
 buildNav();
 renderAll();
 syncUserSelector();
+requireUserSignIn();
 </script>
 
 <script>
