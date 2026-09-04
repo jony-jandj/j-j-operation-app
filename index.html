@@ -52,7 +52,11 @@ header{
 }
 .brand h1{margin:0;font-size:15px}
 .brand small{display:block;color:#D5DAE4;margin-top:2px}
-.header-actions{display:flex;gap:8px}
+.header-actions{display:flex;gap:8px;align-items:center}
+
+.brand-mobile{display:none}
+.mobile-tools-button,.mobile-tools-menu{display:none}
+
 .btn{
   border:0;border-radius:9px;padding:9px 12px;font-weight:800;
   display:inline-flex;align-items:center;justify-content:center;gap:6px;
@@ -1595,6 +1599,280 @@ tr:last-child td{border-bottom:0}
   .precon-project-bar > div:first-child{grid-column:auto}
   .split-grid{grid-template-columns:1fr .55fr .75fr}
 }
+
+@media(max-width:560px){
+  header{
+    height:58px;
+    padding:0 10px;
+    gap:8px;
+  }
+  .brand{
+    gap:8px;
+    flex:1;
+    min-width:0;
+  }
+  .logo{
+    width:34px;
+    height:34px;
+    border-radius:9px;
+    font-size:12px;
+  }
+  .brand h1{
+    font-size:13px;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .brand-full{display:none}
+  .brand-mobile{display:inline}
+  .brand small{display:none}
+
+  .header-actions{
+    gap:5px;
+    flex:none;
+  }
+  .desktop-action{display:none!important}
+
+  .user-switcher{
+    padding:3px;
+    background:rgba(255,255,255,.10);
+  }
+  .user-switcher span{display:none}
+  .user-switcher select{
+    padding:6px 7px;
+    font-size:11px;
+    max-width:78px;
+  }
+
+  .mobile-tools-button{
+    display:grid;
+    place-items:center;
+    width:34px;
+    height:34px;
+    border:1px solid rgba(255,255,255,.25);
+    border-radius:9px;
+    background:rgba(255,255,255,.10);
+    color:#fff;
+    font-size:17px;
+    font-weight:900;
+    padding:0 0 7px;
+  }
+  .mobile-tools-menu{
+    position:fixed;
+    top:62px;
+    right:10px;
+    z-index:90;
+    width:190px;
+    background:#fff;
+    border:1px solid var(--line);
+    border-radius:12px;
+    box-shadow:0 18px 45px rgba(20,35,74,.22);
+    padding:7px;
+  }
+  .mobile-tools-menu.open{
+    display:grid;
+    gap:5px;
+  }
+  .mobile-tools-menu button{
+    width:100%;
+    border:0;
+    border-radius:8px;
+    background:#F6F7F9;
+    color:var(--navy);
+    padding:10px 11px;
+    text-align:left;
+    font-size:11px;
+    font-weight:850;
+  }
+  .mobile-tools-menu button.gold{
+    background:var(--gold-soft);
+  }
+
+  .top-nav{
+    top:58px;
+    padding:8px 10px;
+    gap:6px;
+    justify-content:space-between;
+    overflow:visible;
+  }
+  .top-nav button{
+    flex:1;
+    padding:9px 8px;
+    font-size:11px;
+    text-align:center;
+  }
+
+  .content{
+    padding:12px 10px 84px;
+  }
+
+  .fab{
+    width:50px;
+    height:50px;
+    right:12px;
+    bottom:14px;
+    padding:0;
+    border-radius:50%;
+    font-size:0;
+    display:grid;
+    place-items:center;
+  }
+  .fab::after{
+    content:'✦';
+    font-size:20px;
+    line-height:1;
+  }
+
+  .assistant{
+    right:8px;
+    bottom:72px;
+    width:calc(100vw - 16px);
+    max-width:none;
+    border-radius:14px;
+  }
+}
+
+
+.layout-control{
+  margin-left:auto;
+  display:flex;
+  align-items:center;
+  gap:6px;
+}
+.layout-control button{
+  border:1px solid var(--line);
+  background:#F8F9FB;
+  color:var(--navy);
+  border-radius:8px;
+  padding:7px 9px;
+  font-size:10px;
+  font-weight:900;
+  white-space:nowrap;
+}
+
+body.sidebar-collapsed .sidebar{
+  display:none;
+}
+body.sidebar-collapsed .content{
+  max-width:none;
+  width:100%;
+}
+
+body.topbar-collapsed header,
+body.topbar-collapsed .top-nav{
+  display:none!important;
+}
+body.topbar-collapsed .sidebar{
+  top:0;
+  min-height:100vh;
+}
+body.topbar-collapsed .content{
+  padding-top:16px;
+}
+
+.collapsed-top-controls{
+  display:none;
+  position:fixed;
+  top:8px;
+  right:8px;
+  z-index:120;
+  gap:6px;
+}
+body.topbar-collapsed .collapsed-top-controls{
+  display:flex;
+}
+.collapsed-top-controls button{
+  border:1px solid #D9DFE8;
+  background:#fff;
+  color:var(--navy);
+  border-radius:9px;
+  padding:8px 10px;
+  font-size:10px;
+  font-weight:900;
+  box-shadow:0 6px 18px rgba(20,35,74,.12);
+}
+
+.sidebar-backdrop{
+  display:none;
+}
+
+@media(max-width:980px){
+  /* Turn the hidden desktop sidebar into an on-demand drawer on tablet/phone. */
+  .sidebar{
+    display:block;
+    position:fixed;
+    left:0;
+    top:0;
+    bottom:0;
+    width:min(310px,86vw);
+    min-height:100vh;
+    z-index:115;
+    transform:translateX(-105%);
+    transition:transform .18s ease;
+    box-shadow:18px 0 40px rgba(20,35,74,.18);
+    overflow-y:auto;
+    padding-top:16px;
+  }
+
+  body.mobile-sidebar-open .sidebar{
+    transform:translateX(0);
+  }
+
+  body.mobile-sidebar-open .sidebar-backdrop{
+    display:block;
+    position:fixed;
+    inset:0;
+    z-index:110;
+    background:rgba(10,18,40,.40);
+  }
+
+  body.sidebar-collapsed .sidebar{
+    display:block;
+  }
+
+  .layout-control{
+    margin-left:0;
+  }
+
+  .layout-control button{
+    padding:7px 8px;
+    font-size:9px;
+  }
+}
+
+@media(max-width:560px){
+  .layout-control{
+    width:100%;
+    order:2;
+    justify-content:flex-end;
+  }
+
+  .top-nav{
+    flex-wrap:wrap;
+  }
+
+  .top-nav > button[data-nav]{
+    flex:1;
+  }
+
+  .layout-control button{
+    padding:6px 8px;
+  }
+
+  body.topbar-collapsed .content{
+    padding-top:46px;
+  }
+
+  .collapsed-top-controls{
+    top:7px;
+    right:7px;
+  }
+
+  .collapsed-top-controls button{
+    padding:7px 9px;
+  }
+}
+
 </style>
 
   <meta name="theme-color" content="#14234A">
@@ -1644,7 +1922,10 @@ tr:last-child td{border-bottom:0}
 <header>
   <div class="brand">
     <div class="logo">J&J</div>
-    <div><h1>J&J Home Renovations</h1><small>Operations App Prototype</small></div>
+    <div>
+      <h1><span class="brand-full">J&J Home Renovations</span><span class="brand-mobile">J&J Operations</span></h1>
+      <small>Operations App Prototype</small>
+    </div>
   </div>
   <div class="header-actions">
     <div class="user-switcher">
@@ -1655,15 +1936,30 @@ tr:last-child td{border-bottom:0}
         <option value="Gio">Gio</option>
       </select>
     </div>
-    <button class="btn btn-light save-desktop" onclick="saveState()">Save</button>
-    <button class="btn btn-light" onclick="exportAppBackup()">Export Backup</button>
-<button class="btn btn-light" onclick="openBackupImport()">Import Backup</button>
+    <button class="btn btn-light save-desktop desktop-action" onclick="saveState()">Save</button>
+    <button class="btn btn-light desktop-action" onclick="exportAppBackup()">Export Backup</button>
+<button class="btn btn-light desktop-action" onclick="openBackupImport()">Import Backup</button>
 <input id="backupImportInput" type="file" accept=".json,application/json" style="display:none" onchange="importAppBackup(this)">
-<button class="btn btn-gold" onclick="openAssistant()">J&J Assistant</button>
+<button class="btn btn-gold desktop-action" onclick="openAssistant()">J&J Assistant</button>
+    <button class="mobile-tools-button" onclick="toggleMobileTools()" aria-label="More tools">•••</button>
   </div>
 </header>
 
+<div id="mobileToolsMenu" class="mobile-tools-menu">
+  <button onclick="saveState();closeMobileTools()">Save</button>
+  <button onclick="exportAppBackup();closeMobileTools()">Export Backup</button>
+  <button onclick="openBackupImport();closeMobileTools()">Import Backup</button>
+  <button class="gold" onclick="openAssistant();closeMobileTools()">J&J Assistant</button>
+</div>
+
 <div class="top-nav" id="topNav"></div>
+
+<div id="collapsedTopControls" class="collapsed-top-controls">
+  <button onclick="toggleTopBars()">Show Menu</button>
+  <button onclick="toggleSidebar()">Jobs</button>
+</div>
+
+<div id="sidebarBackdrop" class="sidebar-backdrop" onclick="closeMobileSidebar()"></div>
 
 <div class="shell">
   <aside class="sidebar">
@@ -2170,11 +2466,86 @@ function poBonus(p){ return p.pos.reduce((s,x)=>s+x.builderCost*.05,0); }
 function poReserve(p){ return p.pos.reduce((s,x)=>s+x.builderCost*.35,0); }
 function ready(p){ return p.readyChecklist.length && p.readyChecklist.every(x=>x.done); }
 
+
+function isMobileLayout(){
+  return window.matchMedia('(max-width:980px)').matches;
+}
+
+function updateLayoutButtons(){
+  const sideBtn=document.getElementById('sidebarToggleBtn');
+  const topBtn=document.getElementById('topbarToggleBtn');
+
+  if(sideBtn){
+    if(isMobileLayout()){
+      sideBtn.textContent=document.body.classList.contains('mobile-sidebar-open') ? 'Close Jobs' : '☰ Jobs';
+    }else{
+      sideBtn.textContent=document.body.classList.contains('sidebar-collapsed') ? 'Show Jobs' : 'Hide Jobs';
+    }
+  }
+
+  if(topBtn){
+    topBtn.textContent=document.body.classList.contains('topbar-collapsed') ? 'Show Top' : 'Hide Top';
+  }
+}
+
+function toggleSidebar(){
+  if(isMobileLayout()){
+    document.body.classList.toggle('mobile-sidebar-open');
+  }else{
+    document.body.classList.toggle('sidebar-collapsed');
+    localStorage.setItem(
+      'jj_sidebar_collapsed',
+      document.body.classList.contains('sidebar-collapsed') ? '1' : '0'
+    );
+  }
+  updateLayoutButtons();
+}
+
+function closeMobileSidebar(){
+  document.body.classList.remove('mobile-sidebar-open');
+  updateLayoutButtons();
+}
+
+function toggleTopBars(){
+  document.body.classList.toggle('topbar-collapsed');
+  closeMobileTools();
+
+  localStorage.setItem(
+    'jj_topbar_collapsed',
+    document.body.classList.contains('topbar-collapsed') ? '1' : '0'
+  );
+
+  updateLayoutButtons();
+}
+
+function restoreLayoutPreferences(){
+  if(!isMobileLayout() && localStorage.getItem('jj_sidebar_collapsed')==='1'){
+    document.body.classList.add('sidebar-collapsed');
+  }
+
+  if(localStorage.getItem('jj_topbar_collapsed')==='1'){
+    document.body.classList.add('topbar-collapsed');
+  }
+
+  updateLayoutButtons();
+}
+
+window.addEventListener('resize',()=>{
+  if(!isMobileLayout()){
+    document.body.classList.remove('mobile-sidebar-open');
+  }
+  updateLayoutButtons();
+});
+
 function buildNav(){
   topNav.innerHTML =
     `<button data-nav="dashboard" onclick="go('dashboard')">Dashboard</button>` +
     `<button data-nav="preconstruction" onclick="openPreconstructionForProject(state.selectedProjectId)">Preconstruction</button>` +
-    `<button data-nav="paybyline" onclick="openPOHub('splits');return false;">P.Os</button>`;
+    `<button data-nav="paybyline" onclick="openPOHub('splits');return false;">P.Os</button>` +
+    `<div class="layout-control">
+      <button onclick="toggleSidebar()" id="sidebarToggleBtn">☰ Jobs</button>
+      <button onclick="toggleTopBars()" id="topbarToggleBtn">Hide Top</button>
+    </div>`;
 
   const activePage=document.querySelector('.page.active')?.id;
   document.querySelectorAll('[data-nav]').forEach(x=>x.classList.remove('active'));
@@ -2187,11 +2558,13 @@ function buildNav(){
     document.querySelector('[data-nav="paybyline"]')?.classList.add('active');
   }
 
+  updateLayoutButtons();
   buildProjectSidebar();
 }
 
 
 function openProjectFromSidebar(id){
+  if(isMobileLayout()) closeMobileSidebar();
   const currentPage=document.querySelector('.page.active')?.id;
 
   if(currentPage==='preconstruction'){
@@ -4014,6 +4387,21 @@ function toggleReady(i,val){
 }
 function esc(s){ return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
 
+
+function toggleMobileTools(){
+  document.getElementById('mobileToolsMenu')?.classList.toggle('open');
+}
+function closeMobileTools(){
+  document.getElementById('mobileToolsMenu')?.classList.remove('open');
+}
+document.addEventListener('click',function(e){
+  const menu=document.getElementById('mobileToolsMenu');
+  const button=e.target.closest?.('.mobile-tools-button');
+  if(menu?.classList.contains('open') && !menu.contains(e.target) && !button){
+    menu.classList.remove('open');
+  }
+});
+
 function openAssistant(){ assistant.classList.add('open'); }
 function closeAssistant(){ assistant.classList.remove('open'); }
 function quickAsk(q){ assistantInput.value=q; sendAssistant(); }
@@ -4053,6 +4441,7 @@ function renderAll(){
 buildNav();
 renderAll();
 syncUserSelector();
+restoreLayoutPreferences();
 requireUserSignIn();
 </script>
 
