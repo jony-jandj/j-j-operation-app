@@ -3622,6 +3622,279 @@ textarea.estimate-cell-input{
   }
 }
 
+
+.issues-quick-view{
+  position:fixed;
+  inset:0;
+  z-index:12000;
+  background:rgba(10,18,40,.48);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:18px;
+}
+.issues-quick-view.hidden{display:none}
+.issues-quick-card{
+  width:min(720px,100%);
+  max-height:85vh;
+  overflow:auto;
+  background:#fff;
+  border-radius:14px;
+  padding:16px;
+  box-shadow:0 24px 60px rgba(0,0,0,.25);
+}
+.issues-quick-head{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  gap:12px;
+  margin-bottom:10px;
+}
+.issues-quick-head h3{
+  margin:2px 0 0;
+  color:var(--navy);
+}
+.issues-quick-head button{
+  border:0;
+  background:#F0F2F5;
+  color:var(--navy);
+  width:34px;height:34px;
+  border-radius:8px;
+  font-size:20px;
+  cursor:pointer;
+}
+.issue-project-group{
+  border:1px solid var(--line);
+  border-left:5px solid var(--project-color);
+  border-radius:10px;
+  margin:8px 0;
+  overflow:hidden;
+}
+.issue-project-title{
+  padding:9px 10px;
+  background:#FAFBFC;
+  font-weight:900;
+  color:var(--navy);
+  display:flex;
+  justify-content:space-between;
+  gap:8px;
+}
+.issue-project-body{
+  padding:8px 10px;
+  display:grid;
+  gap:6px;
+}
+.issue-line{
+  font-size:10px;
+  color:var(--navy);
+  padding:6px 7px;
+  border-radius:7px;
+  background:#F7F8FA;
+}
+.issue-line small{
+  display:block;
+  color:var(--muted);
+  margin-top:2px;
+  font-size:8px;
+}
+.issue-none{
+  padding:14px;
+  text-align:center;
+  color:var(--muted);
+  font-size:10px;
+}
+
+
+/* Expanded dashboard layout */
+.dashboard-grid{
+  display:block!important;
+}
+.dashboard-panel{
+  width:100%;
+}
+.dashboard-panel + .dashboard-panel{
+  margin-top:12px;
+}
+.dashboard-panel-head{
+  margin-bottom:12px!important;
+}
+.dashboard-panel-head h3{
+  font-size:17px!important;
+}
+.dashboard-panel-head small{
+  font-size:9px!important;
+}
+.project-health-list,
+.next-actions-list,
+.po-job-list{
+  gap:8px!important;
+}
+.project-health-row{
+  grid-template-columns:minmax(190px,1.7fr) 72px 72px 86px 110px!important;
+  gap:14px!important;
+  padding:12px 13px!important;
+}
+.project-health-name b{
+  font-size:12px!important;
+}
+.project-health-name small{
+  font-size:9px!important;
+}
+.project-health-stat{
+  min-width:0!important;
+}
+.project-health-stat span{
+  font-size:7px!important;
+}
+.project-health-stat b{
+  font-size:12px!important;
+}
+.project-health-start,
+.project-health-po{
+  color:var(--navy);
+  font-size:10px;
+  font-weight:900;
+}
+.project-health-start span,
+.project-health-po span{
+  display:block;
+  color:var(--muted);
+  font-size:7px;
+  font-weight:900;
+  text-transform:uppercase;
+  letter-spacing:.04em;
+  margin-bottom:2px;
+}
+
+.next-action-row{
+  grid-template-columns:6px minmax(0,1fr) auto!important;
+  padding:12px 13px!important;
+}
+.next-action-job{
+  font-size:10px!important;
+}
+.next-action-task{
+  font-size:13px!important;
+}
+.next-action-detail{
+  font-size:9px!important;
+}
+.next-action-extra{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  margin-top:5px;
+  color:var(--muted);
+  font-size:8px;
+}
+.next-action-extra span{
+  display:inline-flex;
+  gap:4px;
+  align-items:center;
+}
+.po-job-head,
+.po-job-row{
+  grid-template-columns:minmax(170px,1.6fr) 54px 62px 62px 62px 100px 100px!important;
+}
+.po-job-row{
+  padding:10px 11px!important;
+}
+.po-job-row b{
+  font-size:10px!important;
+}
+.po-job-row small{
+  font-size:8px!important;
+}
+.po-cost,
+.po-extra{
+  text-align:right;
+  font-size:9px;
+  font-weight:900;
+  color:var(--navy);
+}
+.dashboard-summary-item{
+  cursor:default;
+}
+.dashboard-summary-item.clickable{
+  cursor:pointer;
+}
+.dashboard-summary-item.clickable:hover{
+  background:#FAFBFC;
+}
+@media(min-width:1181px){
+  .content{
+    max-width:none!important;
+  }
+}
+@media(max-width:760px){
+  .project-health-row{
+    grid-template-columns:minmax(125px,1.5fr) 48px 48px!important;
+  }
+  .project-health-start,
+  .project-health-po{
+    display:none!important;
+  }
+  .po-job-row{
+    grid-template-columns:minmax(115px,1.5fr) repeat(4,38px)!important;
+  }
+  .po-extra{
+    grid-column:1/-1;
+    text-align:left;
+    border-top:1px solid var(--line);
+    padding-top:5px;
+  }
+}
+
+
+@media(min-width:1181px){
+  #dashboard,
+  .page.active#dashboard{
+    width:100%!important;
+  }
+  #dashboard .page-title,
+  #dashboard .dashboard-summary-card,
+  #dashboard .dashboard-panel{
+    width:100%!important;
+  }
+  #dashboard .dashboard-panel{
+    margin-bottom:14px;
+  }
+}
+
+
+.brand-image-logo,
+.brand .brand-logo,
+.brand img{
+  object-fit:contain!important;
+  background:#fff!important;
+  border-radius:8px!important;
+  padding:2px!important;
+}
+@media(min-width:1181px){
+  .brand-image-logo,
+  .brand .brand-logo,
+  .brand img{
+    width:46px!important;
+    height:46px!important;
+  }
+}
+@media(min-width:561px) and (max-width:1180px){
+  .brand-image-logo,
+  .brand .brand-logo,
+  .brand img{
+    width:38px!important;
+    height:38px!important;
+  }
+}
+@media(max-width:560px){
+  .brand-image-logo,
+  .brand .brand-logo,
+  .brand img{
+    width:42px!important;
+    height:42px!important;
+  }
+}
+
 </style>
 
   <meta name="theme-color" content="#14234A">
@@ -3635,6 +3908,20 @@ textarea.estimate-cell-input{
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
+
+<div id="issuesQuickView" class="issues-quick-view hidden">
+  <div class="issues-quick-card">
+    <div class="issues-quick-head">
+      <div>
+        <div class="eyebrow">Open Issues</div>
+        <h3>Issues by Project</h3>
+      </div>
+      <button onclick="closeIssuesQuickView()">×</button>
+    </div>
+    <div id="issuesQuickBody"></div>
+  </div>
+</div>
+
 
 <div class="sidebar-backdrop tablet-sidebar-backdrop" onclick="closeJobsDrawer()"></div>
 
@@ -3784,7 +4071,7 @@ textarea.estimate-cell-input{
 
 <div class="app">
 <header>
-  <div class="brand">
+  <div class="brand" onclick="go('dashboard')" role="button" tabindex="0" title="Go to Dashboard">
     <div class="logo">J&J</div>
     <div>
       <h1><span class="brand-full">J&J Home Renovations</span><span class="brand-mobile">J&J Operations</span></h1>
@@ -5630,6 +5917,65 @@ function dashboardSummaryText(active,readyCount,issues,avgComplete){
   };
 }
 
+
+function projectOpenIssueDetails(p){
+  const items=[];
+
+  (p.preconData||[]).forEach((section,si)=>{
+    if(section.status==='Open Issue'){
+      items.push({
+        title:`Section ${si+1}: ${PRECON_SECTIONS[si]?.title || 'Preconstruction'}`,
+        detail:section.nextAction || 'Marked Open Issue'
+      });
+    }
+  });
+
+  if(p.issues && !items.length){
+    items.push({
+      title:`${p.issues} open issue${p.issues===1?'':'s'}`,
+      detail:'Open the project checklist for details.'
+    });
+  }
+
+  return items;
+}
+
+function openIssuesQuickView(){
+  const body=document.getElementById('issuesQuickBody');
+  const modal=document.getElementById('issuesQuickView');
+  if(!body || !modal) return;
+
+  const groups=state.projects
+    .map(p=>({p,items:projectOpenIssueDetails(p)}))
+    .filter(x=>x.items.length);
+
+  body.innerHTML=groups.length
+    ? groups.map(({p,items})=>`
+      <div class="issue-project-group" style="--project-color:${projectColorHex(p.color)}">
+        <div class="issue-project-title">
+          <span>${esc(p.name)}</span>
+          <span>${items.length} open</span>
+        </div>
+        <div class="issue-project-body">
+          ${items.map(it=>`
+            <div class="issue-line">
+              ${esc(it.title)}
+              <small>${esc(it.detail)}</small>
+            </div>
+          `).join('')}
+          <button class="btn btn-light" onclick="closeIssuesQuickView();openPreconstructionForProject(${p.id})">Open Checklist</button>
+        </div>
+      </div>
+    `).join('')
+    : `<div class="issue-none">No open issues right now.</div>`;
+
+  modal.classList.remove('hidden');
+}
+
+function closeIssuesQuickView(){
+  document.getElementById('issuesQuickView')?.classList.add('hidden');
+}
+
 function renderDashboard(){
   ensureUserData();
 
@@ -5660,10 +6006,10 @@ function renderDashboard(){
         <div class="summary-value">${readyCount}<span style="font-size:11px;color:var(--muted)">/ ${active}</span></div>
         <small>${summary.ready}</small>
       </div>
-      <div class="dashboard-summary-item">
+      <div class="dashboard-summary-item clickable" onclick="openIssuesQuickView()">
         <div class="label">Open Issues</div>
         <div class="summary-value">${issues}</div>
-        <small>${summary.issues}</small>
+        <small>${summary.issues} · Click for quick view</small>
       </div>
       <div class="dashboard-summary-item">
         <div class="label">Average Complete</div>
@@ -5672,59 +6018,78 @@ function renderDashboard(){
       </div>
     </div>
 
-    <div class="dashboard-grid">
-      <div class="card dashboard-panel">
-        <div class="dashboard-panel-head">
-          <div><h3>Project Progress</h3><small>Quick status by job</small></div>
-        </div>
-        <div class="project-health-list">
-          ${state.projects.map(p=>{
-            const pct=projectPct(p);
-            const color=projectColorHex(p.color);
-            const completeSections=(p.precon||[]).filter(x=>Number(x)>=100).length;
-            return `<div class="project-health-row" style="--project-color:${color}" onclick="openProject(${p.id})">
-              <div class="project-health-name">
-                <b>${p.name}</b>
-                <small>${p.type}</small>
-              </div>
-
-              <div class="project-health-stat">
-                <span>Progress</span>
-                <b>${pct}%</b>
-              </div>
-
-              <div class="project-health-stat start-stat">
-                <span>Sections</span>
-                <b>${completeSections}/8</b>
-              </div>
-
-              <div class="project-health-issue ${p.issues?'has':'none'}">
-                ${p.issues?p.issues+' open':'Clear'}
-              </div>
-            </div>`;
-          }).join('')}
+    <div class="card dashboard-panel">
+      <div class="dashboard-panel-head">
+        <div>
+          <h3>Project Progress</h3>
+          <small>Quick status, schedule, issues, and P.O. count by job</small>
         </div>
       </div>
+      <div class="project-health-list">
+        ${state.projects.map(p=>{
+          const pct=projectPct(p);
+          const color=projectColorHex(p.color);
+          const completeSections=(p.precon||[]).filter(x=>Number(x)>=100).length;
+          const review=p.pos.filter(po=>poNeedsReviewForCurrentUser(po)).length;
+          return `<div class="project-health-row" style="--project-color:${color}" onclick="openProject(${p.id})">
+            <div class="project-health-name">
+              <b>${p.name}</b>
+              <small>${p.type} · ${p.jobNo}</small>
+            </div>
 
-      <div class="card dashboard-panel">
-        <div class="dashboard-panel-head">
-          <div><h3>Next Actions</h3><small>Separated by job</small></div>
+            <div class="project-health-stat">
+              <span>Progress</span>
+              <b>${pct}%</b>
+            </div>
+
+            <div class="project-health-stat">
+              <span>Sections</span>
+              <b>${completeSections}/8</b>
+            </div>
+
+            <div class="project-health-start">
+              <span>Start</span>
+              ${esc(p.start || 'TBD')}
+            </div>
+
+            <div class="project-health-po">
+              <span>P.O.s</span>
+              ${p.pos.length} total${review?` · ${review} review`:''}
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>
+
+    <div class="card dashboard-panel">
+      <div class="dashboard-panel-head">
+        <div>
+          <h3>Next Actions</h3>
+          <small>What needs attention next, clearly separated by job</small>
         </div>
-        <div class="next-actions-list">
-          ${state.projects.map(p=>{
-            const a=dashboardProjectAction(p);
-            const color=projectColorHex(p.color);
-            return `<div class="next-action-row" style="--project-color:${color}">
-              <div class="next-action-color"></div>
-              <div>
-                <div class="next-action-job">${p.name}</div>
-                <div class="next-action-task">${a.title}</div>
-                <div class="next-action-detail">${a.detail}</div>
+      </div>
+      <div class="next-actions-list">
+        ${state.projects.map(p=>{
+          const a=dashboardProjectAction(p);
+          const color=projectColorHex(p.color);
+          const review=p.pos.filter(po=>poNeedsReviewForCurrentUser(po)).length;
+          const pct=projectPct(p);
+          return `<div class="next-action-row" style="--project-color:${color}">
+            <div class="next-action-color"></div>
+            <div>
+              <div class="next-action-job">${p.name} · ${p.jobNo}</div>
+              <div class="next-action-task">${a.title}</div>
+              <div class="next-action-detail">${a.detail}</div>
+              <div class="next-action-extra">
+                <span>Progress: ${pct}%</span>
+                <span>Open issues: ${p.issues}</span>
+                <span>P.O.s needing review: ${review}</span>
+                <span>Start: ${esc(p.start || 'TBD')}</span>
               </div>
-              <button class="btn btn-light" onclick="${a.action}">${a.label}</button>
-            </div>`;
-          }).join('')}
-        </div>
+            </div>
+            <button class="btn btn-light" onclick="${a.action}">${a.label}</button>
+          </div>`;
+        }).join('')}
       </div>
     </div>
 
@@ -5732,14 +6097,14 @@ function renderDashboard(){
       <div class="dashboard-panel-head">
         <div>
           <h3>P.O. Overview by Job</h3>
-          <small>Draft, approvals, review work, and labor cost are separated by project</small>
+          <small>Approval stage, review work, crew payout, and labor cost separated by project</small>
         </div>
         <button class="btn btn-light" onclick="openPOHub('splits')">Open P.O.s</button>
       </div>
 
       <div class="po-job-list">
         <div class="po-job-head">
-          <div>Job</div><div>Draft</div><div>Pre-App.</div><div>Approved</div><div>Review</div><div>Labor Cost</div>
+          <div>Job</div><div>Draft</div><div>Pre-App.</div><div>Approved</div><div>Review</div><div>Labor Cost</div><div>Crew Payout</div>
         </div>
         ${state.projects.map(p=>{
           const color=projectColorHex(p.color);
@@ -5747,19 +6112,25 @@ function renderDashboard(){
           const pre=p.pos.filter(x=>x.status==='Pre-Approved').length;
           const approved=p.pos.filter(x=>x.status==='Approved').length;
           const review=p.pos.filter(po=>poNeedsReviewForCurrentUser(po)).length;
+          const labor=laborBuilderCost(p);
+          const base=labor*.60;
           return `<div class="po-job-row" style="--project-color:${color}" onclick="openProjectPOHub(${p.id},'splits')">
-            <div><b>${p.name}</b><small>${p.pos.length} total P.O.${p.pos.length===1?'':'s'}</small></div>
+            <div>
+              <b>${p.name}</b>
+              <small>${p.jobNo} · ${p.pos.length} total P.O.${p.pos.length===1?'':'s'}</small>
+            </div>
             <div class="po-cell">${drafts}</div>
             <div class="po-cell">${pre}</div>
             <div class="po-cell">${approved}</div>
             <div class="po-cell ${review?'review':''}">${review}</div>
-            <div class="po-cost">${money(laborBuilderCost(p))}</div>
+            <div class="po-cost">${money(labor)}</div>
+            <div class="po-extra">${money(base)}</div>
           </div>`;
         }).join('')}
       </div>
 
       <div class="dashboard-mini-legend">
-        <span><i style="background:var(--red)"></i> Review = work required by ${state.currentUser}</span>
+        <span><i style="background:var(--red)"></i> Review = action needed by ${state.currentUser}</span>
         <span><i style="background:var(--green)"></i> Approved = final approval complete</span>
       </div>
     </div>
@@ -8043,6 +8414,22 @@ document.addEventListener('keydown',function(e){
 
 
 
+
+document.addEventListener('click',function(e){
+  const sidebar=document.querySelector('.sidebar');
+  const jobsButtons=[...document.querySelectorAll('[onclick*="toggleSidebar"],[onclick*="openJobsDrawer"],[onclick*="openMobileSidebar"]')];
+  const clickedJobsButton=jobsButtons.some(btn=>btn.contains(e.target));
+
+  if(!sidebar || clickedJobsButton || sidebar.contains(e.target)) return;
+
+  if(document.body.classList.contains('sidebar-open')){
+    closeJobsDrawer();
+  }
+  if(document.body.classList.contains('mobile-sidebar-open')){
+    closeMobileSidebar();
+  }
+});
+
 document.addEventListener('click',function(e){
   const menu=document.getElementById('tabletToolsMenu');
   const button=document.querySelector('.tablet-more-button');
@@ -8137,3 +8524,12 @@ if ('serviceWorker' in navigator) {
 
 </body>
 </html>
+
+<script>
+document.querySelector('.brand')?.addEventListener('keydown',e=>{
+  if(e.key==='Enter' || e.key===' '){
+    e.preventDefault();
+    go('dashboard');
+  }
+});
+</script>

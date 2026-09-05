@@ -1,7 +1,8 @@
-const CACHE_NAME = 'jj-operations-v25';
+const CACHE_NAME = 'jj-operations-v27';
 const APP_SHELL = [
   './',
   './index.html',
+  './jj-original-logo.png',
   './manifest.webmanifest',
   './icons/icon-192.png',
   './icons/icon-512.png'
