@@ -1,4 +1,4 @@
-const CACHE_NAME = 'jj-operations-v19';
+const CACHE_NAME = 'jj-operations-v20';
 const APP_SHELL = [
   './',
   './index.html',

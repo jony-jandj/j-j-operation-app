@@ -2862,19 +2862,8 @@ textarea.estimate-cell-input{
   cursor:pointer;
   font-family:inherit;
 }
-.cloud-setup-shortcut{
-  padding:6px 9px!important;
-  font-size:9px!important;
-  min-height:30px;
-}
 @media(max-width:560px){
-  .cloud-setup-shortcut{
-    display:inline-flex!important;
-    padding:5px 7px!important;
-    min-height:28px!important;
-    font-size:8px!important;
-  }
-  #cloudStatus.cloud-status{
+    #cloudStatus.cloud-status{
     cursor:pointer;
   }
 }
@@ -2921,42 +2910,12 @@ textarea.estimate-cell-input{
 </div>
 
 
-<div id="cloudSetupModal" class="cloud-modal">
-  <div class="cloud-modal-card">
-    <div class="cloud-modal-head">
-      <div>
-        <div class="eyebrow">Shared App Setup</div>
-        <h3>Connect J&J Cloud</h3>
-      </div>
-      <button onclick="closeCloudSetup()">×</button>
-    </div>
-
-    <p class="cloud-copy">
-      Connect this app to the J&J Supabase project. Once connected, changes auto-save
-      and sync across phones and computers.
-    </p>
-
-    <label class="cloud-label">Supabase Project URL</label>
-    <input id="cloudUrlInput" class="input" placeholder="https://xxxxx.supabase.co">
-
-    <label class="cloud-label">Publishable / Anon Key</label>
-    <textarea id="cloudKeyInput" class="input" rows="4" placeholder="sb_publishable_..."></textarea>
-
-    <div class="cloud-actions">
-      <button class="btn btn-light" onclick="disconnectCloud()">Disconnect</button>
-      <button class="btn btn-gold" onclick="saveCloudSetup()">Connect</button>
-    </div>
-
-    <div id="cloudSetupMessage" class="cloud-setup-message"></div>
-  </div>
-</div>
-
 <div id="cloudLoginOverlay" class="login-overlay hidden">
   <div class="login-card">
     <div class="login-logo">J&J</div>
     <div class="eyebrow">J&J Home Renovations</div>
     <h2>Sign in</h2>
-    <p>Use your J&J account so your changes sync and are recorded under your name.</p>
+    <p>Sign in with your J&J account. Your projects and changes sync automatically across devices.</p>
 
     <input id="cloudEmail" class="input" type="email" autocomplete="username" placeholder="Email">
     <input id="cloudPassword" class="input" type="password" autocomplete="current-password" placeholder="Password" style="margin-top:8px">
@@ -2964,7 +2923,7 @@ textarea.estimate-cell-input{
     <button class="btn btn-gold" style="width:100%;margin-top:10px" onclick="cloudSignIn()">Sign In</button>
     <div id="cloudLoginMessage" class="cloud-login-message"></div>
 
-    <button class="link-button" onclick="disconnectCloud()">Use local prototype instead</button>
+    
   </div>
 </div>
 
@@ -3051,8 +3010,7 @@ textarea.estimate-cell-input{
     </div>
   </div>
   <div class="header-actions">
-    <button id="cloudStatus" class="cloud-status local cloud-status-button" onclick="openCloudSetup()" title="Open Cloud Setup">Local</button>
-    <button class="btn btn-light cloud-setup-shortcut" onclick="openCloudSetup()">Cloud</button>
+    <div id="cloudStatus" class="cloud-status local">Connecting</div>
     <div class="user-switcher">
       <span>User</span>
       <select id="currentUserSelect" onchange="setCurrentUser(this.value)">
@@ -3072,8 +3030,8 @@ textarea.estimate-cell-input{
 
 <div id="mobileToolsMenu" class="mobile-tools-menu">
   <button onclick="saveState();closeMobileTools()">Save Now</button>
-  <button onclick="openCloudSetup();closeMobileTools()">Cloud Setup</button>
-  <button onclick="exportAppBackup();closeMobileTools()">Export Backup</button>
+  <button onclick="cloudSignOut();closeMobileTools()">Sign Out</button>
+    <button onclick="exportAppBackup();closeMobileTools()">Export Backup</button>
   <button onclick="openBackupImport();closeMobileTools()">Import Backup</button>
   <button class="gold" onclick="openAssistant();closeMobileTools()">J&J Assistant</button>
 </div>
@@ -4276,6 +4234,10 @@ function importAppBackup(input){
 
 
 const CLOUD_CONFIG_KEY='jj_supabase_config';
+const BUILT_IN_CLOUD_CONFIG={
+  url:'https://mrkvspqwqsmlnhrfllpx.supabase.co',
+  key:'sb_publishable_n5w6Q2b1nvsnOEcYZL2fsQ_u0gGltVk'
+};
 const CLOUD_ORG_ID='jj-home-renovations';
 let cloudClient=null;
 let cloudChannel=null;
@@ -4284,11 +4246,9 @@ let cloudApplying=false;
 let cloudLastRemoteAt=0;
 
 function cloudConfig(){
-  try{
-    return JSON.parse(localStorage.getItem(CLOUD_CONFIG_KEY)||'null');
-  }catch(e){
-    return null;
-  }
+  // J&J Supabase connection is built into the app.
+  // The publishable key is browser-safe; no service-role/secret key is stored here.
+  return BUILT_IN_CLOUD_CONFIG;
 }
 
 function setCloudStatus(label,kind='local'){
@@ -4298,53 +4258,33 @@ function setCloudStatus(label,kind='local'){
   el.className=`cloud-status ${kind}`;
 }
 
-function openCloudSetup(){
-  const cfg=cloudConfig();
-  document.getElementById('cloudUrlInput').value=cfg?.url||'';
-  document.getElementById('cloudKeyInput').value=cfg?.key||'';
-  document.getElementById('cloudSetupMessage').textContent='';
-  document.getElementById('cloudSetupModal')?.classList.add('open');
-}
+function openCloudSetup(){ return; }
 
-function closeCloudSetup(){
-  document.getElementById('cloudSetupModal')?.classList.remove('open');
-}
+function closeCloudSetup(){ return; }
 
-async function saveCloudSetup(){
-  const url=document.getElementById('cloudUrlInput')?.value.trim();
-  const key=document.getElementById('cloudKeyInput')?.value.trim();
-  const msg=document.getElementById('cloudSetupMessage');
+async function saveCloudSetup(){ return; }
 
-  if(!url || !key){
-    if(msg) msg.textContent='Enter both the Supabase URL and publishable key.';
-    return;
-  }
-
-  localStorage.setItem(CLOUD_CONFIG_KEY,JSON.stringify({url,key}));
-  if(msg) msg.textContent='Connecting…';
-
-  try{
-    await initCloud(true);
-    closeCloudSetup();
-  }catch(err){
-    if(msg) msg.textContent=err.message || 'Could not connect.';
-  }
-}
-
-async function disconnectCloud(){
+async function cloudSignOut(){
   try{
     if(cloudClient) await cloudClient.auth.signOut();
-  }catch(e){}
+  }catch(e){
+    console.error('Sign out failed',e);
+  }
+
   if(cloudChannel && cloudClient){
     try{ await cloudClient.removeChannel(cloudChannel); }catch(e){}
   }
-  cloudClient=null;
+
   cloudChannel=null;
-  localStorage.removeItem(CLOUD_CONFIG_KEY);
-  document.getElementById('cloudLoginOverlay')?.classList.add('hidden');
-  document.getElementById('loginOverlay')?.classList.remove('hidden');
-  closeCloudSetup();
-  setCloudStatus('Local','local');
+  sessionStorage.removeItem('jj_session_user');
+  document.getElementById('cloudLoginOverlay')?.classList.remove('hidden');
+  document.getElementById('loginOverlay')?.classList.add('hidden');
+  setCloudStatus('Sign In','offline');
+}
+
+async function disconnectCloud(){
+  // Kept for compatibility with older UI calls.
+  return cloudSignOut();
 }
 
 async function initCloud(forceLogin=false){
@@ -7034,21 +6974,20 @@ syncUserSelector();
 restoreLayoutPreferences();
 
 (async()=>{
-  const cfg=cloudConfig();
-  if(cfg){
-    document.getElementById('loginOverlay')?.classList.add('hidden');
-    try{
-      const connected=await initCloud();
-      if(!connected){
-        document.getElementById('cloudLoginOverlay')?.classList.remove('hidden');
-      }
-    }catch(err){
-      console.error(err);
-      setCloudStatus('Offline','offline');
+  document.getElementById('loginOverlay')?.classList.add('hidden');
+  setCloudStatus('Connecting','saving');
+
+  try{
+    const connected=await initCloud();
+    if(!connected){
       document.getElementById('cloudLoginOverlay')?.classList.remove('hidden');
     }
-  }else{
-    requireUserSignIn();
+  }catch(err){
+    console.error(err);
+    setCloudStatus('Offline','offline');
+    document.getElementById('cloudLoginOverlay')?.classList.remove('hidden');
+    const msg=document.getElementById('cloudLoginMessage');
+    if(msg) msg.textContent='Could not connect to J&J Cloud. Check your internet connection and refresh.';
   }
 })();
 </script>

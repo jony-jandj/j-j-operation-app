@@ -1,8 +1,31 @@
-J&J Operations — Visible Cloud Setup
+J&J Operations — Automatic Cloud Connection
 
-Adds an always-visible Cloud button in the header.
-The Local / Live / Saved status pill is also clickable and opens Cloud Setup.
+Supabase connection is now built into the app.
 
-This avoids relying on the ••• menu to connect Supabase.
+New user experience:
+1. Open J&J Operations
+2. Sign in with J&J email/password
+3. Work
 
-All previous mobile, printing, Preconstruction, Estimate, P.O., and approval updates remain included.
+No one needs to manually enter:
+- Supabase Project URL
+- Publishable key
+- Cloud Setup
+
+The app automatically connects to the J&J Supabase project on load.
+
+The header status still shows:
+- Connecting
+- Live
+- Saving
+- Saved
+- Offline
+
+A Sign Out option is available in the app menu so Jony, Adair, and Gio
+can switch accounts on a shared device.
+
+Important:
+Only the browser-safe Supabase publishable key is embedded.
+No secret/service-role key is included.
+
+All prior app features remain included.
