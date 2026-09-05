@@ -1,31 +1,18 @@
-J&J Operations — Automatic Cloud Connection
+J&J Operations — Create / Reset Password
 
-Supabase connection is now built into the app.
+Adds Create / Reset Password to the J&J sign-in screen.
 
-New user experience:
-1. Open J&J Operations
-2. Sign in with J&J email/password
-3. Work
+Flow:
+1. Enter J&J email.
+2. Tap Create / Reset Password.
+3. Supabase emails the user a secure recovery link.
+4. Link returns to the J&J app.
+5. User creates and confirms a new password.
+6. User is signed into the live J&J app.
 
-No one needs to manually enter:
-- Supabase Project URL
-- Publishable key
-- Cloud Setup
+REQUIRED ONCE IN SUPABASE:
+Authentication -> URL Configuration
+Site URL: https://jony-jandj.github.io/j-j-operation-app/
+Add the same URL under Redirect URLs.
 
-The app automatically connects to the J&J Supabase project on load.
-
-The header status still shows:
-- Connecting
-- Live
-- Saving
-- Saved
-- Offline
-
-A Sign Out option is available in the app menu so Jony, Adair, and Gio
-can switch accounts on a shared device.
-
-Important:
-Only the browser-safe Supabase publishable key is embedded.
-No secret/service-role key is included.
-
-All prior app features remain included.
+All previous automatic-cloud and app features remain included.

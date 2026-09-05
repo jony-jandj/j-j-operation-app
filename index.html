@@ -2868,6 +2868,9 @@ textarea.estimate-cell-input{
   }
 }
 
+
+.reset-password-link{display:block;width:100%;margin-top:9px;padding:6px;text-align:center;font-weight:800}
+#passwordResetOverlay .login-card .input{text-align:left}
 </style>
 
   <meta name="theme-color" content="#14234A">
@@ -2921,9 +2924,25 @@ textarea.estimate-cell-input{
     <input id="cloudPassword" class="input" type="password" autocomplete="current-password" placeholder="Password" style="margin-top:8px">
 
     <button class="btn btn-gold" style="width:100%;margin-top:10px" onclick="cloudSignIn()">Sign In</button>
+    <button class="link-button reset-password-link" onclick="requestPasswordReset()">Create / Reset Password</button>
     <div id="cloudLoginMessage" class="cloud-login-message"></div>
 
     
+  </div>
+</div>
+
+<div id="passwordResetOverlay" class="login-overlay hidden">
+  <div class="login-card">
+    <div class="login-logo">J&J</div>
+    <div class="eyebrow">J&J Home Renovations</div>
+    <h2>Set your password</h2>
+    <p>Create a password for your J&J account.</p>
+
+    <input id="newPassword" class="input" type="password" autocomplete="new-password" placeholder="New password">
+    <input id="confirmNewPassword" class="input" type="password" autocomplete="new-password" placeholder="Confirm new password" style="margin-top:8px">
+
+    <button class="btn btn-gold" style="width:100%;margin-top:10px" onclick="completePasswordReset()">Save Password</button>
+    <div id="passwordResetMessage" class="cloud-login-message"></div>
   </div>
 </div>
 
@@ -4277,6 +4296,7 @@ async function cloudSignOut(){
 
   cloudChannel=null;
   sessionStorage.removeItem('jj_session_user');
+  document.getElementById('passwordResetOverlay')?.classList.add('hidden');
   document.getElementById('cloudLoginOverlay')?.classList.remove('hidden');
   document.getElementById('loginOverlay')?.classList.add('hidden');
   setCloudStatus('Sign In','offline');
@@ -4307,10 +4327,17 @@ async function initCloud(forceLogin=false){
     }
   });
 
+  cloudClient.auth.onAuthStateChange((event,session)=>{
+    if(event==='PASSWORD_RECOVERY'){
+      showPasswordResetForm();
+    }
+  });
+
   const {data:{session}}=await cloudClient.auth.getSession();
 
   if(!session){
     document.getElementById('loginOverlay')?.classList.add('hidden');
+    document.getElementById('passwordResetOverlay')?.classList.add('hidden');
     document.getElementById('cloudLoginOverlay')?.classList.remove('hidden');
     setCloudStatus('Sign In','offline');
     return false;
@@ -4318,6 +4345,87 @@ async function initCloud(forceLogin=false){
 
   await finishCloudLogin(session.user);
   return true;
+}
+
+
+async function requestPasswordReset(){
+  if(!cloudClient){
+    try{ await initCloud(); }catch(err){
+      const msg=document.getElementById('cloudLoginMessage');
+      if(msg) msg.textContent=err.message||'Could not connect.';
+      return;
+    }
+  }
+
+  const email=document.getElementById('cloudEmail')?.value.trim();
+  const msg=document.getElementById('cloudLoginMessage');
+
+  if(!email){
+    if(msg) msg.textContent='Enter your email first, then tap Create / Reset Password.';
+    return;
+  }
+
+  if(msg) msg.textContent='Sending password setup email…';
+
+  const redirectTo=window.location.origin + window.location.pathname;
+  const {error}=await cloudClient.auth.resetPasswordForEmail(email,{redirectTo});
+
+  if(error){
+    const lower=(error.message||'').toLowerCase();
+    if(msg){
+      msg.textContent=lower.includes('rate limit')
+        ? 'Email limit reached. Wait a little while, then try once more.'
+        : (error.message||'Could not send password email.');
+    }
+    return;
+  }
+
+  if(msg) msg.textContent='Email sent. Open the J&J password email and tap its link.';
+}
+
+function showPasswordResetForm(){
+  document.getElementById('loginOverlay')?.classList.add('hidden');
+  document.getElementById('cloudLoginOverlay')?.classList.add('hidden');
+  document.getElementById('passwordResetOverlay')?.classList.remove('hidden');
+  setCloudStatus('Set Password','saving');
+  setTimeout(()=>document.getElementById('newPassword')?.focus(),50);
+}
+
+async function completePasswordReset(){
+  if(!cloudClient) return;
+
+  const password=document.getElementById('newPassword')?.value||'';
+  const confirm=document.getElementById('confirmNewPassword')?.value||'';
+  const msg=document.getElementById('passwordResetMessage');
+
+  if(password.length<8){
+    if(msg) msg.textContent='Password must be at least 8 characters.';
+    return;
+  }
+  if(password!==confirm){
+    if(msg) msg.textContent='Passwords do not match.';
+    return;
+  }
+
+  if(msg) msg.textContent='Saving password…';
+  const {data,error}=await cloudClient.auth.updateUser({password});
+
+  if(error){
+    if(msg) msg.textContent=error.message||'Could not save password.';
+    return;
+  }
+
+  if(msg) msg.textContent='Password saved.';
+  document.getElementById('passwordResetOverlay')?.classList.add('hidden');
+
+  const user=data?.user || (await cloudClient.auth.getUser()).data?.user;
+  if(user){
+    await finishCloudLogin(user);
+  }else{
+    document.getElementById('cloudLoginOverlay')?.classList.remove('hidden');
+    const loginMsg=document.getElementById('cloudLoginMessage');
+    if(loginMsg) loginMsg.textContent='Password saved. Sign in with your new password.';
+  }
 }
 
 async function cloudSignIn(){
