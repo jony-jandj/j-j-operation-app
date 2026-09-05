@@ -3905,7 +3905,8 @@ textarea.estimate-cell-input{
   <link rel="apple-touch-icon" href="icons/icon-192.png">
 
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"
+  onerror="this.onerror=null;this.src='https://unpkg.com/@supabase/supabase-js@2';"></script>
 </head>
 <body>
 
@@ -3992,6 +3993,7 @@ textarea.estimate-cell-input{
     <input id="confirmNewPassword" class="input" type="password" autocomplete="new-password" placeholder="Confirm new password" style="margin-top:8px">
 
     <button class="btn btn-gold" style="width:100%;margin-top:10px" onclick="completePasswordReset()">Save Password</button>
+    <button class="link-button reset-password-link" onclick="cancelPasswordRecovery()">Back to Sign In</button>
     <div id="passwordResetMessage" class="cloud-login-message"></div>
   </div>
 </div>
@@ -5453,7 +5455,30 @@ async function initCloud(forceLogin=false){
     await new Promise(resolve=>setTimeout(resolve,400));
   }
 
-  const {data:{session}}=await cloudClient.auth.getSession();
+  let session=null;
+  let sessionError=null;
+
+  try{
+    const sessionResult=await cloudClient.auth.getSession();
+    session=sessionResult?.data?.session||null;
+    sessionError=sessionResult?.error||null;
+  }catch(err){
+    sessionError=err;
+    console.warn('J&J auth session check warning:',err);
+  }
+
+  // During recovery, keep the reset screen open even if the browser has a
+  // temporary session-storage/lock issue. The Save Password button will retry.
+  if((looksLikePasswordRecoveryUrl() || recoveryWasRequested()) && !session){
+    showPasswordResetForm();
+    const resetMsg=document.getElementById('passwordResetMessage');
+    if(resetMsg){
+      resetMsg.textContent=sessionError
+        ? 'Reset link detected. Tap Save Password after entering your new password.'
+        : 'Reset link detected. Create your new password below.';
+    }
+    return true;
+  }
 
   // A password-recovery link creates a temporary valid session.
   // Show Create Password instead of treating that session as a normal login.
@@ -5521,12 +5546,31 @@ function showPasswordResetForm(){
   setTimeout(()=>document.getElementById('newPassword')?.focus(),50);
 }
 
+function cancelPasswordRecovery(){
+  clearPasswordRecoveryRequest();
+  try{
+    history.replaceState({},document.title,window.location.origin + window.location.pathname);
+  }catch(e){}
+  document.getElementById('passwordResetOverlay')?.classList.add('hidden');
+  document.getElementById('cloudLoginOverlay')?.classList.remove('hidden');
+  setCloudStatus('Sign In','offline');
+}
+
 async function completePasswordReset(){
-  if(!cloudClient) return;
+  const msg=document.getElementById('passwordResetMessage');
+
+  if(!cloudClient){
+    if(msg) msg.textContent='Connecting to J&J Cloud…';
+    try{
+      await initCloud();
+    }catch(err){
+      if(msg) msg.textContent='Cloud connection failed: ' + (err?.message||'Unknown error');
+      return;
+    }
+  }
 
   const password=document.getElementById('newPassword')?.value||'';
   const confirm=document.getElementById('confirmNewPassword')?.value||'';
-  const msg=document.getElementById('passwordResetMessage');
 
   if(password.length<8){
     if(msg) msg.textContent='Password must be at least 8 characters.';
@@ -8522,6 +8566,18 @@ restoreLayoutPreferences();
 
 (async()=>{
   document.getElementById('loginOverlay')?.classList.add('hidden');
+
+  const recoveryBoot = looksLikePasswordRecoveryUrl() || recoveryWasRequested();
+
+  // Do not make the user stare at the normal Sign In screen while Supabase
+  // finishes processing a password-reset link.
+  if(recoveryBoot){
+    rememberPasswordRecoveryRequest();
+    showPasswordResetForm();
+    const resetMsg=document.getElementById('passwordResetMessage');
+    if(resetMsg) resetMsg.textContent='Reset link detected. Connecting securely…';
+  }
+
   setCloudStatus('Connecting','saving');
 
   try{
@@ -8530,11 +8586,20 @@ restoreLayoutPreferences();
       document.getElementById('cloudLoginOverlay')?.classList.remove('hidden');
     }
   }catch(err){
-    console.error(err);
+    console.error('J&J Cloud startup error:',err);
     setCloudStatus('Offline','offline');
-    document.getElementById('cloudLoginOverlay')?.classList.remove('hidden');
-    const msg=document.getElementById('cloudLoginMessage');
-    if(msg) msg.textContent='Could not connect to J&J Cloud. Check your internet connection and refresh.';
+    const detail=(err && err.message) ? err.message : 'Unknown cloud startup error';
+
+    if(looksLikePasswordRecoveryUrl() || recoveryWasRequested()){
+      document.getElementById('cloudLoginOverlay')?.classList.add('hidden');
+      document.getElementById('passwordResetOverlay')?.classList.remove('hidden');
+      const resetMsg=document.getElementById('passwordResetMessage');
+      if(resetMsg) resetMsg.textContent='Reset mode is open. Cloud message: ' + detail;
+    }else{
+      document.getElementById('cloudLoginOverlay')?.classList.remove('hidden');
+      const msg=document.getElementById('cloudLoginMessage');
+      if(msg) msg.textContent='J&J Cloud could not start: ' + detail;
+    }
   }
 })();
 </script>
