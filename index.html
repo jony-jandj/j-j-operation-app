@@ -3174,6 +3174,454 @@ textarea.estimate-cell-input{
   }
 }
 
+
+/* Dashboard clarity */
+.dashboard-summary-card{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:0;
+  overflow:hidden;
+  margin-bottom:12px;
+}
+.dashboard-summary-item{
+  padding:12px 14px;
+  border-right:1px solid var(--line);
+  min-width:0;
+}
+.dashboard-summary-item:last-child{border-right:0}
+.dashboard-summary-item .summary-value{
+  display:flex;
+  align-items:baseline;
+  gap:5px;
+  color:var(--navy);
+  font-size:24px;
+  font-weight:900;
+  line-height:1;
+  margin-top:3px;
+}
+.dashboard-summary-item small{
+  display:block;
+  color:var(--muted);
+  font-size:9px;
+  line-height:1.3;
+  margin-top:5px;
+}
+.dashboard-grid{
+  display:grid;
+  grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);
+  gap:12px;
+  align-items:start;
+}
+.dashboard-panel{
+  padding:14px;
+}
+.dashboard-panel-head{
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+  align-items:center;
+  margin-bottom:10px;
+}
+.dashboard-panel-head h3{
+  margin:0;
+  color:var(--navy);
+  font-size:15px;
+}
+.dashboard-panel-head small{
+  color:var(--muted);
+  font-size:9px;
+}
+.project-health-list,
+.next-actions-list,
+.po-job-list{
+  display:grid;
+  gap:7px;
+}
+.project-health-row{
+  display:grid;
+  grid-template-columns:minmax(120px,1fr) minmax(160px,1.4fr) 54px 54px;
+  gap:9px;
+  align-items:center;
+  padding:8px 9px;
+  border:1px solid var(--line);
+  border-left:5px solid var(--project-color);
+  border-radius:9px;
+  cursor:pointer;
+}
+.project-health-name b{
+  display:block;
+  color:var(--navy);
+  font-size:10px;
+}
+.project-health-name small{
+  display:block;
+  color:var(--muted);
+  font-size:8px;
+  margin-top:2px;
+}
+.health-bar{
+  height:9px;
+  border-radius:999px;
+  background:#E9EDF2;
+  overflow:hidden;
+}
+.health-bar > div{
+  height:100%;
+  border-radius:999px;
+  background:var(--project-color);
+}
+.health-number{
+  font-size:10px;
+  font-weight:900;
+  color:var(--navy);
+  text-align:right;
+}
+.health-issue{
+  text-align:right;
+  font-size:9px;
+  font-weight:900;
+}
+.health-issue.has{color:var(--red)}
+.health-issue.none{color:var(--green)}
+
+.next-action-row{
+  display:grid;
+  grid-template-columns:6px minmax(0,1fr) auto;
+  gap:10px;
+  align-items:center;
+  padding:9px 10px;
+  border:1px solid var(--line);
+  border-radius:9px;
+}
+.next-action-color{
+  align-self:stretch;
+  border-radius:999px;
+  background:var(--project-color);
+}
+.next-action-job{
+  color:var(--navy);
+  font-size:9px;
+  font-weight:900;
+}
+.next-action-task{
+  color:var(--navy);
+  font-size:11px;
+  font-weight:900;
+  margin-top:2px;
+}
+.next-action-detail{
+  color:var(--muted);
+  font-size:8px;
+  margin-top:2px;
+}
+.next-action-row .btn{
+  padding:7px 9px;
+  font-size:8px;
+  white-space:nowrap;
+}
+
+.po-job-head,
+.po-job-row{
+  display:grid;
+  grid-template-columns:minmax(140px,1.45fr) 46px 58px 56px 58px 92px;
+  gap:6px;
+  align-items:center;
+}
+.po-job-head{
+  padding:0 8px 5px;
+  color:var(--muted);
+  font-size:7px;
+  font-weight:900;
+  text-transform:uppercase;
+  letter-spacing:.04em;
+}
+.po-job-row{
+  padding:8px;
+  border:1px solid var(--line);
+  border-left:5px solid var(--project-color);
+  border-radius:9px;
+  cursor:pointer;
+}
+.po-job-row b{
+  color:var(--navy);
+  font-size:9px;
+}
+.po-job-row small{
+  color:var(--muted);
+  display:block;
+  font-size:7px;
+  margin-top:2px;
+}
+.po-cell{
+  text-align:center;
+  font-size:9px;
+  font-weight:900;
+  color:var(--navy);
+}
+.po-cell.review{color:var(--red)}
+.po-cost{
+  text-align:right;
+  font-size:9px;
+  font-weight:900;
+  color:var(--navy);
+}
+.dashboard-mini-legend{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  color:var(--muted);
+  font-size:8px;
+  margin-top:8px;
+}
+.dashboard-mini-legend span{
+  display:inline-flex;
+  align-items:center;
+  gap:4px;
+}
+.dashboard-mini-legend i{
+  width:7px;height:7px;border-radius:50%;
+}
+.dashboard-bottom-panel{
+  margin-top:12px;
+}
+@media(max-width:1180px){
+  .dashboard-summary-card{
+    grid-template-columns:repeat(4,1fr);
+  }
+  .dashboard-summary-item{
+    padding:9px 10px;
+  }
+  .dashboard-summary-item .summary-value{
+    font-size:19px;
+  }
+  .dashboard-grid{
+    grid-template-columns:1fr;
+  }
+  .dashboard-panel{
+    padding:11px;
+  }
+}
+@media(max-width:760px){
+  .dashboard-summary-card{
+    grid-template-columns:1fr 1fr;
+  }
+  .dashboard-summary-item:nth-child(2){border-right:0}
+  .dashboard-summary-item:nth-child(-n+2){border-bottom:1px solid var(--line)}
+  .project-health-row{
+    grid-template-columns:minmax(105px,1fr) minmax(100px,1.1fr) 42px;
+  }
+  .health-issue{display:none}
+  .po-job-head{display:none}
+  .po-job-row{
+    grid-template-columns:minmax(115px,1.4fr) repeat(4,38px);
+  }
+  .po-cost{
+    grid-column:1/-1;
+    text-align:left;
+    border-top:1px solid var(--line);
+    padding-top:5px;
+    margin-top:2px;
+  }
+}
+
+
+@media (min-width:561px) and (max-width:1180px){
+  /* Force tablet utilities above the app content */
+  .tablet-more-button,
+  .tablet-signin-button{
+    display:inline-flex!important;
+    position:relative;
+    z-index:10061;
+    pointer-events:auto!important;
+  }
+
+  #tabletToolsMenu{
+    z-index:10060!important;
+    top:62px!important;
+    right:10px!important;
+  }
+
+  .tablet-sidebar-backdrop,
+  body.sidebar-open .tablet-sidebar-backdrop{
+    z-index:8998!important;
+  }
+
+  .sidebar{
+    z-index:8999!important;
+    pointer-events:auto!important;
+  }
+
+  /* Jobs drawer always begins below nothing; it is a true overlay */
+  body.sidebar-open .sidebar{
+    transform:translateX(0)!important;
+    visibility:visible!important;
+    opacity:1!important;
+  }
+
+  /* Header: one calm row */
+  .topbar{
+    min-height:58px!important;
+    padding:7px 10px!important;
+  }
+  .brand-subtitle{display:none!important}
+  .brand-title{font-size:13px!important}
+  .brand img,.brand-logo{width:36px!important;height:36px!important}
+
+  /* Hide old desktop utility buttons, keep Live + account + dots */
+  .header-actions > .btn,
+  .header-actions > button:not(.tablet-more-button):not(.tablet-signin-button):not(#cloudStatus),
+  .header-actions .user-label,
+  #userSelect{
+    display:none!important;
+  }
+
+  .topnav{
+    padding:6px 10px!important;
+  }
+  .topnav .layout-control{
+    margin-left:auto!important;
+  }
+  #topbarToggleBtn{display:none!important}
+
+  .content{
+    padding:10px!important;
+  }
+
+  /* Preconstruction summary: two compact rows instead of giant grid */
+  .precon-summary-card .precon-info-grid{
+    grid-template-columns:repeat(4,1fr)!important;
+    gap:5px!important;
+  }
+  .precon-summary-card .precon-info{
+    padding:6px 7px!important;
+  }
+  .precon-summary-card .precon-info:nth-child(1),
+  .precon-summary-card .precon-info:nth-child(5){
+    display:none!important;
+  }
+  .precon-summary-top{
+    padding:8px 10px!important;
+  }
+  .precon-summary-top h3{font-size:15px!important}
+  .precon-summary-top small{font-size:8px!important}
+
+  .section-step-note,
+  .precon-linked-note{
+    padding:7px 8px!important;
+    font-size:8px!important;
+    margin:6px 0!important;
+  }
+  .user-color-legend{
+    margin:5px 0!important;
+  }
+
+  .precon-overview-row{
+    min-height:56px!important;
+  }
+  .precon-overview-number{
+    width:48px!important;
+    font-size:18px!important;
+  }
+  .precon-overview-copy h4{font-size:11px!important}
+  .precon-overview-copy p{font-size:8px!important}
+
+  .fab{
+    width:38px!important;
+    height:38px!important;
+    font-size:13px!important;
+  }
+}
+
+
+/* Cleaner Project Progress */
+.project-health-list{
+  display:grid;
+  gap:8px;
+}
+.project-health-row{
+  display:grid;
+  grid-template-columns:minmax(150px,1.4fr) auto auto auto;
+  gap:12px;
+  align-items:center;
+  padding:10px 11px;
+  border:1px solid var(--line);
+  border-left:5px solid var(--project-color);
+  border-radius:10px;
+  background:#fff;
+  cursor:pointer;
+}
+.project-health-row:hover{
+  background:#FAFBFC;
+}
+.project-health-name{
+  min-width:0;
+}
+.project-health-name b{
+  display:block;
+  color:var(--navy);
+  font-size:11px;
+}
+.project-health-name small{
+  display:block;
+  color:var(--muted);
+  font-size:8px;
+  margin-top:2px;
+}
+.project-health-stat{
+  min-width:62px;
+}
+.project-health-stat span{
+  display:block;
+  color:var(--muted);
+  font-size:7px;
+  font-weight:900;
+  text-transform:uppercase;
+  letter-spacing:.04em;
+}
+.project-health-stat b{
+  display:block;
+  color:var(--navy);
+  font-size:12px;
+  margin-top:2px;
+}
+.project-health-status{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  white-space:nowrap;
+  font-size:9px;
+  font-weight:900;
+}
+.project-health-status i{
+  width:8px;
+  height:8px;
+  border-radius:50%;
+  background:var(--project-color);
+  flex:0 0 auto;
+}
+.project-health-issue{
+  min-width:70px;
+  text-align:right;
+  font-size:9px;
+  font-weight:900;
+}
+.project-health-issue.has{color:var(--red)}
+.project-health-issue.none{color:var(--green)}
+
+@media(max-width:760px){
+  .project-health-row{
+    grid-template-columns:minmax(120px,1fr) auto auto;
+    gap:8px;
+    padding:9px;
+  }
+  .project-health-stat.start-stat{
+    display:none;
+  }
+  .project-health-issue{
+    min-width:0;
+  }
+}
+
 </style>
 
   <meta name="theme-color" content="#14234A">
@@ -3188,15 +3636,15 @@ textarea.estimate-cell-input{
 </head>
 <body>
 
-<div class="sidebar-backdrop" onclick="closeSidebarDrawer()"></div>
+<div class="sidebar-backdrop tablet-sidebar-backdrop" onclick="closeJobsDrawer()"></div>
 
 <div id="tabletToolsMenu">
-  <button onclick="openJobsDrawer();toggleTabletTools(false)">Jobs</button>
-  <button onclick="saveState();toggleTabletTools(false)">Save Now</button>
-  <button onclick="exportBackup();toggleTabletTools(false)">Export Backup</button>
-  <button onclick="document.getElementById('backupFileInput')?.click();toggleTabletTools(false)">Import Backup</button>
-  <button onclick="openAssistant();toggleTabletTools(false)">J&J Assistant</button>
-  <button onclick="cloudSignOut();toggleTabletTools(false)">Sign Out</button>
+  <button onclick="openJobsDrawer()">Jobs</button>
+  <button onclick="saveState();closeTabletTools()">Save Now</button>
+  <button onclick="exportBackup();closeTabletTools()">Export Backup</button>
+  <button onclick="document.getElementById('backupFileInput')?.click();closeTabletTools()">Import Backup</button>
+  <button onclick="openAssistant();closeTabletTools()">J&J Assistant</button>
+  <button onclick="cloudSignOut();closeTabletTools()">Sign Out</button>
 </div>
 
 <div id="printRoot" class="print-root"></div>
@@ -3376,7 +3824,7 @@ textarea.estimate-cell-input{
 
 <div id="collapsedTopControls" class="collapsed-top-controls">
   <button onclick="toggleTopBars()">Show Menu</button>
-  <button onclick="window.innerWidth<=1180 && window.innerWidth>=561 ? openJobsDrawer() : toggleSidebar()">Jobs</button>
+  <button onclick="isTabletLayout() ? openJobsDrawer() : toggleSidebar()">Jobs</button>
 </div>
 
 <div id="sidebarBackdrop" class="sidebar-backdrop" onclick="closeMobileSidebar()"></div>
@@ -4012,7 +4460,7 @@ function ensurePreconData(){
           if(typeof s.items[ii].checkedBy!=='string') s.items[ii].checkedBy='';
         });
         s.items=s.items.slice(0,definition.items.length);
-        if(!s.status) s.status='Open Issue';
+        if(typeof s.status!=='string') s.status='';
         if(typeof s.nextAction!=='string') s.nextAction='';
         if(typeof s.followupBy!=='string') s.followupBy='';
         if(typeof s.initials!=='string') s.initials='';
@@ -4046,8 +4494,56 @@ function poReserve(p){ return p.pos.reduce((s,x)=>s+x.builderCost*.35,0); }
 function ready(p){ return p.readyChecklist.length && p.readyChecklist.every(x=>x.done); }
 
 
+
+function isTabletLayout(){
+  return window.matchMedia('(min-width:561px) and (max-width:1180px)').matches;
+}
+
+function toggleTabletTools(force){
+  const menu=document.getElementById('tabletToolsMenu');
+  if(!menu) return;
+  const open = typeof force==='boolean' ? force : !menu.classList.contains('open');
+  menu.classList.toggle('open',open);
+}
+
+function closeTabletTools(){
+  toggleTabletTools(false);
+}
+
+function openJobsDrawer(){
+  document.body.classList.add('sidebar-open');
+  document.querySelector('.sidebar')?.classList.add('open');
+  closeTabletTools();
+}
+
+function closeJobsDrawer(){
+  document.body.classList.remove('sidebar-open');
+  document.querySelector('.sidebar')?.classList.remove('open');
+}
+
+function closeSidebarDrawer(){
+  closeJobsDrawer();
+}
+
+function tabletSignInOrAccount(){
+  if(!cloudClient){
+    document.getElementById('cloudLoginOverlay')?.classList.remove('hidden');
+    return;
+  }
+
+  cloudClient.auth.getSession().then(({data})=>{
+    if(data?.session){
+      toggleTabletTools(true);
+    }else{
+      document.getElementById('cloudLoginOverlay')?.classList.remove('hidden');
+    }
+  }).catch(()=>{
+    document.getElementById('cloudLoginOverlay')?.classList.remove('hidden');
+  });
+}
+
 function isMobileLayout(){
-  return window.matchMedia('(max-width:980px)').matches;
+  return window.matchMedia('(max-width:560px)').matches;
 }
 
 function updateLayoutButtons(){
@@ -4113,6 +4609,10 @@ window.addEventListener('resize',()=>{
   if(!isMobileLayout()){
     document.body.classList.remove('mobile-sidebar-open');
   }
+  if(!isTabletLayout()){
+    closeJobsDrawer();
+    closeTabletTools();
+  }
   updateLayoutButtons();
 });
 
@@ -4122,7 +4622,7 @@ function buildNav(){
     `<button data-nav="preconstruction" onclick="openPreconstructionForProject(state.selectedProjectId)">Preconstruction</button>` +
     `<button data-nav="paybyline" onclick="openPOHub('splits');return false;">P.Os</button>` +
     `<div class="layout-control">
-      <button onclick="window.innerWidth<=1180 && window.innerWidth>=561 ? openJobsDrawer() : toggleSidebar()" id="sidebarToggleBtn">☰ Jobs</button>
+      <button onclick="isTabletLayout() ? openJobsDrawer() : toggleSidebar()" id="sidebarToggleBtn">☰ Jobs</button>
       <button onclick="toggleTopBars()" id="topbarToggleBtn">Hide Top</button>
     </div>`;
 
@@ -4144,6 +4644,7 @@ function buildNav(){
 
 function openProjectFromSidebar(id){
   if(isMobileLayout()) closeMobileSidebar();
+  if(isTabletLayout()) closeJobsDrawer();
   const currentPage=document.querySelector('.page.active')?.id;
 
   if(currentPage==='preconstruction'){
@@ -5080,80 +5581,190 @@ function nextActionCard(action){
   </div>`;
 }
 
+
+function dashboardProjectAction(p){
+  const review=p.pos.filter(po=>poNeedsReviewForCurrentUser(po)).length;
+  if(review){
+    return {
+      title:`${review} P.O.${review===1?'':'s'} need review`,
+      detail:reviewStageLabel(),
+      label:'Review',
+      action:`openProjectPOHub(${p.id},'splits')`
+    };
+  }
+
+  const pct=projectPct(p);
+  if(pct<100){
+    const si=firstOpenPreconSection(p);
+    return {
+      title:`Continue Section ${si+1}`,
+      detail:`Preconstruction ${pct}% complete`,
+      label:'Checklist',
+      action:`openPreconstructionForProject(${p.id});openPreconAccordion=${si};renderPreconstruction()`
+    };
+  }
+
+  if(!(p.estimate||[]).length){
+    return {
+      title:'Estimate needed',
+      detail:'Upload estimate to begin labor P.O.s',
+      label:'Estimate',
+      action:`openProjectPOHub(${p.id},'estimate')`
+    };
+  }
+
+  return {
+    title:ready(p)?'Ready to Start':'No immediate review',
+    detail:ready(p)?'Pre-start checklist is complete':'Project is current',
+    label:'Open',
+    action:`openProject(${p.id})`
+  };
+}
+
+function dashboardSummaryText(active,readyCount,issues,avgComplete){
+  return {
+    active:`${active} current job${active===1?'':'s'}`,
+    ready:`${readyCount} ready · ${Math.max(active-readyCount,0)} still preparing`,
+    issues:`${issues} open across all jobs`,
+    complete:`Average Preconstruction progress`
+  };
+}
+
 function renderDashboard(){
   ensureUserData();
 
   const active=state.projects.length;
   const readyCount=state.projects.filter(ready).length;
-  const issues=state.projects.reduce((s,p)=>s+p.issues,0);
+  const issues=state.projects.reduce((s,p)=>s+Number(p.issues||0),0);
   const avgComplete=Math.round(avg(state.projects.map(projectPct)));
-  const allPOs=state.projects.flatMap(p=>p.pos);
-  const drafts=allPOs.filter(x=>x.status==='Draft').length;
-  const preApproved=allPOs.filter(x=>x.status==='Pre-Approved').length;
-  const approved=allPOs.filter(x=>x.status==='Approved').length;
-  const builder=state.projects.reduce((s,p)=>s+laborBuilderCost(p),0);
-  const splitsBad=allPOs.filter(po=>poNeedsReviewForCurrentUser(po)).length;
+  const summary=dashboardSummaryText(active,readyCount,issues,avgComplete);
 
   dashboard.innerHTML=`
     <div class="page-title">
-      <div><div class="eyebrow">Company Overview</div><h2>Dashboard</h2><p>Active projects and labor at a glance.</p></div>
+      <div>
+        <div class="eyebrow">Company Overview</div>
+        <h2>Dashboard</h2>
+        <p>See where every job stands and what needs attention next.</p>
+      </div>
       <button class="btn btn-gold" onclick="openNewProject()">+ New Project</button>
     </div>
 
-    ${nextActionCard(companyNextAction())}
-
-    <div class="stats">
-      <div class="card stat"><div class="label">Active Projects</div><div class="value">${active}</div></div>
-      <div class="card stat"><div class="label">Ready to Start</div><div class="value">${readyCount}</div></div>
-      <div class="card stat"><div class="label">Open Issues</div><div class="value">${issues}</div></div>
-      <div class="card stat"><div class="label">Average Complete</div><div class="value">${avgComplete}%</div></div>
-    </div>
-
-    <div class="section">
-      <div class="section-head"><h3>Active Projects</h3><span>Tap a project to open it</span></div>
-      <div class="card projects-card">
-        <div class="project-head"><div>Project</div><div>Complete</div><div>Issues</div><div>Start</div><div>Labor</div></div>
-        ${state.projects.map(p=>{
-          const pct=projectPct(p), posCount=p.pos.length, laborCount=laborLines(p).length;
-          const color=projectColorHex(p.color);
-          return `<div class="project-row project-colored" style="--project-color:${color}" onclick="openProject(${p.id})">
-            <div class="project-name"><div class="project-name-line"><span class="project-color-dot" style="background:${color}"></span><b>${p.name}</b></div><small>${p.type}</small></div>
-            <div><div class="mobile-label">Complete</div><div class="percent">${pct}%</div><div class="bar"><div style="width:${pct}%"></div></div><button class="mini-link" onclick="event.stopPropagation();openPreconstructionForProject(${p.id})">Open checklist</button></div>
-            <div><div class="mobile-label">Issues</div><span class="pill ${p.issues?'pill-red':'pill-green'}">${p.issues} Open</span></div>
-            <div><div class="mobile-label">Start</div><div class="percent">${p.start.replace(', 2026','')}</div></div>
-            <div><div class="mobile-label">Labor</div><span class="pill ${ready(p)?'pill-green':'pill-gold'}">${posCount} / ${laborCount||posCount} P.O.s</span></div>
-          </div>`;
-        }).join('')}
+    <div class="card dashboard-summary-card">
+      <div class="dashboard-summary-item">
+        <div class="label">Active Projects</div>
+        <div class="summary-value">${active}</div>
+        <small>${summary.active}</small>
+      </div>
+      <div class="dashboard-summary-item">
+        <div class="label">Ready to Start</div>
+        <div class="summary-value">${readyCount}<span style="font-size:11px;color:var(--muted)">/ ${active}</span></div>
+        <small>${summary.ready}</small>
+      </div>
+      <div class="dashboard-summary-item">
+        <div class="label">Open Issues</div>
+        <div class="summary-value">${issues}</div>
+        <small>${summary.issues}</small>
+      </div>
+      <div class="dashboard-summary-item">
+        <div class="label">Average Complete</div>
+        <div class="summary-value">${avgComplete}%</div>
+        <small>${summary.complete}</small>
       </div>
     </div>
 
-    <div class="section">
-      <div class="section-head"><h3>P.O. Splits Overview</h3><button class="btn btn-light" onclick="openPOHub('splits')">Open P.O. Splits</button></div>
-      <div class="pay-grid">
-        <div class="card pay-card">
-          <div class="pay-title">P.O. Status</div>
-          <div class="pay-row"><span>Active P.O.s</span><b>${allPOs.length}</b></div>
-          <div class="pay-row"><span>Draft</span><b>${drafts}</b></div>
-          <div class="pay-row"><span>Pre-Approved</span><b>${preApproved}</b></div>
-          <div class="pay-row"><span>Approved</span><b>${approved}</b></div>
-          <div class="pay-row"><span>Labor Builder Cost</span><b>${money(builder)}</b></div>
+    <div class="dashboard-grid">
+      <div class="card dashboard-panel">
+        <div class="dashboard-panel-head">
+          <div><h3>Project Progress</h3><small>Quick status by job</small></div>
         </div>
-        <div class="card pay-card">
-          <div class="pay-title">P.O. Splits</div>
-          <div class="pay-row"><span>Base Crew Payout</span><b>${money(state.projects.reduce((s,p)=>s+poBase(p),0))}</b></div>
-          <div class="pay-row"><span>Touch-up Bonus</span><b>${money(state.projects.reduce((s,p)=>s+poBonus(p),0))}</b></div>
-          <div class="pay-row"><span>Reserve</span><b>${money(state.projects.reduce((s,p)=>s+poReserve(p),0))}</b></div>
-          <div class="pay-row">
-            <span>Splits Needing Review <small style="display:block;color:var(--muted);font-weight:600;margin-top:2px">${reviewStageLabel()}</small></span>
-            <b style="color:${splitsBad?'var(--red)':'var(--green)'}">${splitsBad}</b>
-          </div>
+        <div class="project-health-list">
+          ${state.projects.map(p=>{
+            const pct=projectPct(p);
+            const color=projectColorHex(p.color);
+            const completeSections=(p.precon||[]).filter(x=>Number(x)>=100).length;
+            return `<div class="project-health-row" style="--project-color:${color}" onclick="openProject(${p.id})">
+              <div class="project-health-name">
+                <b>${p.name}</b>
+                <small>${p.type}</small>
+              </div>
+
+              <div class="project-health-stat">
+                <span>Progress</span>
+                <b>${pct}%</b>
+              </div>
+
+              <div class="project-health-stat start-stat">
+                <span>Sections</span>
+                <b>${completeSections}/8</b>
+              </div>
+
+              <div class="project-health-issue ${p.issues?'has':'none'}">
+                ${p.issues?p.issues+' open':'Clear'}
+              </div>
+            </div>`;
+          }).join('')}
         </div>
+      </div>
+
+      <div class="card dashboard-panel">
+        <div class="dashboard-panel-head">
+          <div><h3>Next Actions</h3><small>Separated by job</small></div>
+        </div>
+        <div class="next-actions-list">
+          ${state.projects.map(p=>{
+            const a=dashboardProjectAction(p);
+            const color=projectColorHex(p.color);
+            return `<div class="next-action-row" style="--project-color:${color}">
+              <div class="next-action-color"></div>
+              <div>
+                <div class="next-action-job">${p.name}</div>
+                <div class="next-action-task">${a.title}</div>
+                <div class="next-action-detail">${a.detail}</div>
+              </div>
+              <button class="btn btn-light" onclick="${a.action}">${a.label}</button>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>
+    </div>
+
+    <div class="card dashboard-panel dashboard-bottom-panel">
+      <div class="dashboard-panel-head">
+        <div>
+          <h3>P.O. Overview by Job</h3>
+          <small>Draft, approvals, review work, and labor cost are separated by project</small>
+        </div>
+        <button class="btn btn-light" onclick="openPOHub('splits')">Open P.O.s</button>
+      </div>
+
+      <div class="po-job-list">
+        <div class="po-job-head">
+          <div>Job</div><div>Draft</div><div>Pre-App.</div><div>Approved</div><div>Review</div><div>Labor Cost</div>
+        </div>
+        ${state.projects.map(p=>{
+          const color=projectColorHex(p.color);
+          const drafts=p.pos.filter(x=>x.status==='Draft').length;
+          const pre=p.pos.filter(x=>x.status==='Pre-Approved').length;
+          const approved=p.pos.filter(x=>x.status==='Approved').length;
+          const review=p.pos.filter(po=>poNeedsReviewForCurrentUser(po)).length;
+          return `<div class="po-job-row" style="--project-color:${color}" onclick="openProjectPOHub(${p.id},'splits')">
+            <div><b>${p.name}</b><small>${p.pos.length} total P.O.${p.pos.length===1?'':'s'}</small></div>
+            <div class="po-cell">${drafts}</div>
+            <div class="po-cell">${pre}</div>
+            <div class="po-cell">${approved}</div>
+            <div class="po-cell ${review?'review':''}">${review}</div>
+            <div class="po-cost">${money(laborBuilderCost(p))}</div>
+          </div>`;
+        }).join('')}
+      </div>
+
+      <div class="dashboard-mini-legend">
+        <span><i style="background:var(--red)"></i> Review = work required by ${state.currentUser}</span>
+        <span><i style="background:var(--green)"></i> Approved = final approval complete</span>
       </div>
     </div>
   `;
 }
-
-
 
 function firstOpenPreconSection(p){
   ensurePreconData();
@@ -5241,8 +5852,17 @@ function updatePreconNote(si,ii,val){
   saveState(false);
 }
 function setPreconStatus(si,status){
-  selectedProject().preconData[si].status=status;
+  const p=selectedProject();
+  const section=p.preconData[si];
+
+  // Tapping the selected checkpoint again clears it.
+  // This lets Complete or Open Issue be undone without choosing the opposite status.
+  section.status = section.status===status ? '' : status;
+
+  syncLinkedPreconItems(p);
+  syncPreconProgress(p);
   saveState(false);
+  renderDashboard();
   renderPreconstruction();
 }
 function updatePreconField(si,key,val){
@@ -5590,7 +6210,7 @@ function renderPreconstruction(){
         <div class="sub">Use the Projects sidebar to switch jobs · ${overall}% overall complete</div>
       </div>
 
-      <div class="section-step-note">How to use it: open a section → check off completed items → add notes where needed → mark the section COMPLETE or OPEN ISSUE → close the section.</div>
+      <div class="section-step-note">How to use it: open a section → check off completed items → add notes where needed → mark the section COMPLETE or OPEN ISSUE (tap again to undo) → close the section.</div>
       <div class="user-color-legend">
         ${USERS.map(u=>`<span><i style="background:${u.color}"></i>${u.name}</span>`).join('')}
       </div>
