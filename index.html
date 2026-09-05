@@ -3985,7 +3985,7 @@ textarea.estimate-cell-input{
   <div class="login-card">
     <div class="login-logo">J&J</div>
     <div class="eyebrow">J&J Home Renovations</div>
-    <h2>Set your password</h2>
+    <h2>Create your password</h2>
     <p>Create a password for your J&J account.</p>
 
     <input id="newPassword" class="input" type="password" autocomplete="new-password" placeholder="New password">
@@ -5362,6 +5362,8 @@ function importAppBackup(input){
 
 
 const CLOUD_CONFIG_KEY='jj_supabase_config';
+const PASSWORD_RECOVERY_FLAG='jj_password_recovery_requested';
+const RECOVERY_URL_AT_LOAD=window.location.href;
 const BUILT_IN_CLOUD_CONFIG={
   url:'https://mrkvspqwqsmlnhrfllpx.supabase.co',
   key:'sb_publishable_n5w6Q2b1nvsnOEcYZL2fsQ_u0gGltVk'
@@ -5436,13 +5438,29 @@ async function initCloud(forceLogin=false){
     }
   });
 
+  let recoveryEventSeen=false;
+
   cloudClient.auth.onAuthStateChange((event,session)=>{
     if(event==='PASSWORD_RECOVERY'){
-      showPasswordResetForm();
+      recoveryEventSeen=true;
+      rememberPasswordRecoveryRequest();
+      setTimeout(()=>showPasswordResetForm(),0);
     }
   });
 
+  if(looksLikePasswordRecoveryUrl()){
+    rememberPasswordRecoveryRequest();
+    await new Promise(resolve=>setTimeout(resolve,400));
+  }
+
   const {data:{session}}=await cloudClient.auth.getSession();
+
+  // A password-recovery link creates a temporary valid session.
+  // Show Create Password instead of treating that session as a normal login.
+  if(session && (recoveryEventSeen || looksLikePasswordRecoveryUrl() || recoveryWasRequested())){
+    showPasswordResetForm();
+    return true;
+  }
 
   if(!session){
     document.getElementById('loginOverlay')?.classList.add('hidden');
@@ -5476,10 +5494,13 @@ async function requestPasswordReset(){
 
   if(msg) msg.textContent='Sending password setup email…';
 
+  rememberPasswordRecoveryRequest();
+
   const redirectTo=window.location.origin + window.location.pathname;
   const {error}=await cloudClient.auth.resetPasswordForEmail(email,{redirectTo});
 
   if(error){
+    clearPasswordRecoveryRequest();
     const lower=(error.message||'').toLowerCase();
     if(msg){
       msg.textContent=lower.includes('rate limit')
@@ -5525,6 +5546,12 @@ async function completePasswordReset(){
   }
 
   if(msg) msg.textContent='Password saved.';
+
+  clearPasswordRecoveryRequest();
+  try{
+    history.replaceState({},document.title,window.location.origin + window.location.pathname);
+  }catch(e){}
+
   document.getElementById('passwordResetOverlay')?.classList.add('hidden');
 
   const user=data?.user || (await cloudClient.auth.getUser()).data?.user;

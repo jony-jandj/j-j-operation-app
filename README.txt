@@ -1,26 +1,10 @@
-J&J Operations — Expanded Dashboard + Original J&J Logo
+J&J Operations — Password Recovery Fix
 
-This combines the previous full Dashboard interaction update with the user's
-original J&J Home Renovations logo in the top-left header.
+Fixes:
+- Recovery email successfully opens J&J app.
+- App now recognizes recovery session/code and shows Create your password.
+- User enters and confirms new password.
+- Recovery URL/session flag is cleared after password is saved.
+- User is then signed in normally.
 
-Included from the last update:
-- Main J&J brand/logo returns to Dashboard when clicked.
-- Clicking outside an open Jobs drawer closes it.
-- Clickable Open Issues quick view.
-- Expanded desktop Dashboard.
-- Full-width Project Progress.
-- Full-width Next Actions.
-- More detailed P.O. Overview by Job.
-- All prior cloud, tablet, password reset, Preconstruction, Estimate,
-  P.O., printing, and approval features.
-
-Logo:
-- Uses the exact original image supplied by the user.
-- No AI-redrawn/recreated logo is used.
-- File included as jj-original-logo.png.
-
-GitHub:
-Upload/replace:
-- index.html
-- service-worker.js
-- jj-original-logo.png
+This build preserves the latest expanded Dashboard and original J&J logo.
