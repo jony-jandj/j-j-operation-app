@@ -1,18 +1,20 @@
-J&J Operations — Create / Reset Password
+J&J Operations — Auto User by Supabase Login
 
-Adds Create / Reset Password to the J&J sign-in screen.
+Fix:
+The signed-in Supabase account is now always the app identity.
 
-Flow:
-1. Enter J&J email.
-2. Tap Create / Reset Password.
-3. Supabase emails the user a secure recovery link.
-4. Link returns to the J&J app.
-5. User creates and confirms a new password.
-6. User is signed into the live J&J app.
+Examples:
+- Adair account -> app opens as Adair
+- Jony account -> app opens as Jony
+- Jovani/Gio account -> app opens as Gio
 
-REQUIRED ONCE IN SUPABASE:
-Authentication -> URL Configuration
-Site URL: https://jony-jandj.github.io/j-j-operation-app/
-Add the same URL under Redirect URLs.
+This is applied AFTER shared cloud data loads, so an iPad can no longer
+inherit whichever user was last saved by another device.
 
-All previous automatic-cloud and app features remain included.
+Also:
+- currentUser is no longer treated as shared cloud data.
+- Realtime updates preserve the current device's signed-in identity.
+- Tablet account button updates to the signed-in person automatically.
+
+All existing iPad polish, password reset, cloud sync, Preconstruction,
+Estimate, P.O., printing, and approval features remain included.

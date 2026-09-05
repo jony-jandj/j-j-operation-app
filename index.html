@@ -2871,6 +2871,309 @@ textarea.estimate-cell-input{
 
 .reset-password-link{display:block;width:100%;margin-top:9px;padding:6px;text-align:center;font-weight:800}
 #passwordResetOverlay .login-card .input{text-align:left}
+
+/* Tablet / iPad polish */
+.tablet-more-button{
+  display:none;
+}
+.tablet-signin-button{
+  display:none;
+}
+.tablet-only-hidden{
+  display:initial;
+}
+
+@media (min-width: 561px) and (max-width: 1180px){
+  /* Header becomes compact instead of desktop-sized */
+  .topbar{
+    padding:10px 12px!important;
+    gap:8px!important;
+  }
+
+  .brand{
+    min-width:0!important;
+    gap:8px!important;
+  }
+
+  .brand img,
+  .brand-logo{
+    width:42px!important;
+    height:42px!important;
+  }
+
+  .brand-title{
+    font-size:14px!important;
+    line-height:1.1!important;
+  }
+
+  .brand-subtitle{
+    font-size:9px!important;
+  }
+
+  .header-actions{
+    gap:6px!important;
+    margin-left:auto!important;
+    flex-wrap:nowrap!important;
+  }
+
+  /* Hide the bulky desktop buttons on iPad */
+  .header-actions > .btn,
+  .header-actions > button:not(.tablet-more-button):not(.tablet-signin-button):not(#cloudStatus),
+  .header-actions .user-label{
+    display:none!important;
+  }
+
+  #userSelect{
+    display:none!important;
+  }
+
+  .tablet-more-button,
+  .tablet-signin-button{
+    display:inline-flex!important;
+    align-items:center;
+    justify-content:center;
+    min-height:38px;
+    border-radius:10px;
+    border:1px solid rgba(255,255,255,.24);
+    background:rgba(255,255,255,.10);
+    color:#fff;
+    font-weight:900;
+    font-size:10px;
+    padding:8px 11px;
+    cursor:pointer;
+  }
+
+  .tablet-more-button{
+    width:42px;
+    padding:0;
+    font-size:20px;
+    letter-spacing:2px;
+  }
+
+  #cloudStatus.cloud-status{
+    padding:5px 8px!important;
+    font-size:8px!important;
+  }
+
+  /* Top navigation becomes one tight row */
+  .topnav{
+    padding:7px 12px!important;
+    gap:6px!important;
+    flex-wrap:nowrap!important;
+    overflow-x:auto!important;
+    -webkit-overflow-scrolling:touch;
+  }
+
+  .topnav button{
+    flex:0 0 auto!important;
+    min-height:34px!important;
+    padding:7px 12px!important;
+    font-size:10px!important;
+  }
+
+  .layout-toggle{
+    display:none!important;
+  }
+
+  /* On iPad, don't permanently consume 300px for Jobs */
+  .sidebar{
+    position:fixed!important;
+    top:0!important;
+    left:0!important;
+    bottom:0!important;
+    width:min(330px,82vw)!important;
+    max-width:none!important;
+    z-index:9000!important;
+    transform:translateX(-105%)!important;
+    transition:transform .18s ease!important;
+    box-shadow:10px 0 28px rgba(20,35,74,.22)!important;
+    background:#fff!important;
+  }
+
+  body.sidebar-open .sidebar{
+    transform:translateX(0)!important;
+  }
+
+  .sidebar-backdrop{
+    display:none;
+    position:fixed;
+    inset:0;
+    background:rgba(10,18,40,.46);
+    z-index:8999;
+  }
+
+  body.sidebar-open .sidebar-backdrop{
+    display:block;
+  }
+
+  .main-shell,
+  .content,
+  .workspace{
+    margin-left:0!important;
+    width:100%!important;
+    max-width:none!important;
+  }
+
+  .content{
+    padding:14px!important;
+  }
+
+  /* Project/Preconstruction summary: far less bulky */
+  .precon-shell,
+  .po-hub-shell{
+    padding:0!important;
+  }
+
+  .precon-summary-card,
+  .project-summary-card{
+    padding:10px!important;
+    border-radius:12px!important;
+  }
+
+  .precon-summary-card .precon-info-grid{
+    grid-template-columns:repeat(4,minmax(0,1fr))!important;
+    gap:7px!important;
+  }
+
+  .precon-summary-card .precon-info{
+    padding:8px!important;
+    min-height:0!important;
+  }
+
+  .precon-summary-card .precon-info span{
+    font-size:7px!important;
+  }
+
+  .precon-summary-card .precon-info b{
+    font-size:10px!important;
+    line-height:1.2!important;
+  }
+
+  .precon-summary-top{
+    padding:10px 12px!important;
+  }
+
+  .precon-summary-top h3{
+    font-size:17px!important;
+    margin:0!important;
+  }
+
+  .precon-summary-top small{
+    font-size:9px!important;
+  }
+
+  .precon-summary-actions .btn,
+  .po-hub-summary-top > .btn{
+    min-height:32px!important;
+    padding:7px 9px!important;
+    font-size:9px!important;
+  }
+
+  .page-title{
+    margin-bottom:10px!important;
+  }
+
+  .page-title h2{
+    font-size:23px!important;
+  }
+
+  .page-title p{
+    font-size:10px!important;
+  }
+
+  .page-title-actions{
+    gap:6px!important;
+  }
+
+  .page-title-actions .btn,
+  .page-title-actions .continue-btn,
+  .compact-action-menu > summary{
+    min-height:34px!important;
+    padding:7px 10px!important;
+    font-size:9px!important;
+  }
+
+  /* Checklist rows tighter */
+  .precon-section-list{
+    gap:8px!important;
+  }
+
+  .precon-section-card,
+  .precon-section-row{
+    border-radius:10px!important;
+  }
+
+  .precon-section-head{
+    min-height:66px!important;
+    padding:10px 12px!important;
+  }
+
+  .precon-section-number{
+    width:42px!important;
+    font-size:17px!important;
+  }
+
+  .precon-section-head h4{
+    font-size:13px!important;
+  }
+
+  .precon-section-head p{
+    font-size:9px!important;
+    line-height:1.25!important;
+  }
+
+  .precon-linked-note,
+  .user-color-legend{
+    margin:7px 0!important;
+  }
+
+  /* Smaller assistant */
+  .fab{
+    width:42px!important;
+    height:42px!important;
+    right:10px!important;
+    bottom:10px!important;
+    font-size:15px!important;
+  }
+
+  /* iPad utility menu */
+  #tabletToolsMenu{
+    display:none;
+    position:fixed;
+    top:64px;
+    right:12px;
+    z-index:10050;
+    width:210px;
+    padding:6px;
+    border-radius:12px;
+    background:#fff;
+    box-shadow:0 18px 45px rgba(20,35,74,.22);
+    border:1px solid #D8DFE9;
+  }
+
+  #tabletToolsMenu.open{
+    display:block;
+  }
+
+  #tabletToolsMenu button{
+    display:block;
+    width:100%;
+    border:0;
+    background:transparent;
+    color:var(--navy);
+    text-align:left;
+    padding:10px;
+    border-radius:8px;
+    font-size:10px;
+    font-weight:800;
+    cursor:pointer;
+  }
+
+  #tabletToolsMenu button:hover{
+    background:#F3F5F8;
+  }
+}
+
 </style>
 
   <meta name="theme-color" content="#14234A">
@@ -2884,6 +3187,18 @@ textarea.estimate-cell-input{
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
+
+<div class="sidebar-backdrop" onclick="closeSidebarDrawer()"></div>
+
+<div id="tabletToolsMenu">
+  <button onclick="openJobsDrawer();toggleTabletTools(false)">Jobs</button>
+  <button onclick="saveState();toggleTabletTools(false)">Save Now</button>
+  <button onclick="exportBackup();toggleTabletTools(false)">Export Backup</button>
+  <button onclick="document.getElementById('backupFileInput')?.click();toggleTabletTools(false)">Import Backup</button>
+  <button onclick="openAssistant();toggleTabletTools(false)">J&J Assistant</button>
+  <button onclick="cloudSignOut();toggleTabletTools(false)">Sign Out</button>
+</div>
+
 <div id="printRoot" class="print-root"></div>
 
 <div id="loginOverlay" class="login-overlay">
@@ -2918,7 +3233,7 @@ textarea.estimate-cell-input{
     <div class="login-logo">J&J</div>
     <div class="eyebrow">J&J Home Renovations</div>
     <h2>Sign in</h2>
-    <p>Sign in with your J&J account. Your projects and changes sync automatically across devices.</p>
+    <p>Sign in with your J&J account. The app automatically opens as Jony, Adair, or Gio based on the account you use.</p>
 
     <input id="cloudEmail" class="input" type="email" autocomplete="username" placeholder="Email">
     <input id="cloudPassword" class="input" type="password" autocomplete="current-password" placeholder="Password" style="margin-top:8px">
@@ -3029,6 +3344,8 @@ textarea.estimate-cell-input{
     </div>
   </div>
   <div class="header-actions">
+    <button class="tablet-signin-button" onclick="tabletSignInOrAccount()">Sign In</button>
+    <button class="tablet-more-button" onclick="toggleTabletTools()">•••</button>
     <div id="cloudStatus" class="cloud-status local">Connecting</div>
     <div class="user-switcher">
       <span>User</span>
@@ -3059,7 +3376,7 @@ textarea.estimate-cell-input{
 
 <div id="collapsedTopControls" class="collapsed-top-controls">
   <button onclick="toggleTopBars()">Show Menu</button>
-  <button onclick="toggleSidebar()">Jobs</button>
+  <button onclick="window.innerWidth<=1180 && window.innerWidth>=561 ? openJobsDrawer() : toggleSidebar()">Jobs</button>
 </div>
 
 <div id="sidebarBackdrop" class="sidebar-backdrop" onclick="closeMobileSidebar()"></div>
@@ -3475,6 +3792,9 @@ function setCurrentUser(name){
   toast(`Signed in as ${name}`);
 }
 function syncUserSelector(){
+  const tabletBtn=document.querySelector('.tablet-signin-button');
+  if(tabletBtn) tabletBtn.textContent=state.currentUser || 'Sign In';
+
   const sel=document.getElementById('currentUserSelect');
   if(sel) sel.value=state.currentUser;
 }
@@ -3802,7 +4122,7 @@ function buildNav(){
     `<button data-nav="preconstruction" onclick="openPreconstructionForProject(state.selectedProjectId)">Preconstruction</button>` +
     `<button data-nav="paybyline" onclick="openPOHub('splits');return false;">P.Os</button>` +
     `<div class="layout-control">
-      <button onclick="toggleSidebar()" id="sidebarToggleBtn">☰ Jobs</button>
+      <button onclick="window.innerWidth<=1180 && window.innerWidth>=561 ? openJobsDrawer() : toggleSidebar()" id="sidebarToggleBtn">☰ Jobs</button>
       <button onclick="toggleTopBars()" id="topbarToggleBtn">Hide Top</button>
     </div>`;
 
@@ -4139,6 +4459,7 @@ function go(id){
 
 function openProject(id){
   state.selectedProjectId=id;
+  if(window.innerWidth<=1180) closeSidebarDrawer();
   projectTab='overview';
   renderProject();
   buildProjectSidebar();
@@ -4457,6 +4778,34 @@ async function cloudSignIn(){
   await finishCloudLogin(data.user);
 }
 
+
+function appUserFromEmail(email=''){
+  const e=String(email||'').trim().toLowerCase();
+
+  const known={
+    'jony@jandjhomerenovations.com':'Jony',
+    'adair@jandjhomerenovations.com':'Adair',
+    'jovani@jandjhomerenovations.com':'Gio'
+  };
+
+  return known[e] || '';
+}
+
+function applySignedInUser(displayName){
+  if(!displayName || !USERS.some(u=>u.name===displayName)) return false;
+
+  state.currentUser=displayName;
+  sessionStorage.setItem('jj_session_user',displayName);
+
+  const selector=document.getElementById('userSelect');
+  if(selector) selector.value=displayName;
+
+  const tabletBtn=document.querySelector('.tablet-signin-button');
+  if(tabletBtn) tabletBtn.textContent=displayName;
+
+  return true;
+}
+
 async function finishCloudLogin(user){
   let displayName='';
   let appRole='';
@@ -4472,23 +4821,41 @@ async function finishCloudLogin(user){
       displayName=profile.display_name||'';
       appRole=profile.app_role||'';
     }
-  }catch(e){}
-
-  if(displayName && USERS.some(u=>u.name===displayName)){
-    state.currentUser=displayName;
+  }catch(e){
+    console.warn('Profile lookup failed',e);
   }
 
-  sessionStorage.setItem('jj_session_user',state.currentUser);
+  // Prefer the database profile. If a device/browser has a stale local user
+  // selected, the authenticated Supabase account always wins.
+  if(!applySignedInUser(displayName)){
+    const fallback=appUserFromEmail(user?.email);
+    applySignedInUser(fallback);
+  }
+
+  // If a user still could not be resolved, do not silently keep the previous
+  // person's local selection.
+  if(!USERS.some(u=>u.name===state.currentUser)){
+    state.currentUser='Jony';
+  }
+
   document.getElementById('cloudLoginOverlay')?.classList.add('hidden');
   document.getElementById('loginOverlay')?.classList.add('hidden');
+  document.getElementById('passwordResetOverlay')?.classList.add('hidden');
 
   await loadCloudState();
+
+  // loadCloudState may contain an older currentUser saved in shared state.
+  // Re-apply the authenticated account AFTER cloud state loads so iPad/desktop
+  // cannot switch back to whoever last saved the shared app.
+  if(!applySignedInUser(displayName)){
+    applySignedInUser(appUserFromEmail(user?.email));
+  }
+
   subscribeCloudState();
   syncUserSelector();
   renderAll();
   setCloudStatus('Live','saved');
 }
-
 async function loadCloudState(){
   if(!cloudClient) return;
 
@@ -4507,7 +4874,14 @@ async function loadCloudState(){
 
   if(data?.state){
     cloudApplying=true;
+
+    const sessionUser=state.currentUser;
     state=data.state;
+
+    if(USERS.some(u=>u.name===sessionUser)){
+      state.currentUser=sessionUser;
+    }
+
     ensureUserData();
     ensurePreconData();
     localStorage.setItem('jj_full_proto',JSON.stringify(state));
@@ -4544,7 +4918,23 @@ function subscribeCloudState(){
 
         cloudLastRemoteAt=incomingAt;
         cloudApplying=true;
+
+        // Preserve the authenticated person's identity locally.
+        let signedInName='';
+        try{
+          const sessionUser=cloudClient?.auth?.getSession
+            ? null
+            : null;
+        }catch(e){}
+
+        const currentLocalUser=state.currentUser;
         state=incoming.state;
+
+        // Shared project data is global, but "who am I" is device/session-specific.
+        if(USERS.some(u=>u.name===currentLocalUser)){
+          state.currentUser=currentLocalUser;
+        }
+
         ensureUserData();
         ensurePreconData();
         localStorage.setItem('jj_full_proto',JSON.stringify(state));
@@ -4580,11 +4970,17 @@ async function pushCloudState(){
     }
 
     const now=new Date().toISOString();
+
+    // Do not let one person's device overwrite another person's signed-in identity.
+    // currentUser is session-specific; the rest of the app state remains shared.
+    const sharedState=JSON.parse(JSON.stringify(state));
+    delete sharedState.currentUser;
+
     const {error}=await cloudClient
       .from('app_state')
       .upsert({
         org_id:CLOUD_ORG_ID,
-        state:state,
+        state:sharedState,
         updated_at:now,
         updated_by:user.id
       },{onConflict:'org_id'});
@@ -7025,6 +7421,15 @@ document.addEventListener('keydown',function(e){
   }
 });
 
+
+
+document.addEventListener('click',function(e){
+  const menu=document.getElementById('tabletToolsMenu');
+  const button=document.querySelector('.tablet-more-button');
+  if(menu?.classList.contains('open') && !menu.contains(e.target) && !button?.contains(e.target)){
+    menu.classList.remove('open');
+  }
+});
 
 document.addEventListener('click',function(e){
   document.querySelectorAll('.compact-action-menu[open]').forEach(menu=>{
