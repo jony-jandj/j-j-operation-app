@@ -1,20 +1,18 @@
-J&J Operations — Compact Preconstruction Responsibilities
+J&J Operations — Mobile Print / Phone Polish
 
-Changed the large Done Means / Handoff / Watch For cards.
+Based on the phone screen recording:
 
-Now:
-- They no longer take up space at the top of an opened section.
-- They appear near the bottom of the section.
-- They are collapsed by default under:
-  "Responsibilities & Handoff"
-- Tap/click the dropdown when you need to review them.
-- Printing still includes Done Means, Handoff, and Watch For.
+- Replaced the large Preconstruction print buttons with one small Print dropdown.
+- Replaced the large P.O. print buttons with one small Print dropdown.
+- Preconstruction keeps one compact Continue button.
+- "Print This Section" is now the smaller "Print Section".
+- "Open Full Project" becomes a small "Project" button on phones.
+- Floating Assistant button is slightly smaller on phones.
+- Desktop behavior/layout remains essentially unchanged.
 
-All existing features remain included:
-- Linked Preconstruction items
-- Typing jump fix
-- Estimate line selection for P.O.s
-- Default crew names
-- Printing
-- New Project
-- Undo approval
+The Print dropdown still gives access to:
+- Print All Preconstruction
+- Print All P.O.s
+- Print Preconstruction + P.O.s together
+
+All previous updates remain included.

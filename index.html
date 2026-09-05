@@ -2724,6 +2724,138 @@ textarea.estimate-cell-input{
   }
 }
 
+
+.compact-action-menu{
+  position:relative;
+  display:inline-block;
+}
+.compact-action-menu > summary{
+  list-style:none;
+  cursor:pointer;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:5px;
+  min-height:34px;
+  padding:7px 10px;
+  border:1px solid var(--line);
+  border-radius:8px;
+  background:#fff;
+  color:var(--navy);
+  font-size:9px;
+  font-weight:900;
+  user-select:none;
+}
+.compact-action-menu > summary::-webkit-details-marker{display:none}
+.compact-action-menu > summary::after{
+  content:'▾';
+  font-size:8px;
+  color:var(--muted);
+}
+.compact-action-menu[open] > summary{
+  border-color:#BFC8D5;
+  background:#F8FAFC;
+}
+.compact-action-menu .compact-menu-panel{
+  position:absolute;
+  top:calc(100% + 5px);
+  right:0;
+  z-index:80;
+  width:190px;
+  padding:5px;
+  border:1px solid #D8DFE9;
+  border-radius:9px;
+  background:#fff;
+  box-shadow:0 12px 28px rgba(20,35,74,.14);
+}
+.compact-action-menu .compact-menu-panel button{
+  display:block;
+  width:100%;
+  border:0;
+  background:transparent;
+  color:var(--navy);
+  text-align:left;
+  padding:9px 10px;
+  border-radius:7px;
+  font-size:9px;
+  font-weight:800;
+  cursor:pointer;
+}
+.compact-action-menu .compact-menu-panel button:hover{
+  background:#F3F5F8;
+}
+.mobile-secondary-action{
+  white-space:nowrap;
+}
+@media(max-width:560px){
+  .page-title-actions{
+    width:auto!important;
+    flex:0 0 auto;
+    gap:6px!important;
+  }
+  .page-title{
+    align-items:flex-start!important;
+    gap:8px!important;
+  }
+  .page-title > div:first-child{
+    min-width:0;
+  }
+  .page-title h2{
+    font-size:20px!important;
+  }
+  .page-title p{
+    font-size:9px!important;
+    line-height:1.3!important;
+    margin-top:3px!important;
+  }
+  .page-title-actions .continue-btn{
+    flex:0 0 auto!important;
+    width:auto!important;
+    padding:7px 9px!important;
+    min-height:34px;
+    font-size:8px!important;
+  }
+  .compact-action-menu > summary{
+    min-height:34px;
+    padding:7px 9px;
+    font-size:8px;
+  }
+  .compact-action-menu .compact-menu-panel{
+    width:175px;
+  }
+  .precon-summary-actions .btn,
+  .po-hub-summary-top > .btn{
+    padding:6px 8px!important;
+    font-size:8px!important;
+    min-height:30px!important;
+  }
+  .precon-summary-actions .btn{
+    font-size:0!important;
+  }
+  .precon-summary-actions .btn::after{
+    content:'Project';
+    font-size:8px;
+  }
+  .po-hub-summary-top > .btn{
+    font-size:0!important;
+  }
+  .po-hub-summary-top > .btn::after{
+    content:'Project';
+    font-size:8px;
+  }
+  .po-actions .print-section-btn{
+    padding:6px 8px!important;
+    font-size:8px!important;
+  }
+  .fab{
+    width:38px!important;
+    height:38px!important;
+    right:8px!important;
+    bottom:8px!important;
+    font-size:15px!important;
+  }
+}
+
 </style>
 
   <meta name="theme-color" content="#14234A">
@@ -4927,9 +5059,14 @@ function renderPreconstruction(){
         <p>Open any section, work through the checklist, then close it when you're done.</p>
       </div>
       <div class="page-title-actions">
-        <button class="btn btn-light" onclick="printAllPreconstruction()">Print All Preconstruction</button>
-        <button class="btn btn-light" onclick="printFullProjectPacket()">Print All Together</button>
-        <button class="continue-btn" onclick="continuePreconstruction()">Continue Checklist</button>
+        <details class="compact-action-menu">
+          <summary>Print</summary>
+          <div class="compact-menu-panel">
+            <button onclick="printAllPreconstruction();this.closest('details').removeAttribute('open')">Print All Preconstruction</button>
+            <button onclick="printFullProjectPacket();this.closest('details').removeAttribute('open')">Print Preconstruction + P.O.s</button>
+          </div>
+        </details>
+        <button class="continue-btn" onclick="continuePreconstruction()">Continue</button>
       </div>
     </div>
 
@@ -5115,7 +5252,7 @@ function renderPreconstruction(){
                   </div>
 
                   <div class="po-actions" style="margin-top:10px">
-                    <button class="btn btn-light" onclick="printPreconSection(${i})">Print This Section</button>
+                    <button class="btn btn-light print-section-btn" onclick="printPreconSection(${i})">Print Section</button>
                     <button class="btn btn-light" onclick="setOpenPreconSection(${i})">Close Section</button>
                   </div>
                 </div>
@@ -5473,8 +5610,13 @@ function renderPayByLine(){
         <p>Start with the estimate, then generate and manage the labor splits here.</p>
       </div>
       <div class="page-title-actions">
-        <button class="btn btn-light" onclick="printAllPOs()">Print All P.Os</button>
-        <button class="btn btn-light" onclick="printFullProjectPacket()">Print All Together</button>
+        <details class="compact-action-menu">
+          <summary>Print</summary>
+          <div class="compact-menu-panel">
+            <button onclick="printAllPOs();this.closest('details').removeAttribute('open')">Print All P.O.s</button>
+            <button onclick="printFullProjectPacket();this.closest('details').removeAttribute('open')">Print Preconstruction + P.O.s</button>
+          </div>
+        </details>
       </div>
     </div>
 
@@ -6809,6 +6951,13 @@ document.addEventListener('keydown',function(e){
   if(e.key==='Escape'){
     closeNewProject();
   }
+});
+
+
+document.addEventListener('click',function(e){
+  document.querySelectorAll('.compact-action-menu[open]').forEach(menu=>{
+    if(!menu.contains(e.target)) menu.removeAttribute('open');
+  });
 });
 
 document.addEventListener('click',function(e){
