@@ -1,18 +1,8 @@
-J&J Operations — Mobile Print / Phone Polish
+J&J Operations — Visible Cloud Setup
 
-Based on the phone screen recording:
+Adds an always-visible Cloud button in the header.
+The Local / Live / Saved status pill is also clickable and opens Cloud Setup.
 
-- Replaced the large Preconstruction print buttons with one small Print dropdown.
-- Replaced the large P.O. print buttons with one small Print dropdown.
-- Preconstruction keeps one compact Continue button.
-- "Print This Section" is now the smaller "Print Section".
-- "Open Full Project" becomes a small "Project" button on phones.
-- Floating Assistant button is slightly smaller on phones.
-- Desktop behavior/layout remains essentially unchanged.
+This avoids relying on the ••• menu to connect Supabase.
 
-The Print dropdown still gives access to:
-- Print All Preconstruction
-- Print All P.O.s
-- Print Preconstruction + P.O.s together
-
-All previous updates remain included.
+All previous mobile, printing, Preconstruction, Estimate, P.O., and approval updates remain included.
