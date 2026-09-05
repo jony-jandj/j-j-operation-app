@@ -5377,6 +5377,37 @@ let cloudSaveTimer=null;
 let cloudApplying=false;
 let cloudLastRemoteAt=0;
 
+function looksLikePasswordRecoveryUrl(url=RECOVERY_URL_AT_LOAD){
+  try{
+    const parsed=new URL(String(url||''),window.location.origin);
+    const hashParams=new URLSearchParams((parsed.hash||'').replace(/^#/,''));
+    return (
+      parsed.searchParams.get('type')==='recovery' ||
+      hashParams.get('type')==='recovery' ||
+      parsed.searchParams.has('code') ||
+      hashParams.has('access_token')
+    );
+  }catch(e){
+    return false;
+  }
+}
+
+function recoveryWasRequested(){
+  return sessionStorage.getItem(PASSWORD_RECOVERY_FLAG)==='1' ||
+         localStorage.getItem(PASSWORD_RECOVERY_FLAG)==='1';
+}
+
+function rememberPasswordRecoveryRequest(){
+  sessionStorage.setItem(PASSWORD_RECOVERY_FLAG,'1');
+  localStorage.setItem(PASSWORD_RECOVERY_FLAG,'1');
+}
+
+function clearPasswordRecoveryRequest(){
+  sessionStorage.removeItem(PASSWORD_RECOVERY_FLAG);
+  localStorage.removeItem(PASSWORD_RECOVERY_FLAG);
+}
+
+
 function cloudConfig(){
   // J&J Supabase connection is built into the app.
   // The publishable key is browser-safe; no service-role/secret key is stored here.
