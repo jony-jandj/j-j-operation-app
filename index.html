@@ -4028,6 +4028,47 @@ textarea.estimate-cell-input{
   white-space:normal;
 }
 
+
+.po-parent-group-label,
+.po-parent-group{
+  display:inline-block;
+  margin-top:4px;
+  padding:3px 6px;
+  border-radius:6px;
+  background:#F1F3F7;
+  color:#657083;
+  font-size:9px;
+  line-height:1.1;
+  font-weight:900;
+  letter-spacing:.035em;
+  text-transform:uppercase;
+}
+
+
+.po-title-area .po-parent-group-label{
+  display:inline-block;
+  margin:0 0 5px 0;
+  padding:3px 6px;
+  border-radius:6px;
+  background:#F1F3F7;
+  color:#657083;
+  font-size:9px;
+  line-height:1.1;
+  font-weight:900;
+  letter-spacing:.035em;
+  text-transform:uppercase;
+}
+@media(max-width:560px){
+  .po-title-area .po-parent-group-label{
+    font-size:9px;
+    margin-bottom:4px;
+  }
+  .po-title-area small{
+    display:block;
+    margin-top:2px;
+  }
+}
+
 </style>
 
   <meta name="theme-color" content="#14234A">
@@ -8253,6 +8294,43 @@ function togglePO(i){
     renderProjectPanel();
   }
 }
+
+function getPOParentGroup(po){
+  if(po?.parentGroup) return String(po.parentGroup).trim();
+
+  const rawLine=String(po?.line||po?.title||'').trim();
+
+  if(rawLine.includes(' · ')){
+    return rawLine.split(' · ')[0].trim();
+  }
+
+  try{
+    const project=selectedProject();
+    const estimate=(project?.estimate||[]);
+    const match=estimate.find(r=>{
+      const title=String(r?.title||r?.line||'').trim();
+      return title && title===rawLine;
+    });
+    if(match?.parentGroup) return String(match.parentGroup).trim();
+
+    const costMatch=estimate.find(r=>{
+      const title=String(r?.title||r?.line||'').trim();
+      return title===rawLine && Number(r?.builderCost||0)===Number(po?.builderCost||0);
+    });
+    if(costMatch?.parentGroup) return String(costMatch.parentGroup).trim();
+  }catch(e){}
+
+  return '';
+}
+
+function getPOBaseTitle(po){
+  const rawLine=String(po?.line||po?.title||'').trim();
+  if(rawLine.includes(' · ')){
+    return rawLine.split(' · ').slice(1).join(' · ').trim();
+  }
+  return rawLine;
+}
+
 function renderPO(po,i){
   ensureUserData();
 
@@ -8301,9 +8379,9 @@ function renderPO(po,i){
         </div>
         <div class="po-chevron">›</div>
         <div class="po-title-area">
-          <h4>${po.line}</h4>
-          <small>${po.id} · Builder Cost ${money(po.builderCost)}</small>
-          <div class="po-expand-note">${expanded?'Open — click again to collapse':'Click to review crew split'}</div>
+          ${getPOParentGroup(po) ? `<div class="po-parent-group-label">${esc(getPOParentGroup(po))}</div>` : ''}
+          <h4>${esc(getPOBaseTitle(po))}</h4>
+          <small>Builder Cost ${money(po.builderCost)}</small>
         </div>
       </div>
 
