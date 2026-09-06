@@ -4012,6 +4012,22 @@ textarea.estimate-cell-input{
   }
 }
 
+
+.estimate-parent-group{
+  display:inline-block;
+  margin:0 0 5px 1px;
+  padding:3px 6px;
+  border-radius:6px;
+  background:#F1F3F7;
+  color:#657083;
+  font-size:9px;
+  line-height:1.1;
+  font-weight:900;
+  letter-spacing:.035em;
+  text-transform:uppercase;
+  white-space:normal;
+}
+
 </style>
 
   <meta name="theme-color" content="#14234A">
@@ -7224,7 +7240,7 @@ function estimateTableHTML(p,mode='hub'){
 
   return `
     <div class="estimate-table-hint">
-      <span>Imported estimate layout: Title · Description · Quantity · Unit · Unit cost · Cost type · Builder Cost</span>
+      <span>Imported estimate layout: Parent Group + Title · Description · Quantity · Unit · Unit cost · Cost type · Builder Cost</span>
       <span>Scroll sideways on phone to see all columns.</span>
     </div>
 
@@ -7271,6 +7287,7 @@ function estimateTableHTML(p,mode='hub'){
                 </td>
 
                 <td class="col-title">
+                  ${r.parentGroup ? `<div class="estimate-parent-group">${esc(r.parentGroup)}</div>` : ''}
                   <textarea class="estimate-cell-input estimate-item-input" rows="2"
                     oninput="${updateFn}(${i},'title',this.value);${updateFn}(${i},'line',this.value)">${esc(r.title)}</textarea>
                 </td>
@@ -7404,7 +7421,7 @@ function renderPayByLine(){
       </div>
 
       <div class="estimate-upload-note">
-        Upload an Excel or CSV estimate. The app will pull Title, Description, Quantity, Unit, Unit cost, Cost type, and Builder Cost. After upload, use the P.O. checkbox to choose only the Labor lines you want turned into P.O. Splits.
+        Upload an Excel or CSV estimate. The app will pull Parent Group, Title, Description, Quantity, Unit, Unit cost, Cost type, and Builder Cost. After upload, use the P.O. checkbox to choose only the Labor lines you want turned into P.O. Splits.
       </div>
 
       <div class="toolbar">
@@ -7610,6 +7627,7 @@ function estimateQuantity(v){
 
 function estimateRowDefaults(r={}){
   return {
+    parentGroup:r.parentGroup ?? r.parent_group ?? r['Parent Group'] ?? '',
     title:r.title ?? r.line ?? r.item ?? 'New Line Item',
     description:r.description ?? '',
     quantity:r.quantity ?? '',
@@ -7647,6 +7665,7 @@ function findEstimateColumns(rows){
   const maxRows=Math.min(rows.length,40);
 
   const headers={
+    parentGroup:['parent group','parentgroup','parent group name','parent category','estimate parent group'],
     title:['title','item title','items','item','line item','name'],
     description:['description','work description','scope'],
     quantity:['quantity','qty'],
@@ -7658,7 +7677,7 @@ function findEstimateColumns(rows){
 
   let best={
     score:-1,rowIndex:-1,
-    titleIndex:-1,descriptionIndex:-1,quantityIndex:-1,unitIndex:-1,
+    parentGroupIndex:-1,titleIndex:-1,descriptionIndex:-1,quantityIndex:-1,unitIndex:-1,
     unitCostIndex:-1,costTypeIndex:-1,builderCostIndex:-1
   };
 
@@ -7680,6 +7699,7 @@ function findEstimateColumns(rows){
 
     const candidate={
       rowIndex:r,
+      parentGroupIndex:findHeader(headers.parentGroup),
       titleIndex:findHeader(headers.title),
       descriptionIndex:findHeader(headers.description),
       quantityIndex:findHeader(headers.quantity),
@@ -7690,6 +7710,7 @@ function findEstimateColumns(rows){
     };
 
     let score=0;
+    if(candidate.parentGroupIndex>=0) score+=1;
     if(candidate.titleIndex>=0) score+=4;
     if(candidate.descriptionIndex>=0) score+=2;
     if(candidate.quantityIndex>=0) score+=1;
@@ -7721,6 +7742,7 @@ function parseEstimateRows(rows){
   for(let r=cols.rowIndex+1;r<rows.length;r++){
     const row=rows[r]||[];
 
+    const parentGroup=cols.parentGroupIndex>=0 ? estimateCellText(row[cols.parentGroupIndex]) : '';
     const title=estimateCellText(row[cols.titleIndex]);
     const description=cols.descriptionIndex>=0 ? estimateCellText(row[cols.descriptionIndex]) : '';
     const quantity=cols.quantityIndex>=0 ? estimateQuantity(row[cols.quantityIndex]) : '';
@@ -7769,6 +7791,7 @@ function parseEstimateRows(rows){
     }
 
     items.push({
+      parentGroup,
       title,
       line:title,
       description,
@@ -7787,7 +7810,9 @@ function syncPOsFromLabor(p,rows=laborLines(p)){
   let created=0;
 
   rows.forEach(r=>{
-    const line=r.title ?? r.line;
+    const baseLine=r.title ?? r.line;
+    const parentGroup=(r.parentGroup||'').trim();
+    const line=parentGroup ? `${parentGroup} · ${baseLine}` : baseLine;
     const existing=p.pos.find(x=>x.line===line);
 
     if(existing){
