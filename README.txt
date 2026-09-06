@@ -1,15 +1,28 @@
-J&J Operations — P.O. / Jobs / Color Update
+J&J Operations — Partial Split Approval + iPad Jobs Fix
 
 Changes:
-- fixes Jobs inside the ••• menu
-  - desktop: brings the Jobs sidebar back if hidden
-  - tablet: opens Jobs drawer
-  - phone: opens Jobs drawer
-- adds Single Split to the P.O. Splits bulk-action toolbar
-  - selected P.O.s become 100% / 0% / 0% / 0%
-- adds 8 more job colors for 16 total color options
-- preserves existing menu cleanup, J&J logo, Recovery Fix v3,
-  cloud sync, P.O. approvals, and other current features
+- P.O. crew splits no longer have to equal exactly 100%.
+- Any crew payout above 0% and up to 100% can be pre-approved and approved.
+- Example: a 75% split pays 75% of the 60% crew-base amount and leaves
+  the remaining 25% of that crew-base amount unassigned.
+- Splits above 100% are still blocked.
+- 0% total is still blocked.
+- Partial payouts are clearly labeled in the P.O.
+- Bulk pre-approval also accepts partial payouts.
+
+iPad:
+- Jobs button now correctly toggles the Jobs drawer.
+- Closed drawer says Show Jobs.
+- Open drawer says Hide Jobs.
+- Fixes the issue where iPad could show Hide Jobs in both states.
+
+Preserves:
+- Single Split bulk action
+- expanded job color palette
+- ••• Jobs fix
+- current menu cleanup
+- password recovery/cloud setup
+- P.O. approval roles and undo flow
 
 Upload/replace:
 1. index.html

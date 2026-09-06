@@ -4234,7 +4234,7 @@ textarea.estimate-cell-input{
   </button>
   <div class="collapsed-actions">
     <button onclick="toggleTopBars()">Show Menu</button>
-    <button onclick="isTabletLayout() ? openJobsDrawer() : toggleSidebar()">Jobs</button>
+    <button onclick="isTabletLayout() ? toggleJobsDrawer() : toggleSidebar()">Jobs</button>
   </div>
 </div>
 
@@ -4956,11 +4956,23 @@ function openJobsDrawer(){
   document.body.classList.add('sidebar-open');
   document.querySelector('.sidebar')?.classList.add('open');
   closeTabletTools();
+  updateLayoutButtons();
 }
 
 function closeJobsDrawer(){
   document.body.classList.remove('sidebar-open');
   document.querySelector('.sidebar')?.classList.remove('open');
+  updateLayoutButtons();
+}
+
+function toggleJobsDrawer(){
+  const isOpen=document.body.classList.contains('sidebar-open');
+  if(isOpen){
+    closeJobsDrawer();
+  }else{
+    openJobsDrawer();
+  }
+  updateLayoutButtons();
 }
 
 function closeSidebarDrawer(){
@@ -4995,6 +5007,8 @@ function updateLayoutButtons(){
   if(sideBtn){
     if(isMobileLayout()){
       sideBtn.textContent=document.body.classList.contains('mobile-sidebar-open') ? 'Close Jobs' : '☰ Jobs';
+    }else if(isTabletLayout()){
+      sideBtn.textContent=document.body.classList.contains('sidebar-open') ? 'Hide Jobs' : 'Show Jobs';
     }else{
       sideBtn.textContent=document.body.classList.contains('sidebar-collapsed') ? 'Show Jobs' : 'Hide Jobs';
     }
@@ -5064,7 +5078,7 @@ function buildNav(){
     `<button data-nav="preconstruction" onclick="openPreconstructionForProject(state.selectedProjectId)">Preconstruction</button>` +
     `<button data-nav="paybyline" onclick="openPOHub('splits');return false;">P.Os</button>` +
     `<div class="layout-control">
-      <button onclick="isTabletLayout() ? openJobsDrawer() : toggleSidebar()" id="sidebarToggleBtn">☰ Jobs</button>
+      <button onclick="isTabletLayout() ? toggleJobsDrawer() : toggleSidebar()" id="sidebarToggleBtn">☰ Jobs</button>
     </div>`;
 
   const activePage=document.querySelector('.page.active')?.id;
@@ -8130,7 +8144,7 @@ function bulkPreApprove(){
   let updated=0, skipped=0;
   items.forEach(po=>{
     const total=po.splits.reduce((s,x)=>s+Number(x.pct||0),0);
-    if(total===100 && po.status!=='Approved'){
+    if(total>0 && total<=100 && po.status!=='Approved'){
       po.status='Pre-Approved';
       po.preApprovedBy=state.currentUser;
       po.approvedBy='';
@@ -8222,11 +8236,18 @@ function renderPO(po,i){
   const assigned=po.splits.filter(x=>Number(x.pct||0)>0 && x.name).map(x=>`${x.name} ${x.pct}%`).join(' · ') || 'No crew assigned';
   const expanded=openPOIndex==='all' || openPOIndex===i;
 
-  const preApproveDisabled=!canPreApprove() || total!==100 || po.status!=='Draft';
+  const splitValid=total>0 && total<=100;
+  const preApproveDisabled=!canPreApprove() || !splitValid || po.status!=='Draft';
   const approveDisabled=!canFinalApprove() || po.status!=='Pre-Approved';
 
   const preApproveHelp = canPreApprove()
-    ? (total===100 ? 'Jony or Adair can pre-approve this P.O.' : 'Split must equal 100% before pre-approval.')
+    ? (splitValid
+        ? (total===100
+            ? 'Jony or Adair can pre-approve this P.O.'
+            : `Partial crew payout: ${total}% of base crew pay. Ready for pre-approval.`)
+        : (total<=0
+            ? 'Enter a crew payout before pre-approval.'
+            : 'Crew split cannot exceed 100%.'))
     : 'Only Jony or Adair can pre-approve.';
 
   const approveHelp = canFinalApprove()
@@ -8297,8 +8318,20 @@ function renderPO(po,i){
         `).join('')}
       </div>
 
-      <div class="split-total ${total===100?'good':'bad'}" data-po-split-total="${i}">P.O. Split Total: ${total}% ${total===100?'✓ Ready':'— must equal 100%'}</div>
-      <div class="inline-tip" data-po-split-tip="${i}" style="${total===100?'display:none':''}">Adjust the crew percentages until the P.O. split total equals 100%.</div>
+      <div class="split-total ${total>0 && total<=100?'good':'bad'}" data-po-split-total="${i}">
+        P.O. Split Total: ${total}% ${
+          total===100
+            ? '✓ Full crew payout'
+            : total>0 && total<100
+              ? `✓ Partial payout · ${100-total}% remains in crew base`
+              : total<=0
+                ? '— enter crew payout'
+                : '— cannot exceed 100%'
+        }
+      </div>
+      <div class="inline-tip" data-po-split-tip="${i}" style="${total>0 && total<=100?'display:none':''}">
+        ${total>100 ? 'Reduce the crew percentages to 100% or less.' : 'Enter at least one crew payout percentage.'}
+      </div>
 
       <div class="approval-trail">
         <div class="approval-step ${po.preApprovedBy?'done':''}">
@@ -8472,29 +8505,47 @@ function refreshSplitCalculations(pi){
     }
   });
 
+  const splitValid=total>0 && total<=100;
+
   const totalEl=document.querySelector(`[data-po-split-total="${pi}"]`);
   if(totalEl){
-    totalEl.textContent=`P.O. Split Total: ${total}% ${total===100?'✓ Ready':'— must equal 100%'}`;
-    totalEl.classList.toggle('good',total===100);
-    totalEl.classList.toggle('bad',total!==100);
+    const statusText =
+      total===100
+        ? '✓ Full crew payout'
+        : total>0 && total<100
+          ? `✓ Partial payout · ${100-total}% remains in crew base`
+          : total<=0
+            ? '— enter crew payout'
+            : '— cannot exceed 100%';
+
+    totalEl.textContent=`P.O. Split Total: ${total}% ${statusText}`;
+    totalEl.classList.toggle('good',splitValid);
+    totalEl.classList.toggle('bad',!splitValid);
   }
 
   const tip=document.querySelector(`[data-po-split-tip="${pi}"]`);
   if(tip){
-    tip.style.display=total===100?'none':'';
+    tip.style.display=splitValid?'none':'';
+    tip.textContent=total>100
+      ? 'Reduce the crew percentages to 100% or less.'
+      : 'Enter at least one crew payout percentage.';
   }
 
   const preBtn=document.querySelector(`[data-preapprove-po="${pi}"]`);
   if(preBtn){
-    const disabled=!canPreApprove() || total!==100 || po.status!=='Draft';
+    const disabled=!canPreApprove() || !splitValid || po.status!=='Draft';
     preBtn.disabled=disabled;
 
     if(!canPreApprove()){
       preBtn.title='Only Jony or Adair can pre-approve.';
-    }else if(total!==100){
-      preBtn.title='Crew split must total 100% before pre-approval.';
+    }else if(total<=0){
+      preBtn.title='Enter a crew payout before pre-approval.';
+    }else if(total>100){
+      preBtn.title='Crew split cannot exceed 100%.';
     }else if(po.status!=='Draft'){
       preBtn.title='Only Draft P.O.s can be pre-approved.';
+    }else if(total<100){
+      preBtn.title=`Partial payout: ${total}% of crew base pay. Ready for pre-approval.`;
     }else{
       preBtn.title='Ready for pre-approval.';
     }
@@ -8614,8 +8665,12 @@ function setPOStatus(i,status){
       alert('Only Jony or Adair can pre-approve a P.O.');
       return;
     }
-    if(splitTotal!==100){
-      alert('The P.O. split must equal 100% before it can be pre-approved.');
+    if(splitTotal<=0){
+      alert('Enter a crew payout before this P.O. can be pre-approved.');
+      return;
+    }
+    if(splitTotal>100){
+      alert('The P.O. crew split cannot exceed 100%.');
       return;
     }
     po.status='Pre-Approved';
