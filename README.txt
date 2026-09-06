@@ -1,19 +1,16 @@
-J&J Operations — Password Recovery Fix v3
+J&J Operations — P.O. / Jobs / Color Update
 
-Fixes the exact v2 error:
-looksLikePasswordRecoveryUrl is not defined
-
-The recovery helper functions are now included in the app before initCloud
-and before the startup recovery check runs.
+Changes:
+- fixes Jobs inside the ••• menu
+  - desktop: brings the Jobs sidebar back if hidden
+  - tablet: opens Jobs drawer
+  - phone: opens Jobs drawer
+- adds Single Split to the P.O. Splits bulk-action toolbar
+  - selected P.O.s become 100% / 0% / 0% / 0%
+- adds 8 more job colors for 16 total color options
+- preserves existing menu cleanup, J&J logo, Recovery Fix v3,
+  cloud sync, P.O. approvals, and other current features
 
 Upload/replace:
 1. index.html
 2. service-worker.js
-
-Service worker cache bumped to v30.
-
-After GitHub Pages updates:
-- fully close the app/browser
-- reopen
-- request a NEW reset email
-- use only the newest link
