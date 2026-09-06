@@ -7140,10 +7140,48 @@ function estimateRowTitle(row){
   return String(row?.title ?? row?.line ?? '').trim();
 }
 
-function estimateRowHasPO(p,row){
+function estimateRowSourceKey(row){
+  const parentGroup=String(row?.parentGroup||row?.parent_group||'').trim();
   const title=estimateRowTitle(row);
+  const description=String(row?.description||'').trim();
+  const builderCost=Number(row?.builderCost||0);
+
+  // Parent Group is the main separator between matching lines
+  // such as the same task in Primary Bathroom vs First Floor Bathroom.
+  return [
+    parentGroup.toLowerCase(),
+    title.toLowerCase(),
+    description.toLowerCase(),
+    String(builderCost)
+  ].join('||');
+}
+
+function estimateRowHasPO(p,row){
+  const sourceKey=estimateRowSourceKey(row);
+  const parentGroup=String(row?.parentGroup||row?.parent_group||'').trim();
+  const title=estimateRowTitle(row);
+
   if(!title) return false;
-  return (p.pos||[]).some(po=>String(po.line||'').trim()===title);
+
+  return (p.pos||[]).some(po=>{
+    // New P.O.s get an exact source key.
+    if(po.sourceEstimateKey){
+      return po.sourceEstimateKey===sourceKey;
+    }
+
+    // Compatibility for P.O.s already created before this fix.
+    // Match Parent Group + base title instead of title alone.
+    const poParent=String(getPOParentGroup(po)||po.parentGroup||'').trim();
+    const poTitle=String(getPOBaseTitle(po)||po.line||po.title||'').trim();
+
+    if(parentGroup || poParent){
+      return poParent.toLowerCase()===parentGroup.toLowerCase() &&
+             poTitle.toLowerCase()===title.toLowerCase();
+    }
+
+    // Legacy rows with no Parent Group available at all.
+    return poTitle.toLowerCase()===title.toLowerCase();
+  });
 }
 
 function eligibleEstimatePOIndexes(p){
@@ -7238,11 +7276,15 @@ function createPOsFromSelectedEstimateRows(){
   indexes.forEach(i=>{
     const row=p.estimate[i];
     const title=estimateRowTitle(row);
+    const parentGroup=String(row.parentGroup||row.parent_group||'').trim();
+    const sourceEstimateKey=estimateRowSourceKey(row);
     if(!title || estimateRowHasPO(p,row)) return;
 
     p.pos.push({
       id:nextProjectPOId(p),
       line:title,
+      parentGroup,
+      sourceEstimateKey,
       builderCost:Number(row.builderCost||0),
       status:'Draft',
       preApprovedBy:'',
@@ -7853,8 +7895,15 @@ function syncPOsFromLabor(p,rows=laborLines(p)){
   rows.forEach(r=>{
     const baseLine=r.title ?? r.line;
     const parentGroup=(r.parentGroup||'').trim();
-    const line=parentGroup ? `${parentGroup} · ${baseLine}` : baseLine;
-    const existing=p.pos.find(x=>x.line===line);
+    const line=baseLine;
+    const sourceEstimateKey=estimateRowSourceKey(r);
+    const existing=p.pos.find(x=>{
+      if(x.sourceEstimateKey) return x.sourceEstimateKey===sourceEstimateKey;
+      const poParent=String(getPOParentGroup(x)||x.parentGroup||'').trim();
+      const poTitle=String(getPOBaseTitle(x)||x.line||x.title||'').trim();
+      return poParent.toLowerCase()===parentGroup.toLowerCase() &&
+             poTitle.toLowerCase()===String(baseLine||'').trim().toLowerCase();
+    });
 
     if(existing){
       existing.builderCost=Number(r.builderCost||0);
@@ -7864,6 +7913,8 @@ function syncPOsFromLabor(p,rows=laborLines(p)){
     p.pos.push({
       id:nextProjectPOId(p),
       line,
+      parentGroup,
+      sourceEstimateKey,
       builderCost:Number(r.builderCost||0),
       status:'Draft',
       preApprovedBy:'',
@@ -7968,8 +8019,19 @@ function updateEstimateFromPOHub(i,key,val){
 
   if(key==='builderCost'){
     const row=p.estimate[i];
-    const title=estimateRowTitle(row);
-    const existing=p.pos.find(po=>String(po.line||'').trim()===title);
+    const existing=p.pos.find(po=>{
+      if(po.sourceEstimateKey) return po.sourceEstimateKey===estimateRowSourceKey(row);
+      const poParent=String(getPOParentGroup(po)||po.parentGroup||'').trim();
+      const rowParent=String(row.parentGroup||row.parent_group||'').trim();
+      const poTitle=String(getPOBaseTitle(po)||po.line||po.title||'').trim();
+      const rowTitle=estimateRowTitle(row);
+
+      if(rowParent || poParent){
+        return poParent.toLowerCase()===rowParent.toLowerCase() &&
+               poTitle.toLowerCase()===rowTitle.toLowerCase();
+      }
+      return poTitle.toLowerCase()===rowTitle.toLowerCase();
+    });
     if(existing){
       existing.builderCost=Number(row.builderCost||0);
       saveState(false);
@@ -8557,8 +8619,19 @@ function updateEstimate(i,key,val){
 
   if(key==='builderCost'){
     const row=p.estimate[i];
-    const title=estimateRowTitle(row);
-    const existing=p.pos.find(po=>String(po.line||'').trim()===title);
+    const existing=p.pos.find(po=>{
+      if(po.sourceEstimateKey) return po.sourceEstimateKey===estimateRowSourceKey(row);
+      const poParent=String(getPOParentGroup(po)||po.parentGroup||'').trim();
+      const rowParent=String(row.parentGroup||row.parent_group||'').trim();
+      const poTitle=String(getPOBaseTitle(po)||po.line||po.title||'').trim();
+      const rowTitle=estimateRowTitle(row);
+
+      if(rowParent || poParent){
+        return poParent.toLowerCase()===rowParent.toLowerCase() &&
+               poTitle.toLowerCase()===rowTitle.toLowerCase();
+      }
+      return poTitle.toLowerCase()===rowTitle.toLowerCase();
+    });
     if(existing){
       existing.builderCost=Number(row.builderCost||0);
     }
