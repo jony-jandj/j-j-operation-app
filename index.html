@@ -4601,7 +4601,7 @@ let projectTab='overview';
 let openPreconSection=0;
 let openPreconAccordion=null;
 let preconView='overview';
-let openPOIndex=null;
+let openPOIds=new Set();
 let poHubView='splits';
 let openProjectColorMenu=null;
 let deleteProjectPendingId=null;
@@ -5175,7 +5175,7 @@ function openProjectFromSidebar(id){
     const keepView=poHubView==='estimate'?'estimate':'splits';
     state.selectedProjectId=Number(id);
     poHubView=keepView;
-    openPOIndex=null;
+    openPOIds.clear();
     deletePOIndex=null;
     selectedPOIds.clear();
     bulkDeletePending=false;
@@ -5370,7 +5370,7 @@ function createNewProject(){
 
   openPreconSection=0;
   openPreconAccordion=null;
-  openPOIndex=null;
+  openPOIds.clear();
   selectedPOIds.clear();
   selectedEstimateRows.clear();
   selectedEstimatePORows.clear();
@@ -5561,7 +5561,7 @@ function importAppBackup(input){
       if(typeof bulkDeletePending!=='undefined') bulkDeletePending=false;
       if(typeof estimateDeletePending!=='undefined') estimateDeletePending=false;
       if(typeof deletePOIndex!=='undefined') deletePOIndex=null;
-      if(typeof openPOIndex!=='undefined') openPOIndex=null;
+      if(typeof openPOIds!=='undefined') openPOIds.clear();
       if(typeof openPreconAccordion!=='undefined') openPreconAccordion=null;
 
       renderAll();
@@ -6479,12 +6479,12 @@ function continuePreconstruction(){
 function expandAllPOs(){
   const p=selectedProject();
   if(!p.pos.length) return;
-  openPOIndex='all';
+  openPOIds=new Set(p.pos.map(po=>po.id));
   poHubView='splits';
   renderPayByLine();
 }
 function collapseAllPOs(){
-  openPOIndex=null;
+  openPOIds.clear();
   poHubView='splits';
   renderPayByLine();
 }
@@ -7104,7 +7104,7 @@ function openProjectPOHub(id,view='splits'){
 
 function openPOHub(view='splits'){
   poHubView = view === 'estimate' ? 'estimate' : 'splits';
-  openPOIndex = null;
+  openPOIds.clear();
   deletePOIndex = null;
   selectedPOIds.clear();
   bulkDeletePending=false;
@@ -7117,7 +7117,7 @@ function openPOHub(view='splits'){
 
 function setPOHubView(view){
   poHubView = view === 'estimate' ? 'estimate' : 'splits';
-  openPOIndex = null;
+  openPOIds.clear();
   deletePOIndex = null;
   selectedPOIds.clear();
   bulkDeletePending=false;
@@ -7309,7 +7309,7 @@ function createPOsFromSelectedEstimateRows(){
   saveState(false);
   renderAll();
   poHubView='splits';
-  openPOIndex=null;
+  openPOIds.clear();
   renderPayByLine();
   go('paybyline');
 
@@ -7967,7 +7967,7 @@ async function importEstimateFile(input){
     selectedPOIds.clear();
     estimateDeletePending=false;
     bulkDeletePending=false;
-    openPOIndex=null;
+    openPOIds.clear();
 
     saveState(false);
     renderAll();
@@ -8256,7 +8256,7 @@ function confirmBulkDelete(){
   p.pos=p.pos.filter(po=>!ids.has(po.id));
   selectedPOIds.clear();
   bulkDeletePending=false;
-  openPOIndex=null;
+  ids.forEach(id=>openPOIds.delete(id));
   saveState(false);
   renderAll();
   poHubView='splits';
@@ -8334,7 +8334,6 @@ function applyBulkSplit(count){
   });
 
   saveState(false);
-  openPOIndex='all';
   renderAll();
   poHubView='splits';
   renderPayByLine();
@@ -8343,10 +8342,14 @@ function applyBulkSplit(count){
 }
 
 function togglePO(i){
-  if(openPOIndex==='all'){
-    openPOIndex=i;
+  const p=selectedProject();
+  const po=p?.pos?.[i];
+  if(!po) return;
+
+  if(openPOIds.has(po.id)){
+    openPOIds.delete(po.id);
   }else{
-    openPOIndex = openPOIndex===i ? null : i;
+    openPOIds.add(po.id);
   }
 
   if(document.getElementById('paybyline')?.classList.contains('active')){
@@ -8399,7 +8402,7 @@ function renderPO(po,i){
   const base=po.builderCost*.60, cleanup=po.builderCost*.05, reserve=po.builderCost*.35;
   const total=po.splits.reduce((s,x)=>s+Number(x.pct||0),0);
   const assigned=po.splits.filter(x=>Number(x.pct||0)>0 && x.name).map(x=>`${x.name} ${x.pct}%`).join(' · ') || 'No crew assigned';
-  const expanded=openPOIndex==='all' || openPOIndex===i;
+  const expanded=openPOIds.has(po.id);
 
   const splitValid=total>0 && total<=100;
   const preApproveDisabled=!canPreApprove() || !splitValid || po.status!=='Draft';
@@ -8764,7 +8767,7 @@ function confirmDeletePO(i){
   selectedPOIds.delete(po.id);
   p.pos.splice(i,1);
   deletePOIndex=null;
-  openPOIndex=null;
+  openPOIds.clear();
 
   saveState(false);
   renderAll();
