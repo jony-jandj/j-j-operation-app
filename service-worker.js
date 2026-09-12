@@ -1,4 +1,4 @@
-const CACHE_NAME = 'jj-operations-v48-selection-room-stock';
+const CACHE_NAME = 'jj-operations-v49-confirmed-allocations';
 const APP_SHELL = [
   './',
   './index.html',
@@ -33,4 +33,5 @@ self.addEventListener('fetch', event => {
     }).catch(() => caches.match(event.request))
   );
 });
+
 
