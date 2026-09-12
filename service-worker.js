@@ -1,4 +1,4 @@
-const CACHE_NAME = 'jj-operations-v50-confirmed-overview';
+const CACHE_NAME = 'jj-operations-v51-payout-colors';
 const APP_SHELL = [
   './',
   './index.html',

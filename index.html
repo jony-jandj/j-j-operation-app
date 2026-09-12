@@ -4500,7 +4500,9 @@ body.topbar-collapsed .operations-app > .sidebar{top:0;min-height:100vh}
 .confirmed-money small{display:block;font-size:10px;color:#596579;font-weight:800;margin-bottom:4px}
 .confirmed-money b{font-size:17px;color:#14234A}
 .confirmed-money .touch{background:#FFF8E9;border-color:#EFDEB4}
-.confirmed-money .reserve{background:#EEF3FC;border-color:#D4DFF1}
+.confirmed-money .builder{background:#EAF4FF;border-color:#C7DFF5}
+.confirmed-money .payout{background:#F2ECFA;border-color:#DDCFEE}
+.confirmed-money .reserve{background:#EDF7EE;border-color:#CBE4CF}
 .confirmed-expand{font-size:11px;color:#334F70;font-weight:800;margin-top:10px}
 .confirmed-expand::after{content:'▸ Expand details'}
 details[open] > .confirmed-summary .confirmed-expand::after{content:'▾ Collapse details'}
@@ -8053,8 +8055,8 @@ function renderConfirmedPayouts(project,forPrint=false){
         <div class="confirmed-crew">${recipients.map(r=>`<span><b>${esc(r.name)}</b> · ${r.pct}% · ${money(r.amount)}</span>`).join('')}</div>
         <div class="confirmed-expand"></div>
       </div><div class="confirmed-money">
-        <div><small>Builder Cost</small><b>${money(Number(po.builderCost||0))}</b></div>
-        <div><small>Confirmed Crew Payout</small><b>${money(crewTotal)}</b></div>
+        <div class="builder"><small>Builder Cost</small><b>${money(Number(po.builderCost||0))}</b></div>
+        <div class="payout"><small>Confirmed Crew Payout</small><b>${money(crewTotal)}</b></div>
         <div class="touch"><small>Touch-up Allocation · 5%</small><b>${money(Number(po.builderCost||0)*.05)}</b></div>
         <div class="reserve"><small>Reserve Allocation · 35%</small><b>${money(Number(po.builderCost||0)*.35)}</b></div>
       </div>`;
