@@ -4386,6 +4386,17 @@ body.topbar-collapsed .operations-app > .sidebar{top:0;min-height:100vh}
 .selection-field label{display:block;margin-bottom:5px;color:#657382;font-size:10px;font-weight:850}
 .selection-field input,.selection-field select,.selection-field textarea{width:100%;padding:9px 10px;border:1px solid #CED7DF;border-radius:8px;background:#fff;color:var(--text)}
 .selection-field textarea{min-height:70px;resize:vertical}
+.selection-lookup-row{display:flex;gap:7px}
+.selection-lookup-row input{min-width:0;flex:1}
+.selection-lookup-row button{border:1px solid #C8D3DC;border-radius:8px;background:#F2F5F7;color:var(--navy);padding:0 11px;font-size:11px;font-weight:850;white-space:nowrap}
+.selection-lookup-status{grid-column:1/-1;display:flex;align-items:center;gap:8px;margin-top:-4px;color:#657382;font-size:11px;line-height:1.35}
+.selection-lookup-status.loading{color:#8B6516}
+.selection-lookup-status.success{color:#2F6A4A}
+.selection-lookup-status.warn{color:#8A5D20}
+.selection-lookup-status::before{content:'•';color:#AEBECB;font-size:17px;line-height:0}
+.selection-lookup-status.loading::before{content:'↻';color:#C18B1E}
+.selection-lookup-status.success::before{content:'✓';color:#3A8A5D}
+.selection-lookup-status.warn::before{content:'!';color:#C18B1E;font-weight:900}
 .selection-tax-row{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 12px;border:1px solid #D9E1E7;border-radius:9px;background:#F8FAFB}
 .selection-tax-row label{display:flex;align-items:center;gap:8px;margin:0;color:var(--text);font-size:12px;font-weight:850}
 .selection-tax-row input{width:18px;height:18px;accent-color:var(--navy)}
@@ -9676,18 +9687,151 @@ function addSelectionRoom(){
   toast(`${project.selectionActiveRoom} added`);
 }
 
+function selectionTitleCase(value){
+  return String(value||'').replace(/\s+/g,' ').trim().replace(/\b\w/g,char=>char.toUpperCase());
+}
+
+function selectionCategoryFromText(value){
+  const text=String(value||'').toLowerCase();
+  const rules=[
+    [/tile|mosaic|backsplash|porcelain|ceramic|marble/, 'Tile'],
+    [/faucet|shower|tub|valve|trim|drain|toilet|plumb/, 'Plumbing'],
+    [/vanity|cabinet|medicine cabinet/, 'Vanity'],
+    [/mirror/, 'Mirror'],
+    [/sconce|light|chandelier|pendant|electrical/, 'Electrical'],
+    [/fan|ventilation|exhaust/, 'Ventilation'],
+    [/door|hinge|handle|lockset/, 'Doors / Hardware'],
+    [/flooring|hardwood|laminate|vinyl|carpet/, 'Flooring'],
+    [/paint|primer|wallpaper/, 'Finishes'],
+    [/countertop|quartz|granite|solid surface/, 'Countertops']
+  ];
+  return rules.find(([pattern])=>pattern.test(text))?.[1]||'';
+}
+
 function productGuessFromUrl(url){
-  if(!url) return {vendor:'',title:''};
+  if(!url) return {vendor:'',title:'',category:'',model:''};
   try{
     const parsed=new URL(url);
-    const vendor=parsed.hostname.replace(/^www\./,'').split('.')[0].replace(/[-_]/g,' ')
-      .replace(/\b\w/g,char=>char.toUpperCase());
-    const segment=decodeURIComponent(parsed.pathname.split('/').filter(Boolean).pop()||'')
-      .replace(/[-_]+/g,' ').replace(/\b\w/g,char=>char.toUpperCase());
-    return {vendor,title:segment.length>3?segment:''};
+    const host=parsed.hostname.replace(/^www\./i,'').toLowerCase();
+    const vendorMap={
+      'homedepot.com':'The Home Depot',
+      'lowes.com':"Lowe's",
+      'flooranddecor.com':'Floor & Decor',
+      'wayfair.com':'Wayfair',
+      'build.com':'Build.com',
+      'ferguson.com':'Ferguson',
+      'amazon.com':'Amazon'
+    };
+    const vendor=vendorMap[host]||selectionTitleCase(host.split('.')[0].replace(/[-_]/g,' '));
+    const pathParts=parsed.pathname.split('/').filter(Boolean);
+    let raw=decodeURIComponent(pathParts[pathParts.length-1]||'');
+    if(pathParts[0]?.toLowerCase()==='p' && pathParts[1]) raw=decodeURIComponent(pathParts.slice(1).join('-'));
+    if(/^[A-Z0-9]{6,}$/i.test(raw) && pathParts.length>1){
+      raw=decodeURIComponent(pathParts[pathParts.length-2]||'')+'-'+raw;
+    }
+    raw=raw.replace(/\.(html?|aspx?)$/i,'');
+    const queryModel=parsed.searchParams.get('sku')||parsed.searchParams.get('model')||parsed.searchParams.get('productId')||'';
+    const trailingId=raw.match(/(?:^|[-_])([A-Z0-9]{6,})$/i)?.[1]||'';
+    const model=queryModel||trailingId;
+    const withoutId=trailingId ? raw.slice(0,raw.length-trailingId.length).replace(/[-_]+$/,'') : raw;
+    const title=selectionTitleCase(withoutId.replace(/[-_]+/g,' '));
+    return {vendor,title:title.length>3?title:'',category:selectionCategoryFromText(title+' '+raw),model};
   }catch(e){
-    return {vendor:'',title:''};
+    return {vendor:'',title:'',category:'',model:''};
   }
+}
+
+function selectionLookupUrl(url){
+  const params=new URLSearchParams({
+    url,
+    'data.price.selector':'meta[itemprop="price"],meta[property="product:price:amount"]',
+    'data.price.attr':'content',
+    'data.sku.selector':'meta[itemprop="sku"],meta[property="product:retailer_item_id"]',
+    'data.sku.attr':'content',
+    'data.description.selector':'meta[name="description"],meta[property="og:description"]',
+    'data.description.attr':'content'
+  });
+  return `https://api.microlink.io?${params.toString()}`;
+}
+
+function selectionNumber(value){
+  if(typeof value==='number' && Number.isFinite(value)) return value;
+  const raw=value?.value ?? value?.text ?? value ?? '';
+  const text=String(raw).replace(/,/g,'');
+  const match=text.match(/(?:\$|USD\s*)?([0-9]+(?:\.[0-9]{1,2})?)/i);
+  return match?Number(match[1]):0;
+}
+
+function selectionMetadataTitle(value){
+  const text=String(value||'').replace(/\s+/g,' ').trim();
+  if(!text || /^(error page|access denied|the home depot)$/i.test(text)) return '';
+  return text.replace(/\s*[-|]\s*(The Home Depot|Lowe's|Wayfair).*$/i,'').trim();
+}
+
+async function fetchSelectionMetadata(url){
+  const controller=new AbortController();
+  const timeout=setTimeout(()=>controller.abort(),10000);
+  try{
+    const response=await fetch(selectionLookupUrl(url),{signal:controller.signal,headers:{Accept:'application/json'}});
+    if(!response.ok) return null;
+    const payload=await response.json();
+    const data=payload?.data||{};
+    const image=typeof data.image==='string'?data.image:data.image?.url||'';
+    return {
+      title:selectionMetadataTitle(data.title),
+      description:String(data.description||'').trim(),
+      image:safeSelectionUrl(image),
+      unitPrice:selectionNumber(data.price),
+      model:String(data.sku||'').trim(),
+      blocked:Number(payload?.statusCode||0)>=400
+    };
+  }catch(e){
+    return null;
+  }finally{
+    clearTimeout(timeout);
+  }
+}
+
+function setSelectionLookupStatus(message,tone=''){
+  const node=document.getElementById('selectionLookupStatus');
+  if(!node) return;
+  node.textContent=message;
+  node.className=`selection-lookup-status ${tone}`.trim();
+}
+
+function fillSelectionField(id,value,overwrite=false){
+  const field=document.getElementById(id);
+  if(field && value && (overwrite || !String(field.value||'').trim())) field.value=value;
+}
+
+async function enrichSelectionEditorFromUrl(url,overwrite=false){
+  const normalized=String(url||'').trim();
+  if(!normalized) return;
+  const guess=productGuessFromUrl(normalized);
+  fillSelectionField('selectionEditTitle',guess.title,overwrite);
+  fillSelectionField('selectionEditVendor',guess.vendor,overwrite);
+  fillSelectionField('selectionEditCategory',guess.category,overwrite);
+  fillSelectionField('selectionEditModel',guess.model,overwrite);
+  setSelectionLookupStatus('Reading the product link…','loading');
+  const metadata=await fetchSelectionMetadata(normalized);
+  if(metadata){
+    fillSelectionField('selectionEditTitle',metadata.title,overwrite);
+    fillSelectionField('selectionEditDescription',metadata.description,overwrite);
+    fillSelectionField('selectionEditImage',metadata.image,overwrite);
+    fillSelectionField('selectionEditModel',metadata.model,overwrite);
+    if(metadata.unitPrice) fillSelectionField('selectionEditPrice',metadata.unitPrice.toFixed(2),overwrite);
+  }
+  const hasPrice=Number(document.getElementById('selectionEditPrice')?.value||0)>0;
+  const hasDetails=Boolean(document.getElementById('selectionEditTitle')?.value.trim() && document.getElementById('selectionEditCategory')?.value.trim());
+  if(hasPrice && hasDetails) setSelectionLookupStatus('Product details and price found — review before saving.','success');
+  else if(hasDetails) setSelectionLookupStatus('Product name, vendor, category, and SKU were filled from the link. This retailer did not expose a live price, so enter it below.','warn');
+  else setSelectionLookupStatus('We could not read this link. You can still enter the product details manually.','warn');
+  updateSelectionTotals();
+}
+
+function selectionLookupFromEditorUrl(){
+  const url=document.getElementById('selectionEditUrl')?.value.trim()||'';
+  if(url) enrichSelectionEditorFromUrl(url,false);
 }
 
 function openSelectionEditorFromLink(){
@@ -9697,6 +9841,7 @@ function openSelectionEditorFromLink(){
     return;
   }
   openSelectionEditor(null,url);
+  document.getElementById('selectionProductUrl').value='';
 }
 
 function openSelectionEditor(index=null,prefillUrl=''){
@@ -9706,8 +9851,8 @@ function openSelectionEditor(index=null,prefillUrl=''){
   const existing=selectionEditIndex===null?null:project.selections[selectionEditIndex];
   const guess=productGuessFromUrl(prefillUrl);
   const item=existing||{
-    url:prefillUrl,title:guess.title,vendor:guess.vendor,category:'',room:project.selectionActiveRoom||project.selectionRooms[0],
-    model:'',image:'',description:'',quality:'Standard',unitPrice:'',quantity:1,addTax:false,
+    url:prefillUrl,title:guess.title,vendor:guess.vendor,category:guess.category,room:project.selectionActiveRoom||project.selectionRooms[0],
+    model:guess.model,image:'',description:'',quality:'Standard',unitPrice:'',quantity:1,addTax:false,
     purchasedBy:'J&J',status:'Pending',leadTimeValue:1,leadTimeUnit:'Day(s)',notes:''
   };
   const host=document.getElementById('selectionModalBackdrop');
@@ -9718,7 +9863,8 @@ function openSelectionEditor(index=null,prefillUrl=''){
       <button onclick="closeSelectionEditor()" aria-label="Close">×</button>
     </div>
     <div class="selection-form">
-      <div class="selection-field full"><label>Product link</label><input id="selectionEditUrl" type="url" value="${esc(item.url||'')}"></div>
+      <div class="selection-field full"><label>Product link</label><div class="selection-lookup-row"><input id="selectionEditUrl" type="url" value="${esc(item.url||'')}" onblur="selectionLookupFromEditorUrl()"><button type="button" onclick="selectionLookupFromEditorUrl()">Fill from link</button></div></div>
+      <div id="selectionLookupStatus" class="selection-lookup-status">Paste a product link and we’ll fill in anything the retailer makes available.</div>
       <div class="selection-field full"><label>Product name</label><input id="selectionEditTitle" value="${esc(item.title||'')}" placeholder="Product name"></div>
       <div class="selection-field"><label>Vendor</label><input id="selectionEditVendor" value="${esc(item.vendor||'')}" placeholder="Home Depot"></div>
       <div class="selection-field"><label>Category</label><input id="selectionEditCategory" value="${esc(item.category||'')}" placeholder="Tile, Plumbing, Vanity…"></div>
@@ -9750,6 +9896,7 @@ function openSelectionEditor(index=null,prefillUrl=''){
   host.classList.add('open');
   updateSelectionTotals();
   setTimeout(()=>document.getElementById('selectionEditTitle')?.focus(),30);
+  if(prefillUrl && !existing) enrichSelectionEditorFromUrl(prefillUrl,false);
 }
 
 function closeSelectionEditor(){
