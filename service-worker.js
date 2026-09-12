@@ -1,4 +1,4 @@
-const CACHE_NAME = 'jj-operations-v47-bulk-undo-sidebar';
+const CACHE_NAME = 'jj-operations-v48-selection-room-stock';
 const APP_SHELL = [
   './',
   './index.html',

@@ -9740,7 +9740,7 @@ function selectionCard(item,index){
   const productUrl=safeSelectionUrl(item.url);
   const imageUrl=safeSelectionImageUrl(item.image);
   const taxNote=item.addTax?' · tax included':'';
-  const lead=item.leadTimeValue
+  const lead=item.inStock ? 'In Stock' : item.leadTimeValue
     ? `${item.leadTimeValue} ${String(item.leadTimeUnit||'days').toLowerCase()}`
     : '';
   const photo=imageUrl
@@ -10064,7 +10064,8 @@ function openSelectionEditor(index=null,prefillUrl=''){
       <div class="selection-field full"><label>Product name</label><input id="selectionEditTitle" value="${esc(item.title||'')}" placeholder="Product name"></div>
       <div class="selection-field"><label>Vendor</label><input id="selectionEditVendor" value="${esc(item.vendor||'')}" placeholder="Home Depot"></div>
       <div class="selection-field"><label>Category</label><input id="selectionEditCategory" value="${esc(item.category||'')}" placeholder="Tile, Plumbing, Vanity…"></div>
-      <div class="selection-field"><label>Room</label><select id="selectionEditRoom">${project.selectionRooms.map(room=>`<option ${room===item.room?'selected':''}>${esc(room)}</option>`).join('')}</select></div>
+      <div class="selection-field"><label for="selectionEditRoom">Room</label><select id="selectionEditRoom">${[...new Set([...project.selectionRooms,item.room].filter(Boolean))].map(room=>`<option ${room===item.room?'selected':''}>${esc(room)}</option>`).join('')}</select>
+        <div style="display:flex;gap:8px;margin-top:8px"><input id="selectionEditorNewRoom" placeholder="New room name" aria-label="New room name" onkeydown="if(event.key==='Enter'){event.preventDefault();addRoomInSelectionEditor()}"><button type="button" class="btn btn-light" onclick="addRoomInSelectionEditor()">Add Room</button></div></div>
       <div class="selection-field"><label>Quality</label><select id="selectionEditQuality">
         ${['Budget','Standard','Premium','Luxury'].map(q=>`<option ${q===(item.quality||'Standard')?'selected':''}>${q}</option>`).join('')}
       </select></div>
@@ -10085,6 +10086,7 @@ function openSelectionEditor(index=null,prefillUrl=''){
           <input id="selectionEditLeadValue" type="number" min="1" step="1" value="${Math.max(1,Number(item.leadTimeValue||1))}" aria-label="Lead time amount">
           <select id="selectionEditLeadUnit" aria-label="Lead time unit">${['Day(s)','Week(s)'].map(v=>`<option ${v===(item.leadTimeUnit||'Day(s)')?'selected':''}>${v}</option>`).join('')}</select>
         </div>
+        <button type="button" id="selectionEditInStock" class="btn ${item.inStock?'btn-gold':'btn-light'}" style="margin-top:8px" aria-pressed="${item.inStock?'true':'false'}" onclick="toggleSelectionInStock()">In Stock</button>
       </div>
       <div class="selection-field full"><label>Description</label><textarea id="selectionEditDescription" placeholder="Product description">${esc(item.description||'')}</textarea></div>
       <div class="selection-field full"><label>Notes</label><textarea id="selectionEditNotes" placeholder="Compatibility, quantities, installation notes…">${esc(item.notes||'')}</textarea></div>
@@ -10096,9 +10098,36 @@ function openSelectionEditor(index=null,prefillUrl=''){
     </div>
   </div>`;
   host.classList.add('open');
+  refreshSelectionInStock();
   updateSelectionTotals();
   setTimeout(()=>document.getElementById('selectionEditTitle')?.focus(),30);
   if(prefillUrl && !existing) enrichSelectionEditorFromUrl(prefillUrl,false);
+}
+
+function addRoomInSelectionEditor(){
+  const input=document.getElementById('selectionEditorNewRoom');
+  const select=document.getElementById('selectionEditRoom');
+  const name=input.value.trim();
+  if(!name){input.focus();return;}
+  const existing=Array.from(select.options).find(option=>option.value.toLowerCase()===name.toLowerCase());
+  if(existing) select.value=existing.value;
+  else {const option=document.createElement('option');option.value=name;option.textContent=name;select.appendChild(option);select.value=name;}
+  input.value='';
+}
+
+function refreshSelectionInStock(){
+  const button=document.getElementById('selectionEditInStock');
+  const active=button?.getAttribute('aria-pressed')==='true';
+  for(const id of ['selectionEditLeadValue','selectionEditLeadUnit']){
+    const input=document.getElementById(id);if(input) input.disabled=active;
+  }
+  if(button){button.classList.toggle('btn-gold',active);button.classList.toggle('btn-light',!active);}
+}
+
+function toggleSelectionInStock(){
+  const button=document.getElementById('selectionEditInStock');
+  button.setAttribute('aria-pressed',button.getAttribute('aria-pressed')==='true'?'false':'true');
+  refreshSelectionInStock();
 }
 
 function closeSelectionEditor(){
@@ -10142,12 +10171,15 @@ function saveSelectionEditor(){
     addTax:!!document.getElementById('selectionEditTax')?.checked,
     purchasedBy:document.getElementById('selectionEditPurchasedBy')?.value||'J&J',
     status,
+    inStock:document.getElementById('selectionEditInStock')?.getAttribute('aria-pressed')==='true',
     leadTimeValue:Math.max(1,Number(document.getElementById('selectionEditLeadValue')?.value||1)),
     leadTimeUnit:document.getElementById('selectionEditLeadUnit')?.value||'Day(s)',
     description:document.getElementById('selectionEditDescription')?.value.trim()||'',
     notes:document.getElementById('selectionEditNotes')?.value.trim()||''
   };
   const project=selectedProject();
+  if(!project.selectionRooms.includes(item.room)) project.selectionRooms.push(item.room);
+  project.selectionActiveRoom=item.room;
   if(selectionEditIndex===null) project.selections.push(item);
   else project.selections[selectionEditIndex]=item;
   saveState(false);
@@ -10256,5 +10288,6 @@ document.querySelector('.brand')?.addEventListener('keydown',e=>{
   }
 });
 </script>
+
 
 
