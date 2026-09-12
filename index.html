@@ -4517,6 +4517,20 @@ details[open] > .confirmed-summary .confirmed-expand::after{content:'▾ Collaps
 .cost-chart-row{padding:12px 0;border-bottom:1px solid #E3E7ED}
 .cost-chart-bar{height:10px;background:#ECE5F6;border-radius:6px;margin:6px 0;overflow:hidden}
 .cost-chart-bar span{display:block;height:100%;background:#9676BC;border-radius:6px}
+
+.confirmed-slim{padding:0;margin-bottom:6px;border-radius:9px;box-shadow:none}
+.confirmed-slim .confirmed-summary{display:grid;grid-template-columns:minmax(0,1fr) auto 16px;gap:16px;align-items:center;padding:13px 16px;cursor:pointer}
+.confirmed-row-title{display:flex;align-items:baseline;gap:10px;min-width:0;flex-wrap:wrap}
+.confirmed-row-title small{color:#697689;font-size:11px}
+.confirmed-row-title b{font-size:14px;color:#14234A}
+.confirmed-row-amount{font-size:14px;font-variant-numeric:tabular-nums;color:#14234A;white-space:nowrap}
+.confirmed-row-chevron{font-size:22px;color:#7A8290;text-align:center;transition:transform .15s}
+.confirmed-slim[open] .confirmed-row-chevron{transform:rotate(90deg)}
+.confirmed-slim[open] .confirmed-summary{border-bottom:1px solid #E3E7ED}
+.confirmed-expanded-content{padding:14px 16px}
+.confirmed-expanded-meta{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+.confirmed-slim summary:hover{background:#F6F8FB;border-radius:9px}
+.confirmed-slim summary:focus-visible{outline:2px solid #4E78B7;outline-offset:2px}
 </style>
 
   <meta name="theme-color" content="#14234A">
@@ -8056,15 +8070,9 @@ function renderConfirmedPayouts(project,forPrint=false){
       if(forPrint) return `<section style="padding:16px;margin-bottom:12px;break-inside:avoid">${heading}${body}</section>`;
       const crewTotal=recipients.reduce((sum,r)=>sum+r.amount,0);
       const assignedPct=recipients.reduce((sum,r)=>sum+r.pct,0);
-      const overview=`<div>
-        <div class="confirmed-summary-top">${getPOParentGroup(po)?`<span class="eyebrow">${esc(getPOParentGroup(po))}</span>`:''}<span class="confirmed-badge">Approved${po.approvedBy?` by ${esc(po.approvedBy)}`:''}</span></div>
-        <h3>${esc(getPOBaseTitle(po))}</h3>
-        ${description?`<p class="confirmed-description">${esc(description)}</p>`:'<p class="confirmed-description">No matching estimate description available.</p>'}
-        <div class="help-text">${recipients.length} crew recipient${recipients.length===1?'':'s'} · ${assignedPct}% of base crew assigned${po.preApprovedBy?` · Pre-approved by ${esc(po.preApprovedBy)}`:''}</div>
-        <div class="confirmed-crew">${recipients.map(r=>`<span><b>${esc(r.name)}</b> · ${r.pct}% · ${money(r.amount)}</span>`).join('')}</div>
-        <div class="confirmed-expand"></div>
-      </div>`;
-      return `<details class="card confirmed-compact" style="padding:12px 16px;margin-bottom:8px" ${confirmedPayoutIsOpen(project.id,po.id)?'open':''} ontoggle="rememberConfirmedPayoutOpen(${esc(JSON.stringify(project.id))},${esc(JSON.stringify(po.id))},this.open)"><summary class="confirmed-summary" style="cursor:pointer">${overview}</summary>${body}</details>`;
+      const overview=`<span class="confirmed-row-title">${getPOParentGroup(po)?`<small>${esc(getPOParentGroup(po))}</small>`:''}<b>${esc(getPOBaseTitle(po))}</b></span><b class="confirmed-row-amount">${money(crewTotal)}</b><span class="confirmed-row-chevron" aria-hidden="true">›</span>`;
+      const approval=`<div class="confirmed-expanded-meta"><span class="confirmed-badge">Approved${po.approvedBy?` by ${esc(po.approvedBy)}`:''}</span><span class="help-text">${recipients.length} crew recipient${recipients.length===1?'':'s'} · ${assignedPct}% assigned${po.preApprovedBy?` · Pre-approved by ${esc(po.preApprovedBy)}`:''}</span></div>`;
+      return `<details class="card confirmed-compact confirmed-slim" ${confirmedPayoutIsOpen(project.id,po.id)?'open':''} ontoggle="rememberConfirmedPayoutOpen(${esc(JSON.stringify(project.id))},${esc(JSON.stringify(po.id))},this.open)"><summary class="confirmed-summary">${overview}</summary><div class="confirmed-expanded-content">${approval}${body}</div></details>`;
     }).join('') : '<div class="empty"><strong>No confirmed payouts yet.</strong><br>Named crew members with a positive split appear here after final P.O. approval.</div>'}`;
 }
 

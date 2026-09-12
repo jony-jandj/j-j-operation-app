@@ -1,4 +1,4 @@
-const CACHE_NAME = 'jj-operations-v52-job-costing';
+const CACHE_NAME = 'jj-operations-v53-slim-payouts';
 const APP_SHELL = [
   './',
   './index.html',
