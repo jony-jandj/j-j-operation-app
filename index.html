@@ -9527,6 +9527,8 @@ function openAccountSignIn(){
 /* Selections */
 let selectionFilter='All';
 let selectionEditIndex=null;
+let selectionLookupInFlight='';
+let selectionLookupCompleted='';
 
 function ensureSelectionsData(){
   state.projects.forEach(project=>{
@@ -9691,6 +9693,14 @@ function selectionTitleCase(value){
   return String(value||'').replace(/\s+/g,' ').trim().replace(/\b\w/g,char=>char.toUpperCase());
 }
 
+function selectionCleanProductTitle(value){
+  return selectionTitleCase(value)
+    .replace(/\b(\d+)\s+(\d+)\s+In\b/gi,'$1.$2 in')
+    .replace(/\b(\d+)\s+(\d+)\s+Sq\s+Ft\b/gi,'$1.$2 sq ft')
+    .replace(/\b(\d+(?:\.\d+)?)\s+In\b/gi,'$1 in')
+    .replace(/\s+X\s+/g,' × ');
+}
+
 function selectionCategoryFromText(value){
   const text=String(value||'').toLowerCase();
   const rules=[
@@ -9734,7 +9744,7 @@ function productGuessFromUrl(url){
     const trailingId=raw.match(/(?:^|[-_])([A-Z0-9]{6,})$/i)?.[1]||'';
     const model=queryModel||trailingId;
     const withoutId=trailingId ? raw.slice(0,raw.length-trailingId.length).replace(/[-_]+$/,'') : raw;
-    const title=selectionTitleCase(withoutId.replace(/[-_]+/g,' '));
+    const title=selectionCleanProductTitle(withoutId.replace(/[-_]+/g,' '));
     return {vendor,title:title.length>3?title:'',category:selectionCategoryFromText(title+' '+raw),model};
   }catch(e){
     return {vendor:'',title:'',category:'',model:''};
@@ -9807,6 +9817,8 @@ function fillSelectionField(id,value,overwrite=false){
 async function enrichSelectionEditorFromUrl(url,overwrite=false){
   const normalized=String(url||'').trim();
   if(!normalized) return;
+  if(!overwrite && (selectionLookupInFlight===normalized || selectionLookupCompleted===normalized)) return;
+  selectionLookupInFlight=normalized;
   const guess=productGuessFromUrl(normalized);
   fillSelectionField('selectionEditTitle',guess.title,overwrite);
   fillSelectionField('selectionEditVendor',guess.vendor,overwrite);
@@ -9827,6 +9839,8 @@ async function enrichSelectionEditorFromUrl(url,overwrite=false){
   else if(hasDetails) setSelectionLookupStatus('Product name, vendor, category, and SKU were filled from the link. This retailer did not expose a live price, so enter it below.','warn');
   else setSelectionLookupStatus('We could not read this link. You can still enter the product details manually.','warn');
   updateSelectionTotals();
+  selectionLookupCompleted=normalized;
+  if(selectionLookupInFlight===normalized) selectionLookupInFlight='';
 }
 
 function selectionLookupFromEditorUrl(){
@@ -9848,6 +9862,8 @@ function openSelectionEditor(index=null,prefillUrl=''){
   const project=selectedProject();
   ensureSelectionsData();
   selectionEditIndex=Number.isInteger(index)?index:null;
+  selectionLookupInFlight='';
+  selectionLookupCompleted='';
   const existing=selectionEditIndex===null?null:project.selections[selectionEditIndex];
   const guess=productGuessFromUrl(prefillUrl);
   const item=existing||{
