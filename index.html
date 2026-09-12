@@ -4508,6 +4508,15 @@ body.topbar-collapsed .operations-app > .sidebar{top:0;min-height:100vh}
 details[open] > .confirmed-summary .confirmed-expand::after{content:'▾ Collapse details'}
 @media(max-width:650px){.confirmed-summary{grid-template-columns:1fr;gap:12px}}
 
+
+.confirmed-compact .confirmed-summary{grid-template-columns:1fr;gap:0}
+.confirmed-compact:not([open]) .confirmed-description{-webkit-line-clamp:1;margin:4px 0}
+.confirmed-compact .confirmed-summary h3{font-size:16px;margin:4px 0}
+.confirmed-compact .confirmed-crew{margin-top:6px}
+.confirmed-compact .confirmed-expand{margin-top:6px}
+.cost-chart-row{padding:12px 0;border-bottom:1px solid #E3E7ED}
+.cost-chart-bar{height:10px;background:#ECE5F6;border-radius:6px;margin:6px 0;overflow:hidden}
+.cost-chart-bar span{display:block;height:100%;background:#9676BC;border-radius:6px}
 </style>
 
   <meta name="theme-color" content="#14234A">
@@ -8033,10 +8042,10 @@ function renderConfirmedPayouts(project,forPrint=false){
   const total=groups.reduce((sum,group)=>sum+group.recipients.reduce((n,r)=>n+r.amount,0),0);
   const cost=groups.reduce((sum,{po})=>sum+Number(po.builderCost||0),0);
   return `${forPrint?'':`<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px"><button class="btn btn-navy" onclick="printConfirmedPayouts()" ${groups.length?'':'disabled'}>Print Confirmed Payouts</button><button class="btn btn-light" onclick="setAllConfirmedPayoutsOpen(true)">Expand All</button><button class="btn btn-light" onclick="setAllConfirmedPayoutsOpen(false)">Collapse All</button></div>`}<div class="po-hub-section-title"><h3>Confirmed Payouts</h3><span>${groups.length} approved P.O.s · ${money(total)} crew payouts</span></div>
-    ${confirmedAllocationCards(cost,forPrint)}
-    <p class="help-text" style="margin-bottom:14px">Allocations for the approved P.O.s listed below. Crew splits apply to the 60% base crew pool. Touch-up and reserve are allocated funds, not payment or remaining-balance records.</p>
+    
+    <p class="help-text" style="margin-bottom:14px">Approved employee payouts. Crew splits apply to the 60% base crew pool.</p>
     ${groups.length ? groups.map(({po,recipients})=>{
-      const heading=`<div class="eyebrow">${esc(getPOParentGroup(po))}</div><h3 style="margin:4px 0 8px">${esc(getPOBaseTitle(po))}</h3><div class="help-text">Crew ${money(recipients.reduce((sum,r)=>sum+r.amount,0))} · Touch-up ${money(Number(po.builderCost||0)*.05)} · Reserve ${money(Number(po.builderCost||0)*.35)}</div>`;
+      const heading=`<div class="eyebrow">${esc(getPOParentGroup(po))}</div><h3 style="margin:4px 0 8px">${esc(getPOBaseTitle(po))}</h3><div class="help-text">Crew ${money(recipients.reduce((sum,r)=>sum+r.amount,0))}</div>`;
       const description=confirmedPayoutDescription(project,po);
       const body=`<div style="padding-top:12px">
         ${description?`<p style="white-space:pre-wrap;overflow-wrap:anywhere;margin:0 0 12px;line-height:1.5">${esc(description)}</p>`:''}
@@ -8054,13 +8063,8 @@ function renderConfirmedPayouts(project,forPrint=false){
         <div class="help-text">${recipients.length} crew recipient${recipients.length===1?'':'s'} · ${assignedPct}% of base crew assigned${po.preApprovedBy?` · Pre-approved by ${esc(po.preApprovedBy)}`:''}</div>
         <div class="confirmed-crew">${recipients.map(r=>`<span><b>${esc(r.name)}</b> · ${r.pct}% · ${money(r.amount)}</span>`).join('')}</div>
         <div class="confirmed-expand"></div>
-      </div><div class="confirmed-money">
-        <div class="builder"><small>Builder Cost</small><b>${money(Number(po.builderCost||0))}</b></div>
-        <div class="payout"><small>Confirmed Crew Payout</small><b>${money(crewTotal)}</b></div>
-        <div class="touch"><small>Touch-up Allocation · 5%</small><b>${money(Number(po.builderCost||0)*.05)}</b></div>
-        <div class="reserve"><small>Reserve Allocation · 35%</small><b>${money(Number(po.builderCost||0)*.35)}</b></div>
       </div>`;
-      return `<details class="card" style="padding:16px;margin-bottom:12px" ${confirmedPayoutIsOpen(project.id,po.id)?'open':''} ontoggle="rememberConfirmedPayoutOpen(${esc(JSON.stringify(project.id))},${esc(JSON.stringify(po.id))},this.open)"><summary class="confirmed-summary" style="cursor:pointer">${overview}</summary>${body}</details>`;
+      return `<details class="card confirmed-compact" style="padding:12px 16px;margin-bottom:8px" ${confirmedPayoutIsOpen(project.id,po.id)?'open':''} ontoggle="rememberConfirmedPayoutOpen(${esc(JSON.stringify(project.id))},${esc(JSON.stringify(po.id))},this.open)"><summary class="confirmed-summary" style="cursor:pointer">${overview}</summary>${body}</details>`;
     }).join('') : '<div class="empty"><strong>No confirmed payouts yet.</strong><br>Named crew members with a positive split appear here after final P.O. approval.</div>'}`;
 }
 
@@ -8854,6 +8858,7 @@ ${estimateTableHTML(p,'project')}`:`<div class="empty">No estimate loaded yet.<b
     `;
   } else if(projectTab==='jobcost'){
     c.innerHTML=`
+      ${renderEmployeeCosting(p)}
       <div class="stats">
         <div class="card stat"><div class="label">Labor Builder Cost</div><div class="value">${money(laborBuilderCost(p))}</div></div>
         <div class="card stat"><div class="label">Base Crew Payout</div><div class="value">${money(poBase(p))}</div></div>
@@ -8877,6 +8882,34 @@ ${estimateTableHTML(p,'project')}`:`<div class="empty">No estimate loaded yet.<b
   }
 }
 
+
+function employeeCostSummary(project){
+  const employees=new Map();
+  confirmedPayoutGroups(project).forEach(({po,recipients})=>{
+    const ticketNames=new Set();
+    recipients.forEach(r=>{
+      const key=r.name.trim().toLowerCase();
+      if(!employees.has(key)) employees.set(key,{name:r.name,payout:0,tickets:0});
+      const employee=employees.get(key);
+      employee.payout+=r.amount;
+      if(!ticketNames.has(key)){employee.tickets++;ticketNames.add(key);}
+    });
+  });
+  return [...employees.values()].sort((a,b)=>b.payout-a.payout||a.name.localeCompare(b.name));
+}
+function renderEmployeeCosting(project){
+  const groups=confirmedPayoutGroups(project);
+  const employees=employeeCostSummary(project);
+  const max=Math.max(1,...employees.map(e=>e.payout));
+  return `<section class="card info-card" style="margin-bottom:16px"><h3>Employee Payouts &amp; Tickets</h3>
+    <p class="help-text">Current job · final-approved P.O.s only. One ticket is one P.O. assigned to an employee. These are approved payouts, not recorded payments.</p>
+    ${employees.length?employees.map(e=>`<div class="cost-chart-row"><div style="display:flex;justify-content:space-between;gap:12px"><b>${esc(e.name)}</b><b>${money(e.payout)}</b></div><div class="cost-chart-bar"><span style="width:${e.payout/max*100}%"></span></div><div class="help-text">${e.tickets} ticket${e.tickets===1?'':'s'} · ${money(e.payout/e.tickets)} average per ticket</div></div>`).join(''):'<div class="empty">Approve a P.O. with assigned employees to see the comparison.</div>'}
+  </section><section class="card info-card"><h3>Approved P.O. Allocations</h3>
+    ${confirmedAllocationCards(groups.reduce((sum,{po})=>sum+Number(po.builderCost||0),0))}
+    <p class="help-text">Allocations, not remaining balances or employee gains/losses.</p>
+    ${groups.map(({po,recipients})=>`<div style="margin-top:14px"><h4>${esc(getPOParentGroup(po))} ${esc(getPOBaseTitle(po))}</h4><div class="confirmed-money"><div class="builder"><small>Builder Cost</small><b>${money(Number(po.builderCost||0))}</b></div><div class="payout"><small>Confirmed Crew Payout</small><b>${money(recipients.reduce((sum,r)=>sum+r.amount,0))}</b></div><div class="touch"><small>Touch-up · 5%</small><b>${money(Number(po.builderCost||0)*.05)}</b></div><div class="reserve"><small>Reserve · 35%</small><b>${money(Number(po.builderCost||0)*.35)}</b></div></div></div>`).join('')}
+  </section>`;
+}
 
 function selectedPOs(){
   const p=selectedProject();
@@ -10348,6 +10381,7 @@ document.querySelector('.brand')?.addEventListener('keydown',e=>{
   }
 });
 </script>
+
 
 
 

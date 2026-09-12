@@ -1,4 +1,4 @@
-const CACHE_NAME = 'jj-operations-v51-payout-colors';
+const CACHE_NAME = 'jj-operations-v52-job-costing';
 const APP_SHELL = [
   './',
   './index.html',
@@ -33,6 +33,7 @@ self.addEventListener('fetch', event => {
     }).catch(() => caches.match(event.request))
   );
 });
+
 
 
 
