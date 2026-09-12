@@ -7959,15 +7959,37 @@ function confirmedPayoutGroups(project){
   })).filter(group=>group.recipients.length);
 }
 
-function renderConfirmedPayouts(project){
+function confirmedPayoutDescription(project,po){
+  const rows=project.estimate||[];
+  if(po.sourceEstimateKey){
+    const exact=rows.find(row=>estimateRowSourceKey(row)===po.sourceEstimateKey);
+    if(exact) return String(exact.description||'').trim();
+  }
+  const norm=value=>String(value||'').trim().toLowerCase();
+  const title=norm(getPOBaseTitle(po));
+  const group=norm(po.parentGroup || (String(po.line||'').includes(' · ')?String(po.line).split(' · ')[0]:''));
+  let matches=rows.filter(row=>norm(estimateRowTitle(row))===title && norm(row.parentGroup||row.parent_group)===group);
+  if(matches.length>1) matches=matches.filter(row=>Number(row.builderCost||0)===Number(po.builderCost||0));
+  // Never borrow a description from a different room or an ambiguous estimate line.
+  return matches.length===1 ? String(matches[0].description||'').trim() : '';
+}
+
+function printConfirmedPayouts(){
+  const project=selectedProject();
+  if(!confirmedPayoutGroups(project).length){toast('No confirmed payouts to print.');return;}
+  launchPrint(`<div class="print-doc-header"><h1>J&J Home Renovations</h1><h2>Confirmed Payouts</h2><p>${esc(project.name)} · ${esc(project.jobNo||'')}</p></div>` + renderConfirmedPayouts(project,true));
+}
+
+function renderConfirmedPayouts(project,forPrint=false){
   const groups=confirmedPayoutGroups(project);
   const total=groups.reduce((sum,group)=>sum+group.recipients.reduce((n,r)=>n+r.amount,0),0);
-  return `<div class="po-hub-section-title"><h3>Confirmed Payouts</h3><span>${groups.length} approved P.O.s · ${money(total)}</span></div>
+  return `${forPrint?'':`<div style="margin-bottom:12px"><button class="btn btn-navy" onclick="printConfirmedPayouts()" ${groups.length?'':'disabled'}>Print Confirmed Payouts</button></div>`}<div class="po-hub-section-title"><h3>Confirmed Payouts</h3><span>${groups.length} approved P.O.s · ${money(total)}</span></div>
     <p class="help-text" style="margin-bottom:14px">Final-approved crew payouts for this project. Split percentages apply to the 60% base crew pool. Approval does not indicate payment has been made.</p>
     ${groups.length ? groups.map(({po,recipients})=>`
-      <section class="card" style="padding:16px;margin-bottom:12px">
+      <section class="card" style="padding:16px;margin-bottom:12px;break-inside:avoid">
         <div class="eyebrow">${esc(getPOParentGroup(po))}</div>
         <h3 style="margin:4px 0 12px">${esc(getPOBaseTitle(po))}</h3>
+        ${confirmedPayoutDescription(project,po)?`<p style="white-space:pre-wrap;overflow-wrap:anywhere;margin:0 0 12px;line-height:1.5">${esc(confirmedPayoutDescription(project,po))}</p>`:''}
         <table style="width:100%;table-layout:fixed" aria-label="Confirmed crew payouts">
           <thead><tr><th style="width:46%;text-align:left">Employee</th><th style="width:22%;text-align:right">Split</th><th style="width:32%;text-align:right">Payout</th></tr></thead>
           <tbody>${recipients.map(r=>`<tr><td style="padding:12px 4px;overflow-wrap:anywhere"><b>${esc(r.name)}</b></td><td style="text-align:right;padding:12px 4px">${r.pct}%</td><td style="text-align:right;padding:12px 4px">${money(r.amount)}</td></tr>`).join('')}</tbody>
