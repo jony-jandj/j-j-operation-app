@@ -1,22 +1,19 @@
-J&J Operations — Independent P.O. Open / Close
+J&J Operations — Clean Printing
 
-Change:
-- each P.O. now opens and closes independently
-- closing one P.O. does not close the others
-- opening one P.O. does not close the others
-- you can keep several P.O.s open and several closed at the same time
-- Expand All still opens every P.O.
-- Collapse P.O.s still closes every P.O.
-- deleting one P.O. does not reset the open/closed state of unrelated P.O.s
+Changes:
+- Print on an individual P.O. prints only that P.O.
+- Print All P.O.s prints one P.O. per page.
+- Printing a Preconstruction section prints each checklist line item on its own page.
+- Print All Preconstruction prints every checklist line item on its own page.
+- The app interface/navigation is hidden from print output.
+- Printed P.O.s keep Parent Group and Builder Cost information.
 
-This preserves the latest:
-- duplicate estimate P.O. fix using Parent Group
-- Parent Group display
+Preserves all current app features including:
+- independent P.O. open/close
+- Parent Group duplicate handling
 - partial split approvals
-- iPad Jobs fix
-- Single Split
-- expanded job colors
-- menu/cloud/password recovery changes
+- iPad Jobs behavior
+- cloud/password recovery
 
 Upload/replace:
 1. index.html

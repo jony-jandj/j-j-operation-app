@@ -4069,6 +4069,19 @@ textarea.estimate-cell-input{
   }
 }
 
+
+@media print{
+  .print-page-break{
+    break-before:page !important;
+    page-break-before:always !important;
+  }
+
+  .print-section{
+    break-inside:avoid !important;
+    page-break-inside:avoid !important;
+  }
+}
+
 </style>
 
   <meta name="theme-color" content="#14234A">
@@ -6678,6 +6691,63 @@ function preconSectionPrintHTML(p,i,addPageBreak=false){
     </section>`;
 }
 
+
+function preconLineItemPrintHTML(p,sectionIndex,itemIndex,addPageBreak=false){
+  const section=PRECON_SECTIONS[sectionIndex];
+  const data=p.preconData[sectionIndex];
+  const item=data?.items?.[itemIndex];
+  if(!section || !data || !item) return '';
+
+  const link=linkedPreconDefinition(sectionIndex,itemIndex);
+
+  return `
+    <section class="print-section ${addPageBreak?'print-page-break':''}">
+      <div class="print-section-title">
+        <div>
+          <h2>${sectionIndex+1}. ${printSafe(section.title)}</h2>
+          <p>${printSafe(section.goal)}</p>
+        </div>
+        <div class="print-status">${item.done?'Complete':'Open'}</div>
+      </div>
+
+      <div class="print-meta-grid">
+        <div class="print-meta-box full">
+          <span>Checklist Item</span>
+          ${printSafe(item.text)}
+        </div>
+        <div class="print-meta-box">
+          <span>Checked By</span>
+          ${link?'Auto-linked':printSafe(item.checkedBy || '')}
+        </div>
+        <div class="print-meta-box">
+          <span>Status</span>
+          ${item.done?'Complete':'Open'}
+        </div>
+        <div class="print-meta-box full">
+          <span>Notes / Details</span>
+          ${printSafe(item.notes || '')}
+        </div>
+      </div>
+
+      ${link ? `
+        <div class="print-note">
+          <b>Linked From</b><br>
+          ${printSafe(linkedPreconSourceLabel(link))}
+        </div>` : ''}
+
+      <div class="print-meta-grid" style="margin-top:9px">
+        <div class="print-meta-box full">
+          <span>Section Handoff</span>
+          ${printSafe(section.handoff || '')}
+        </div>
+        <div class="print-meta-box full">
+          <span>Watch For</span>
+          ${printSafe(section.watchFor || '')}
+        </div>
+      </div>
+    </section>`;
+}
+
 function poPrintHTML(p,po,index,addPageBreak=false){
   const base=Number(po.builderCost||0)*.60;
   const touch=Number(po.builderCost||0)*.05;
@@ -6688,8 +6758,8 @@ function poPrintHTML(p,po,index,addPageBreak=false){
     <section class="print-section ${addPageBreak?'print-page-break':''}">
       <div class="print-section-title">
         <div>
-          <h2>P.O. ${index+1}: ${printSafe(po.line)}</h2>
-          <p>${printSafe(po.id)} · Builder Cost ${money(po.builderCost)}</p>
+          <h2>${printSafe(getPOBaseTitle(po)||po.line)}</h2>
+          <p>${getPOParentGroup(po)?`${printSafe(getPOParentGroup(po))} · `:''}Builder Cost ${money(po.builderCost)}</p>
         </div>
         <div class="print-status">${printSafe(po.status)}</div>
       </div>
@@ -6766,9 +6836,16 @@ function launchPrint(html){
 function printPreconSection(i){
   ensurePreconData();
   const p=selectedProject();
+  const items=p.preconData[i]?.items||[];
+
+  if(!items.length){
+    toast('No preconstruction line items to print.');
+    return;
+  }
+
   launchPrint(
     printProjectHeader(p,`Preconstruction · Section ${i+1}`) +
-    preconSectionPrintHTML(p,i,false) +
+    items.map((_,ii)=>preconLineItemPrintHTML(p,i,ii,ii>0)).join('') +
     `<div class="print-footer">J&J Home Renovations · ${printSafe(p.jobNo)}</div>`
   );
 }
@@ -6778,9 +6855,23 @@ function printAllPreconstruction(){
   const p=selectedProject();
   syncLinkedPreconItems(p);
   syncPreconProgress(p);
+
+  const pages=[];
+  PRECON_SECTIONS.forEach((_,si)=>{
+    const items=p.preconData[si]?.items||[];
+    items.forEach((__,ii)=>{
+      pages.push(preconLineItemPrintHTML(p,si,ii,pages.length>0));
+    });
+  });
+
+  if(!pages.length){
+    toast('No preconstruction line items to print.');
+    return;
+  }
+
   launchPrint(
-    printProjectHeader(p,'Complete Preconstruction Checklist') +
-    PRECON_SECTIONS.map((_,i)=>preconSectionPrintHTML(p,i,i>0)).join('') +
+    printProjectHeader(p,'Preconstruction Line Items') +
+    pages.join('') +
     `<div class="print-footer">J&J Home Renovations · ${printSafe(p.jobNo)}</div>`
   );
 }
@@ -6789,10 +6880,10 @@ function printSinglePO(i){
   const p=selectedProject();
   const po=p.pos[i];
   if(!po) return;
+
   launchPrint(
-    printProjectHeader(p,'P.O. Split') +
     poPrintHTML(p,po,i,false) +
-    `<div class="print-footer">J&J Home Renovations · ${printSafe(p.jobNo)}</div>`
+    `<div class="print-footer">J&J Home Renovations · ${printSafe(p.name)}</div>`
   );
 }
 
@@ -6802,10 +6893,10 @@ function printAllPOs(){
     toast('No P.O. splits to print.');
     return;
   }
+
   launchPrint(
-    printProjectHeader(p,'All P.O. Splits') +
     p.pos.map((po,i)=>poPrintHTML(p,po,i,i>0)).join('') +
-    `<div class="print-footer">J&J Home Renovations · ${printSafe(p.jobNo)}</div>`
+    `<div class="print-footer">J&J Home Renovations · ${printSafe(p.name)}</div>`
   );
 }
 
