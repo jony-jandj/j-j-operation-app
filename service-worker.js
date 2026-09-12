@@ -1,4 +1,4 @@
-const CACHE_NAME = 'jj-operations-v49-confirmed-allocations';
+const CACHE_NAME = 'jj-operations-v50-confirmed-overview';
 const APP_SHELL = [
   './',
   './index.html',
@@ -33,5 +33,6 @@ self.addEventListener('fetch', event => {
     }).catch(() => caches.match(event.request))
   );
 });
+
 
 

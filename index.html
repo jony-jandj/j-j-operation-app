@@ -4486,6 +4486,26 @@ body.topbar-collapsed .operations-app > .sidebar{top:0;min-height:100vh}
   .selection-modal-foot{padding:12px 14px}
 }
 
+
+.confirmed-summary{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(280px,1fr);gap:18px;align-items:start;list-style:none}
+.confirmed-summary::-webkit-details-marker{display:none}
+.confirmed-summary h3{font-size:19px;margin:6px 0}
+.confirmed-summary-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.confirmed-badge{font-size:10px;font-weight:800;background:#E8F4ED;color:#256343;padding:5px 8px;border-radius:20px}
+.confirmed-description{color:#596579;font-size:12px;line-height:1.5;margin:8px 0;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.confirmed-crew{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.confirmed-crew span{background:#EDF2F8;color:#233D5A;padding:6px 9px;border-radius:7px;font-size:11px}
+.confirmed-money{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.confirmed-money div{border:1px solid #E3E7ED;background:#F6F8FB;border-radius:9px;padding:10px}
+.confirmed-money small{display:block;font-size:10px;color:#596579;font-weight:800;margin-bottom:4px}
+.confirmed-money b{font-size:17px;color:#14234A}
+.confirmed-money .touch{background:#FFF8E9;border-color:#EFDEB4}
+.confirmed-money .reserve{background:#EEF3FC;border-color:#D4DFF1}
+.confirmed-expand{font-size:11px;color:#334F70;font-weight:800;margin-top:10px}
+.confirmed-expand::after{content:'▸ Expand details'}
+details[open] > .confirmed-summary .confirmed-expand::after{content:'▾ Collapse details'}
+@media(max-width:650px){.confirmed-summary{grid-template-columns:1fr;gap:12px}}
+
 </style>
 
   <meta name="theme-color" content="#14234A">
@@ -8023,7 +8043,22 @@ function renderConfirmedPayouts(project,forPrint=false){
           <tbody>${recipients.map(r=>`<tr><td style="padding:12px 4px;overflow-wrap:anywhere"><b>${esc(r.name)}</b></td><td style="text-align:right;padding:12px 4px">${r.pct}%</td><td style="text-align:right;padding:12px 4px">${money(r.amount)}</td></tr>`).join('')}</tbody>
         </table></div>`;
       if(forPrint) return `<section style="padding:16px;margin-bottom:12px;break-inside:avoid">${heading}${body}</section>`;
-      return `<details class="card" style="padding:16px;margin-bottom:12px" ${confirmedPayoutIsOpen(project.id,po.id)?'open':''} ontoggle="rememberConfirmedPayoutOpen(${esc(JSON.stringify(project.id))},${esc(JSON.stringify(po.id))},this.open)"><summary style="cursor:pointer">${heading}</summary>${body}</details>`;
+      const crewTotal=recipients.reduce((sum,r)=>sum+r.amount,0);
+      const assignedPct=recipients.reduce((sum,r)=>sum+r.pct,0);
+      const overview=`<div>
+        <div class="confirmed-summary-top">${getPOParentGroup(po)?`<span class="eyebrow">${esc(getPOParentGroup(po))}</span>`:''}<span class="confirmed-badge">Approved${po.approvedBy?` by ${esc(po.approvedBy)}`:''}</span></div>
+        <h3>${esc(getPOBaseTitle(po))}</h3>
+        ${description?`<p class="confirmed-description">${esc(description)}</p>`:'<p class="confirmed-description">No matching estimate description available.</p>'}
+        <div class="help-text">${recipients.length} crew recipient${recipients.length===1?'':'s'} · ${assignedPct}% of base crew assigned${po.preApprovedBy?` · Pre-approved by ${esc(po.preApprovedBy)}`:''}</div>
+        <div class="confirmed-crew">${recipients.map(r=>`<span><b>${esc(r.name)}</b> · ${r.pct}% · ${money(r.amount)}</span>`).join('')}</div>
+        <div class="confirmed-expand"></div>
+      </div><div class="confirmed-money">
+        <div><small>Builder Cost</small><b>${money(Number(po.builderCost||0))}</b></div>
+        <div><small>Confirmed Crew Payout</small><b>${money(crewTotal)}</b></div>
+        <div class="touch"><small>Touch-up Allocation · 5%</small><b>${money(Number(po.builderCost||0)*.05)}</b></div>
+        <div class="reserve"><small>Reserve Allocation · 35%</small><b>${money(Number(po.builderCost||0)*.35)}</b></div>
+      </div>`;
+      return `<details class="card" style="padding:16px;margin-bottom:12px" ${confirmedPayoutIsOpen(project.id,po.id)?'open':''} ontoggle="rememberConfirmedPayoutOpen(${esc(JSON.stringify(project.id))},${esc(JSON.stringify(po.id))},this.open)"><summary class="confirmed-summary" style="cursor:pointer">${overview}</summary>${body}</details>`;
     }).join('') : '<div class="empty"><strong>No confirmed payouts yet.</strong><br>Named crew members with a positive split appear here after final P.O. approval.</div>'}`;
 }
 
@@ -10311,6 +10346,7 @@ document.querySelector('.brand')?.addEventListener('keydown',e=>{
   }
 });
 </script>
+
 
 
 
