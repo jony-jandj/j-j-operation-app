@@ -4230,6 +4230,13 @@ textarea.estimate-cell-input{
 .operations-app .project-side-main{grid-template-columns:1fr 27px;padding:9px 7px 9px 11px}
 .operations-app .project-side-open{color:#D5E0E9}
 .operations-app .project-side-open b{color:#D5E0E9;font-size:12px}
+.operations-app .project-side-wrap.active{background:#25435E;box-shadow:inset 3px 0 0 var(--shell-gold)}
+.operations-app .project-side-wrap.active .project-side-open,
+.operations-app .project-side-wrap.active .project-side-open b{color:#FFFFFF}
+.operations-app .project-side-wrap.active .project-side-open small,
+.operations-app .project-side-wrap.active .project-side-status span,
+.operations-app .project-side-wrap.active .project-side-status strong{color:#DCE8F2}
+
 .operations-app .project-side-open small,
 .operations-app .project-side-status span{color:#70869A}
 .operations-app .project-side-status strong{color:#AFC0CE}
@@ -8174,6 +8181,8 @@ ${estimateTableHTML(p,'hub')}
       <button class="quick-action" onclick="applyBulkSplit(4)">4-Way Pay Split</button>
       <button class="quick-action" onclick="bulkPreApprove()">Pre-Approve</button>
       <button class="quick-action primary" onclick="bulkApprove()">Approve</button>
+      <button class="quick-action" onclick="bulkUndoPOApproval('Pre-Approved')" ${canPreApprove()?'':'disabled'} title="Return selected pre-approved P.O.s to Draft">Undo Pre-Approval</button>
+      <button class="quick-action" onclick="bulkUndoPOApproval('Approved')" ${canFinalApprove()?'':'disabled'} title="Return selected approved P.O.s to Pre-Approved">Undo Approval</button>
       <button class="btn btn-danger" style="padding:8px 10px;font-size:11px" onclick="requestBulkDelete()">Delete Selected</button>
       <div class="po-bulk-count">${selectedPOs().length} selected</div>
     </div>
@@ -8893,6 +8902,28 @@ function bulkApprove(){
   renderPayByLine();
   toast(skipped ? `${updated} approved · ${skipped} need pre-approval` : `${updated} approved`);
 }
+function bulkUndoPOApproval(status){
+  if(status!=='Approved' && status!=='Pre-Approved') return;
+  const items=selectedPOs();
+  if(!items.length){toast('Select at least one P.O.');return;}
+  const finalApproval=status==='Approved';
+  if(finalApproval ? !canFinalApprove() : !canPreApprove()){
+    alert(finalApproval?'Only Gio can undo final approval.':'Only Jony or Adair can undo pre-approval.');
+    return;
+  }
+  let updated=0;
+  items.forEach(po=>{
+    if(po.status!==status) return;
+    po.status=finalApproval?'Pre-Approved':'Draft';
+    po.approvedBy='';
+    if(!finalApproval) po.preApprovedBy='';
+    updated++;
+  });
+  if(updated){saveState(false);renderAll();renderPayByLine();}
+  const skipped=items.length-updated;
+  toast(`${updated} returned to ${finalApproval?'Pre-Approved':'Draft'}${skipped?` · ${skipped} skipped (different status)`:''}`);
+}
+
 function applyBulkSplit(count){
   const items=selectedPOs();
   if(!items.length){ toast('Select at least one P.O.'); return; }
@@ -10225,4 +10256,5 @@ document.querySelector('.brand')?.addEventListener('keydown',e=>{
   }
 });
 </script>
+
 
