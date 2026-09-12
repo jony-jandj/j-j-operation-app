@@ -900,7 +900,7 @@ tr:last-child td{border-bottom:0}
 }
 .po-hub-nav{
   display:grid;
-  grid-template-columns:1fr 1fr;
+  grid-template-columns:repeat(3,minmax(0,1fr));
   gap:9px;
   margin-bottom:12px;
 }
@@ -5052,20 +5052,25 @@ let poMenuOpen=false;
 const USERS = [
   {name:'Jony',role:'Pre-Approver',color:'#4E78B7'},
   {name:'Adair',role:'Pre-Approver',color:'#B59A62'},
-  {name:'Gio',role:'Final Approver',color:'#4F8A68'}
+  {name:'Gio',role:'Final Approver',color:'#4F8A68'},
+  {name:'Hayden Gross',role:'Admin',color:'#5F6F82'}
 ];
 
 function userColor(name){
   return USERS.find(u=>u.name===name)?.color || '#8B929D';
 }
 function userInitial(name){
-  return (name || '?').trim().charAt(0).toUpperCase();
+  const parts=String(name||'?').trim().split(/\s+/).filter(Boolean);
+  if(parts.length>=2) return (parts[0][0]+parts[parts.length-1][0]).toUpperCase();
+  return (parts[0]||'?').charAt(0).toUpperCase();
 }
 function poNeedsReviewForCurrentUser(po){
+  if(state.currentUser==='Hayden Gross') return false;
   if(state.currentUser==='Gio') return po.status==='Pre-Approved';
   return po.status==='Draft';
 }
 function reviewStageLabel(){
+  if(state.currentUser==='Hayden Gross') return 'Admin Oversight';
   return state.currentUser==='Gio' ? 'Pre-Approved ↔ Approved' : 'Draft ↔ Pre-Approved';
 }
 
@@ -5616,7 +5621,7 @@ function openProjectFromSidebar(id){
   }
 
   if(currentPage==='paybyline' || currentPage==='estimates'){
-    const keepView=poHubView==='estimate'?'estimate':'splits';
+    const keepView=['estimate','payouts'].includes(poHubView)?poHubView:'splits';
     state.selectedProjectId=Number(id);
     poHubView=keepView;
     openPOIds.clear();
@@ -6342,7 +6347,8 @@ function appUserFromEmail(email=''){
   const known={
     'jony@jandjhomerenovations.com':'Jony',
     'adair@jandjhomerenovations.com':'Adair',
-    'jovani@jandjhomerenovations.com':'Gio'
+    'jovani@jandjhomerenovations.com':'Gio',
+    'hayden@educo.io':'Hayden Gross'
   };
 
   return known[e] || '';
@@ -7625,7 +7631,7 @@ function openProjectPOHub(id,view='splits'){
 }
 
 function openPOHub(view='splits'){
-  poHubView = view === 'estimate' ? 'estimate' : 'splits';
+  poHubView = ['estimate','payouts'].includes(view) ? view : 'splits';
   openPOIds.clear();
   deletePOIndex = null;
   selectedPOIds.clear();
@@ -7638,7 +7644,7 @@ function openPOHub(view='splits'){
 }
 
 function setPOHubView(view){
-  poHubView = view === 'estimate' ? 'estimate' : 'splits';
+  poHubView = ['estimate','payouts'].includes(view) ? view : 'splits';
   openPOIds.clear();
   deletePOIndex = null;
   selectedPOIds.clear();
@@ -7939,6 +7945,36 @@ function estimateTableHTML(p,mode='hub'){
     </div>`;
 }
 
+// Read-only view: use the same final approval status and base crew pay as P.O. Splits.
+function confirmedPayoutGroups(project){
+  return (project.pos||[]).filter(po=>po.status==='Approved').map(po=>({
+    po,
+    recipients:(po.splits||[]).filter(split=>
+      String(split.name||'').trim() && Number.isFinite(Number(split.pct)) && Number(split.pct)>0
+    ).map(split=>({
+      name:String(split.name).trim(),
+      pct:Number(split.pct),
+      amount:Number(po.builderCost||0)*0.60*Number(split.pct)/100
+    }))
+  })).filter(group=>group.recipients.length);
+}
+
+function renderConfirmedPayouts(project){
+  const groups=confirmedPayoutGroups(project);
+  const total=groups.reduce((sum,group)=>sum+group.recipients.reduce((n,r)=>n+r.amount,0),0);
+  return `<div class="po-hub-section-title"><h3>Confirmed Payouts</h3><span>${groups.length} approved P.O.s · ${money(total)}</span></div>
+    <p class="help-text" style="margin-bottom:14px">Final-approved crew payouts for this project. Split percentages apply to the 60% base crew pool. Approval does not indicate payment has been made.</p>
+    ${groups.length ? groups.map(({po,recipients})=>`
+      <section class="card" style="padding:16px;margin-bottom:12px">
+        <div class="eyebrow">${esc(getPOParentGroup(po))}</div>
+        <h3 style="margin:4px 0 12px">${esc(getPOBaseTitle(po))}</h3>
+        <table style="width:100%;table-layout:fixed" aria-label="Confirmed crew payouts">
+          <thead><tr><th style="width:46%;text-align:left">Employee</th><th style="width:22%;text-align:right">Split</th><th style="width:32%;text-align:right">Payout</th></tr></thead>
+          <tbody>${recipients.map(r=>`<tr><td style="padding:12px 4px;overflow-wrap:anywhere"><b>${esc(r.name)}</b></td><td style="text-align:right;padding:12px 4px">${r.pct}%</td><td style="text-align:right;padding:12px 4px">${money(r.amount)}</td></tr>`).join('')}</tbody>
+        </table>
+      </section>`).join('') : '<div class="empty"><strong>No confirmed payouts yet.</strong><br>Named crew members with a positive split appear here after final P.O. approval.</div>'}`;
+}
+
 function renderPayByLine(){
   const p=selectedProject();
   const color=projectColorHex(p.color);
@@ -8010,6 +8046,10 @@ function renderPayByLine(){
           P.O. Splits
           <span>${p.pos.length} P.O.s · ${preApprovedCount} pre-approved · ${approvedCount} approved</span>
         </button>
+        <button class="${poHubView==='payouts'?'active':''}" onclick="setPOHubView('payouts')">
+          Confirmed Payouts
+          <span>Approved crew names, rates &amp; amounts</span>
+        </button>
         <button class="${poHubView==='estimate'?'active':''}" onclick="setPOHubView('estimate')">
           Estimate
           <span>${p.estimate.length} line items · ${money(estimateTotal)} builder cost</span>
@@ -8017,6 +8057,11 @@ function renderPayByLine(){
       </div>
 
   `;
+
+  if(poHubView==='payouts'){
+    paybyline.innerHTML = header + renderConfirmedPayouts(p) + '</div>';
+    return;
+  }
 
   if(poHubView==='estimate'){
     paybyline.innerHTML = header + `
@@ -10158,3 +10203,4 @@ document.querySelector('.brand')?.addEventListener('keydown',e=>{
   }
 });
 </script>
+

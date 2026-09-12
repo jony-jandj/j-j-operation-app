@@ -1,4 +1,4 @@
-const CACHE_NAME = 'jj-operations-v44';
+const CACHE_NAME = 'jj-operations-v45-confirmed-payouts';
 const APP_SHELL = [
   './',
   './index.html',
@@ -33,3 +33,4 @@ self.addEventListener('fetch', event => {
     }).catch(() => caches.match(event.request))
   );
 });
+
