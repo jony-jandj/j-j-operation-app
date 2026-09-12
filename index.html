@@ -4397,12 +4397,21 @@ body.topbar-collapsed .operations-app > .sidebar{top:0;min-height:100vh}
 .selection-lookup-status.loading::before{content:'↻';color:#C18B1E}
 .selection-lookup-status.success::before{content:'✓';color:#3A8A5D}
 .selection-lookup-status.warn::before{content:'!';color:#C18B1E;font-weight:900}
+.selection-image-drop{display:grid;grid-template-columns:92px 1fr;gap:11px;align-items:center;min-height:96px;padding:9px;border:1.5px dashed #BFCBD5;border-radius:10px;background:#F8FAFB;transition:.12s ease}
+.selection-image-drop.dragover{border-color:var(--shell-gold);background:#FFF9EC;box-shadow:0 0 0 3px rgba(181,154,98,.12)}
+.selection-image-preview{width:92px;height:76px;display:grid;place-items:center;overflow:hidden;border-radius:8px;background:#E8EDF0;color:#7B8793;font-size:10px;text-align:center}
+.selection-image-preview img{width:100%;height:100%;display:block;object-fit:cover}
+.selection-image-copy{min-width:0;color:#657382;font-size:11px;line-height:1.35}
+.selection-image-copy strong{display:block;margin-bottom:3px;color:var(--navy);font-size:12px}
+.selection-image-copy button{margin-top:7px;border:1px solid #C8D3DC;border-radius:7px;background:#fff;color:var(--navy);padding:6px 9px;font-size:10px;font-weight:850}
+.selection-image-name{display:block;margin-top:5px;color:#8B98A5;font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .selection-tax-row{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 12px;border:1px solid #D9E1E7;border-radius:9px;background:#F8FAFB}
 .selection-tax-row label{display:flex;align-items:center;gap:8px;margin:0;color:var(--text);font-size:12px;font-weight:850}
 .selection-tax-row input{width:18px;height:18px;accent-color:var(--navy)}
 .selection-tax-row span{color:var(--muted);font-size:11px}
 .selection-lead-time{display:grid;grid-template-columns:90px 1fr;gap:7px;margin-top:8px;padding-top:8px;border-top:1px solid #E4E9ED}
 .selection-lead-time.hidden{display:none}
+.selection-lead-label{grid-column:1/-1;color:#657382;font-size:10px;font-weight:850}
 .selection-modal-foot{display:flex;justify-content:space-between;gap:9px;padding:14px 20px;border-top:1px solid var(--line);background:#F8FAFB}
 .selection-modal-foot-right{display:flex;gap:8px}
 .selection-danger{border:1px solid #F0D1D1!important;background:#FFF2F2!important;color:var(--red)!important}
@@ -9536,6 +9545,10 @@ function ensureSelectionsData(){
       project.selectionRooms=['Primary Bathroom'];
     }
     if(!Array.isArray(project.selections)) project.selections=[];
+    project.selections.forEach(item=>{
+      if(!item.leadTimeValue) item.leadTimeValue=1;
+      if(!item.leadTimeUnit) item.leadTimeUnit='Day(s)';
+    });
   });
 }
 
@@ -9627,9 +9640,9 @@ function renderSelections(){
 
 function selectionCard(item,index){
   const productUrl=safeSelectionUrl(item.url);
-  const imageUrl=safeSelectionUrl(item.image);
+  const imageUrl=safeSelectionImageUrl(item.image);
   const taxNote=item.addTax?' · tax included':'';
-  const lead=item.status==='Ordered' && item.leadTimeValue
+  const lead=item.leadTimeValue
     ? `${item.leadTimeValue} ${String(item.leadTimeUnit||'days').toLowerCase()}`
     : '';
   const photo=imageUrl
@@ -9661,6 +9674,75 @@ function setSelectionFilter(value){
 function safeSelectionUrl(value){
   const raw=String(value||'').trim();
   return /^https?:\/\//i.test(raw) ? raw : '';
+}
+
+function safeSelectionImageUrl(value){
+  const raw=String(value||'').trim();
+  return /^https?:\/\//i.test(raw) || /^data:image\/(?:jpeg|jpg|png|webp|gif);base64,/i.test(raw) ? raw : '';
+}
+
+function selectionImageMarkup(value){
+  const image=safeSelectionImageUrl(value);
+  return image
+    ? `<img src="${esc(image)}" alt="Selected product image" onerror="this.parentElement.textContent='No image selected'">`
+    : 'Drop image here';
+}
+
+function selectionImageSetValue(value,name='',overwrite=true){
+  const image=safeSelectionImageUrl(value);
+  const field=document.getElementById('selectionEditImage');
+  if(!image || !field || (!overwrite && field.value)) return;
+  field.value=image;
+  const preview=document.getElementById('selectionImagePreview');
+  if(preview) preview.innerHTML=selectionImageMarkup(image);
+  const nameNode=document.getElementById('selectionImageName');
+  if(nameNode) nameNode.textContent=name||'Image added';
+}
+
+function selectionImageDragOver(event){
+  event.preventDefault();
+  event.currentTarget?.classList.add('dragover');
+}
+
+function selectionImageDragLeave(event){
+  event.currentTarget?.classList.remove('dragover');
+}
+
+function selectionImageDrop(event){
+  event.preventDefault();
+  event.currentTarget?.classList.remove('dragover');
+  const file=event.dataTransfer?.files?.[0];
+  if(file) selectionImageFile(file);
+}
+
+function selectionImageFileSelected(event){
+  const file=event.target?.files?.[0];
+  if(file) selectionImageFile(file);
+}
+
+function selectionImageFile(file){
+  if(!file.type || !file.type.startsWith('image/')){
+    toast('Please choose an image file');
+    return;
+  }
+  const reader=new FileReader();
+  reader.onload=()=>{
+    const source=new Image();
+    source.onload=()=>{
+      const maxSize=1400;
+      const scale=Math.min(1,maxSize/Math.max(source.naturalWidth||source.width,source.naturalHeight||source.height));
+      const canvas=document.createElement('canvas');
+      canvas.width=Math.max(1,Math.round((source.naturalWidth||source.width)*scale));
+      canvas.height=Math.max(1,Math.round((source.naturalHeight||source.height)*scale));
+      const context=canvas.getContext('2d');
+      context.drawImage(source,0,0,canvas.width,canvas.height);
+      selectionImageSetValue(canvas.toDataURL('image/jpeg',.82),file.name);
+    };
+    source.onerror=()=>toast('That image could not be read');
+    source.src=reader.result;
+  };
+  reader.onerror=()=>toast('That image could not be read');
+  reader.readAsDataURL(file);
 }
 
 function selectionActiveRoomChanged(value){
@@ -9829,7 +9911,7 @@ async function enrichSelectionEditorFromUrl(url,overwrite=false){
   if(metadata){
     fillSelectionField('selectionEditTitle',metadata.title,overwrite);
     fillSelectionField('selectionEditDescription',metadata.description,overwrite);
-    fillSelectionField('selectionEditImage',metadata.image,overwrite);
+    selectionImageSetValue(metadata.image,'Image from product link',overwrite);
     fillSelectionField('selectionEditModel',metadata.model,overwrite);
     if(metadata.unitPrice) fillSelectionField('selectionEditPrice',metadata.unitPrice.toFixed(2),overwrite);
   }
@@ -9889,13 +9971,19 @@ function openSelectionEditor(index=null,prefillUrl=''){
         ${['Budget','Standard','Premium','Luxury'].map(q=>`<option ${q===(item.quality||'Standard')?'selected':''}>${q}</option>`).join('')}
       </select></div>
       <div class="selection-field"><label>Model / SKU</label><input id="selectionEditModel" value="${esc(item.model||'')}"></div>
-      <div class="selection-field"><label>Picture URL</label><input id="selectionEditImage" type="url" value="${esc(item.image||'')}" placeholder="https://…"></div>
+      <div class="selection-field full"><label>Product picture</label><div id="selectionImageDrop" class="selection-image-drop" ondragover="selectionImageDragOver(event)" ondragleave="selectionImageDragLeave(event)" ondrop="selectionImageDrop(event)">
+        <div id="selectionImagePreview" class="selection-image-preview">${selectionImageMarkup(item.image)}</div>
+        <div class="selection-image-copy"><strong>Drag and drop an image here</strong><span>or choose one from your computer</span><button type="button" onclick="document.getElementById('selectionImageFile')?.click()">Choose image</button><span id="selectionImageName" class="selection-image-name">${item.image?'Image ready':'No image selected'}</span></div>
+        <input id="selectionImageFile" type="file" accept="image/*" hidden onchange="selectionImageFileSelected(event)">
+        <input id="selectionEditImage" type="hidden" value="${esc(safeSelectionImageUrl(item.image))}">
+      </div></div>
       <div class="selection-field"><label>Unit price</label><input id="selectionEditPrice" type="number" min="0" step="0.01" inputmode="decimal" value="${Number(item.unitPrice||0)||''}" oninput="updateSelectionTotals()"></div>
       <div class="selection-field"><label>Quantity</label><input id="selectionEditQuantity" type="number" min="1" step="1" value="${Math.max(1,Number(item.quantity||1))}" oninput="updateSelectionTotals()"></div>
       <div class="selection-tax-row"><label><input id="selectionEditTax" type="checkbox" ${item.addTax?'checked':''} onchange="updateSelectionTotals()"> Add taxes (8.25%)</label><span id="selectionEditTaxText">Tax: $0.00</span></div>
       <div class="selection-field"><label>Purchased by</label><select id="selectionEditPurchasedBy">${['J&J','Homeowner','Not assigned'].map(v=>`<option ${v===(item.purchasedBy||'J&J')?'selected':''}>${v}</option>`).join('')}</select></div>
-      <div class="selection-field"><label>Status</label><select id="selectionEditStatus" onchange="selectionStatusChanged()">${['Pending','Selected','Ordered','Received'].map(v=>`<option ${v===(item.status||'Pending')?'selected':''}>${v}</option>`).join('')}</select>
-        <div id="selectionLeadTime" class="selection-lead-time ${item.status==='Ordered'?'':'hidden'}">
+      <div class="selection-field"><label>Status</label><select id="selectionEditStatus">${['Pending','Selected','Ordered','Received'].map(v=>`<option ${v===(item.status||'Pending')?'selected':''}>${v}</option>`).join('')}</select>
+        <div id="selectionLeadTime" class="selection-lead-time">
+          <div class="selection-lead-label">Lead time</div>
           <input id="selectionEditLeadValue" type="number" min="1" step="1" value="${Math.max(1,Number(item.leadTimeValue||1))}" aria-label="Lead time amount">
           <select id="selectionEditLeadUnit" aria-label="Lead time unit">${['Day(s)','Week(s)'].map(v=>`<option ${v===(item.leadTimeUnit||'Day(s)')?'selected':''}>${v}</option>`).join('')}</select>
         </div>
@@ -9921,8 +10009,7 @@ function closeSelectionEditor(){
 }
 
 function selectionStatusChanged(){
-  const ordered=document.getElementById('selectionEditStatus')?.value==='Ordered';
-  document.getElementById('selectionLeadTime')?.classList.toggle('hidden',!ordered);
+  document.getElementById('selectionLeadTime')?.classList.remove('hidden');
 }
 
 function updateSelectionTotals(){
@@ -9951,14 +10038,14 @@ function saveSelectionEditor(){
     room:document.getElementById('selectionEditRoom')?.value||selectedProject().selectionRooms[0],
     quality:document.getElementById('selectionEditQuality')?.value||'Standard',
     model:document.getElementById('selectionEditModel')?.value.trim()||'',
-    image:safeSelectionUrl(document.getElementById('selectionEditImage')?.value.trim()||''),
+    image:safeSelectionImageUrl(document.getElementById('selectionEditImage')?.value.trim()||''),
     unitPrice:Number(document.getElementById('selectionEditPrice')?.value||0),
     quantity:Math.max(1,Number(document.getElementById('selectionEditQuantity')?.value||1)),
     addTax:!!document.getElementById('selectionEditTax')?.checked,
     purchasedBy:document.getElementById('selectionEditPurchasedBy')?.value||'J&J',
     status,
-    leadTimeValue:status==='Ordered'?Math.max(1,Number(document.getElementById('selectionEditLeadValue')?.value||1)):'',
-    leadTimeUnit:status==='Ordered'?(document.getElementById('selectionEditLeadUnit')?.value||'Day(s)'):'',
+    leadTimeValue:Math.max(1,Number(document.getElementById('selectionEditLeadValue')?.value||1)),
+    leadTimeUnit:document.getElementById('selectionEditLeadUnit')?.value||'Day(s)',
     description:document.getElementById('selectionEditDescription')?.value.trim()||'',
     notes:document.getElementById('selectionEditNotes')?.value.trim()||''
   };
