@@ -9949,24 +9949,43 @@ function applySelectionBulk(action){
   saveState(false);renderSelections();toast(`${items.length} product${items.length===1?'':'s'} ${action==='delete'?'deleted':'updated'}`);
 }
 
-function openHomeownerQR(){
+async function openHomeownerQR(){
   document.getElementById('homeownerQRDialog')?.remove();
   const dialog=document.createElement('dialog');dialog.id='homeownerQRDialog';dialog.style.cssText='max-width:480px;width:95%;border:1px solid #ddd;border-radius:14px;padding:22px';
-  dialog.innerHTML=`<h3>Homeowner QR Code · ${esc(selectedProject().name)}</h3><p>No sign-in. Anyone with this code can view this job’s selections, add products, and mark Pending products Selected. Prices are excluded.</p><p>Generating a new code replaces any previous code for this job.</p><div id="homeownerQRMessage" role="status"></div><div id="homeownerQRCode" style="margin:20px auto;width:256px"></div><input id="homeownerQRLink" class="input" readonly aria-label="Private homeowner link" hidden><div class="toolbar" style="margin-top:16px"><button class="btn btn-gold" id="homeownerQRGenerate" onclick="generateHomeownerQR()">Generate / Replace Code</button><button class="btn btn-light" id="homeownerQRPrint" hidden onclick="printHomeownerQR()">Print QR Code</button><button class="btn btn-light" onclick="revokeHomeownerQR()">Deactivate Link</button><button class="btn btn-light" onclick="document.getElementById('homeownerQRDialog').close()">Close</button></div>`;
+  dialog.innerHTML=`<h3>Homeowner QR Code · ${esc(selectedProject().name)}</h3><p>No sign-in. Anyone with this code can view and edit this job’s selections, add photos and products, and toggle Selected. Pricing is visible and read-only for homeowners.</p><p>Generating a new code replaces any previous code for this job.</p><div id="homeownerQRMessage" role="status"></div><div id="homeownerQRRestore" hidden><label for="homeownerQROldLink">Existing homeowner link</label><input id="homeownerQROldLink" class="input" placeholder="Paste the link from your existing QR"><button class="btn btn-light" onclick="restoreHomeownerQR()">Keep Existing QR</button></div><div id="homeownerQRCode" style="margin:20px auto;width:256px"></div><input id="homeownerQRLink" class="input" readonly aria-label="Private homeowner link" hidden><div class="toolbar" style="margin-top:16px"><button class="btn btn-gold" id="homeownerQRGenerate" onclick="generateHomeownerQR()">Generate New QR</button><button class="btn btn-light" id="homeownerQRPrint" hidden onclick="printHomeownerQR()">Print QR Code</button><button class="btn btn-light" onclick="revokeHomeownerQR()">Deactivate Link</button><button class="btn btn-light" onclick="document.getElementById('homeownerQRDialog').close()">Close</button></div>`;
   dialog.dataset.job=String(selectedProject().id);document.body.appendChild(dialog);dialog.showModal();
+  const button=document.getElementById('homeownerQRGenerate');button.disabled=true;
+  try{const {data,error}=await cloudClient.rpc('jj_portal_get_link',{p_job:dialog.dataset.job});if(error)throw error;
+    if(!dialog.isConnected)return;
+    if(data?.token)displayHomeownerQR(data.token);
+    else {document.getElementById('homeownerQRRestore').hidden=!data?.exists;document.getElementById('homeownerQRMessage').textContent=data?.exists?'To keep an older QR, scan it and paste its link below. A deactivated link cannot be restored. Generate New QR only when you want to replace the code.':'No QR yet. Choose Generate New QR to create one.';}
+  }catch(e){document.getElementById('homeownerQRMessage').textContent='Unable to retrieve the saved QR. Apply the included database update if needed. '+(e.message||'');}finally{button.disabled=false;}
+
 }
 async function generateHomeownerQR(){
   const dialog=document.getElementById('homeownerQRDialog'),msg=document.getElementById('homeownerQRMessage'),button=document.getElementById('homeownerQRGenerate');
   if(!cloudClient||typeof QRCode==='undefined'){msg.textContent='Connect to the cloud and refresh the app before generating a code.';return;}
+  if(!confirm('Generate a new QR for this project? Any previous QR will stop working.'))return;
   button.disabled=true;msg.textContent='Creating private link…';
   try{
     const token=Array.from(crypto.getRandomValues(new Uint8Array(32)),v=>v.toString(16).padStart(2,'0')).join('');
     const {error}=await cloudClient.rpc('jj_portal_link',{p_job:dialog.dataset.job,p_token:token});if(error)throw error;
+    displayHomeownerQR(token);
+  }catch(e){msg.textContent='QR setup is not ready or access was denied. Apply JJ_Homeowner_Portal_Setup.sql in Supabase, then try again. '+(e.message||'');}finally{button.disabled=false;}
+}
+async function restoreHomeownerQR(){
+ const msg=document.getElementById('homeownerQRMessage');
+ try{const url=new URL(document.getElementById('homeownerQROldLink').value.trim());const token=new URLSearchParams(url.hash.slice(1)).get('key');
+ if(!/^[a-f0-9]{64}$/.test(token||''))throw Error('Paste the full homeowner link, including its key.');
+ const {error}=await cloudClient.rpc('jj_portal_restore_link',{p_job:document.getElementById('homeownerQRDialog').dataset.job,p_token:token});if(error)throw error;displayHomeownerQR(token);
+ }catch(e){msg.textContent=e.message||'Unable to restore that link.';}
+}
+function displayHomeownerQR(token){
+    document.getElementById('homeownerQRRestore').hidden=true;
     const url=new URL('homeowner.html',location.href);url.hash='key='+token;
     const input=document.getElementById('homeownerQRLink');input.hidden=false;input.value=url.href;input.onclick=()=>input.select();
     const target=document.getElementById('homeownerQRCode');target.replaceChildren();new QRCode(target,{text:url.href,width:256,height:256,correctLevel:QRCode.CorrectLevel.M});
-    document.getElementById('homeownerQRPrint').hidden=false;msg.textContent='Ready to scan. Click the link field to select and copy it.';
-  }catch(e){msg.textContent='QR setup is not ready or access was denied. Apply JJ_Homeowner_Portal_Setup.sql in Supabase, then try again. '+(e.message||'');}finally{button.disabled=false;}
+    document.getElementById('homeownerQRPrint').hidden=false;document.getElementById('homeownerQRMessage').textContent='Saved project QR. Reuse this code through edits and refreshes.';
 }
 async function revokeHomeownerQR(){
   if(!cloudClient)return;const dialog=document.getElementById('homeownerQRDialog');
@@ -9987,6 +10006,15 @@ async function syncHomeownerSelections(){
   toast(data?'Homeowner selections updated':'No new homeowner updates');
 }
 
+let homeownerSyncBusy=false;
+async function autoSyncHomeownerSelections(){
+ if(homeownerSyncBusy||!cloudClient||document.hidden||!['Live','Saved'].includes(document.getElementById('cloudStatus')?.textContent)||document.querySelector('.selection-modal-backdrop.open')||document.querySelector('dialog[open]')||['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName))return;
+ const job=selectedProject();if(!job)return;homeownerSyncBusy=true;
+ try{const {data,error}=await cloudClient.rpc('jj_portal_sync_pending');
+ if(!error&&data){const user=state.currentUser;state=data;state.currentUser=user;localStorage.setItem('jj_full_proto',JSON.stringify(state));renderAll();}
+ }catch(e){}finally{homeownerSyncBusy=false;}
+}
+setInterval(autoSyncHomeownerSelections,8000);
 function renderSelections(){
   const root=document.getElementById('selections');
   if(!root) return;
@@ -10082,12 +10110,19 @@ function selectionCard(item,index){
       </div>
       <div class="selection-card-actions">
         ${productUrl?`<a href="${esc(productUrl)}" target="_blank" rel="noopener">View product ↗</a>`:''}
+        ${['Pending','Selected'].includes(item.status||'Pending')?`<button aria-pressed="${item.status==='Selected'}" onclick="toggleSelectionStatus(${index})">${item.status==='Selected'?'Selected':'Mark Selected'}</button>`:''}
         <button onclick="openSelectionEditor(${index})">Edit</button>
       </div>
     </div>
   </article>`;
 }
 
+function toggleSelectionStatus(index){
+ const item=selectedProject().selections[index];if(!item||!['Pending','Selected'].includes(item.status||'Pending'))return;
+ item.status=item.status==='Selected'?'Pending':'Selected';
+ if(item.status==='Pending'){item.homeownerSelected=false;item.homeownerSelectedAt=null;}
+ saveState(false);renderSelections();
+}
 function setSelectionFilter(value){
   selectionBulkSet().clear();
   selectionFilter=value;
@@ -10508,6 +10543,7 @@ function saveSelectionEditor(){
     description:document.getElementById('selectionEditDescription')?.value.trim()||'',
     notes:document.getElementById('selectionEditNotes')?.value.trim()||''
   };
+  if(status!=='Selected'){item.homeownerSelected=false;item.homeownerSelectedAt=null;}
   const project=selectedProject();
   if(!project.selectionRooms.includes(item.room)) project.selectionRooms.push(item.room);
   project.selectionActiveRoom=item.room;

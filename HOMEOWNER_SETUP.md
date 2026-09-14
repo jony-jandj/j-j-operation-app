@@ -1,18 +1,23 @@
-# Homeowner QR setup
+# Install this update
 
-The staff app includes Homeowner QR Code and Refresh Homeowner Updates buttons. The homeowner page has no sign-in or price fields. The portal is not activated until the SQL setup succeeds.
+1. Run the included `JJ_Homeowner_Portal_Setup.sql` in your Supabase SQL Editor, including if you ran a previous portal setup. It updates the existing portal functions and adds protected QR storage. It is safe to rerun. Existing projects, selections, P.O.s and active QR hashes remain intact.
+2. Upload the ZIP contents to the same GitHub Pages app folder. Replace `index.html`, `homeowner.html`, and `service-worker.js`; retain the included QR script, icons, manifest and logo. Upload extracted files, not the ZIP itself. SQL and Markdown files are setup/reference documents and do not need to be published.
+3. Refresh the staff app. On a test job, open Selections → Homeowner QR Code. Saved QRs load automatically. Use Generate New QR only to create or explicitly replace a code. It asks before invalidating the previous code.
+4. For an older code created before this update, scan that QR, copy its full homeowner URL, and paste it into Existing homeowner link → Keep Existing QR. This validates and saves the same token; printed QRs continue working. Previous versions stored only a hash, so the original link is required for this one-time recovery. Deactivated codes cannot be restored.
+5. Verify the homeowner flow on a test selection: add a photo and product, edit details, toggle Selected twice, and confirm staff pricing remains unchanged. New homeowner products show Price not set until J&J enters pricing.
 
-1. In Supabase → SQL Editor, review and run `JJ_Homeowner_Portal_Setup.sql`. This creates private token/event tables, staff-only operations-data restrictions, and narrowly scoped homeowner functions. It does not create or invite customers.
-2. Test with a disposable job first. Check that the QR opens only that job, adding a product and selecting a Pending item work, and prices/operations data are absent. These database rules have not been executed or integration-tested in this environment.
-3. Open a job’s Selections → Homeowner QR Code → Generate / Replace Code. Copy the link field or print the QR. New codes invalidate older codes for that job; Deactivate Link turns access off.
-4. Homeowner actions appear immediately in their page. Staff clicks Refresh Homeowner Updates when cloud status is Live or Saved to import those changes into shared operations data. Selected items receive a green border and “H.O. has selected.” This is not automatic background synchronization.
+## Sync and pricing
 
-Anyone holding the QR/link can act as the homeowner for that job. Tokens are generated locally, stored as hashes in the database, and embedded in the URL fragment; the QR is generated locally without a third-party QR service. There is no verified homeowner identity. Do not put pricing or private staff information in product titles/descriptions intended for the homeowner page. The API omits price, estimate, P.O. and internal-note fields, but cannot remove prices typed into free text.
+Homeowner writes use the existing protected event queue. An open, signed-in staff app automatically imports pending changes for all jobs about every eight seconds while cloud status is Live/Saved and no selection editor, dialog, or input is active. Imported changes use the existing shared app_state record and its realtime subscription. Refresh Homeowner Updates remains available for the current job.
 
-Customer additions are Pending and Purchased by Homeowner. Customers can only add products or move Pending to Selected; they cannot edit existing details, pricing, lead times, approval, or later statuses. Staff retains those controls. New customer products accept links and text details, not uploaded photos in this version.
+Homeowner pages refresh about every eight seconds while visible and outside the editor, and also offer manual refresh. If no staff app is open, homeowners still see their pending changes; those changes import into staff records when a staff app reconnects. A stale homeowner editor is rejected instead of overwriting a newer version.
 
-Existing shared-state cloud saves can still have simultaneous-edit conflicts. Refresh only after your local changes finish saving. No customer link has been generated or distributed by this update.
+Homeowners can view unit price, item total, and the existing tax setting. They cannot submit pricing, tax, or total fields, including with a modified request. Their edits preserve pricing, staff notes, lead times, quality and other staff-only fields. They can change Pending/Selected; approval and ordering status changes remain with staff. Quantity is editable, so the displayed total recalculates using the staff-set unit price.
 
-## Staff photo update
+Anyone holding a job’s private link can view its selections and pricing and edit allowed selection details. Other operations data and internal notes are excluded. The saved QR token lives in a protected staff-only table, never in shared app_state. No accounts are created.
 
-Drop a supported image anywhere in the Edit Selection window, or paste an image copied to the clipboard. Choose Image remains available. JPG, PNG and WebP are recommended; unreadable formats show an error. Existing resize/compression behavior is preserved. Code-level drop/paste handler tests passed; real browser drag-and-drop testing remains outstanding.
+## Verification
+
+Passed local PostgreSQL-runtime tests for migration/rerun, event replay and shared-state import, price protection, photos, unpriced additions, stale edits, link persistence/replacement/revocation, older-link recovery and anonymous access boundaries. Passed simulated-cloud Chrome flow tests at phone, tablet and desktop widths, plus existing app logic regression checks for Job Costing, P.O. workflows, Hayden approval separation and Parent Groups.
+
+These files have not been deployed and the SQL has not been run against your live Supabase project. Real account/realtime integration, existing production triggers, printing and physical iPad/Safari behavior still need a deployment smoke check. The existing whole-state cloud model can still have simultaneous staff-edit conflicts.

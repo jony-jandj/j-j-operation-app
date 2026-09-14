@@ -1,4 +1,4 @@
-const CACHE_NAME = 'jj-operations-v59-homeowner-qr-photo-drop';
+const CACHE_NAME = 'jj-operations-v60-homeowner-selection-editor';
 const APP_SHELL = ['./','./index.html','./qrcode.min.js','./jj-original-logo.png','./manifest.webmanifest','./icons/icon-192.png','./icons/icon-512.png'];
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE_NAME).then(cache=>cache.addAll(APP_SHELL)).then(()=>self.skipWaiting()));
