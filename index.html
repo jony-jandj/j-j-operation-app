@@ -4387,6 +4387,8 @@ body.topbar-collapsed .operations-app > .sidebar{top:0;min-height:100vh}
 .selection-status{padding:5px 7px;border-radius:999px;background:#F4EFE5;color:#775F2D;font-size:10px;font-weight:900}
 .selection-card-actions{display:flex;flex-wrap:wrap;gap:12px;margin-top:12px}.selection-card-actions button,.selection-card-actions a{min-height:36px;display:inline-flex;align-items:center}.selection-group-inline{display:inline-flex;align-items:center;gap:5px;color:#173E67;font-size:10px;font-weight:850}.selection-group-inline select{max-width:150px;padding:6px;border:1px solid var(--line);border-radius:6px;background:#fff;color:#173E67;font-size:10px}
 .selection-card-actions button,.selection-card-actions a{border:0;background:transparent;color:#173E67;padding:0;font-size:10px;font-weight:850;text-decoration:none}
+.selection-card-actions .selection-status-toggle{border-radius:8px;padding:8px 12px;background:#173E67;color:#fff;min-width:104px;justify-content:center}
+.selection-card-actions .selection-status-toggle[aria-pressed="true"]{background:#2e7a55}
 .selection-empty{grid-column:1/-1;padding:36px 20px;border:1.5px dashed #B9C4CD;border-radius:13px;background:#F8FAFB;color:var(--muted);text-align:center}
 .selection-empty button{width:46px;height:46px;border:0;border-radius:50%;background:#E7EDF2;color:var(--navy);font-size:25px}
 .selection-empty strong{display:block;margin:9px 0 4px;color:var(--text)}
@@ -10183,7 +10185,7 @@ function selectionCard(item,index){
     ? `${item.leadTimeValue} ${String(item.leadTimeUnit||'days').toLowerCase()}`
     : '';
   const photo=imageUrl?`<img src="${esc(imageUrl)}" alt="${esc(item.title)}" onerror="this.parentElement.remove()">`:'';
-  return `<article class="selection-card" style="${item.homeownerSelected?'border:3px solid #2e7a55;box-shadow:0 0 0 2px #e5f4eb':''}">
+  return `<article class="selection-card" role="group" style="${item.homeownerSelected?'border:3px solid #2e7a55;box-shadow:0 0 0 2px #e5f4eb':''}">
     <label style="display:flex;gap:8px;align-items:center;padding:10px"><input type="checkbox" aria-label="Select ${esc(item.title)}" ${selectionBulkSet().has(item)?'checked':''} onchange="toggleSelectionBulk(${index},this.checked)">Select product</label>
     ${photo?`<div class="selection-photo">${photo}</div>`:''}
     <div class="selection-card-body">
@@ -10197,7 +10199,7 @@ function selectionCard(item,index){
       </div>
       <div class="selection-card-actions">
         ${productUrl?`<a href="${esc(productUrl)}" target="_blank" rel="noopener">View product ↗</a>`:''}
-        ${['Pending','Selected'].includes(item.status||'Pending')?`<button aria-pressed="${item.status==='Selected'}" onclick="toggleSelectionStatus(${index})">${item.status==='Selected'?'Selected':'Mark Selected'}</button>`:''}
+        ${['Pending','Selected'].includes(item.status||'Pending')?`<button type="button" class="selection-status-toggle" aria-pressed="${item.status==='Selected'}" onclick="toggleSelectionStatus(${index})">${item.status==='Selected'?'Selected':'Mark Selected'}</button>`:''}
         <button onclick="addSelectionOption(${index})">＋ Another option</button>${selectionGroupSelect(item,index)}<button onclick="openSelectionEditor(${index})">Edit</button>
       </div>
     </div>
@@ -10563,7 +10565,6 @@ function updateSelectionTotals(){
 }
 
 function saveSelectionEditor(){
-  if(selectionLookupInFlight){toast('Please wait for product details to finish loading');return;}
   const title=document.getElementById('selectionEditTitle')?.value.trim();
   const category=document.getElementById('selectionEditCategory')?.value.trim();
   if(!title){toast('Enter the product name');return;}
@@ -10712,9 +10713,6 @@ document.querySelector('.brand')?.addEventListener('keydown',e=>{
   }
 });
 </script>
-
-
-
 
 
 
