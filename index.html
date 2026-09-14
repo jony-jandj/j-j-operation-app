@@ -6007,8 +6007,7 @@ function openProject(id){
 
 function exportAppBackup(){
   try{
-    saveState(false);
-
+    // Export the live state even when browser storage or cloud saving fails.
     const backup={
       app:'J&J Home Renovations Operations Prototype',
       version:1,
@@ -6027,7 +6026,7 @@ function exportAppBackup(){
     document.body.appendChild(a);
     a.click();
     a.remove();
-    URL.revokeObjectURL(url);
+    setTimeout(()=>URL.revokeObjectURL(url),60000);
 
     toast('Backup exported');
   }catch(err){
@@ -6077,7 +6076,7 @@ function importAppBackup(input){
       if(typeof ensureUserData==='function') ensureUserData();
       if(typeof ensurePreconData==='function') ensurePreconData();
 
-      localStorage.setItem('jj_full_proto',JSON.stringify(state));
+      writeLocalState();
 
       if(typeof selectedPOIds!=='undefined') selectedPOIds.clear();
       if(typeof selectedEstimateRows!=='undefined') selectedEstimateRows.clear();
@@ -6124,12 +6123,63 @@ let cloudSaveTimer=null;
 let cloudApplying=false;
 let cloudLastRemoteAt=0;
 let cloudRevision=null,cloudDirty=false,cloudWriteBusy=false,cloudEditSequence=0;
+// Recovery copies use IndexedDB, separate from the small localStorage quota.
+function openRecoveryDB(){
+  if(openRecoveryDB.promise)return openRecoveryDB.promise;
+  openRecoveryDB.promise=new Promise((resolve,reject)=>{
+    const request=indexedDB.open('jj_operations_recovery',1);
+    request.onupgradeneeded=()=>request.result.createObjectStore('snapshots');
+    request.onsuccess=()=>resolve(request.result);
+    request.onerror=()=>reject(request.error);
+    request.onblocked=()=>reject(new Error('Recovery storage is blocked'));
+  }).catch(error=>{openRecoveryDB.promise=null;throw error;});
+  return openRecoveryDB.promise;
+}
+function writeLocalState(){
+  try{
+    localStorage.setItem('jj_full_proto',JSON.stringify(state));
+    writeLocalState.failed=false;
+    return true;
+  }catch(error){
+    writeLocalState.failed=true;
+    console.warn('Device save unavailable; cloud save and backup export remain available',error);
+    return false;
+  }
+}
 function preserveSelectionRecovery(){
- try{const selections=(state.projects||[]).map(p=>({id:p.id,name:p.name,selections:p.selections||[]}));
- const encoded=JSON.stringify(selections);if(!selections.some(p=>p.selections.length))return;
- const previous=localStorage.getItem('jj_selection_recovery_latest');
- if(previous!==encoded){if(previous)localStorage.setItem('jj_selection_recovery_previous',previous);localStorage.setItem('jj_selection_recovery_latest',encoded);}
- }catch(e){console.warn('Selection recovery storage unavailable',e);}
+  // Capture immediately, before callers replace or mutate state.
+  const encoded=JSON.stringify(state);
+  const legacyKeys=['jj_selection_recovery_latest','jj_selection_recovery_previous'];
+  let legacy=[];
+  try{legacy=legacyKeys.map(key=>[key,localStorage.getItem(key)]).filter(([,value])=>value!==null);}catch(e){}
+  const task=async()=>{
+    const db=await openRecoveryDB();
+    await new Promise((resolve,reject)=>{
+      const tx=db.transaction('snapshots','readwrite'),store=tx.objectStore('snapshots');
+      for(const [key,value] of legacy)store.put(value,'legacy:'+key);
+      const old=store.get('latest');
+      old.onsuccess=()=>{
+        if(old.result!==encoded){
+          if(old.result)store.put(old.result,'previous');
+          store.put(encoded,'latest');
+        }
+      };
+      tx.oncomplete=resolve;
+      tx.onerror=()=>reject(tx.error);
+      tx.onabort=()=>reject(tx.error||new Error('Recovery save aborted'));
+    });
+    // Only retire the quota-consuming copies after the transaction commits.
+    for(const [key,value] of legacy){
+      try{if(localStorage.getItem(key)===value)localStorage.removeItem(key);}catch(e){}
+    }
+    // Retry the current state, never the earlier snapshot captured above.
+    if(legacy.length&&writeLocalState.failed)writeLocalState();
+    return true;
+  };
+  preserveSelectionRecovery.pending=(preserveSelectionRecovery.pending||Promise.resolve()).then(task).catch(error=>{
+    console.warn('Recovery snapshot unavailable',error);return false;
+  });
+  return preserveSelectionRecovery.pending;
 }
 
 
@@ -6565,7 +6615,7 @@ async function loadCloudState(){
 
     ensureUserData();
     ensurePreconData();
-    localStorage.setItem('jj_full_proto',JSON.stringify(state));
+    writeLocalState();
     cloudApplying=false;
     cloudLastRemoteAt=Date.parse(data.updated_at||0)||Date.now();
   }else{
@@ -6621,7 +6671,7 @@ function subscribeCloudState(){
 
         ensureUserData();
         ensurePreconData();
-        localStorage.setItem('jj_full_proto',JSON.stringify(state));
+        writeLocalState();
         cloudApplying=false;
 
         renderAll();
@@ -6681,10 +6731,12 @@ async function pushCloudState(){
 }
 
 function saveState(show=true){
+  const savedLocally=writeLocalState();
   preserveSelectionRecovery();
-  localStorage.setItem('jj_full_proto',JSON.stringify(state));
+  // A failed device write must never prevent cloud saving or close/render steps.
   queueCloudSave();
-  if(show) toast(cloudClient?'Saving to J&J Cloud…':'Saved on this device');
+  if(!savedLocally&&!cloudClient)setCloudStatus('Device storage full — export backup','offline');
+  if(show)toast(cloudClient?'Saving to J&J Cloud…':savedLocally?'Saved on this device':'Device storage full. Export a backup; keep this app open.');
 }
 function toast(text){
   const el=document.createElement('div'); el.className='toast'; el.textContent=text;
@@ -8757,7 +8809,7 @@ async function importEstimateFile(input){
     p.estimate=parsed.items;
     p.estimateAttachment=attachment;
     const selectionCount=seedEstimateSelections(p);
-    try{localStorage.setItem('jj_full_proto',JSON.stringify(state));}
+    try{writeLocalState();}
     catch(error){p.estimate=previousEstimate;p.estimateAttachment=previousAttachment;p.selections=previousSelections;p.selectionRooms=previousRooms;throw new Error('Device storage is full. The previous estimate was preserved. Export a backup and free space before trying again.');}
     state.selectedProjectId=p.id;
 
@@ -10063,7 +10115,7 @@ async function acceptHomeownerSync(sequence){
  if(!data||sequence!==cloudEditSequence||cloudDirty||cloudWriteBusy)return false;
  preserveSelectionRecovery();const user=state.currentUser;state=data.state;state.currentUser=user;
  cloudRevision=data.updated_at;cloudLastRemoteAt=Date.parse(data.updated_at);
- localStorage.setItem('jj_full_proto',JSON.stringify(state));renderAll();return true;
+ writeLocalState();renderAll();return true;
 }
 async function syncHomeownerSelections(){
  if(!cloudClient||cloudDirty||cloudWriteBusy||homeownerSyncBusy){toast('Wait for your changes to save first.');return;}
