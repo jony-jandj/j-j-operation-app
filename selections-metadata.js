@@ -659,8 +659,8 @@ window.JJProduct = (() => {
 
     const heading=root.querySelector('.selection-heading');
 
-    // Remove only stale controls from older builds. Keep the current
-    // explicit app buttons: View All + Show Groups.
+    // Remove stale selection-group controls from older builds. Keep only the
+    // current app buttons: Expand All + Collapse All.
     root.querySelectorAll('button').forEach(btn=>{
       const t=(btn.textContent||'').trim().toLowerCase();
       const keep=['jjAppViewAll','jjAppShowGroups'].includes(btn.id);
@@ -675,8 +675,8 @@ window.JJProduct = (() => {
         <button class="btn btn-gold" type="button" onclick="openSelectionEditor()">+ Add Selection</button>
         <button class="btn btn-light" type="button" onclick="window.JJSelectionGroups.create()">Create Group</button>
         <button class="btn btn-light" type="button" onclick="window.JJSelectionGroups.manage()">Manage Groups</button>
-        <button class="btn btn-light" type="button" id="jjAppViewAll" onclick="window.JJSelectionGroups.expandAll()">View All</button>
-        <button class="btn btn-light" type="button" id="jjAppShowGroups" onclick="window.JJSelectionGroups.collapseAll()">Show Groups</button>`;
+        <button class="btn btn-light" type="button" id="jjAppViewAll" onclick="window.JJSelectionGroups.expandAll()">Expand All</button>
+        <button class="btn btn-light" type="button" id="jjAppShowGroups" onclick="window.JJSelectionGroups.collapseAll()">Collapse All</button>`;
       heading.insertAdjacentElement('afterend',actions);
     }
 
@@ -740,44 +740,27 @@ window.JJProduct = (() => {
   let homeownerMassToggle=false;
   let homeownerEnhancing=false;
 
+  function homeownerItemsSafe(){
+    try{return Array.isArray(items)?items:[];}catch{return [];}
+  }
+
   function homeownerGroupKey(details){
     if(!details)return '';
     if(details.dataset.jjGroup)return String(details.dataset.jjGroup);
-    const firstOption=details.querySelector('[data-option]')?.dataset.option;
-    if(firstOption){
-      const row=homeownerItemsSafe().find(item=>String(item.id)===String(firstOption));
-      if(row?.optionGroupId)return String(row.optionGroupId);
-    }
-    return (details.querySelector('.jj-ho-summary-title')?.textContent||details.querySelector('summary')?.textContent||'').trim();
-  }
 
-  function rememberHomeownerGroupState(){
-    document.querySelectorAll('#items details.option-group').forEach(details=>{
-      const key=homeownerGroupKey(details);
-      if(key)homeownerGroupOpenState.set(key,!!details.open);
-    });
-  }
-
-  function restoreHomeownerGroupState(){
-    document.querySelectorAll('#items details.option-group').forEach(details=>{
-      const key=homeownerGroupKey(details);
-      if(key && homeownerGroupOpenState.has(key)){
-        details.open=homeownerGroupOpenState.get(key);
+    const optionNode=details.querySelector('[data-option]');
+    const optionId=optionNode?.dataset?.option;
+    if(optionId){
+      const row=homeownerItemsSafe().find(item=>String(item.id)===String(optionId));
+      if(row?.optionGroupId){
+        details.dataset.jjGroup=String(row.optionGroupId);
+        return String(row.optionGroupId);
       }
-    });
-  }
+    }
 
-  function bindHomeownerIndividualGroupToggles(){
-    document.querySelectorAll('#items details.option-group').forEach(details=>{
-      if(details.dataset.jjToggleBound==='1')return;
-      details.dataset.jjToggleBound='1';
-      details.addEventListener('toggle',()=>{
-        if(homeownerMassToggle||homeownerEnhancing)return;
-        const key=homeownerGroupKey(details);
-        if(key)homeownerGroupOpenState.set(key,!!details.open);
-        updateHomeownerGroupToggle();
-      });
-    });
+    const title=(details.querySelector('.jj-ho-summary-title')?.textContent
+      || details.querySelector('summary')?.textContent || '').replace(/\s+/g,' ').trim();
+    return title;
   }
 
   function homeownerGroupsExpanded(){
@@ -791,15 +774,15 @@ window.JJProduct = (() => {
     const expanded=homeownerGroupsExpanded();
     button.textContent=expanded?'Show Groups':'View All';
     button.setAttribute('aria-pressed',String(expanded));
-    button.title=expanded?'Collapse selection groups':'Expand all selection groups';
+    button.title=expanded?'Collapse all selection groups':'Expand all selection groups';
   }
 
   function homeownerGroupMode(open){
     const groups=[...document.querySelectorAll('#items details.option-group')];
     homeownerMassToggle=true;
     groups.forEach(details=>{
-      details.open=!!open;
       const key=homeownerGroupKey(details);
+      details.open=!!open;
       if(key)homeownerGroupOpenState.set(key,!!open);
     });
     homeownerMassToggle=false;
@@ -810,129 +793,166 @@ window.JJProduct = (() => {
     homeownerGroupMode(!homeownerGroupsExpanded());
   }
 
+  function restoreHomeownerGroupState(){
+    document.querySelectorAll('#items details.option-group').forEach(details=>{
+      const key=homeownerGroupKey(details);
+      if(!key)return;
+
+      // If this group has a remembered state, restore only THAT group.
+      // Otherwise leave the original renderer's default state alone.
+      if(homeownerGroupOpenState.has(key)){
+        details.open=homeownerGroupOpenState.get(key);
+      }
+    });
+  }
+
+  function bindHomeownerIndividualGroupToggles(){
+    document.querySelectorAll('#items details.option-group').forEach(details=>{
+      if(details.dataset.jjToggleBound==='1')return;
+      details.dataset.jjToggleBound='1';
+
+      // Give every native multi-option group a stable group id before the
+      // card-level option button is removed.
+      homeownerGroupKey(details);
+
+      details.addEventListener('toggle',()=>{
+        if(homeownerMassToggle||homeownerEnhancing)return;
+        const key=homeownerGroupKey(details);
+        if(key)homeownerGroupOpenState.set(key,!!details.open);
+        updateHomeownerGroupToggle();
+      });
+    });
+  }
+
   function enhanceHomeownerGroups(){
     const itemsRoot=document.getElementById('items');
     if(!itemsRoot || homeownerEnhancing)return;
     homeownerEnhancing=true;
-    rememberHomeownerGroupState();
 
-    // Add homeowner group controls next to Card/List view.
-    const viewActions=document.querySelector('.actions[aria-label="Selections view"]');
+    try{
+      const viewActions=document.querySelector('.actions[aria-label="Selections view"]');
 
-    // Clean up any older two-button View All / Show Groups controls.
-    document.querySelectorAll('#jjHOViewAll,#jjHOShowGroups').forEach(node=>node.remove());
-    if(viewActions && !document.getElementById('jjHOGroupToolbar')){
-      const toolbar=document.createElement('div');
-      toolbar.id='jjHOGroupToolbar';
-      toolbar.className='jj-ho-group-toolbar';
-      toolbar.setAttribute('aria-label','Selection groups');
-      toolbar.innerHTML=`
-        <button type="button" id="jjHOGroupToggle" class="secondary" aria-pressed="true">Show Groups</button>`;
-      viewActions.insertAdjacentElement('afterend',toolbar);
-      toolbar.querySelector('#jjHOGroupToggle').addEventListener('click',toggleHomeownerGroups);
-    }
+      // Remove any old two-button versions.
+      document.querySelectorAll('#jjHOViewAll,#jjHOShowGroups').forEach(node=>node.remove());
 
-    const hoItems=homeownerItemsSafe();
+      if(viewActions && !document.getElementById('jjHOGroupToolbar')){
+        const toolbar=document.createElement('div');
+        toolbar.id='jjHOGroupToolbar';
+        toolbar.className='jj-ho-group-toolbar';
+        toolbar.setAttribute('aria-label','Selection groups');
+        toolbar.innerHTML=`
+          <button type="button" id="jjHOGroupToggle" class="secondary" aria-pressed="true">Show Groups</button>`;
+        viewActions.insertAdjacentElement('afterend',toolbar);
+        toolbar.querySelector('#jjHOGroupToggle').addEventListener('click',toggleHomeownerGroups);
+      }
 
-    // If a named group only has one item, the original homeowner renderer
-    // draws a standalone card. Wrap it so the homeowner still sees the group
-    // header and has a consistent Add Option location.
-    const counts=new Map();
-    hoItems.forEach(item=>{
-      if(item?.optionGroupId){
+      const hoItems=homeownerItemsSafe();
+
+      // Count products by explicit group.
+      const counts=new Map();
+      hoItems.forEach(item=>{
+        if(item?.optionGroupId){
+          const id=String(item.optionGroupId);
+          counts.set(id,(counts.get(id)||0)+1);
+        }
+      });
+
+      // The original homeowner renderer makes a 1-item group look standalone.
+      // Wrap it so it still has a group header and independent open state.
+      [...itemsRoot.querySelectorAll(':scope > article')].forEach(article=>{
+        const opt=article.querySelector('[data-option]');
+        if(!opt)return;
+        const item=hoItems.find(row=>String(row.id)===String(opt.dataset.option));
+        if(!item?.optionGroupId)return;
+
         const id=String(item.optionGroupId);
-        counts.set(id,(counts.get(id)||0)+1);
+        const details=document.createElement('details');
+        details.className='option-group';
+        details.dataset.jjGroup=id;
+        details.innerHTML=`
+          <summary>
+            ${escLocal(item.optionGroupTitle||item.title||'Selection Group')}
+            <span>${counts.get(id)||1} option${(counts.get(id)||1)===1?'':'s'} · tap to compare</span>
+          </summary>
+          <div class="option-group-items"></div>`;
+        article.replaceWith(details);
+        details.querySelector('.option-group-items').appendChild(article);
+      });
+
+      // Stabilize native multi-item groups before removing their card button.
+      itemsRoot.querySelectorAll('details.option-group').forEach(details=>{
+        homeownerGroupKey(details);
+      });
+
+      // Put Add Option in the group header, never on an individual card.
+      itemsRoot.querySelectorAll('details.option-group').forEach(details=>{
+        const summary=details.querySelector(':scope > summary');
+        const optionButton=details.querySelector('.option-group-items [data-option]');
+        if(!summary || !optionButton)return;
+
+        const optionId=optionButton.dataset.option;
+        details.querySelectorAll('.option-group-items [data-option]').forEach(btn=>btn.remove());
+
+        if(!summary.querySelector('.jj-ho-group-add-option')){
+          const existingSpan=summary.querySelector('span');
+          const oldCount=existingSpan?.textContent?.trim()||'';
+          if(existingSpan)existingSpan.remove();
+          const oldText=(summary.textContent||'Selection Group').replace(/\s+/g,' ').trim();
+          summary.textContent='';
+          summary.classList.add('jj-ho-summary');
+
+          const title=document.createElement('span');
+          title.className='jj-ho-summary-title';
+          title.textContent=oldText;
+
+          const actions=document.createElement('span');
+          actions.className='jj-ho-summary-actions';
+
+          const count=document.createElement('span');
+          count.className='jj-ho-summary-count';
+          count.textContent=oldCount;
+
+          const add=document.createElement('button');
+          add.type='button';
+          add.className='jj-ho-group-add-option secondary';
+          add.dataset.option=optionId;
+          add.textContent='+ Add Option';
+
+          actions.append(count,add);
+          summary.append(title,actions);
+        }
+      });
+
+      itemsRoot.querySelectorAll(':scope > article [data-option]').forEach(btn=>btn.remove());
+
+      // Symbols for Card / List view.
+      const card=document.getElementById('cardView');
+      const list=document.getElementById('listView');
+      if(card){
+        card.textContent='▦';
+        card.title='Card view';
+        card.setAttribute('aria-label','Card view');
+        card.style.fontSize='19px';
+        card.style.width='44px';
+        card.style.padding='10px';
       }
-    });
-
-    [...itemsRoot.querySelectorAll(':scope > article')].forEach(article=>{
-      const opt=article.querySelector('[data-option]');
-      if(!opt)return;
-      const item=hoItems.find(row=>String(row.id)===String(opt.dataset.option));
-      if(!item?.optionGroupId)return;
-
-      const id=String(item.optionGroupId);
-      const details=document.createElement('details');
-      details.className='option-group';
-      details.dataset.jjGroup=id;
-      details.innerHTML=`
-        <summary>
-          ${escLocal(item.optionGroupTitle||item.title||'Selection Group')}
-          <span>${counts.get(id)||1} option${(counts.get(id)||1)===1?'':'s'} · tap to compare</span>
-        </summary>
-        <div class="option-group-items"></div>`;
-      article.replaceWith(details);
-      details.querySelector('.option-group-items').appendChild(article);
-    });
-
-    // Move the homeowner Add Option action into each group header.
-    itemsRoot.querySelectorAll('details.option-group').forEach(details=>{
-      const summary=details.querySelector(':scope > summary');
-      const optionButton=details.querySelector('.option-group-items [data-option]');
-      if(!summary || !optionButton)return;
-
-      const optionId=optionButton.dataset.option;
-      // Remove the card-level "Another option" buttons in this group.
-      details.querySelectorAll('.option-group-items [data-option]').forEach(btn=>btn.remove());
-
-      if(!summary.querySelector('.jj-ho-group-add-option')){
-        const existingSpan=summary.querySelector('span');
-        const oldCount=existingSpan?.textContent?.trim()||'';
-        if(existingSpan)existingSpan.remove();
-        const oldText=(summary.textContent||'Selection Group').replace(/\s+/g,' ').trim();
-        summary.textContent='';
-        summary.classList.add('jj-ho-summary');
-
-        const title=document.createElement('span');
-        title.className='jj-ho-summary-title';
-        title.textContent=oldText;
-
-        const actions=document.createElement('span');
-        actions.className='jj-ho-summary-actions';
-
-        const count=document.createElement('span');
-        count.className='jj-ho-summary-count';
-        count.textContent=oldCount;
-
-        const add=document.createElement('button');
-        add.type='button';
-        add.className='jj-ho-group-add-option secondary';
-        add.dataset.option=optionId;
-        add.textContent='+ Add Option';
-
-        actions.append(count,add);
-        summary.append(title,actions);
+      if(list){
+        list.textContent='☰';
+        list.title='List view';
+        list.setAttribute('aria-label','List view');
+        list.style.fontSize='19px';
+        list.style.width='44px';
+        list.style.padding='10px';
       }
-    });
 
-    // Any standalone selection should not keep a per-card "Another option"
-    // action. A group is created/managed from the contractor side first.
-    itemsRoot.querySelectorAll(':scope > article [data-option]').forEach(btn=>btn.remove());
-
-    // Use compact symbols for homeowner Card / List view.
-    const card=document.getElementById('cardView');
-    const list=document.getElementById('listView');
-    if(card){
-      card.textContent='▦';
-      card.title='Card view';
-      card.setAttribute('aria-label','Card view');
-      card.style.fontSize='19px';
-      card.style.width='44px';
-      card.style.padding='10px';
+      // Restore each group individually. This is the key fix: the map is NOT
+      // overwritten by freshly rendered groups that start closed.
+      restoreHomeownerGroupState();
+      bindHomeownerIndividualGroupToggles();
+      updateHomeownerGroupToggle();
+    } finally {
+      homeownerEnhancing=false;
     }
-    if(list){
-      list.textContent='☰';
-      list.title='List view';
-      list.setAttribute('aria-label','List view');
-      list.style.fontSize='19px';
-      list.style.width='44px';
-      list.style.padding='10px';
-    }
-
-    restoreHomeownerGroupState();
-    bindHomeownerIndividualGroupToggles();
-    updateHomeownerGroupToggle();
-    homeownerEnhancing=false;
   }
 
   function installHomeownerEnhancements(){
@@ -941,15 +961,19 @@ window.JJProduct = (() => {
     if(!itemsRoot || document.body.dataset.jjHoGroupsInstalled==='1')return false;
     document.body.dataset.jjHoGroupsInstalled='1';
 
-    let timer=null;
-    const run=()=>{
-      if(homeownerEnhancing)return;
-      clearTimeout(timer);
-      timer=setTimeout(enhanceHomeownerGroups,25);
-    };
-    const observer=new MutationObserver(run);
-    observer.observe(itemsRoot,{childList:true,subtree:true});
-    run();
+    // Hook the homeowner's real render() function instead of watching every
+    // DOM mutation. Native <details> open/close actions no longer trigger a
+    // re-enhancement, so closing one group cannot collapse the others.
+    if(typeof window.render==='function'){
+      const originalRender=window.render;
+      window.render=function(...args){
+        const result=originalRender.apply(this,args);
+        setTimeout(enhanceHomeownerGroups,0);
+        return result;
+      };
+    }
+
+    setTimeout(enhanceHomeownerGroups,0);
     return true;
   }
 
