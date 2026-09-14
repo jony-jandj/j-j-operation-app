@@ -5061,7 +5061,16 @@ const defaultState = {
   ]
 };
 
-let state = JSON.parse(localStorage.getItem('jj_full_proto')||'null') || structuredClone(defaultState);
+function loadLocalState(){
+  try{
+    return JSON.parse(localStorage.getItem('jj_full_proto')||'null');
+  }catch(err){
+    console.warn('Saved browser data could not be parsed; cloud or backup recovery will be used.',err);
+    return null;
+  }
+}
+
+let state = loadLocalState() || structuredClone(defaultState);
 let projectTab='overview';
 let openPreconSection=0;
 let openPreconAccordion=null;
@@ -6006,6 +6015,12 @@ function importAppBackup(input){
   const file=input?.files?.[0];
   if(!file) return;
 
+  if(!/\.json$/i.test(file.name||'')){
+    alert('Please unzip the recovery package first, then select the JJ_Operations_6_Jobs_Backup.json file.');
+    input.value='';
+    return;
+  }
+
   const reader=new FileReader();
 
   reader.onload=function(){
@@ -6038,7 +6053,7 @@ function importAppBackup(input){
         state.selectedProjectId=state.projects[0]?.id ?? null;
       }
 
-      localStorage.setItem('jj_full_proto',JSON.stringify(state));
+      persistStateLocally();
 
       if(typeof selectedPOIds!=='undefined') selectedPOIds.clear();
       if(typeof selectedEstimateRows!=='undefined') selectedEstimateRows.clear();
@@ -6059,7 +6074,7 @@ function importAppBackup(input){
       toast(`${state.projects.length} jobs restored from backup`);
     }catch(err){
       console.error(err);
-      alert('That file is not a valid J&J Operations backup.');
+      alert(`The backup could not be imported.\n\n${err?.message||'Please select the JSON backup file and try again.'}`);
     }finally{
       input.value='';
     }
@@ -6546,7 +6561,7 @@ async function loadCloudState(){
 
     ensureUserData();
     ensurePreconData();
-    localStorage.setItem('jj_full_proto',JSON.stringify(state));
+    persistStateLocally();
     cloudBaseState=sharedCloudState(state);
     cloudApplying=false;
     cloudLastRemoteAt=Date.parse(data.updated_at||0)||Date.now();
@@ -6595,7 +6610,7 @@ function subscribeCloudState(){
 
         ensureUserData();
         ensurePreconData();
-        localStorage.setItem('jj_full_proto',JSON.stringify(state));
+        persistStateLocally();
         cloudBaseState=remoteShared;
         cloudApplying=false;
 
@@ -6661,7 +6676,7 @@ async function pushCloudState(){
         state=sharedState;
         state.currentUser=USERS.some(u=>u.name===localUserName)?localUserName:'Jony';
         cloudBaseState=latestShared;
-        localStorage.setItem('jj_full_proto',JSON.stringify(state));
+        persistStateLocally();
         renderAll();
       }
     }
@@ -6700,9 +6715,36 @@ async function pushCloudState(){
 }
 
 function saveState(show=true){
-  localStorage.setItem('jj_full_proto',JSON.stringify(state));
+  const fullLocalSave=persistStateLocally();
   queueCloudSave();
-  if(show) toast(cloudClient?'Saved':'Saved on this device');
+  if(show) toast(cloudClient?'Saved':(fullLocalSave?'Saved on this device':'Saved locally without embedded photos'));
+}
+
+function stateWithoutEmbeddedPhotos(source=state){
+  const compact=JSON.parse(JSON.stringify(source||{}));
+  (compact.projects||[]).forEach(project=>{
+    (project.selections||[]).forEach(item=>{
+      if(/^data:image\//i.test(String(item.image||''))) item.image='';
+    });
+  });
+  return compact;
+}
+
+function persistStateLocally(){
+  try{
+    localStorage.setItem('jj_full_proto',JSON.stringify(state));
+    return true;
+  }catch(err){
+    // Image-heavy backups can exceed the browser's small localStorage quota.
+    // Keep every job and field locally, omit only embedded photo bytes, and
+    // let the full state (including photos) continue to sync to the cloud.
+    try{
+      localStorage.setItem('jj_full_proto',JSON.stringify(stateWithoutEmbeddedPhotos(state)));
+    }catch(storageErr){
+      console.warn('Local state storage is unavailable',storageErr);
+    }
+    return false;
+  }
 }
 function toast(text){
   const el=document.createElement('div'); el.className='toast'; el.textContent=text;
