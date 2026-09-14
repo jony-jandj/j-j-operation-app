@@ -4355,13 +4355,30 @@ body.topbar-collapsed .operations-app > .sidebar{top:0;min-height:100vh}
 .selection-room-custom.hidden{display:none}
 .selection-room-custom input{min-width:0;flex:1;padding:8px;border:0;border-radius:7px}
 .selection-room-custom button{border:0;border-radius:7px;background:var(--shell-gold);color:var(--shell-navy);font-weight:900}
-.selection-toolbar{display:flex;gap:7px;align-items:center;overflow-x:auto;margin:18px 0 14px;padding-bottom:2px}
+.selection-toolbar{display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin:18px 0 14px;padding-bottom:2px}
 .selection-filter{white-space:nowrap;border:1px solid var(--line);border-radius:999px;background:#fff;color:#536171;padding:8px 12px;font-size:11px;font-weight:800}
 .selection-filter.active{border-color:var(--shell-navy);background:var(--shell-navy);color:#fff}
+.selection-toolbar-spacer{flex:1 1 18px}
+.selection-view-controls{display:flex;gap:4px;padding:3px;border:1px solid var(--line);border-radius:9px;background:#F4F7F9}
+.selection-view-button{border:0;border-radius:6px;background:transparent;color:#657382;padding:6px 9px;font-size:10px;font-weight:850}
+.selection-view-button.active{background:#fff;color:var(--navy);box-shadow:0 1px 4px rgba(19,35,52,.13)}
+.selection-group-action{white-space:nowrap;border:0;background:transparent;color:#173E67;padding:6px 3px;font-size:10px;font-weight:850}
+.selection-groups{display:grid;gap:13px}
+.selection-room-group{overflow:hidden;border:1px solid var(--line);border-radius:13px;background:#F8FAFB}
+.selection-room-heading{width:100%;display:flex;align-items:center;justify-content:space-between;gap:12px;border:0;background:#fff;color:var(--navy);padding:12px 14px;text-align:left}
+.selection-room-heading b{display:block;font-size:14px}
+.selection-room-heading small{display:block;margin-top:2px;color:var(--muted);font-size:10px;font-weight:650}
+.selection-room-chevron{font-size:17px;transition:transform .15s ease}
+.selection-room-group.collapsed .selection-room-chevron{transform:rotate(-90deg)}
+.selection-room-group.collapsed .selection-room-content{display:none}
+.selection-room-content{padding:13px}
 .selection-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
 .selection-card{overflow:hidden;border:1px solid var(--line);border-radius:13px;background:#fff;box-shadow:0 2px 8px rgba(19,35,52,.04)}
-.selection-photo{height:165px;display:grid;place-items:center;background:#E8EDF0 center/cover no-repeat;color:#7B8793;font-size:12px}
-.selection-photo img{width:100%;height:100%;display:block;object-fit:cover}
+.selection-photo{height:210px;display:grid;place-items:center;padding:12px;border-bottom:1px solid #EDF0F2;background:#F7F9FA;color:#7B8793;font-size:12px}
+.selection-photo img{width:100%;height:100%;display:block;object-fit:contain}
+.selection-photo-empty{display:grid;place-items:center;gap:5px;color:#8B98A5;text-align:center}
+.selection-photo-empty span{display:grid;place-items:center;width:42px;height:42px;border:1px solid #D7E0E7;border-radius:10px;background:#fff;color:#A4AFB9;font-size:20px}
+.selection-photo-empty small{font-size:10px;font-weight:750}
 .selection-card-body{padding:14px}
 .selection-card-meta{color:var(--muted);font-size:10px;font-weight:850;letter-spacing:.6px;text-transform:uppercase}
 .selection-card h3{margin:6px 0 5px;color:var(--text);font-size:15px;line-height:1.35}
@@ -4372,6 +4389,12 @@ body.topbar-collapsed .operations-app > .sidebar{top:0;min-height:100vh}
 .selection-status{padding:5px 7px;border-radius:999px;background:#F4EFE5;color:#775F2D;font-size:10px;font-weight:900}
 .selection-card-actions{display:flex;gap:7px;margin-top:12px}
 .selection-card-actions button,.selection-card-actions a{border:0;background:transparent;color:#173E67;padding:0;font-size:10px;font-weight:850;text-decoration:none}
+.selection-grid.selection-list{display:flex;flex-direction:column;gap:9px}
+.selection-grid.selection-list .selection-card{display:grid;grid-template-columns:150px minmax(0,1fr);align-items:stretch}
+.selection-grid.selection-list .selection-photo{height:100%;min-height:142px;border-right:1px solid #EDF0F2;border-bottom:0}
+.selection-grid.selection-list .selection-card-body{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:18px;align-content:center}
+.selection-grid.selection-list .selection-card-meta,.selection-grid.selection-list .selection-card h3,.selection-grid.selection-list .selection-vendor,.selection-grid.selection-list .selection-card-actions{grid-column:1}
+.selection-grid.selection-list .selection-card-bottom{grid-column:2;grid-row:1/5;min-width:150px;margin:0;padding:0 0 0 16px;border-top:0;border-left:1px solid #EDF0F2;align-self:stretch;align-items:flex-end;justify-content:center;flex-direction:column}
 .selection-empty{grid-column:1/-1;padding:36px 20px;border:1.5px dashed #B9C4CD;border-radius:13px;background:#F8FAFB;color:var(--muted);text-align:center}
 .selection-empty button{width:46px;height:46px;border:0;border-radius:50%;background:#E7EDF2;color:var(--navy);font-size:25px}
 .selection-empty strong{display:block;margin:9px 0 4px;color:var(--text)}
@@ -4399,8 +4422,8 @@ body.topbar-collapsed .operations-app > .sidebar{top:0;min-height:100vh}
 .selection-lookup-status.warn::before{content:'!';color:#C18B1E;font-weight:900}
 .selection-image-drop{display:grid;grid-template-columns:92px 1fr;gap:11px;align-items:center;min-height:96px;padding:9px;border:1.5px dashed #BFCBD5;border-radius:10px;background:#F8FAFB;transition:.12s ease}
 .selection-image-drop.dragover{border-color:var(--shell-gold);background:#FFF9EC;box-shadow:0 0 0 3px rgba(181,154,98,.12)}
-.selection-image-preview{width:92px;height:76px;display:grid;place-items:center;overflow:hidden;border-radius:8px;background:#E8EDF0;color:#7B8793;font-size:10px;text-align:center}
-.selection-image-preview img{width:100%;height:100%;display:block;object-fit:cover}
+.selection-image-preview{width:92px;height:76px;display:grid;place-items:center;overflow:hidden;border-radius:8px;background:#F7F9FA;color:#7B8793;font-size:10px;text-align:center}
+.selection-image-preview img{width:100%;height:100%;display:block;object-fit:contain}
 .selection-image-copy{min-width:0;color:#657382;font-size:11px;line-height:1.35}
 .selection-image-copy strong{display:block;margin-bottom:3px;color:var(--navy);font-size:12px}
 .selection-image-copy button{margin-top:7px;border:1px solid #C8D3DC;border-radius:7px;background:#fff;color:var(--navy);padding:6px 9px;font-size:10px;font-weight:850}
@@ -4468,6 +4491,13 @@ body.topbar-collapsed .operations-app > .sidebar{top:0;min-height:100vh}
   .operations-header .header-actions{gap:5px}
   .operations-main > .content{padding:14px 10px 82px}
   .selection-heading{align-items:flex-start;flex-direction:column}
+  .selection-toolbar-spacer{display:none}
+  .selection-view-controls{margin-left:auto}
+  .selection-room-content{padding:9px}
+  .selection-grid.selection-list .selection-card{grid-template-columns:96px minmax(0,1fr)}
+  .selection-grid.selection-list .selection-photo{min-height:118px;padding:7px}
+  .selection-grid.selection-list .selection-card-body{display:block;padding:11px}
+  .selection-grid.selection-list .selection-card-bottom{min-width:0;margin-top:9px;padding:9px 0 0;border-top:1px solid #EDF0F2;border-left:0;align-items:flex-start;flex-direction:row}
   .selection-heading h2{font-size:24px}
   .selection-summary{display:none}
   .selection-url-row{display:grid;grid-template-columns:1fr}
@@ -5069,6 +5099,9 @@ function reviewStageLabel(){
 }
 
 function ensureUserData(){
+  if(!state || typeof state!=='object') state=JSON.parse(JSON.stringify(defaultState));
+  if(!Array.isArray(state.projects)) state.projects=[];
+  state.projects=state.projects.filter(project=>project && typeof project==='object');
   if(!USERS.some(u=>u.name===state.currentUser)) state.currentUser='Jony';
 
   state.projects.forEach(p=>{
@@ -5995,10 +6028,15 @@ function importAppBackup(input){
         return;
       }
 
-      state=importedState;
+      state=JSON.parse(JSON.stringify(importedState));
 
       if(typeof ensureUserData==='function') ensureUserData();
       if(typeof ensurePreconData==='function') ensurePreconData();
+      if(typeof ensureSelectionsData==='function') ensureSelectionsData();
+
+      if(!state.projects.some(project=>Number(project.id)===Number(state.selectedProjectId))){
+        state.selectedProjectId=state.projects[0]?.id ?? null;
+      }
 
       localStorage.setItem('jj_full_proto',JSON.stringify(state));
 
@@ -6015,7 +6053,10 @@ function importAppBackup(input){
       buildNav();
       go('dashboard');
 
-      toast('Backup imported');
+      // Keep the restored backup as the intended local change so the cloud
+      // merge cannot replace it with an older or incomplete project list.
+      saveState(false);
+      toast(`${state.projects.length} jobs restored from backup`);
     }catch(err){
       console.error(err);
       alert('That file is not a valid J&J Operations backup.');
@@ -6072,25 +6113,35 @@ function mergeCloudValues(base,local,incoming){
   if(cloudValuesEqual(local,base)) return cloneCloudValue(incoming);
   if(cloudValuesEqual(incoming,base)) return cloneCloudValue(local);
 
+  // A missing local value means this browser intentionally deleted it. A
+  // missing remote value only wins when local remained unchanged (handled
+  // above); otherwise preserve the local edit.
+  if(local===undefined) return undefined;
+  if(incoming===undefined) return cloneCloudValue(local);
+
   if(Array.isArray(base)&&Array.isArray(local)&&Array.isArray(incoming)){
     const keyed=base.concat(local,incoming).every(item=>item && typeof item==='object' && item.id!=null);
     if(keyed){
       const ids=[...new Set([...base,...local,...incoming].map(item=>item.id))];
-      return ids.map(id=>mergeCloudValues(
-        base.find(item=>item.id===id),
-        local.find(item=>item.id===id),
-        incoming.find(item=>item.id===id)
-      ));
+      return ids
+        .map(id=>mergeCloudValues(
+          base.find(item=>item.id===id),
+          local.find(item=>item.id===id),
+          incoming.find(item=>item.id===id)
+        ))
+        .filter(item=>item!==undefined && item!==null);
     }
     return cloneCloudValue(local);
   }
 
-  if(base&&local&&incoming && typeof base==='object' && typeof local==='object' && typeof incoming==='object'){
-    const keys=[...new Set([...Object.keys(base),...Object.keys(local),...Object.keys(incoming)])];
+  if(local&&incoming && typeof local==='object' && typeof incoming==='object' && !Array.isArray(local) && !Array.isArray(incoming)){
+    const baseObject=base&&typeof base==='object'&&!Array.isArray(base)?base:{};
+    const keys=[...new Set([...Object.keys(baseObject),...Object.keys(local),...Object.keys(incoming)])];
     const merged={};
     keys.forEach(key=>{
       if(key==='currentUser') return;
-      merged[key]=mergeCloudValues(base[key],local[key],incoming[key]);
+      const value=mergeCloudValues(baseObject[key],local[key],incoming[key]);
+      if(value!==undefined) merged[key]=value;
     });
     return merged;
   }
@@ -9533,6 +9584,8 @@ let selectionFilter='All';
 let selectionEditIndex=null;
 let selectionLookupInFlight='';
 let selectionLookupCompleted='';
+let selectionViewMode=localStorage.getItem('jj_selection_view_mode')==='list'?'list':'cards';
+let selectionCollapsedRooms=new Set();
 
 function ensureSelectionsData(){
   state.projects.forEach(project=>{
@@ -9575,6 +9628,7 @@ function renderSelections(){
     : project.selectionRooms[0];
   project.selectionActiveRoom=selectedRoom;
   const filtered=items.filter(item=>selectionFilter==='All' || item.category===selectionFilter);
+  const visibleRooms=[...new Set(filtered.map(item=>item.room||'Unassigned'))];
   const categories=[...new Set(items.map(item=>item.category).filter(Boolean))];
   const selectedCount=items.filter(item=>item.status==='Selected' || item.status==='Ordered' || item.status==='Received').length;
   const pendingCount=items.filter(item=>item.status==='Pending').length;
@@ -9618,11 +9672,18 @@ function renderSelections(){
 
     <div class="selection-toolbar" aria-label="Selection filters">
       ${['All',...categories].map(cat=>`<button class="selection-filter ${selectionFilter===cat?'active':''}" onclick="setSelectionFilter(decodeURIComponent('${encodeURIComponent(cat)}'))">${cat==='All'?'All selections':esc(cat)}</button>`).join('')}
-      <button class="selection-filter" style="margin-left:auto" onclick="openSelectionEditor()">＋ Add manually</button>
+      <span class="selection-toolbar-spacer"></span>
+      <div class="selection-view-controls" aria-label="Selection view">
+        <button class="selection-view-button ${selectionViewMode==='cards'?'active':''}" aria-pressed="${selectionViewMode==='cards'}" onclick="setSelectionView('cards')">Cards</button>
+        <button class="selection-view-button ${selectionViewMode==='list'?'active':''}" aria-pressed="${selectionViewMode==='list'}" onclick="setSelectionView('list')">List</button>
+      </div>
+      <button class="selection-group-action" onclick="expandAllSelectionGroups()">Expand all</button>
+      <button class="selection-group-action" onclick="collapseAllSelectionGroups()">Collapse all</button>
+      <button class="selection-filter" onclick="openSelectionEditor()">＋ Add manually</button>
     </div>
 
-    <div class="selection-grid">
-      ${filtered.length ? filtered.map(item=>selectionCard(item,items.indexOf(item))).join('') : `
+    <div class="selection-groups">
+      ${filtered.length ? visibleRooms.map(room=>selectionRoomGroup(project,room,filtered.filter(item=>(item.room||'Unassigned')===room),items)).join('') : `
         <div class="selection-empty">
           <button onclick="openSelectionEditor()">+</button>
           <strong>${items.length?'No selections match this filter':'No selections added yet'}</strong>
@@ -9633,6 +9694,27 @@ function renderSelections(){
   </div>`;
 }
 
+function selectionRoomStateKey(project,room){
+  return `${project.id}::${room}`;
+}
+
+function selectionRoomGroup(project,room,roomItems,allItems){
+  const key=selectionRoomStateKey(project,room);
+  const collapsed=selectionCollapsedRooms.has(key);
+  const encodedRoom=encodeURIComponent(room).replace(/'/g,'%27');
+  return `<section class="selection-room-group ${collapsed?'collapsed':''}">
+    <button class="selection-room-heading" onclick="toggleSelectionRoom(decodeURIComponent('${encodedRoom}'))" aria-expanded="${!collapsed}">
+      <span><b>${esc(room)}</b><small>${roomItems.length} selection${roomItems.length===1?'':'s'}</small></span>
+      <span class="selection-room-chevron" aria-hidden="true">⌄</span>
+    </button>
+    <div class="selection-room-content">
+      <div class="selection-grid ${selectionViewMode==='list'?'selection-list':''}">
+        ${roomItems.map(item=>selectionCard(item,allItems.indexOf(item))).join('')}
+      </div>
+    </div>
+  </section>`;
+}
+
 function selectionCard(item,index){
   const productUrl=safeSelectionUrl(item.url);
   const imageUrl=safeSelectionImageUrl(item.image);
@@ -9641,8 +9723,8 @@ function selectionCard(item,index){
     ? `${item.leadTimeValue} ${String(item.leadTimeUnit||'days').toLowerCase()}`
     : '';
   const photo=imageUrl
-    ? `<img src="${esc(imageUrl)}" alt="${esc(item.title)}" onerror="this.remove();this.parentElement.insertAdjacentText('beforeend','No picture')">`
-    : 'No picture';
+    ? `<img src="${esc(imageUrl)}" alt="${esc(item.title)}" loading="lazy" onerror="selectionPhotoFallback(this)">`
+    : selectionPhotoPlaceholder();
   return `<article class="selection-card">
     <div class="selection-photo">${photo}</div>
     <div class="selection-card-body">
@@ -9661,8 +9743,46 @@ function selectionCard(item,index){
   </article>`;
 }
 
+function selectionPhotoPlaceholder(){
+  return '<div class="selection-photo-empty"><span aria-hidden="true">▧</span><small>No product photo</small></div>';
+}
+
+function selectionPhotoFallback(image){
+  if(image?.parentElement) image.parentElement.innerHTML=selectionPhotoPlaceholder();
+}
+
 function setSelectionFilter(value){
   selectionFilter=value;
+  renderSelections();
+}
+
+function setSelectionView(mode){
+  selectionViewMode=mode==='list'?'list':'cards';
+  localStorage.setItem('jj_selection_view_mode',selectionViewMode);
+  renderSelections();
+}
+
+function toggleSelectionRoom(room){
+  const project=selectedProject();
+  const key=selectionRoomStateKey(project,room);
+  if(selectionCollapsedRooms.has(key)) selectionCollapsedRooms.delete(key);
+  else selectionCollapsedRooms.add(key);
+  renderSelections();
+}
+
+function expandAllSelectionGroups(){
+  const project=selectedProject();
+  [...selectionCollapsedRooms].forEach(key=>{
+    if(key.startsWith(`${project.id}::`)) selectionCollapsedRooms.delete(key);
+  });
+  renderSelections();
+}
+
+function collapseAllSelectionGroups(){
+  const project=selectedProject();
+  (project.selections||[]).forEach(item=>{
+    selectionCollapsedRooms.add(selectionRoomStateKey(project,item.room||'Unassigned'));
+  });
   renderSelections();
 }
 
