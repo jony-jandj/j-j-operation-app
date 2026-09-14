@@ -169,7 +169,7 @@ window.JJProduct = (() => {
     style.textContent=`
       .jj-selection-top-actions{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 14px}
       .jj-app-group-controls{display:inline-flex;gap:7px;align-items:center;margin-left:8px}
-      .jj-app-group-controls .btn{min-width:94px!important;font-size:11px!important;padding:9px 11px!important}
+      .jj-app-group-controls .btn{min-width:118px!important;font-size:11px!important;padding:9px 11px!important}
       .jj-group-card-button{border:1px solid var(--line,#dfe4ea);background:#fff;color:var(--navy,#14234A);border-radius:8px;padding:8px 10px;font-size:11px;font-weight:800}
       .jj-group-badge{display:inline-flex;margin:7px 0 0;padding:5px 8px;border-radius:999px;background:#eef3f7;color:#40566a;font-size:10px;font-weight:850}
       .jj-group-summary-actions{display:flex;align-items:center;gap:10px;margin-left:auto}
@@ -197,6 +197,14 @@ window.JJProduct = (() => {
       #jjHOGroupToolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:0 0 16px}
       #jjHOGroupToggle{min-width:118px;font-weight:850;border:1px solid #cfd6df!important;background:#fff!important;color:#14234a!important}
       #cardView,#listView{width:44px;min-width:44px;padding:10px!important;font-size:19px;line-height:1}
+      .jj-ho-qr-button{margin-left:auto!important}
+      .jj-qr-backdrop{position:fixed;inset:0;z-index:10090;display:flex;align-items:center;justify-content:center;padding:18px;background:rgba(8,19,31,.72)}
+      .jj-qr-dialog{width:min(430px,100%);border-radius:16px;background:#fff;padding:22px;box-shadow:0 24px 75px rgba(0,0,0,.34);text-align:center;color:#202633}
+      .jj-qr-dialog h3{margin:0;color:#14234a;font-size:19px}.jj-qr-dialog p{margin:7px 0 15px;color:#657382;font-size:12px}
+      .jj-qr-dialog img{width:220px;height:220px;display:block;margin:0 auto 14px;border:8px solid #fff;box-shadow:0 3px 14px rgba(9,25,39,.15)}
+      .jj-qr-link{display:block;padding:9px;border-radius:8px;background:#f3f6f8;color:#4a5b6b;font-size:10px;word-break:break-all}
+      .jj-qr-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}.jj-qr-actions button{border:1px solid #d3dae1;border-radius:8px;background:#fff;color:#14234a;padding:8px 12px;font-size:11px;font-weight:900}.jj-qr-actions .primary{border-color:#14234a;background:#14234a;color:#fff}
+      .jj-ho-page-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}@media(max-width:900px){.jj-ho-page-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:620px){.jj-ho-page-grid{grid-template-columns:1fr}}
       #items{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
       #items>.option-group{grid-column:1/-1;margin:0;border:1px solid #d9e0e6;border-radius:14px;background:#f8fafb;overflow:hidden;box-shadow:0 3px 12px rgba(19,35,52,.05)}
       #items>.option-group>summary.jj-ho-summary{display:flex!important;align-items:center!important;gap:12px!important;min-height:58px;padding:14px 16px!important;background:#fff!important;color:#14234a!important;font-size:12px!important;font-weight:900!important;list-style:none}
@@ -319,6 +327,22 @@ window.JJProduct = (() => {
 
   function setAllAppGroups(open){
     document.querySelectorAll('#selections details.selection-option-group').forEach(details=>details.open=!!open);
+    updateAppGroupToggle();
+  }
+
+  function updateAppGroupToggle(){
+    const button=document.getElementById('jjAppGroupToggle');
+    if(!button)return;
+    const groups=[...document.querySelectorAll('#selections details.selection-option-group')];
+    const allOpen=groups.length>0&&groups.every(details=>details.open);
+    button.textContent=allOpen?'Show Groups':'View All';
+    button.title=allOpen?'Collapse all selection groups':'Expand all selection groups';
+    button.setAttribute('aria-label',button.title);
+  }
+
+  function toggleAppGroups(){
+    const groups=[...document.querySelectorAll('#selections details.selection-option-group')];
+    setAllAppGroups(!(groups.length>0&&groups.every(details=>details.open)));
   }
 
   function openCreateGroup(assignIndex=null){
@@ -574,31 +598,32 @@ window.JJProduct = (() => {
       actions.innerHTML=`
         <button class="btn btn-gold" type="button" onclick="openSelectionEditor()">+ Add Selection</button>
         <button class="btn btn-light" type="button" onclick="window.JJSelectionGroups.create()">Create Group</button>
-        <button class="btn btn-light" type="button" onclick="window.JJSelectionGroups.manage()">Manage Groups</button>`;
+        <button class="btn btn-light" type="button" onclick="window.JJSelectionGroups.manage()">Manage Groups</button>
+        <button class="btn btn-light jj-ho-qr-button" type="button" onclick="window.JJSelectionGroups.openQR()">H.O. Selections / QR</button>`;
       heading.insertAdjacentElement('afterend',actions);
     }
 
     root.querySelectorAll('.selection-toolbar button').forEach(btn=>{
       if(/add manually/i.test(btn.textContent||''))btn.style.display='none';
     });
+    root.querySelectorAll('.selection-group-action').forEach(btn=>btn.remove());
 
     root.querySelectorAll('.selection-card-actions button').forEach(btn=>{
       if(/another option/i.test(btn.textContent||''))btn.remove();
     });
 
-    const viewHost=root.querySelector('.toolbar[role="group"][aria-label="Selections view"],[role="group"][aria-label="Selections view"]');
+    const viewHost=root.querySelector('.toolbar[role="group"][aria-label="Selections view"],[role="group"][aria-label="Selections view"],.selection-view-controls[aria-label="Selections view"]');
     if(viewHost&&!viewHost.querySelector('.jj-app-group-controls')){
       const controls=document.createElement('span');
       controls.className='jj-app-group-controls';
       controls.innerHTML=`
-        <button class="btn btn-light" type="button" data-expand>Expand All</button>
-        <button class="btn btn-light" type="button" data-collapse>Collapse All</button>`;
+        <button class="btn btn-light" type="button" id="jjAppGroupToggle">View All</button>`;
       viewHost.appendChild(controls);
-      controls.querySelector('[data-expand]').addEventListener('click',()=>setAllAppGroups(true));
-      controls.querySelector('[data-collapse]').addEventListener('click',()=>setAllAppGroups(false));
+      controls.querySelector('#jjAppGroupToggle').addEventListener('click',toggleAppGroups);
     }
+    updateAppGroupToggle();
 
-    const viewButtons=[...root.querySelectorAll('[aria-label="Selections view"]>button,.toolbar[role="group"][aria-label="Selections view"]>button')];
+    const viewButtons=[...root.querySelectorAll('[aria-label="Selections view"]>button,.toolbar[role="group"][aria-label="Selections view"]>button,.selection-view-controls[aria-label="Selections view"]>button')];
     viewButtons.forEach((btn,idx)=>{
       const label=(btn.getAttribute('aria-label')||btn.textContent||'').toLowerCase();
       if(label.includes('card')||idx===0){
@@ -656,6 +681,49 @@ window.JJProduct = (() => {
     ensureAppGroups();
     try{window.renderSelections()}catch{}
     return true;
+  }
+
+  /* ---------------- Homeowner link + QR ---------------- */
+  function homeownerUrl(project=appProject()){
+    const base=(location.href||'').split('#')[0];
+    return `${base}#homeowner=${encodeURIComponent(project?.id??'')}`;
+  }
+
+  function closeQR(){document.getElementById('jjQRBackdrop')?.remove();}
+
+  async function copyHomeownerUrl(){
+    const url=homeownerUrl(window.JJHomeownerProject||appProject());
+    try{await navigator.clipboard.writeText(url);window.toast?.('Homeowner link copied');}
+    catch{window.prompt('Copy this homeowner link:',url)}
+  }
+
+  function openHomeownerQR(project=appProject()){
+    if(!project)return;
+    window.JJHomeownerProject=project;
+    closeQR();
+    const url=homeownerUrl(project);
+    const backdrop=document.createElement('div');
+    backdrop.id='jjQRBackdrop';backdrop.className='jj-qr-backdrop';
+    const qr=`https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(url)}`;
+    backdrop.innerHTML=`<div class="jj-qr-dialog" role="dialog" aria-modal="true" aria-label="Homeowner selections QR code"><h3>Homeowner selections</h3><p>Scan this code to open a read-only selections page for ${escapeHtml(project.name||'this job')}.</p><img src="${qr}" alt="Homeowner selections QR code"><span class="jj-qr-link">${escapeHtml(url)}</span><div class="jj-qr-actions"><button type="button" data-copy>Copy link</button><button type="button" data-close>Close</button><button type="button" class="primary" data-open>Open page</button></div></div>`;
+    backdrop.addEventListener('click',event=>{if(event.target===backdrop)closeQR()});
+    backdrop.querySelector('[data-copy]').addEventListener('click',copyHomeownerUrl);
+    backdrop.querySelector('[data-close]').addEventListener('click',closeQR);
+    backdrop.querySelector('[data-open]').addEventListener('click',()=>{closeQR();renderHomeownerPage(project)});
+    document.body.appendChild(backdrop);
+  }
+
+  function renderHomeownerPage(project){
+    document.getElementById('jjHomeownerPage')?.remove();
+    const items=Array.isArray(project.selections)?project.selections:[];
+    const rooms=[...new Set(items.map(item=>item.room||'Unassigned'))];
+    const page=document.createElement('div');page.id='jjHomeownerPage';page.className='jj-qr-backdrop';
+    page.innerHTML=`<div class="jj-qr-dialog" style="width:min(1120px,100%);text-align:left;max-height:92vh;overflow:auto"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><div><small style="color:#b59a62;font-weight:900;letter-spacing:.8px">HOMEOWNER SELECTIONS</small><h3 style="margin-top:4px">${escapeHtml(project.name||'Selections')}</h3></div><button type="button" data-close class="primary">Close</button></div><div id="jjHomeownerItems" style="margin-top:16px"></div></div>`;
+    const root=page.querySelector('#jjHomeownerItems');
+    if(!items.length){root.innerHTML='<p style="color:#657382">No selections have been added yet.</p>'}
+    else root.innerHTML=rooms.map(room=>{const group=items.filter(item=>(item.room||'Unassigned')===room);return `<section style="margin-top:16px"><div style="display:flex;justify-content:space-between;gap:8px"><strong style="color:#14234a">${escapeHtml(room)}</strong><span style="color:#657382;font-size:11px">${group.length} selection${group.length===1?'':'s'}</span></div><div class="jj-ho-page-grid">${group.map(item=>{const img=String(item.image||'');return `<article style="margin-top:9px;border:1px solid #dce2e9;border-radius:12px;overflow:hidden;background:#fff"><img src="${/^https?:\/\//i.test(img)?escapeHtml(img):''}" alt="" style="width:100%;height:150px;object-fit:cover;background:#f6f8f9" onerror="this.style.display='none'"><div style="padding:11px"><small style="color:#657382;font-weight:850;text-transform:uppercase">${escapeHtml(item.category||'Selection')}</small><div style="margin-top:4px;font-weight:850;color:#14234a">${escapeHtml(item.title||'Untitled selection')}</div><div style="margin-top:4px;color:#657382;font-size:11px">${escapeHtml(item.vendor||'')} ${item.model?`· ${escapeHtml(item.model)}`:''}</div></div></article>`}).join('')}</div></section>`}).join('');
+    page.addEventListener('click',event=>{if(event.target===page||event.target.closest('[data-close]'))page.remove()});
+    document.body.appendChild(page);
   }
 
 
@@ -886,12 +954,21 @@ window.JJProduct = (() => {
     create:()=>openCreateGroup(null),
     manage:manageGroups,
     openAssign,
+    openQR:()=>openHomeownerQR(),
     expandAll:()=>setAllAppGroups(true),
     collapseAll:()=>setAllAppGroups(false)
   };
 
   function boot(){
     injectStyles();
+    const match=(location.hash||'').match(/^#homeowner=(.+)$/);
+    if(match){
+      const id=decodeURIComponent(match[1]);
+      let project=null;
+      try{const saved=JSON.parse(localStorage.getItem('jj_full_proto')||'null');project=saved?.projects?.find(item=>String(item.id)===String(id))||null}catch{}
+      project=project||appProject();
+      if(project){window.JJHomeownerProject=project;setTimeout(()=>renderHomeownerPage(project),0);return;}
+    }
     if(installHO())return;
     installApp();
   }
