@@ -1,19 +1,32 @@
-J&J Selections — H.O. / QR / Controls Fix
+J&J Homeowner Guest Selections v74
 
-Upload and replace all three files in the GitHub repository root:
+ONE-TIME SUPABASE STEP
+Run JJ_Homeowner_Guest_Access.sql in Supabase -> SQL Editor.
+This creates a token-protected homeowner selections portal. Homeowners can
+open their QR/link without a J&J login, and the link cannot read the rest of
+the operations app.
+
+GITHUB FILES
+Upload and replace these three files in the repository root:
 1. index.html
 2. selections-metadata.js
 3. service-worker.js
 
-The metadata script was previously uploaded without being loaded by index.html,
-which is why the last updates had no visible effect.
+Do not upload the ZIP itself to GitHub. Open the ZIP and upload the individual
+files above. The SQL file is run in Supabase only.
 
-This update adds the H.O. Selections / QR action, a read-only homeowner page,
-one View All / Show Groups toggle, and ▦ / ☰ Card/List icons. It does not add
-the later save-conflict recovery layer. It also restores Create Group, Manage
-Groups, Selection group in the editor, and Add to Group / Change Group on cards.
-The edit form keeps the room assignment internally without showing a Room
-column, and link lookup checks SKU/model plus UPC/GTIN metadata automatically.
+WHAT CHANGED
+- Create / Show QR Code is beside Customer View on the Selections page.
+- A shared QR or copied link opens without a login.
+- Homeowners can view, select, and add products without entering or seeing a
+  price.
+- The H.O. add form includes product link lookup, name, room, category,
+  vendor, model/SKU, UPC, quantity, group, description, and photo upload.
+- H.O. changes sync back into the contractor Selections page.
+- H.O. cards follow the clean one-column mobile layout from the supplied
+  recording and retain the card/list controls on larger screens.
+- The service-worker cache is bumped so stale screens are replaced.
 
-After committing, wait for GitHub Pages to finish, then fully close/reopen the
-app. If the old cached screen remains, hard-refresh once.
+After committing the three GitHub files, wait for GitHub Pages to finish and
+hard-refresh the app once. Then open Selections and press Create / Show QR
+Code to create the project's permanent guest link.

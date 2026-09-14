@@ -4360,14 +4360,19 @@ body.topbar-collapsed .operations-app > .sidebar{top:0;min-height:100vh}
 .selection-room-custom input{min-width:0;flex:1;padding:8px;border:0;border-radius:7px}
 .selection-room-custom button{border:0;border-radius:7px;background:var(--shell-gold);color:var(--shell-navy);font-weight:900}
 .selection-toolbar{display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin:18px 0 14px;padding-bottom:2px}
+.selection-group-controls{display:flex;align-items:center;gap:7px;flex:none}
+.selection-group-toggle{white-space:nowrap;border:1px solid var(--line);border-radius:9px;background:#fff;color:var(--navy);padding:8px 11px;font-size:11px;font-weight:850}
+.selection-category-filters{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-left:auto;justify-content:flex-end}
 .selection-filter{white-space:nowrap;border:1px solid var(--line);border-radius:999px;background:#fff;color:#536171;padding:8px 12px;font-size:11px;font-weight:800}
 .selection-filter.active{border-color:var(--shell-navy);background:var(--shell-navy);color:#fff}
 .selection-toolbar-spacer{flex:1 1 18px}
 .selection-view-controls{display:flex;gap:4px;padding:3px;border:1px solid var(--line);border-radius:9px;background:#F4F7F9}
+.selection-toolbar > .selection-view-controls{margin-left:0;flex:none}
 .selection-view-button{border:0;border-radius:6px;background:transparent;color:#657382;padding:6px 9px;font-size:10px;font-weight:850}
 .selection-view-button.active{background:#fff;color:var(--navy);box-shadow:0 1px 4px rgba(19,35,52,.13)}
 .selection-group-action{white-space:nowrap;border:0;background:transparent;color:#173E67;padding:6px 3px;font-size:10px;font-weight:850}
 .selection-groups{display:grid;gap:13px}
+.named-selection-group.collapsed .selection-room-content{display:none}
 .selection-room-group{overflow:visible;border:0;border-radius:0;background:transparent}
 .selection-room-heading{width:100%;display:flex;align-items:center;justify-content:space-between;gap:12px;border:0;background:transparent;color:var(--navy);padding:0 0 10px;text-align:left}
 .selection-room-heading b{display:block;font-size:14px}
@@ -4515,6 +4520,7 @@ body.topbar-collapsed .operations-app > .sidebar{top:0;min-height:100vh}
   .selection-heading-right{width:100%;align-items:flex-start;justify-content:space-between;gap:10px}
   .selection-heading-actions{margin-left:auto}
   .selection-toolbar-spacer{display:none}
+  .selection-category-filters{width:100%;margin-left:0;justify-content:flex-start}
   .selection-view-controls{margin-left:auto}
   .selection-room-content{padding:9px}
   .selection-grid.selection-list .selection-card{grid-template-columns:96px minmax(0,1fr)}
@@ -6339,6 +6345,31 @@ async function initCloud(forceLogin=false){
   await finishCloudLogin(session.user);
   return true;
 }
+
+// Homeowner links are guest links. An opaque QR token allows access only to
+// that project's homeowner selections row; the full operations state and the
+// normal J&J login are never exposed.
+window.homeownerPortalClient = function(token){
+  const cfg=cloudConfig();
+  if(!cfg || !window.supabase?.createClient || !token) return null;
+  return window.supabase.createClient(cfg.url,cfg.key,{
+    global:{headers:{'x-homeowner-token':String(token)}},
+    auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}
+  });
+};
+
+window.loadHomeownerProject = async function(projectId,token){
+  try{
+    const guestClient=window.homeownerPortalClient(token);
+    if(!guestClient) return null;
+    const result=await guestClient.from('homeowner_portals').select('project_id,project_name,data,updated_at').eq('token',String(token)).eq('project_id',String(projectId)).maybeSingle();
+    if(result?.error || !result?.data?.data) return null;
+    return {...result.data.data,id:result.data.project_id,name:result.data.project_name||result.data.data.name||'Homeowner selections'};
+  }catch(error){
+    console.warn('Homeowner guest state could not load:',error);
+    return null;
+  }
+};
 
 
 async function requestPasswordReset(){
@@ -9650,6 +9681,7 @@ let selectionEditIndex=null;
 let selectionLookupInFlight='';
 let selectionLookupCompleted='';
 let selectionViewMode=localStorage.getItem('jj_selection_view_mode')==='list'?'list':'cards';
+let selectionGroupMode=localStorage.getItem('jj_selection_group_mode')==='groups';
 let selectionCollapsedRooms=new Set();
 
 function ensureSelectionsData(){
@@ -9693,8 +9725,9 @@ function renderSelections(){
     ? project.selectionActiveRoom
     : project.selectionRooms[0];
   project.selectionActiveRoom=selectedRoom;
-  const filtered=items.filter(item=>selectionFilter==='All' || item.category===selectionFilter);
-  const visibleRooms=[...new Set(filtered.map(item=>item.room||'Unassigned'))];
+  const filtered=selectionFilter==='All'
+    ? items
+    : items.filter(item=>String(item.category||'').trim().toLowerCase()===String(selectionFilter).trim().toLowerCase());
   const categories=[...new Set(['Tile','Plumbing','Vanities','Lighting','Hardware',...items.map(item=>item.category).filter(Boolean)])];
   const selectedCount=items.filter(item=>item.status==='Selected' || item.status==='Ordered' || item.status==='Received').length;
   const pendingCount=items.filter(item=>item.status==='Pending').length;
@@ -9715,6 +9748,7 @@ function renderSelections(){
         </div>
         <div class="selection-heading-actions">
           <button class="selection-header-button" onclick="openHomeownerView()">Customer View</button>
+          <button class="selection-header-button" onclick="openHomeownerShare()">Create / Show QR Code</button>
           <button class="selection-header-button primary" onclick="exportSelectionsPdf()">Export PDF</button>
         </div>
       </div>
@@ -9742,20 +9776,21 @@ function renderSelections(){
       </div>
     </div>
 
-    <div class="selection-toolbar" aria-label="Selection filters">
-      ${['All',...categories].map(cat=>`<button class="selection-filter ${selectionFilter===cat?'active':''}" onclick="setSelectionFilter(decodeURIComponent('${encodeURIComponent(cat)}'))">${cat==='All'?'All selections':esc(cat)}</button>`).join('')}
-      <span class="selection-toolbar-spacer"></span>
+    <div class="selection-toolbar" aria-label="Selection tools">
+      <div class="selection-group-controls" aria-label="Selection grouping">
+        <button id="jjAppGroupToggle" class="selection-group-toggle" onclick="setSelectionGroupMode(!selectionGroupMode)">${selectionGroupMode?'Show All':'Show Groups'}</button>
+      </div>
+      <div class="selection-category-filters" aria-label="Quick filter by category">
+        ${['All selections',...categories].map(category=>{const value=category==='All selections'?'All':category;return `<button class="selection-filter ${selectionFilter===value?'active':''}" onclick="setSelectionFilter('${esc(value).replace(/'/g,"\\'")}')">${esc(category)}</button>`}).join('')}
+      </div>
       <div class="selection-view-controls" aria-label="Selections view">
         <button class="selection-view-button ${selectionViewMode==='cards'?'active':''}" aria-label="Card view" title="Card view" aria-pressed="${selectionViewMode==='cards'}" onclick="setSelectionView('cards')">▦</button>
         <button class="selection-view-button ${selectionViewMode==='list'?'active':''}" aria-label="List view" title="List view" aria-pressed="${selectionViewMode==='list'}" onclick="setSelectionView('list')">☰</button>
       </div>
-      <button class="selection-group-action" onclick="expandAllSelectionGroups()">Expand all</button>
-      <button class="selection-group-action" onclick="collapseAllSelectionGroups()">Collapse all</button>
-      <button class="selection-filter" onclick="openSelectionEditor()">＋ Add manually</button>
     </div>
 
     <div class="selection-groups">
-      ${filtered.length ? visibleRooms.map(room=>selectionRoomGroup(project,room,filtered.filter(item=>(item.room||'Unassigned')===room),items)).join('') : `
+      ${filtered.length ? (selectionGroupMode ? selectionNamedGroups(project,filtered,items) : `<div class="selection-grid ${selectionViewMode==='list'?'selection-list':''}">${filtered.map(item=>selectionCard(item,items.indexOf(item))).join('')}</div>`) : `
         <div class="selection-empty">
           <button onclick="openSelectionEditor()">+</button>
           <strong>${items.length?'No selections match this filter':'No selections added yet'}</strong>
@@ -9764,6 +9799,39 @@ function renderSelections(){
     </div>
     <div id="selectionModalBackdrop" class="selection-modal-backdrop" onclick="if(event.target===this)closeSelectionEditor()"></div>
   </div>`;
+}
+
+function setSelectionGroupMode(enabled){
+  selectionGroupMode=!!enabled;
+  localStorage.setItem('jj_selection_group_mode',selectionGroupMode?'groups':'all');
+  renderSelections();
+}
+window.setSelectionGroupMode=setSelectionGroupMode;
+window.isSelectionGroupMode=()=>selectionGroupMode;
+
+function selectionNamedGroups(project,items,allItems){
+  const registry=Array.isArray(project.selectionGroups)?project.selectionGroups:[];
+  const buckets=[];
+  const known=new Map();
+  registry.forEach(group=>{
+    const id=String(group?.id||'');
+    if(id){const bucket={id,name:group.name||'Selection Group',items:[]};known.set(id,bucket);buckets.push(bucket)}
+  });
+  const ungrouped=[];
+  items.forEach(item=>{
+    const bucket=known.get(String(item.optionGroupId||''));
+    if(bucket)bucket.items.push(item);else ungrouped.push(item);
+  });
+  if(ungrouped.length)buckets.push({id:'ungrouped',name:'Ungrouped selections',items:ungrouped});
+  return buckets.filter(bucket=>bucket.items.length).map(bucket=>`<section class="selection-room-group named-selection-group">
+    <button class="selection-room-heading" type="button" onclick="this.parentElement.classList.toggle('collapsed')" aria-expanded="true">
+      <span><b>${esc(bucket.name)}</b><small>${bucket.items.length} selection${bucket.items.length===1?'':'s'}</small></span>
+      <span class="selection-room-chevron" aria-hidden="true">⌄</span>
+    </button>
+    <div class="selection-room-content"><div class="selection-grid ${selectionViewMode==='list'?'selection-list':''}">
+      ${bucket.items.map(item=>selectionCard(item,allItems.indexOf(item))).join('')}
+    </div></div>
+  </section>`).join('');
 }
 
 function selectionRoomStateKey(project,room){
@@ -9817,7 +9885,7 @@ function openHomeownerView(project=selectedProject()){
   overlay.id='homeownerOverlay';
   overlay.className='homeowner-overlay';
   overlay.innerHTML=`<div class="homeowner-page" role="dialog" aria-modal="true" aria-label="Homeowner selections">
-    <header class="homeowner-top"><div class="homeowner-brand"><span class="homeowner-brand-mark">J&J</span><span>J&J Home Renovations</span></div><div class="homeowner-actions"><button onclick="openHomeownerShare()">Share / QR code</button><button class="primary" onclick="closeHomeownerOverlay()">Back to app</button></div></header>
+    <header class="homeowner-top"><div class="homeowner-brand"><span class="homeowner-brand-mark">J&J</span><span>J&J Home Renovations</span></div><div class="homeowner-actions"><button class="primary" onclick="closeHomeownerOverlay()">Back to app</button></div></header>
     <main class="homeowner-body"><div class="eyebrow">${esc(project.jobNo||'Selections')}</div><h2>${esc(project.name)} · Selections</h2><p>Review the selections for your project. Prices shown include any taxes added by J&J.</p>
       ${rooms.length?rooms.map(room=>{const roomItems=items.filter(item=>(item.room||'Unassigned')===room); const complete=roomItems.filter(item=>['Selected','Ordered','Received'].includes(item.status)).length; return `<section class="homeowner-group"><div class="homeowner-group-head"><h3>${esc(room)}</h3><span>${complete} of ${roomItems.length} selections complete</span></div><div class="homeowner-grid">${roomItems.map(homeownerCard).join('')}</div></section>`}).join(''):'<div class="homeowner-empty">No selections have been added yet.</div>'}
     </main></div>`;
@@ -9853,6 +9921,7 @@ function exportSelectionsPdf(){
 function selectionCard(item,index){
   const productUrl=safeSelectionUrl(item.url);
   const imageUrl=safeSelectionImageUrl(item.image);
+  const identifier=[item.model?`Model/SKU ${item.model}`:'',item.upc?`UPC ${item.upc}`:''].filter(Boolean).join(' · ') || 'Model/SKU/UPC not entered';
   const taxNote=item.addTax?' · tax included':'';
   const lead=item.leadTimeValue
     ? `${item.leadTimeValue} ${String(item.leadTimeUnit||'days').toLowerCase()}`
@@ -9868,7 +9937,7 @@ function selectionCard(item,index){
     <div class="selection-card-body">
       <div class="selection-card-meta">${esc(item.category||'Selection')}</div>
       <h3>${esc(item.title||'Untitled product')}</h3>
-      <div class="selection-vendor">${esc(item.vendor||'Vendor not entered')} · ${esc(item.model||item.upc||'Model/SKU/UPC not entered')}</div>
+      <div class="selection-vendor">${esc(item.vendor||'Vendor not entered')} · ${esc(identifier)}</div>
       <div class="selection-card-bottom">
         <div class="selection-price">${selectionMoney(selectionTotal(item))}<small>${Math.max(1,Number(item.quantity||1))} item${Number(item.quantity||1)===1?'':'s'}${taxNote}</small></div>
         <span class="selection-purchased">Purchased by<br><b>${esc(item.purchasedBy||'Not assigned')}</b>${lead?`<small> · ${esc(lead)}</small>`:''}</span>
@@ -10348,12 +10417,9 @@ renderAll();
 syncUserSelector();
 restoreLayoutPreferences();
 
-// QR links open the read-only homeowner page without requiring a staff sign-in.
-if(location.hash.startsWith('#homeowner=')){
-  const homeownerId=decodeURIComponent(location.hash.slice('#homeowner='.length));
-  const homeownerProject=state.projects.find(project=>String(project.id)===String(homeownerId));
-  if(homeownerProject) setTimeout(()=>openHomeownerView(homeownerProject),80);
-}
+// QR links are rendered by selections-metadata.js after the app shell loads.
+// Keeping the legacy renderer out of this path prevents two H.O. overlays from
+// competing with each other during startup.
 
 (async()=>{
   document.getElementById('loginOverlay')?.classList.add('hidden');
@@ -10367,6 +10433,18 @@ if(location.hash.startsWith('#homeowner=')){
     showPasswordResetForm();
     const resetMsg=document.getElementById('passwordResetMessage');
     if(resetMsg) resetMsg.textContent='Reset link detected. Connecting securely…';
+  }
+
+  // A shared homeowner URL is intentionally a guest experience. Do not
+  // initialize the staff login flow or cover the selections page with a
+  // sign-in prompt while the homeowner view is opening.
+  if(/^#homeowner=/.test(location.hash||'')){
+    window.JJGuestMode=true;
+    document.getElementById('loginOverlay')?.classList.add('hidden');
+    document.getElementById('cloudLoginOverlay')?.classList.add('hidden');
+    document.getElementById('passwordResetOverlay')?.classList.add('hidden');
+    setCloudStatus('Guest view','local');
+    return;
   }
 
   setCloudStatus('Connecting','saving');

@@ -1,4 +1,4 @@
-/* J&J shared product lookup + selections group UI v72 */
+/* J&J shared product lookup + selections group UI v74 */
 window.JJProduct = (() => {
   const text=v=>typeof v==='string'?v.trim():typeof v==='number'?String(v):'';
   const safe=u=>/^https?:\/\//i.test(text(u))?text(u):'';
@@ -160,15 +160,15 @@ window.JJProduct = (() => {
 
 
 (() => {
-  const VERSION='v72';
+  const VERSION='v74';
   const escapeHtml=value=>String(value??'').replace(/[&<>"']/g,ch=>({
     '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
   }[ch]));
 
   function injectStyles(){
-    if(document.getElementById('jj-selection-groups-v72'))return;
+    if(document.getElementById('jj-selection-groups-v74'))return;
     const style=document.createElement('style');
-    style.id='jj-selection-groups-v72';
+    style.id='jj-selection-groups-v74';
     style.textContent=`
       .jj-selection-top-actions{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 14px}
       .jj-app-group-controls{display:inline-flex;gap:7px;align-items:center;margin-left:8px}
@@ -211,7 +211,13 @@ window.JJProduct = (() => {
       .jj-qr-dialog img{width:220px;height:220px;display:block;margin:0 auto 14px;border:8px solid #fff;box-shadow:0 3px 14px rgba(9,25,39,.15)}
       .jj-qr-link{display:block;padding:9px;border-radius:8px;background:#f3f6f8;color:#4a5b6b;font-size:10px;word-break:break-all}
       .jj-qr-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}.jj-qr-actions button{border:1px solid #d3dae1;border-radius:8px;background:#fff;color:#14234a;padding:8px 12px;font-size:11px;font-weight:900}.jj-qr-actions .primary{border-color:#14234a;background:#14234a;color:#fff}
-      .jj-ho-page-toolbar{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin:16px 0 4px}.jj-ho-page-toolbar button{border:1px solid #d3dae1;border-radius:8px;background:#fff;color:#14234a;padding:8px 11px;font-size:11px;font-weight:900}.jj-ho-page-toolbar button.active,.jj-ho-page-toolbar button.primary{border-color:#14234a;background:#14234a;color:#fff}.jj-ho-page-toolbar .spacer{flex:1}.jj-ho-page-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.jj-ho-page-grid.list{grid-template-columns:1fr}.jj-ho-page-grid.list article{display:grid;grid-template-columns:150px 1fr}.jj-ho-page-grid.list article img{height:100%}@media(max-width:900px){.jj-ho-page-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:620px){.jj-ho-page-grid{grid-template-columns:1fr}.jj-ho-page-grid.list article{grid-template-columns:90px 1fr}}
+      .jj-ho-add-backdrop{position:fixed;inset:0;z-index:10130;display:flex;align-items:center;justify-content:center;padding:18px;background:rgba(8,19,31,.7)}
+      .jj-ho-add-dialog{width:min(720px,100%);max-height:calc(100dvh - 36px);overflow:auto;border-radius:16px;background:#fff;color:#202633;box-shadow:0 24px 75px rgba(0,0,0,.32)}
+      .jj-ho-add-dialog header{position:sticky;top:0;z-index:2;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:18px 20px;border-bottom:1px solid #e2e7ec;background:#fff}.jj-ho-add-dialog header small{display:block;color:#9b7a37;font-size:12px;font-weight:900;letter-spacing:.8px}.jj-ho-add-dialog h3{margin:3px 0 0;color:#172248;font-size:22px}.jj-ho-add-dialog header button{width:38px;height:38px;border:1px solid #d5dce3;border-radius:9px;background:#fff;color:#172248;font-size:24px}
+      .jj-ho-add-dialog form{padding:20px}.jj-ho-add-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:15px}.jj-ho-add-grid label{display:grid;gap:7px;color:#26344a;font-size:14px;font-weight:750}.jj-ho-add-grid input,.jj-ho-add-grid select,.jj-ho-add-grid textarea{width:100%;box-sizing:border-box;border:1px solid #cfd7df;border-radius:8px;background:#fff;color:#202633;padding:11px 12px;font:inherit;font-weight:400}.jj-ho-add-wide{grid-column:1/-1}.jj-ho-lookup{align-self:end;min-height:44px;border:0;border-radius:8px;background:#172248;color:#fff;padding:10px 14px;font-size:14px;font-weight:800}.jj-ho-drop{display:block;padding:18px;border:1.5px dashed #aeb9c4;border-radius:9px;background:#f7f9fb;color:#536171;text-align:center;font-weight:500}.jj-ho-drop.is-dragging{border-color:#172248;background:#eef2f7}.jj-ho-add-note{margin:16px 0 0;padding:12px 14px;border-radius:8px;background:#fff2c9;font-size:14px}.jj-ho-add-message{min-height:21px;margin-top:9px;color:#315f48;font-size:14px}.jj-ho-add-dialog footer{display:flex;justify-content:flex-end;gap:9px;margin-top:16px}.jj-ho-add-dialog footer button{border:1px solid #ccd5de;border-radius:8px;padding:10px 15px;font-size:14px;font-weight:800}.jj-ho-add-dialog footer .secondary{background:#fff;color:#172248}.jj-ho-add-dialog footer .primary{border-color:#172248;background:#172248;color:#fff}
+      @media(max-width:620px){.jj-ho-add-backdrop{align-items:stretch;padding:0}.jj-ho-add-dialog{width:100%;max-height:100dvh;border-radius:0}.jj-ho-add-grid{grid-template-columns:1fr}.jj-ho-add-wide{grid-column:auto}.jj-ho-add-dialog form{padding:18px}.jj-ho-lookup{width:100%}}
+      .jj-ho-page-backdrop{align-items:stretch;justify-content:stretch;padding:0;background:#f1f3f6}.jj-ho-page-shell{width:100%;min-height:100%;max-height:none;overflow:auto;border-radius:0;background:#f1f3f6;color:#202633}.jj-ho-page-head{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:15px clamp(16px,4vw,48px);background:#172248;color:#fff;position:sticky;top:0;z-index:2;font-size:14px}.jj-ho-page-head>div:last-child{display:flex;gap:8px}.jj-ho-page-brand{display:flex;align-items:center;gap:10px;font-weight:500}.jj-ho-page-brand-mark{display:none}.jj-ho-page-head button{border:1px solid rgba(255,255,255,.35);border-radius:7px;background:#fff;color:#14234a;padding:7px 10px;font-size:11px;font-weight:800}.jj-ho-page-body{width:min(1120px,calc(100% - 48px));margin:0 auto;padding:44px 0 60px}.jj-ho-page-title{display:block;margin-bottom:20px}.jj-ho-page-title h2{margin:0;color:#172248;font-size:29px;line-height:1.18}.jj-ho-page-title p{margin:18px 0 0;color:#202633;font-size:17px;line-height:1.4}.jj-ho-page-toolbar{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin:0 0 22px;padding:0;border:0}.jj-ho-page-toolbar button{border:0;border-radius:8px;background:#172248;color:#fff;padding:11px 15px;font-size:14px;font-weight:700}.jj-ho-page-toolbar button[data-ho-view]{min-width:42px;padding:10px 12px;border:1px solid #d2d8df;background:#fff;color:#172248;font-size:18px;line-height:1}.jj-ho-page-toolbar button[data-ho-view].active,.jj-ho-page-toolbar button.primary{background:#172248;color:#fff;border-color:#172248}.jj-ho-page-toolbar .spacer{flex:1}.jj-ho-page-sync{margin:0 0 22px;padding:18px 20px;background:#fff2c9;color:#202633;font-size:15px}.jj-ho-page-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}.jj-ho-page-grid.list{grid-template-columns:1fr}.jj-ho-page-grid.list article{display:grid;grid-template-columns:180px minmax(0,1fr);align-items:start}.jj-ho-page-grid.list article .jj-ho-page-card-body{grid-column:2}.jj-ho-page-grid.list article>div:first-child:has(.empty){display:none}.jj-ho-page-card{border:1px solid #d3d5d8;border-radius:14px;overflow:hidden;background:#fff;box-shadow:0 1px 4px rgba(19,35,52,.04)}.jj-ho-page-card.is-selected{border:2px solid #39815f}.jj-ho-page-card>div:first-child:empty{display:none}.jj-ho-page-card>div:first-child:has(.empty){display:none}.jj-ho-page-card img{width:100%;height:220px;display:block;object-fit:contain;background:#fff}.jj-ho-page-card .empty{display:none}.jj-ho-page-card-body{padding:18px}.jj-ho-page-card-body .eyebrow{font-size:11px;color:#6b6f76;letter-spacing:0}.jj-ho-page-card-body h4{margin:10px 0 12px;color:#172248;font-size:17px;line-height:1.3}.jj-ho-page-card-body p{margin:7px 0;color:#202633;font-size:14px;line-height:1.4}.jj-ho-page-card-body strong{display:block;margin-top:10px;color:#172248;font-size:16px}.jj-ho-page-card-description{color:#202633!important}.jj-ho-page-card-label{color:#202633!important;font-size:14px!important}.jj-ho-page-status-selected{margin:0 0 12px;color:#317653;font-size:16px;font-weight:800}.jj-ho-page-card .jj-ho-select-button{border:0;border-radius:8px;background:#172248;color:#fff;padding:9px 12px;font-size:14px;font-weight:700}.jj-ho-page-group{margin-top:28px}.jj-ho-page-group>summary{display:flex;align-items:center;justify-content:space-between;gap:10px;cursor:pointer;padding:0 0 12px;color:#172248;font-size:18px;font-weight:900;list-style:none}.jj-ho-page-group>summary::-webkit-details-marker{display:none}.jj-ho-page-group>summary:before{content:'▸';margin-right:7px;transition:transform .15s}.jj-ho-page-group[open]>summary:before{transform:rotate(90deg)}.jj-ho-page-group>summary span{margin-left:auto;color:#657382;font-size:13px;font-weight:700}@media(max-width:900px){.jj-ho-page-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:620px){.jj-ho-page-body{width:calc(100% - 32px);padding:30px 0 42px}.jj-ho-page-head{padding:14px 18px}.jj-ho-page-head>div:last-child button{padding:7px 8px;font-size:10px}.jj-ho-page-title h2{font-size:24px}.jj-ho-page-title p{margin-top:12px;font-size:16px}.jj-ho-page-toolbar{align-items:stretch}.jj-ho-page-toolbar .spacer{display:none}.jj-ho-page-toolbar button[data-ho-view]:first-of-type{margin-left:auto}.jj-ho-page-grid{grid-template-columns:1fr}.jj-ho-page-card img{height:190px}.jj-ho-page-card-body{padding:20px}.jj-ho-page-card-body h4{font-size:18px}.jj-ho-page-card-body p{font-size:15px}.jj-ho-page-grid.list article{display:block}.jj-ho-page-grid.list article>div:first-child:has(.empty){display:none}}
+      @media(max-width:620px){.jj-ho-page-toolbar button[data-ho-view="cards"]{margin-left:auto}}
       #items{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
       #items>.option-group{grid-column:1/-1;margin:0;border:1px solid #d9e0e6;border-radius:14px;background:#f8fafb;overflow:hidden;box-shadow:0 3px 12px rgba(19,35,52,.05)}
       #items>.option-group>summary.jj-ho-summary{display:flex!important;align-items:center!important;gap:12px!important;min-height:58px;padding:14px 16px!important;background:#fff!important;color:#14234a!important;font-size:12px!important;font-weight:900!important;list-style:none}
@@ -367,6 +373,13 @@ window.JJProduct = (() => {
   function updateAppGroupToggle(){
     const button=document.getElementById('jjAppGroupToggle');
     if(!button)return;
+    if(typeof window.isSelectionGroupMode==='function'){
+      const grouped=window.isSelectionGroupMode();
+      button.textContent=grouped?'Show All':'Show Groups';
+      button.title=grouped?'Show all selections':'Show named selection groups';
+      button.setAttribute('aria-label',button.title);
+      return;
+    }
     const groups=appGroupNodes();
     const allOpen=groups.length>0&&groups.every(details=>details.matches('.selection-room-group')?!details.classList.contains('collapsed'):details.open);
     button.textContent=allOpen?'Show Groups':'View All';
@@ -375,6 +388,10 @@ window.JJProduct = (() => {
   }
 
   function toggleAppGroups(){
+    if(typeof window.setSelectionGroupMode==='function'&&typeof window.isSelectionGroupMode==='function'){
+      window.setSelectionGroupMode(!window.isSelectionGroupMode());
+      return;
+    }
     const groups=appGroupNodes();
     setAllAppGroups(!(groups.length>0&&groups.every(details=>details.matches('.selection-room-group')?!details.classList.contains('collapsed'):details.open)));
   }
@@ -632,6 +649,7 @@ window.JJProduct = (() => {
     if(!root)return;
     const p=appProject();
     ensureAppGroups(p);
+    pullHomeownerPortal(p);
 
     const heading=root.querySelector('.selection-heading');
     if(heading&&!root.querySelector('.jj-selection-top-actions')){
@@ -640,8 +658,7 @@ window.JJProduct = (() => {
       actions.innerHTML=`
         <button class="btn btn-gold" type="button" onclick="openSelectionEditor()">+ Add Selection</button>
         <button class="btn btn-light" type="button" onclick="window.JJSelectionGroups.create()">Create Group</button>
-        <button class="btn btn-light" type="button" onclick="window.JJSelectionGroups.manage()">Manage Groups</button>
-        <button class="btn btn-light jj-ho-qr-button" type="button" onclick="window.JJSelectionGroups.openQR()">H.O. Selections / QR</button>`;
+        <button class="btn btn-light" type="button" onclick="window.JJSelectionGroups.manage()">Manage Groups</button>`;
       heading.insertAdjacentElement('afterend',actions);
     }
 
@@ -655,7 +672,7 @@ window.JJProduct = (() => {
     });
 
     const viewHost=root.querySelector('.toolbar[role="group"][aria-label="Selections view"],[role="group"][aria-label="Selections view"],.selection-view-controls[aria-label="Selections view"]');
-    if(viewHost&&!viewHost.querySelector('.jj-app-group-controls')){
+    if(viewHost&&!root.querySelector('#jjAppGroupToggle')){
       const controls=document.createElement('span');
       controls.className='jj-app-group-controls';
       controls.innerHTML=`
@@ -701,11 +718,18 @@ window.JJProduct = (() => {
       button.addEventListener('click',()=>openAssign(index));
       actions.appendChild(button);
     });
-    enhanceHostGroupedCards(p);
+    // The app renderer owns the named-group layout. Do not wrap its cards in
+    // room/category containers, which would reintroduce the old grouping.
   }
 
   function installApp(){
     if(typeof window.renderSelections!=='function'||typeof window.selectedProject!=='function')return false;
+
+    // The app's legacy Customer View buttons should open the same H.O. page
+    // as a shared homeowner link, so the preview and QR destination never
+    // drift into two different designs.
+    window.openHomeownerView=async(project=appProject())=>{if(project){window.JJGuestMode=false;await syncHomeownerPortal(project);renderHomeownerPage(project)}};
+    window.openHomeownerShare=(project=window.JJHomeownerProject||appProject())=>{if(project)openHomeownerQR(project)};
 
     window.selectionGroupSelect=(item,index)=>appGroupControl(item,index);
     window.renderSelectionOptionGroups=renderAppGroups;
@@ -760,28 +784,113 @@ window.JJProduct = (() => {
   }
 
   /* ---------------- Homeowner link + QR ---------------- */
+  function makePortalToken(){
+    if(globalThis.crypto?.randomUUID)return globalThis.crypto.randomUUID();
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,char=>{const value=Math.random()*16|0;return (char==='x'?value:(value&3|8)).toString(16)});
+  }
+
+  function ensurePortalToken(project){
+    if(!project.homeownerPortalToken)project.homeownerPortalToken=makePortalToken();
+    return String(project.homeownerPortalToken);
+  }
+
+  function homeownerSnapshot(project){
+    const allowed=['id','title','vendor','model','sku','upc','gtin','description','url','image','quantity','status','purchasedBy','category','room','optionGroupId','optionGroupTitle','selectedAt','leadTimeValue','leadTimeUnit'];
+    return {id:project.id,name:project.name||'Homeowner selections',jobNo:project.jobNo||'',type:project.type||'',selectionGroups:(project.selectionGroups||[]).map(group=>({id:group.id,name:group.name})),selections:(project.selections||[]).map(item=>Object.fromEntries(allowed.filter(key=>item[key]!==undefined).map(key=>[key,item[key]])))};
+  }
+
+  function mergeHomeownerPortal(project,portal){
+    if(!project||!portal)return false;
+    let changed=false;
+    if(!Array.isArray(project.selections))project.selections=[];
+    const byId=new Map(project.selections.map(item=>[String(item.id),item]));
+    (portal.selections||[]).forEach(incoming=>{
+      const current=byId.get(String(incoming.id));
+      if(current){
+        ['status','selectedAt'].forEach(key=>{if(incoming[key]!==undefined&&current[key]!==incoming[key]){current[key]=incoming[key];changed=true}});
+      }else{
+        project.selections.push({...incoming,unitPrice:0,addTax:false,purchasedBy:incoming.purchasedBy||'Homeowner'});
+        changed=true;
+      }
+    });
+    if(!Array.isArray(project.selectionGroups))project.selectionGroups=[];
+    (portal.selectionGroups||[]).forEach(group=>{if(group?.id&&!project.selectionGroups.some(current=>String(current.id)===String(group.id))){project.selectionGroups.push({id:group.id,name:group.name||'Selection Group'});changed=true}});
+    return changed;
+  }
+
+  async function syncHomeownerPortal(project){
+    if(!project)return false;
+    const token=ensurePortalToken(project);
+    window.JJHomeownerToken=token;
+    try{window.saveState?.(false)}catch{}
+    const client=window.homeownerPortalClient?.(token);
+    if(!client)return false;
+    const current=await client.from('homeowner_portals').select('data').eq('token',token).maybeSingle();
+    if(current?.data?.data&&mergeHomeownerPortal(project,current.data.data))try{window.saveState?.(false)}catch{}
+    const result=await client.from('homeowner_portals').upsert({token,project_id:String(project.id),project_name:project.name||'Homeowner selections',data:homeownerSnapshot(project),updated_at:new Date().toISOString()},{onConflict:'token'});
+    if(result?.error){console.warn('Homeowner portal could not sync:',result.error);return false}
+    return true;
+  }
+
+  let portalPulling=false;
+  let portalPulledAt=0;
+  async function pullHomeownerPortal(project,force=false){
+    const token=project?.homeownerPortalToken;
+    if(!token||portalPulling||(!force&&Date.now()-portalPulledAt<15000))return false;
+    const client=window.homeownerPortalClient?.(token);
+    if(!client)return false;
+    portalPulling=true;portalPulledAt=Date.now();
+    try{
+      const result=await client.from('homeowner_portals').select('data').eq('token',String(token)).maybeSingle();
+      if(result?.error||!result?.data?.data)return false;
+      if(!mergeHomeownerPortal(project,result.data.data))return false;
+      try{window.saveState?.(false)}catch{}
+      try{window.renderSelections?.()}catch{}
+      return true;
+    }finally{portalPulling=false}
+  }
+
+  async function updateHomeownerPortal(project){
+    const token=window.JJHomeownerToken||project?.homeownerPortalToken;
+    const client=window.homeownerPortalClient?.(token);
+    if(!client||!token)return false;
+    const result=await client.from('homeowner_portals').update({project_name:project.name||'Homeowner selections',data:homeownerSnapshot(project),updated_at:new Date().toISOString()}).eq('token',String(token));
+    if(result?.error){console.warn('Homeowner change could not sync:',result.error);return false}
+    return true;
+  }
+
+  function homeownerRoute(){
+    const params=new URLSearchParams((location.hash||'').replace(/^#/,''));
+    return {id:params.get('homeowner')||'',token:params.get('token')||''};
+  }
+
   function homeownerUrl(project=appProject()){
     const base=(location.href||'').split('#')[0];
-    return `${base}#homeowner=${encodeURIComponent(project?.id??'')}`;
+    const token=ensurePortalToken(project);
+    return `${base}#homeowner=${encodeURIComponent(project?.id??'')}&token=${encodeURIComponent(token)}`;
   }
 
   function closeQR(){document.getElementById('jjQRBackdrop')?.remove();}
 
   async function copyHomeownerUrl(){
-    const url=homeownerUrl(window.JJHomeownerProject||appProject());
+    const project=window.JJHomeownerProject||appProject();
+    const synced=await syncHomeownerPortal(project);
+    if(!synced)window.toast?.('Guest portal setup is not complete');
+    const url=homeownerUrl(project);
     try{await navigator.clipboard.writeText(url);window.toast?.('Homeowner link copied');}
     catch{window.prompt('Copy this homeowner link:',url)}
   }
 
-  function openHomeownerQR(project=appProject()){
+  async function openHomeownerQR(project=appProject()){
     if(!project)return;
     window.JJHomeownerProject=project;
+    const synced=await syncHomeownerPortal(project);
     closeQR();
     const url=homeownerUrl(project);
     const backdrop=document.createElement('div');
     backdrop.id='jjQRBackdrop';backdrop.className='jj-qr-backdrop';
     const qr=`https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(url)}`;
-    backdrop.innerHTML=`<div class="jj-qr-dialog" role="dialog" aria-modal="true" aria-label="Homeowner selections QR code"><h3>Homeowner selections</h3><p>Scan this code to open a read-only selections page for ${escapeHtml(project.name||'this job')}.</p><img src="${qr}" alt="Homeowner selections QR code"><span class="jj-qr-link">${escapeHtml(url)}</span><div class="jj-qr-actions"><button type="button" data-copy>Copy link</button><button type="button" data-close>Close</button><button type="button" class="primary" data-open>Open page</button></div></div>`;
+    backdrop.innerHTML=`<div class="jj-qr-dialog" role="dialog" aria-modal="true" aria-label="Homeowner selections QR code"><h3>Homeowner selections</h3><p>${synced?`Scan this code to view and add selections for ${escapeHtml(project.name||'this job')}. No login is required.`:'Guest access is not connected yet. Run the homeowner guest SQL setup before sharing this code.'}</p><img src="${qr}" alt="Homeowner selections QR code"><span class="jj-qr-link">${escapeHtml(url)}</span><div class="jj-qr-actions"><button type="button" data-copy>Copy link</button><button type="button" data-close>Close</button><button type="button" class="primary" data-open>Open page</button></div></div>`;
     backdrop.addEventListener('click',event=>{if(event.target===backdrop)closeQR()});
     backdrop.querySelector('[data-copy]').addEventListener('click',copyHomeownerUrl);
     backdrop.querySelector('[data-close]').addEventListener('click',closeQR);
@@ -789,24 +898,154 @@ window.JJProduct = (() => {
     document.body.appendChild(backdrop);
   }
 
+  function selectionMoneySafe(item){
+    const subtotal=Number(item?.unitPrice||0)*Math.max(1,Number(item?.quantity||1));
+    const total=subtotal+(item?.addTax?subtotal*.0825:0);
+    return total.toLocaleString('en-US',{style:'currency',currency:'USD'});
+  }
+
+  function homeownerGroupBuckets(project,items){
+    const buckets=[];
+    const byId=new Map();
+    (Array.isArray(project?.selectionGroups)?project.selectionGroups:[]).forEach(group=>{
+      const id=String(group?.id||'');
+      if(!id)return;
+      const bucket={id,name:String(group.name||'Selection Group'),items:[]};
+      buckets.push(bucket);byId.set(id,bucket);
+    });
+    const ungrouped=[];
+    items.forEach(item=>{
+      const id=String(item?.optionGroupId||'');
+      const bucket=id&&byId.get(id);
+      if(bucket)bucket.items.push(item);
+      else if(id&&item?.optionGroupTitle){
+        let legacy=buckets.find(group=>group.id===`legacy:${item.optionGroupTitle}`);
+        if(!legacy){legacy={id:`legacy:${item.optionGroupTitle}`,name:String(item.optionGroupTitle),items:[]};buckets.push(legacy)}
+        legacy.items.push(item);
+      }else ungrouped.push(item);
+    });
+    buckets.filter(group=>group.items.length===0).forEach(group=>{group.empty=true});
+    if(ungrouped.length)buckets.push({id:'ungrouped',name:'Ungrouped selections',items:ungrouped});
+    return buckets.filter(group=>group.items.length||group.id==='ungrouped');
+  }
+
+  function homeownerImage(value){
+    const raw=String(value||'').trim();
+    return /^https?:\/\//i.test(raw)||/^data:image\/(?:jpeg|jpg|png|webp|gif);base64,/i.test(raw)?raw:'';
+  }
+
+  function closeHomeownerPage(page){
+    page?.remove();
+    if(/^#homeowner=/.test(location.hash||'')){
+      history.replaceState(null,'',location.pathname+location.search);
+      installApp();
+    }
+  }
+
+  async function markHomeownerSelected(project,id){
+    const item=(project?.selections||[]).find(entry=>String(entry.id||'')===String(id));
+    if(!item)return;
+    item.status='Selected';
+    item.selectedAt=new Date().toISOString();
+    try{window.saveState?.(false)}catch{}
+    try{
+      const saved=JSON.parse(localStorage.getItem('jj_full_proto')||'null');
+      const savedProject=saved?.projects?.find(entry=>String(entry.id)===String(project.id));
+      const savedItem=savedProject?.selections?.find(entry=>String(entry.id||'')===String(id));
+      if(savedItem)Object.assign(savedItem,item);
+      if(saved) localStorage.setItem('jj_full_proto',JSON.stringify(saved));
+    }catch{}
+    await updateHomeownerPortal(project);
+    renderHomeownerPage(project);
+  }
+
+  function saveHomeownerGuestProject(project){
+    try{
+      const saved=JSON.parse(localStorage.getItem('jj_full_proto')||'null')||{projects:[],selectedProjectId:project.id,currentUser:''};
+      if(!Array.isArray(saved.projects))saved.projects=[];
+      const index=saved.projects.findIndex(entry=>String(entry.id)===String(project.id));
+      if(index>=0)saved.projects[index]=project;else saved.projects.push(project);
+      saved.selectedProjectId=project.id;
+      localStorage.setItem('jj_full_proto',JSON.stringify(saved));
+      return true;
+    }catch(error){console.warn('Homeowner selection could not be saved locally:',error);return false}
+  }
+
+  function openHomeownerAddDialog(project,page){
+    document.getElementById('jjHOAddDialog')?.remove();
+    const groups=Array.isArray(project.selectionGroups)?project.selectionGroups:[];
+    const backdrop=document.createElement('div');
+    backdrop.id='jjHOAddDialog';backdrop.className='jj-ho-add-backdrop';
+    backdrop.innerHTML=`<div class="jj-ho-add-dialog" role="dialog" aria-modal="true" aria-label="Add homeowner selection"><header><div><small>HOMEOWNER SELECTION</small><h3>Add a selection</h3></div><button type="button" data-close aria-label="Close">×</button></header><form><div class="jj-ho-add-grid"><label>Product link (optional)<input name="url" type="url" placeholder="Paste a product link"></label><button type="button" class="jj-ho-lookup" data-lookup>Look up details</button><label>Product name<input name="title" required placeholder="What would you like to add?"></label><label>Room<input name="room" placeholder="Primary bathroom, kitchen…"></label><label>Category<input name="category" placeholder="Tile, plumbing, lighting…"></label><label>Vendor<input name="vendor" placeholder="Store or brand"></label><label>Model / SKU #<input name="model" placeholder="Optional"></label><label>UPC code #<input name="upc" placeholder="Optional"></label><label>Quantity<input name="quantity" type="number" min="1" step="1" value="1"></label><label>Selection group<select name="group"><option value="">Ungrouped selections</option>${groups.map(group=>`<option value="${escapeHtml(group.id)}">${escapeHtml(group.name)}</option>`).join('')}</select></label><label class="jj-ho-add-wide">Description / finish / color<textarea name="description" rows="3" placeholder="Notes or product details"></textarea></label><label class="jj-ho-add-wide">Product photo<input name="imageFile" type="file" accept="image/*"><span class="jj-ho-drop" data-drop>Drag and drop an image here, or choose a file</span><input name="image" type="hidden"></label></div><p class="jj-ho-add-note">Prices are not requested or shown for homeowner-added selections.</p><div class="jj-ho-add-message" data-message></div><footer><button type="button" class="secondary" data-close>Cancel</button><button type="submit" class="primary">Add selection</button></footer></form></div>`;
+    document.body.appendChild(backdrop);
+    const form=backdrop.querySelector('form');
+    const message=backdrop.querySelector('[data-message]');
+    const close=()=>backdrop.remove();
+    backdrop.querySelectorAll('[data-close]').forEach(button=>button.addEventListener('click',close));
+    backdrop.addEventListener('click',event=>{if(event.target===backdrop)close()});
+    const setMessage=text=>{if(message)message.textContent=text||''};
+    const imageInput=form.elements.imageFile;
+    const imageHidden=form.elements.image;
+    const readImage=file=>{if(!file||!file.type.startsWith('image/'))return;const reader=new FileReader();reader.onload=()=>{const image=new Image();image.onload=()=>{const max=1200,scale=Math.min(1,max/Math.max(image.width,image.height));const canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(image.width*scale));canvas.height=Math.max(1,Math.round(image.height*scale));canvas.getContext('2d').drawImage(image,0,0,canvas.width,canvas.height);imageHidden.value=canvas.toDataURL('image/jpeg',.82);backdrop.querySelector('[data-drop]').textContent='Image ready';};image.src=String(reader.result||'');};reader.readAsDataURL(file)};
+    imageInput.addEventListener('change',()=>readImage(imageInput.files?.[0]));
+    const drop=backdrop.querySelector('[data-drop]');
+    ['dragenter','dragover'].forEach(type=>drop.addEventListener(type,event=>{event.preventDefault();drop.classList.add('is-dragging')}));
+    ['dragleave','drop'].forEach(type=>drop.addEventListener(type,event=>{event.preventDefault();drop.classList.remove('is-dragging')}));
+    drop.addEventListener('drop',event=>readImage(event.dataTransfer?.files?.[0]));
+    backdrop.querySelector('[data-lookup]')?.addEventListener('click',async()=>{
+      const url=form.elements.url.value.trim();
+      if(!url){setMessage('Paste a product link first.');return;}
+      if(!window.JJProduct?.lookup){setMessage('Product lookup is unavailable right now.');return;}
+      setMessage('Looking up product details…');
+      const result=await window.JJProduct.lookup(url);
+      if(!result){setMessage('I could not read that page. You can still enter the details manually.');return;}
+      ['title','vendor','model','upc','description','category'].forEach(key=>{if(result[key]&&form.elements[key])form.elements[key].value=result[key]});
+      if(result.image&&!imageHidden.value){imageHidden.value=result.image;drop.textContent='Product image found';}
+      setMessage('Product details added. Review them, then select Add selection.');
+    });
+    form.addEventListener('submit',async event=>{
+      event.preventDefault();
+      const data=new FormData(form);
+      const title=String(data.get('title')||'').trim();
+      if(!title){setMessage('Enter a product name.');return}
+      const groupId=String(data.get('group')||'');
+      const group=groups.find(entry=>String(entry.id)===groupId);
+      const item={id:'sel-'+Date.now()+'-'+Math.random().toString(36).slice(2,8),title,vendor:String(data.get('vendor')||'').trim(),model:String(data.get('model')||'').trim(),upc:String(data.get('upc')||'').trim(),description:String(data.get('description')||'').trim(),url:String(data.get('url')||'').trim(),image:String(data.get('image')||'').trim(),quantity:Math.max(1,Number(data.get('quantity')||1)),status:'Pending',purchasedBy:'Homeowner',unitPrice:0,addTax:false,category:String(data.get('category')||'').trim(),room:String(data.get('room')||'').trim()||'Unassigned'};
+      if(group){item.optionGroupId=group.id;item.optionGroupTitle=group.name;}
+      if(!Array.isArray(project.selections))project.selections=[];
+      project.selections.push(item);
+      const saved=saveHomeownerGuestProject(project);
+      const synced=await updateHomeownerPortal(project);
+      setMessage(synced?'Selection added.':(saved?'Selection added on this device.':'Selection added for this session.'));
+      setTimeout(()=>{close();renderHomeownerPage(project)},250);
+    });
+    setTimeout(()=>form.elements.title?.focus(),30);
+  }
+
   function renderHomeownerPage(project){
     document.getElementById('jjHomeownerPage')?.remove();
     const items=Array.isArray(project.selections)?project.selections:[];
-    const rooms=[...new Set(items.map(item=>item.room||'Unassigned'))];
-    const page=document.createElement('div');page.id='jjHomeownerPage';page.className='jj-qr-backdrop';
-    page.innerHTML=`<div class="jj-qr-dialog" style="width:min(1120px,100%);text-align:left;max-height:92vh;overflow:auto"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><div><small style="color:#b59a62;font-weight:900;letter-spacing:.8px">HOMEOWNER SELECTIONS</small><h3 style="margin-top:4px">${escapeHtml(project.name||'Selections')}</h3></div><button type="button" data-close class="primary">Close</button></div><div class="jj-ho-page-toolbar"><button type="button" data-ho-toggle>View All</button><button type="button" data-ho-view="cards" class="active" aria-label="Card view" title="Card view">▦</button><button type="button" data-ho-view="list" aria-label="List view" title="List view">☰</button><span class="spacer"></span><button type="button" data-ho-add class="primary">+ Add Selection</button></div><div id="jjHomeownerItems" style="margin-top:8px"></div></div>`;
+    const groups=homeownerGroupBuckets(project,items);
+    const page=document.createElement('div');page.id='jjHomeownerPage';page.className='jj-qr-backdrop jj-ho-page-backdrop';
+    page.innerHTML=`<div class="jj-ho-page-shell" role="dialog" aria-modal="true" aria-label="Homeowner selections"><header class="jj-ho-page-head"><div class="jj-ho-page-brand">J&J Home Renovations · Homeowner Selections</div><div>${window.JJGuestMode?'':'<button type="button" data-close>Back to app</button>'}</div></header><main class="jj-ho-page-body"><div class="jj-ho-page-title"><h2>${escapeHtml(project.name||'Selections')} · Selections</h2><p>Add product details or mark a Pending product as Selected.</p></div><div class="jj-ho-page-sync">${project.portalUnavailable?'This homeowner link is not connected yet. Please ask J&J to refresh the QR code.':'Your selections are up to date.'}</div><div class="jj-ho-page-toolbar"><button type="button" data-refresh>Refresh selections</button><button type="button" data-ho-toggle>View All</button><button type="button" data-ho-add class="primary">+ Add Selection</button><span class="spacer"></span><button type="button" data-ho-view="cards" class="active" aria-label="Card view" title="Card view">▦</button><button type="button" data-ho-view="list" aria-label="List view" title="List view">☰</button></div><div id="jjHomeownerItems"></div></main></div>`;
     const root=page.querySelector('#jjHomeownerItems');
     if(!items.length){root.innerHTML='<p style="color:#657382">No selections have been added yet.</p>'}
-    else root.innerHTML=rooms.map(room=>{const group=items.filter(item=>(item.room||'Unassigned')===room);return `<details class="jj-ho-page-group" open style="margin-top:16px"><summary style="display:flex;justify-content:space-between;gap:8px;cursor:pointer;color:#14234a;font-weight:900;padding:5px 0;list-style:none"><strong>${escapeHtml(room)}</strong><span style="color:#657382;font-size:11px">${group.length} selection${group.length===1?'':'s'}</span></summary><div class="jj-ho-page-grid">${group.map(item=>{const img=String(item.image||'');return `<article style="margin-top:9px;border:1px solid #dce2e9;border-radius:12px;overflow:hidden;background:#fff"><img src="${/^https?:\/\//i.test(img)?escapeHtml(img):''}" alt="" style="width:100%;height:150px;object-fit:cover;background:#f6f8f9" onerror="this.style.display='none'"><div style="padding:11px"><small style="color:#657382;font-weight:850;text-transform:uppercase">${escapeHtml(item.category||'Selection')}</small><div style="margin-top:4px;font-weight:850;color:#14234a">${escapeHtml(item.title||'Untitled selection')}</div><div style="margin-top:4px;color:#657382;font-size:11px">${escapeHtml(item.vendor||'')} ${item.model?`· ${escapeHtml(item.model)}`:''}</div></div></article>`}).join('')}</div></details>`}).join('');
-    const groups=[...page.querySelectorAll('.jj-ho-page-group')];
+    else root.innerHTML=groups.map(group=>{const complete=group.items.filter(item=>['Selected','Ordered','Received'].includes(item.status)).length;return `<details class="jj-ho-page-group" open><summary><strong>${escapeHtml(group.name)}</strong><span>${complete} of ${group.items.length} selections complete</span></summary><div class="jj-ho-page-grid">${group.items.map(item=>{const img=homeownerImage(item.image);const model=String(item.model||item.sku||'').trim();const upc=String(item.upc||item.gtin||'').trim();const selected=['Selected','Ordered','Received'].includes(item.status);return `<article class="jj-ho-page-card ${selected?'is-selected':''}"><div>${img?`<img src="${escapeHtml(img)}" alt="${escapeHtml(item.title||'Selected product')}" loading="lazy" onerror="this.outerHTML='<div class=\\"empty\\">No product photo</div>'">`:'<div class="empty">No product photo</div>'}</div><div class="jj-ho-page-card-body"><div class="eyebrow">${escapeHtml(group.name)}${item.category?` · ${escapeHtml(item.category)}`:''}</div><h4>${escapeHtml(item.title||'Untitled selection')}</h4>${selected?'<div class="jj-ho-page-status-selected">H.O. has selected</div>':''}${item.description?`<p class="jj-ho-page-card-description">${escapeHtml(item.description)}</p>`:''}${item.vendor?`<p>Vendor - ${escapeHtml(item.vendor)}</p>`:''}${model?`<p>Model / SKU # ${escapeHtml(model)}</p>`:''}${upc?`<p>UPC Code # ${escapeHtml(upc)}</p>`:''}<p>Quantity: ${Math.max(1,Number(item.quantity||1))}</p><p><b>Purchased by:</b> ${escapeHtml(item.purchasedBy||'Not assigned')}</p><p>Status: ${escapeHtml(item.status||'Pending')}</p>${!selected?`<button type="button" class="jj-ho-select-button" data-ho-select="${escapeHtml(item.id||'')}">Mark Selected</button>`:''}</div></article>`}).join('')}</div></details>`}).join('');
+    const pageGroups=[...page.querySelectorAll('.jj-ho-page-group')];
     const toggle=page.querySelector('[data-ho-toggle]');
-    const updateToggle=()=>{const allOpen=groups.length>0&&groups.every(group=>group.open);if(toggle){toggle.textContent=allOpen?'Show Groups':'View All';toggle.title=allOpen?'Collapse all selection groups':'Expand all selection groups'}};
-    toggle?.addEventListener('click',()=>{const open=!(groups.length>0&&groups.every(group=>group.open));groups.forEach(group=>group.open=open);updateToggle()});
-    groups.forEach(group=>group.addEventListener('toggle',updateToggle));
+    const updateToggle=()=>{const allOpen=pageGroups.length>0&&pageGroups.every(group=>group.open);if(toggle){toggle.textContent=allOpen?'Show Groups':'View All';toggle.title=allOpen?'Collapse all selection groups':'Expand all selection groups'}};
+    toggle?.addEventListener('click',()=>{const open=!(pageGroups.length>0&&pageGroups.every(group=>group.open));pageGroups.forEach(group=>group.open=open);updateToggle()});
+    pageGroups.forEach(group=>group.addEventListener('toggle',updateToggle));
     page.querySelectorAll('[data-ho-view]').forEach(button=>button.addEventListener('click',()=>{page.querySelectorAll('[data-ho-view]').forEach(other=>other.classList.toggle('active',other===button));page.querySelectorAll('.jj-ho-page-grid').forEach(grid=>grid.classList.toggle('list',button.dataset.hoView==='list'))}));
-    page.querySelector('[data-ho-add]')?.addEventListener('click',()=>{page.remove();closeQR();if(typeof window.openSelectionEditor==='function')window.openSelectionEditor(null,'');else window.toast?.('Open the app to add a selection')});
+    page.querySelector('[data-ho-add]')?.addEventListener('click',()=>openHomeownerAddDialog(project,page));
+    page.querySelector('[data-refresh]')?.addEventListener('click',async()=>{
+      const route=homeownerRoute();
+      const fresh=route.token&&window.loadHomeownerProject?await window.loadHomeownerProject(project.id,route.token):null;
+      renderHomeownerPage(fresh||project);
+    });
+    page.querySelectorAll('[data-ho-select]').forEach(button=>button.addEventListener('click',()=>markHomeownerSelected(project,button.dataset.hoSelect)));
     updateToggle();
-    page.addEventListener('click',event=>{if(event.target===page||event.target.closest('[data-close]'))page.remove()});
+    page.addEventListener('click',event=>{if(event.target===page||event.target.closest('[data-close]'))closeHomeownerPage(page)});
     document.body.appendChild(page);
   }
 
@@ -1052,15 +1291,21 @@ window.JJProduct = (() => {
     collapseAll:()=>setAllAppGroups(false)
   };
 
-  function boot(){
+  async function boot(){
     injectStyles();
-    const match=(location.hash||'').match(/^#homeowner=(.+)$/);
-    if(match){
-      const id=decodeURIComponent(match[1]);
+    const route=homeownerRoute();
+    if(route.id){
+      const id=route.id;
+      window.JJHomeownerToken=route.token;
       let project=null;
       try{const saved=JSON.parse(localStorage.getItem('jj_full_proto')||'null');project=saved?.projects?.find(item=>String(item.id)===String(id))||null}catch{}
-      project=project||appProject();
-      if(project){window.JJHomeownerProject=project;setTimeout(()=>renderHomeownerPage(project),0);return;}
+      if(route.token && typeof window.loadHomeownerProject==='function')project=await window.loadHomeownerProject(id,route.token)||project;
+      if(!project){const current=appProject();if(current&&String(current.id)===String(id))project=current;}
+      if(project){window.JJHomeownerProject=project;window.JJGuestMode=true;setTimeout(()=>renderHomeownerPage(project),0);return;}
+      document.getElementById('cloudLoginOverlay')?.classList.add('hidden');
+      document.getElementById('loginOverlay')?.classList.add('hidden');
+      setTimeout(()=>renderHomeownerPage({id,name:'Homeowner selections',selections:[],selectionGroups:[],portalUnavailable:true}),0);
+      return;
     }
     if(installHO())return;
     installApp();
