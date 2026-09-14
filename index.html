@@ -4340,6 +4340,14 @@ body.topbar-collapsed .operations-app .top-nav{display:flex!important}
 body.topbar-collapsed .operations-app > .sidebar{top:0;min-height:100vh}
 
 /* Selections */
+.selection-grid.selection-list{grid-template-columns:1fr}
+.selection-list .selection-card{display:grid;grid-template-columns:150px minmax(0,1fr);align-items:start}
+.selection-list .selection-card>label{grid-column:1/-1}
+.selection-list .selection-photo{height:140px;margin:0 12px 12px}
+.selection-list .selection-card-body{grid-column:2;padding-top:4px}
+.selection-list .selection-card:not(:has(.selection-photo)) .selection-card-body{grid-column:1/-1}
+@media(max-width:600px){.selection-list .selection-card{grid-template-columns:90px minmax(0,1fr)}.selection-list .selection-photo{height:90px;margin:0 4px}.selection-card-bottom{flex-wrap:wrap}}
+
 .selections-workspace{color:var(--text)}
 .selection-heading{display:flex;justify-content:space-between;gap:18px;align-items:flex-end;margin-bottom:18px}
 .selection-heading h2{margin:0;color:var(--navy);font-size:28px}
@@ -4367,9 +4375,9 @@ body.topbar-collapsed .operations-app > .sidebar{top:0;min-height:100vh}
 .selection-filter.active{border-color:var(--shell-navy);background:var(--shell-navy);color:#fff}
 .selection-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
 .selection-card{overflow:hidden;border:1px solid var(--line);border-radius:13px;background:#fff;box-shadow:0 2px 8px rgba(19,35,52,.04)}
-.selection-photo{height:165px;display:grid;place-items:center;background:#E8EDF0 center/cover no-repeat;color:#7B8793;font-size:12px}
-.selection-photo img{width:100%;height:100%;display:block;object-fit:cover}
-.selection-card-body{padding:14px}
+.selection-photo{position:relative;overflow:hidden;min-height:0;height:220px;display:grid;place-items:center;background:#E8EDF0 center/cover no-repeat;color:#7B8793;font-size:12px}
+.selection-photo img{position:absolute;inset:0;width:100%;height:100%;max-height:100%;min-height:0;display:block;object-fit:contain;background:#fff}
+.selection-card-body{padding:14px;min-width:0;position:relative;background:#fff;overflow-wrap:anywhere}
 .selection-card-meta{color:var(--muted);font-size:10px;font-weight:850;letter-spacing:.6px;text-transform:uppercase}
 .selection-card h3{margin:6px 0 5px;color:var(--text);font-size:15px;line-height:1.35}
 .selection-vendor{color:var(--muted);font-size:11px}
@@ -4377,7 +4385,7 @@ body.topbar-collapsed .operations-app > .sidebar{top:0;min-height:100vh}
 .selection-price{color:var(--navy);font-size:17px;font-weight:900}
 .selection-price small{display:block;margin-top:2px;color:var(--muted);font-size:10px;font-weight:500}
 .selection-status{padding:5px 7px;border-radius:999px;background:#F4EFE5;color:#775F2D;font-size:10px;font-weight:900}
-.selection-card-actions{display:flex;gap:7px;margin-top:12px}
+.selection-card-actions{display:flex;flex-wrap:wrap;gap:12px;margin-top:12px}.selection-card-actions button,.selection-card-actions a{min-height:36px;display:inline-flex;align-items:center}
 .selection-card-actions button,.selection-card-actions a{border:0;background:transparent;color:#173E67;padding:0;font-size:10px;font-weight:850;text-decoration:none}
 .selection-empty{grid-column:1/-1;padding:36px 20px;border:1.5px dashed #B9C4CD;border-radius:13px;background:#F8FAFB;color:var(--muted);text-align:center}
 .selection-empty button{width:46px;height:46px;border:0;border-radius:50%;background:#E7EDF2;color:var(--navy);font-size:25px}
@@ -4555,6 +4563,7 @@ details[open] > .confirmed-summary .confirmed-expand::after{content:'▾ Collaps
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"
   onerror="this.onerror=null;this.src='https://unpkg.com/@supabase/supabase-js@2';"></script>
+<script src="selections-metadata.js"></script>
 </head>
 <body>
 
@@ -10015,6 +10024,8 @@ async function autoSyncHomeownerSelections(){
  }catch(e){}finally{homeownerSyncBusy=false;}
 }
 setInterval(autoSyncHomeownerSelections,8000);
+let selectionView=localStorage.getItem('jj-selection-view')==='list'?'list':'cards';
+function setSelectionView(value){selectionView=value==='list'?'list':'cards';localStorage.setItem('jj-selection-view',selectionView);renderSelections();}
 function renderSelections(){
   const root=document.getElementById('selections');
   if(!root) return;
@@ -10074,7 +10085,8 @@ function renderSelections(){
 
     <div class="toolbar"><button class="btn btn-light" onclick="openHomeownerQR()">Homeowner QR Code</button><button class="btn btn-light" onclick="syncHomeownerSelections()">Refresh Homeowner Updates</button></div>
     ${selectionBulkToolbar(project)}
-    <div class="selection-grid">
+    <div class="toolbar" role="group" aria-label="Selections view" style="margin:14px 0"><button class="btn ${selectionView==='cards'?'btn-gold':'btn-light'}" aria-pressed="${selectionView==='cards'}" onclick="setSelectionView('cards')">Card view</button><button class="btn ${selectionView==='list'?'btn-gold':'btn-light'}" aria-pressed="${selectionView==='list'}" onclick="setSelectionView('list')">List view</button></div>
+    <div class="selection-grid ${selectionView==='list'?'selection-list':''}">
       ${filtered.length ? filtered.map(item=>selectionCard(item,items.indexOf(item))).join('') : `
         <div class="selection-empty">
           <button onclick="openSelectionEditor()">+</button>
@@ -10088,24 +10100,22 @@ function renderSelections(){
 
 function selectionCard(item,index){
   const productUrl=safeSelectionUrl(item.url);
-  const imageUrl=safeSelectionImageUrl(item.image);
+  const imageUrl=JJProduct.image(item.image)||(/^data:image\//.test(item.image||'')?safeSelectionImageUrl(item.image):'');
   const taxNote=item.addTax?' · tax included':'';
   const lead=item.inStock ? 'In Stock' : item.leadTimeValue
     ? `${item.leadTimeValue} ${String(item.leadTimeUnit||'days').toLowerCase()}`
     : '';
-  const photo=imageUrl
-    ? `<img src="${esc(imageUrl)}" alt="${esc(item.title)}" onerror="this.remove();this.parentElement.insertAdjacentText('beforeend','No picture')">`
-    : 'No picture';
+  const photo=imageUrl?`<img src="${esc(imageUrl)}" alt="${esc(item.title)}" onerror="this.parentElement.remove()">`:'';
   return `<article class="selection-card" style="${item.homeownerSelected?'border:3px solid #2e7a55;box-shadow:0 0 0 2px #e5f4eb':''}">
     <label style="display:flex;gap:8px;align-items:center;padding:10px"><input type="checkbox" aria-label="Select ${esc(item.title)}" ${selectionBulkSet().has(item)?'checked':''} onchange="toggleSelectionBulk(${index},this.checked)">Select product</label>
-    <div class="selection-photo">${photo}</div>
+    ${photo?`<div class="selection-photo">${photo}</div>`:''}
     <div class="selection-card-body">
       <div class="selection-card-meta">${esc(item.room)} · ${esc(item.category||'Selection')}</div>
       <div style="margin-top:8px;font-size:13px"><strong>Purchased by:</strong> ${esc(item.purchasedBy||'Not assigned')}</div>
       <h3>${esc(item.title||'Untitled product')}</h3>${item.homeownerSelected?'<p style="color:#246441;font-weight:800">H.O. has selected</p>':''}
       <div class="selection-vendor">${esc(item.vendor||'Vendor not entered')} · ${esc(item.model||'Model/SKU not entered')}</div>
       <div class="selection-card-bottom">
-        <div class="selection-price">${selectionMoney(selectionTotal(item))}<small>${Math.max(1,Number(item.quantity||1))} item${Number(item.quantity||1)===1?'':'s'}${taxNote}</small></div>
+        <div class="selection-price">${item.unitPrice===null||item.unitPrice===undefined||item.unitPrice===''?'Price not set':selectionMoney(selectionTotal(item))}<small>${Math.max(1,Number(item.quantity||1))} item${Number(item.quantity||1)===1?'':'s'}${taxNote}</small></div>
         <span class="selection-status">${esc(item.status||'Pending')}${lead?` · ${esc(lead)}`:''}</span>
       </div>
       <div class="selection-card-actions">
@@ -10263,38 +10273,7 @@ function selectionCategoryFromText(value){
   return rules.find(([pattern])=>pattern.test(text))?.[1]||'';
 }
 
-function productGuessFromUrl(url){
-  if(!url) return {vendor:'',title:'',category:'',model:''};
-  try{
-    const parsed=new URL(url);
-    const host=parsed.hostname.replace(/^www\./i,'').toLowerCase();
-    const vendorMap={
-      'homedepot.com':'The Home Depot',
-      'lowes.com':"Lowe's",
-      'flooranddecor.com':'Floor & Decor',
-      'wayfair.com':'Wayfair',
-      'build.com':'Build.com',
-      'ferguson.com':'Ferguson',
-      'amazon.com':'Amazon'
-    };
-    const vendor=vendorMap[host]||selectionTitleCase(host.split('.')[0].replace(/[-_]/g,' '));
-    const pathParts=parsed.pathname.split('/').filter(Boolean);
-    let raw=decodeURIComponent(pathParts[pathParts.length-1]||'');
-    if(pathParts[0]?.toLowerCase()==='p' && pathParts[1]) raw=decodeURIComponent(pathParts.slice(1).join('-'));
-    if(/^[A-Z0-9]{6,}$/i.test(raw) && pathParts.length>1){
-      raw=decodeURIComponent(pathParts[pathParts.length-2]||'')+'-'+raw;
-    }
-    raw=raw.replace(/\.(html?|aspx?)$/i,'');
-    const queryModel=parsed.searchParams.get('sku')||parsed.searchParams.get('model')||parsed.searchParams.get('productId')||'';
-    const trailingId=raw.match(/(?:^|[-_])([A-Z0-9]{6,})$/i)?.[1]||'';
-    const model=queryModel||trailingId;
-    const withoutId=trailingId ? raw.slice(0,raw.length-trailingId.length).replace(/[-_]+$/,'') : raw;
-    const title=selectionCleanProductTitle(withoutId.replace(/[-_]+/g,' '));
-    return {vendor,title:title.length>3?title:'',category:selectionCategoryFromText(title+' '+raw),model};
-  }catch(e){
-    return {vendor:'',title:'',category:'',model:''};
-  }
-}
+function productGuessFromUrl(url){return JJProduct.guess(url);}
 
 function selectionLookupUrl(url){
   const params=new URLSearchParams({
@@ -10323,29 +10302,7 @@ function selectionMetadataTitle(value){
   return text.replace(/\s*[-|]\s*(The Home Depot|Lowe's|Wayfair).*$/i,'').trim();
 }
 
-async function fetchSelectionMetadata(url){
-  const controller=new AbortController();
-  const timeout=setTimeout(()=>controller.abort(),10000);
-  try{
-    const response=await fetch(selectionLookupUrl(url),{signal:controller.signal,headers:{Accept:'application/json'}});
-    if(!response.ok) return null;
-    const payload=await response.json();
-    const data=payload?.data||{};
-    const image=typeof data.image==='string'?data.image:data.image?.url||'';
-    return {
-      title:selectionMetadataTitle(data.title),
-      description:String(data.description||'').trim(),
-      image:safeSelectionUrl(image),
-      unitPrice:selectionNumber(data.price),
-      model:String(data.sku||'').trim(),
-      blocked:Number(payload?.statusCode||0)>=400
-    };
-  }catch(e){
-    return null;
-  }finally{
-    clearTimeout(timeout);
-  }
-}
+async function fetchSelectionMetadata(url){return JJProduct.lookup(url);}
 
 function setSelectionLookupStatus(message,tone=''){
   const node=document.getElementById('selectionLookupStatus');
@@ -10359,39 +10316,30 @@ function fillSelectionField(id,value,overwrite=false){
   if(field && value && (overwrite || !String(field.value||'').trim())) field.value=value;
 }
 
+let selectionLookupGeneration=0,selectionEditorLastUrl='';
 async function enrichSelectionEditorFromUrl(url,overwrite=false){
-  const normalized=String(url||'').trim();
-  if(!normalized) return;
-  if(!overwrite && (selectionLookupInFlight===normalized || selectionLookupCompleted===normalized)) return;
-  selectionLookupInFlight=normalized;
-  const guess=productGuessFromUrl(normalized);
-  fillSelectionField('selectionEditTitle',guess.title,overwrite);
-  fillSelectionField('selectionEditVendor',guess.vendor,overwrite);
-  fillSelectionField('selectionEditCategory',guess.category,overwrite);
-  fillSelectionField('selectionEditModel',guess.model,overwrite);
-  setSelectionLookupStatus('Reading the product link…','loading');
-  const metadata=await fetchSelectionMetadata(normalized);
-  if(metadata){
-    fillSelectionField('selectionEditTitle',metadata.title,overwrite);
-    fillSelectionField('selectionEditDescription',metadata.description,overwrite);
-    selectionImageSetValue(metadata.image,'Image from product link',overwrite);
-    fillSelectionField('selectionEditModel',metadata.model,overwrite);
-    if(metadata.unitPrice) fillSelectionField('selectionEditPrice',metadata.unitPrice.toFixed(2),overwrite);
-  }
-  const hasPrice=Number(document.getElementById('selectionEditPrice')?.value||0)>0;
-  const hasDetails=Boolean(document.getElementById('selectionEditTitle')?.value.trim() && document.getElementById('selectionEditCategory')?.value.trim());
-  if(hasPrice && hasDetails) setSelectionLookupStatus('Product details and price found — review before saving.','success');
-  else if(hasDetails) setSelectionLookupStatus('Product name, vendor, category, and SKU were filled from the link. This retailer did not expose a live price, so enter it below.','warn');
-  else setSelectionLookupStatus('We could not read this link. You can still enter the product details manually.','warn');
-  updateSelectionTotals();
-  selectionLookupCompleted=normalized;
-  if(selectionLookupInFlight===normalized) selectionLookupInFlight='';
+ const normalized=safeSelectionUrl(url);if(!normalized)return;
+ if(selectionLookupInFlight===normalized)return;
+ const generation=++selectionLookupGeneration;selectionLookupInFlight=normalized;
+ const changed=normalized!==selectionEditorLastUrl;selectionEditorLastUrl=normalized;
+ const ids={title:'selectionEditTitle',vendor:'selectionEditVendor',category:'selectionEditCategory',model:'selectionEditModel',description:'selectionEditDescription',unitPrice:'selectionEditPrice',image:'selectionEditImage'};
+ const before=Object.fromEntries(Object.entries(ids).map(([k,id])=>[k,document.getElementById(id)?.value||'']));
+ setSelectionLookupStatus('Reading product name, photo and pricing…','loading');
+ const metadata=await fetchSelectionMetadata(normalized);
+ if(generation===selectionLookupGeneration)selectionLookupInFlight='';
+ if(generation!==selectionLookupGeneration||document.getElementById('selectionEditUrl')?.value.trim()!==normalized||!document.getElementById('selectionModalBackdrop')?.classList.contains('open'))return;
+ const values={...productGuessFromUrl(normalized)};for(const [key,value] of Object.entries(metadata||{})){if(value!==''&&value!==null&&value!==undefined)values[key]=value;}
+ for(const [key,id] of Object.entries(ids)){const field=document.getElementById(id);if(!field||field.value!==before[key])continue;
+ const value=values[key];
+ if(key==='unitPrice'){if(value!==null&&value!==undefined)field.value=Number(value).toFixed(2);continue;}
+ if(key==='image'){if(value&&(changed||overwrite||!field.value)){field.value=value;const preview=document.getElementById('selectionImagePreview');if(preview)preview.innerHTML=selectionImageMarkup(value);}continue;}
+ if(value&&(changed||overwrite||!field.value))field.value=value;
+ }
+ const foundPrice=metadata?.unitPrice!==null&&metadata?.unitPrice!==undefined;
+ setSelectionLookupStatus(foundPrice?'Retailer product details and price found. Review the unit/pack and price before saving.':metadata?'Product details found. A reliable price was not available; existing pricing was kept.':'Retailer could not be read. Available details were inferred from the link; review them and enter pricing manually.',foundPrice?'success':'warn');
+ updateSelectionTotals();selectionLookupCompleted=normalized;selectionLookupInFlight='';
 }
-
-function selectionLookupFromEditorUrl(){
-  const url=document.getElementById('selectionEditUrl')?.value.trim()||'';
-  if(url) enrichSelectionEditorFromUrl(url,false);
-}
+function selectionLookupFromEditorUrl(){const url=document.getElementById('selectionEditUrl')?.value.trim();if(url)enrichSelectionEditorFromUrl(url,true);}
 
 function openSelectionEditorFromLink(){
   const url=document.getElementById('selectionProductUrl')?.value.trim()||'';
@@ -10407,6 +10355,7 @@ function openSelectionEditor(index=null,prefillUrl=''){
   const project=selectedProject();
   ensureSelectionsData();
   selectionEditIndex=Number.isInteger(index)?index:null;
+  selectionLookupGeneration++;selectionEditorLastUrl='';
   selectionLookupInFlight='';
   selectionLookupCompleted='';
   const existing=selectionEditIndex===null?null:project.selections[selectionEditIndex];
@@ -10516,6 +10465,7 @@ function updateSelectionTotals(){
 }
 
 function saveSelectionEditor(){
+  if(selectionLookupInFlight){toast('Please wait for product details to finish loading');return;}
   const title=document.getElementById('selectionEditTitle')?.value.trim();
   const category=document.getElementById('selectionEditCategory')?.value.trim();
   if(!title){toast('Enter the product name');return;}
@@ -10532,7 +10482,7 @@ function saveSelectionEditor(){
     quality:document.getElementById('selectionEditQuality')?.value||'Standard',
     model:document.getElementById('selectionEditModel')?.value.trim()||'',
     image:safeSelectionImageUrl(document.getElementById('selectionEditImage')?.value.trim()||''),
-    unitPrice:Number(document.getElementById('selectionEditPrice')?.value||0),
+    unitPrice:document.getElementById('selectionEditPrice')?.value.trim()===''?null:Number(document.getElementById('selectionEditPrice')?.value||0),
     quantity:Math.max(1,Number(document.getElementById('selectionEditQuantity')?.value||1)),
     addTax:!!document.getElementById('selectionEditTax')?.checked,
     purchasedBy:document.getElementById('selectionEditPurchasedBy')?.value||'J&J',

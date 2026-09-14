@@ -1,3 +1,18 @@
+# Selections photo, view and autofill update
+
+- Fixed tall product photos overflowing over text. Photos are contained in a dedicated area.
+- Removed empty photo blocks and recognized placeholder image URLs. Broken card images disappear cleanly.
+- Added remembered Card view / List view on homeowner and contractor pages.
+- Improved product-name extraction and replacement when links change.
+- Added structured product/offer price extraction with metadata fallback for contractors. Ambiguous ranges, non-USD amounts and savings text are not used as prices.
+- Homeowner links now autofill product details and photos; pricing remains read-only and unchanged.
+- Late lookup responses cannot replace a newer link or overwrite fields typed during the lookup.
+- Existing selections, QR persistence, sync, P.O.s, Job Costing, roles and auth preserved.
+
+Validation: tall-image bounds, responsive list layout, changed-link autofill, contractor price fill, homeowner price protection and existing app regression checks passed. Retailer lookup availability varies; blocked or unavailable prices need staff entry.
+
+---
+
 # J&J Operations — Homeowner selections update
 
 - Photo cards and a prominent + Add Selection button replace the long bottom form.
