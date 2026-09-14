@@ -9908,6 +9908,46 @@ function openSelections(){
   if(isTabletLayout()) closeJobsDrawer();
 }
 
+const selectionBulkChoices=new WeakMap();
+function selectionBulkSet(p=selectedProject()){
+  if(!selectionBulkChoices.has(p))selectionBulkChoices.set(p,new Set());
+  const set=selectionBulkChoices.get(p);
+  for(const item of set)if(!p.selections.includes(item))set.delete(item);
+  return set;
+}
+function toggleSelectionBulk(index,checked){
+  const p=selectedProject(),item=p.selections[index],set=selectionBulkSet(p);
+  if(item){if(checked)set.add(item);else set.delete(item);}renderSelections();
+}
+function selectAllSelections(checked){
+  const p=selectedProject(),set=selectionBulkSet(p);set.clear();
+  if(checked)p.selections.filter(item=>selectionFilter==='All'||item.category===selectionFilter).forEach(item=>set.add(item));
+  renderSelections();
+}
+function selectionBulkToolbar(p){
+  const count=selectionBulkSet(p).size,disabled=count?'':'disabled';
+  return `<section class="card info-card" style="margin-bottom:16px"><div class="toolbar" style="align-items:center"><button class="btn btn-light" onclick="selectAllSelections(true)">${selectionFilter==='All'?'Select All':'Select All Shown'}</button><button class="btn btn-light" onclick="selectAllSelections(false)">Clear</button><strong>${count} checked</strong></div><div class="toolbar">
+    <select class="input" style="width:auto" id="selectionBulkStatus" aria-label="Bulk selection status">${['Pending','Selected','Approved','Ordered','Received'].map(s=>`<option>${s}</option>`).join('')}</select><button class="btn btn-gold" ${disabled} onclick="applySelectionBulk('status')">Apply Status</button>
+    <input class="input" style="width:90px" id="selectionBulkLead" aria-label="Bulk lead time" type="number" min="1" step="1" value="1"><select class="input" style="width:auto" id="selectionBulkUnit" aria-label="Lead time unit"><option>Day(s)</option><option>Week(s)</option></select><button class="btn btn-light" ${disabled} onclick="applySelectionBulk('lead')">Set Lead Time</button><button class="btn btn-light" ${disabled} onclick="applySelectionBulk('stock')">Mark In Stock</button>
+    <button class="btn btn-danger" ${disabled} onclick="applySelectionBulk('delete')">Delete Checked</button></div><p class="help-text">Actions affect only checked products in this job. Changing the category filter clears checks. Approved is a product status, separate from P.O. approval.</p></section>`;
+}
+function applySelectionBulk(action){
+  const p=selectedProject(),set=selectionBulkSet(p),items=[...set];if(!items.length)return;
+  if(action==='delete'){
+    if(!confirm(`Delete ${items.length} checked product${items.length===1?'':'s'} from ${p.name}?`))return;
+    p.selections=p.selections.filter(item=>!set.has(item));set.clear();
+  }else if(action==='status'){
+    const status=document.getElementById('selectionBulkStatus').value;
+    if(!['Pending','Selected','Approved','Ordered','Received'].includes(status))return;
+    items.forEach(item=>{item.status=status;});
+  }else if(action==='lead'){
+    const value=Number(document.getElementById('selectionBulkLead').value),unit=document.getElementById('selectionBulkUnit').value;
+    if(!Number.isInteger(value)||value<1||!['Day(s)','Week(s)'].includes(unit)){toast('Enter a whole number of days or weeks, at least 1.');return;}
+    items.forEach(item=>{item.leadTimeValue=value;item.leadTimeUnit=unit;item.inStock=false;});
+  }else if(action==='stock'){items.forEach(item=>{item.inStock=true;});}else return;
+  saveState(false);renderSelections();toast(`${items.length} product${items.length===1?'':'s'} ${action==='delete'?'deleted':'updated'}`);
+}
+
 function renderSelections(){
   const root=document.getElementById('selections');
   if(!root) return;
@@ -9920,7 +9960,7 @@ function renderSelections(){
   project.selectionActiveRoom=selectedRoom;
   const filtered=items.filter(item=>selectionFilter==='All' || item.category===selectionFilter);
   const categories=[...new Set(items.map(item=>item.category).filter(Boolean))];
-  const selectedCount=items.filter(item=>item.status==='Selected' || item.status==='Ordered' || item.status==='Received').length;
+  const selectedCount=items.filter(item=>item.status==='Selected' || item.status==='Approved' || item.status==='Ordered' || item.status==='Received').length;
   const pendingCount=items.filter(item=>item.status==='Pending').length;
   const total=items.reduce((sum,item)=>sum+selectionTotal(item),0);
 
@@ -9965,6 +10005,7 @@ function renderSelections(){
       <button class="selection-filter" style="margin-left:auto" onclick="openSelectionEditor()">＋ Add manually</button>
     </div>
 
+    ${selectionBulkToolbar(project)}
     <div class="selection-grid">
       ${filtered.length ? filtered.map(item=>selectionCard(item,items.indexOf(item))).join('') : `
         <div class="selection-empty">
@@ -9988,6 +10029,7 @@ function selectionCard(item,index){
     ? `<img src="${esc(imageUrl)}" alt="${esc(item.title)}" onerror="this.remove();this.parentElement.insertAdjacentText('beforeend','No picture')">`
     : 'No picture';
   return `<article class="selection-card">
+    <label style="display:flex;gap:8px;align-items:center;padding:10px"><input type="checkbox" aria-label="Select ${esc(item.title)}" ${selectionBulkSet().has(item)?'checked':''} onchange="toggleSelectionBulk(${index},this.checked)">Select product</label>
     <div class="selection-photo">${photo}</div>
     <div class="selection-card-body">
       <div class="selection-card-meta">${esc(item.room)} · ${esc(item.category||'Selection')}</div>
@@ -10006,6 +10048,7 @@ function selectionCard(item,index){
 }
 
 function setSelectionFilter(value){
+  selectionBulkSet().clear();
   selectionFilter=value;
   renderSelections();
 }
@@ -10321,7 +10364,7 @@ function openSelectionEditor(index=null,prefillUrl=''){
       <div class="selection-field"><label>Quantity</label><input id="selectionEditQuantity" type="number" min="1" step="1" value="${Math.max(1,Number(item.quantity||1))}" oninput="updateSelectionTotals()"></div>
       <div class="selection-tax-row"><label><input id="selectionEditTax" type="checkbox" ${item.addTax?'checked':''} onchange="updateSelectionTotals()"> Add taxes (8.25%)</label><span id="selectionEditTaxText">Tax: $0.00</span></div>
       <div class="selection-field"><label>Purchased by</label><select id="selectionEditPurchasedBy">${['J&J','Homeowner','Not assigned'].map(v=>`<option ${v===(item.purchasedBy||'J&J')?'selected':''}>${v}</option>`).join('')}</select></div>
-      <div class="selection-field"><label>Status</label><select id="selectionEditStatus">${['Pending','Selected','Ordered','Received'].map(v=>`<option ${v===(item.status||'Pending')?'selected':''}>${v}</option>`).join('')}</select>
+      <div class="selection-field"><label>Status</label><select id="selectionEditStatus">${['Pending','Selected','Approved','Ordered','Received'].map(v=>`<option ${v===(item.status||'Pending')?'selected':''}>${v}</option>`).join('')}</select>
         <div id="selectionLeadTime" class="selection-lead-time">
           <div class="selection-lead-label">Lead time</div>
           <input id="selectionEditLeadValue" type="number" min="1" step="1" value="${Math.max(1,Number(item.leadTimeValue||1))}" aria-label="Lead time amount">
