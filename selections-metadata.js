@@ -326,6 +326,13 @@ window.JJProduct = (() => {
       .jj-selection-top-actions{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 14px}
       .jj-selection-group-badge{display:inline-flex;align-items:center;gap:5px;margin:7px 0 0;padding:5px 8px;border-radius:999px;background:#EEF3F7;color:#40566A;font-size:10px;font-weight:850}
       .jj-selection-group-btn{border:1px solid var(--line,#dfe4ea);background:#fff;color:var(--navy,#14234A);border-radius:8px;padding:8px 10px;font-size:11px;font-weight:800}
+      .jj-group-summary-actions{display:flex;align-items:center;justify-content:flex-end;gap:10px;margin-left:auto}
+      .jj-group-summary-count{color:#657083;font-size:11px;font-weight:850;white-space:nowrap}
+      .jj-group-add-option{border:1px solid #D9DFE7;background:#fff;color:#14234A;border-radius:8px;padding:7px 10px;font-size:10px;font-weight:900;white-space:nowrap}
+      .jj-group-add-option:hover{background:#F7F2E8;border-color:#CDBA8E}
+      .selection-option-group-title{gap:12px}
+      .selection-option-group-title>.jj-group-title-text{min-width:0;overflow:hidden;text-overflow:ellipsis}
+      #selectionEditGroup{display:block!important}
       .jj-group-dialog{width:min(620px,calc(100% - 24px));max-height:88dvh;padding:0;border:0;border-radius:16px;color:#202633;box-shadow:0 24px 70px rgba(12,28,45,.32)}
       .jj-group-dialog::backdrop{background:rgba(7,18,31,.55)}
       .jj-group-head,.jj-group-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 18px;background:#fff;position:sticky;z-index:2}
@@ -341,9 +348,109 @@ window.JJProduct = (() => {
       .jj-group-empty{display:grid;gap:5px;padding:18px;border:1px dashed #cdd5de;border-radius:12px;background:#fff;text-align:center}.jj-group-empty span{color:#6f7a89;font-size:12px}
       .jj-group-row{padding:14px;border:1px solid #dce2e9;border-radius:12px;background:#fff;margin-bottom:10px}.jj-group-row-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}.jj-group-row-head strong{display:block;color:#14234A}.jj-group-row-head small{display:block;margin-top:4px;color:#6f7a89}.jj-group-row-head>div:last-child{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
       .jj-group-row details{margin-top:10px}.jj-group-row summary{cursor:pointer;color:#536171;font-size:11px;font-weight:800}.jj-group-member-list{display:grid;gap:5px;margin-top:8px;padding:9px;border-radius:8px;background:#f6f8fa;color:#405066;font-size:11px}
-      @media(max-width:600px){.jj-group-row-head{display:grid}.jj-group-row-head>div:last-child{justify-content:flex-start}.jj-selection-top-actions .btn{flex:1}.jj-group-foot .btn{flex:1}}
+      @media(max-width:600px){
+        .jj-group-row-head{display:grid}
+        .jj-group-row-head>div:last-child{justify-content:flex-start}
+        .jj-selection-top-actions .btn{flex:1}
+        .jj-group-foot .btn{flex:1}
+        .selection-option-group-title{align-items:flex-start;flex-wrap:wrap}
+        .jj-group-summary-actions{width:100%;justify-content:space-between;margin-left:0}
+        .jj-group-add-option{padding:8px 10px}
+      }
     `;
     document.head.appendChild(style);
+  }
+
+
+  function renderExplicitSelectionGroups(filtered,allItems){
+    const p=project();
+    ensureGroups(p);
+
+    const buckets=new Map();
+    filtered.forEach(item=>{
+      const grouped=!!item.optionGroupId;
+      const key=grouped ? `group:${item.optionGroupId}` : `item:${item.id}`;
+      if(!buckets.has(key))buckets.set(key,[]);
+      buckets.get(key).push(item);
+    });
+
+    return [...buckets.values()].map(group=>{
+      const first=group[0];
+      const firstIndex=allItems.indexOf(first);
+
+      // Standalone products stay as normal cards.
+      if(!first.optionGroupId){
+        return window.selectionCard(first,firstIndex);
+      }
+
+      const registry=(p.selectionGroups||[]).find(g=>String(g.id)===String(first.optionGroupId));
+      const title=registry?.name||first.optionGroupTitle||first.title||'Selection Group';
+      const count=group.length;
+
+      // A named group always gets a group header, even when it currently
+      // contains only one selection. This makes the header the permanent
+      // place to add another option.
+      return `<details class="selection-option-group" data-selection-group-id="${escLocal(first.optionGroupId)}" open>
+        <summary class="selection-option-group-title">
+          <span class="jj-group-title-text">${escLocal(title)}</span>
+          <span class="jj-group-summary-actions">
+            <span class="jj-group-summary-count">${count} option${count===1?'':'s'} · tap to compare</span>
+            <button type="button" class="jj-group-add-option"
+              onclick="event.preventDefault();event.stopPropagation();addSelectionOption(${firstIndex})">
+              + Add Another Option
+            </button>
+          </span>
+        </summary>
+        <div class="selection-option-grid">
+          ${group.map(item=>window.selectionCard(item,allItems.indexOf(item))).join('')}
+        </div>
+      </details>`;
+    }).join('');
+  }
+
+  function setAllSelectionGroups(open){
+    document.querySelectorAll('#selections details.selection-option-group').forEach(details=>{
+      details.open=!!open;
+    });
+  }
+
+  function configureEditorGroupDropdown(){
+    const select=document.getElementById('selectionEditGroup');
+    if(!select)return;
+
+    const p=project();
+    const groups=ensureGroups(p);
+    const current=String(select.value||'');
+    const field=select.closest('.selection-field')||select.parentElement;
+    const label=field?.querySelector('label');
+
+    if(field)field.style.display='';
+    if(label)label.textContent='Selection Group';
+
+    select.innerHTML=
+      `<option value="">No group / Standalone</option>`+
+      groups.map(group=>{
+        const count=(p.selections||[]).filter(item=>String(item.optionGroupId||'')===String(group.id)).length;
+        return `<option value="${escLocal(group.id)}">${escLocal(group.name)} · ${count} selection${count===1?'':'s'}</option>`;
+      }).join('');
+
+    if(groups.some(group=>String(group.id)===current))select.value=current;
+    else select.value='';
+
+    // The original app saves optionGroupTitle from this input. Keep it as a
+    // hidden backing field and automatically sync it to the selected group.
+    const nameInput=document.getElementById('selectionEditGroupName');
+    if(nameInput){
+      nameInput.type='hidden';
+      nameInput.style.display='none';
+    }
+
+    const syncGroupName=()=>{
+      const group=groups.find(g=>String(g.id)===String(select.value));
+      if(nameInput)nameInput.value=group?.name||'';
+    };
+    syncGroupName();
+    select.addEventListener('change',syncGroupName);
   }
 
   function enhanceRenderedSelections(){
@@ -359,24 +466,25 @@ window.JJProduct = (() => {
       actions.innerHTML=`
         <button class="btn btn-gold" type="button" onclick="openSelectionEditor()">+ Add Selection</button>
         <button class="btn btn-light" type="button" onclick="window.JJSelectionGroups.create()">Create Group</button>
-        <button class="btn btn-light" type="button" onclick="window.JJSelectionGroups.manage()">Manage Groups</button>`;
+        <button class="btn btn-light" type="button" onclick="window.JJSelectionGroups.manage()">Manage Groups</button>
+        <button class="btn btn-light" type="button" onclick="window.JJSelectionGroups.expandAll()">Expand All</button>
+        <button class="btn btn-light" type="button" onclick="window.JJSelectionGroups.collapseAll()">Collapse All</button>`;
       heading.insertAdjacentElement('afterend',actions);
     }
 
-    // Hide the duplicate old "Add manually" button now that Add Selection is prominent.
+    // Hide the duplicate old "Add manually" button now that Add Selection
+    // is prominent near the top.
     root.querySelectorAll('.selection-toolbar button').forEach(btn=>{
       if(/add manually/i.test(btn.textContent||''))btn.style.display='none';
     });
 
-    // Hide the old direct-linking fields in the editor if it is currently open.
-    ['selectionEditGroup','selectionEditGroupName'].forEach(id=>{
-      const node=document.getElementById(id);
-      const wrap=node?.closest('label')||node?.parentElement;
-      if(wrap)wrap.style.display='none';
+    // "Add Another Option" belongs in the group header now, not on each card.
+    root.querySelectorAll('.selection-card-actions button').forEach(btn=>{
+      if(/another option/i.test(btn.textContent||''))btn.remove();
     });
 
     // Group badge on every assigned card.
-    root.querySelectorAll('.selection-card').forEach((card,cardIndex)=>{
+    root.querySelectorAll('.selection-card').forEach(card=>{
       const titleNode=card.querySelector('h3');
       if(!titleNode)return;
       const title=(titleNode.textContent||'').trim();
@@ -392,14 +500,8 @@ window.JJProduct = (() => {
     });
   }
 
-  function hideOldGroupFields(){
-    setTimeout(()=>{
-      ['selectionEditGroup','selectionEditGroupName'].forEach(id=>{
-        const node=document.getElementById(id);
-        const wrap=node?.closest('label')||node?.parentElement;
-        if(wrap)wrap.style.display='none';
-      });
-    },0);
+  function configureEditorAfterOpen(){
+    setTimeout(configureEditorGroupDropdown,0);
   }
 
   function install(){
@@ -407,21 +509,19 @@ window.JJProduct = (() => {
     window.__jjSelectionGroupsInstalled=true;
     injectStyles();
 
-    // Do nothing on the homeowner page except preserve shared option-group data.
+    // Do nothing on the homeowner page. The homeowner portal already reads
+    // the same optionGroupId / optionGroupTitle values written here.
     if(typeof window.renderSelections!=='function' || typeof window.selectedProject!=='function')return;
 
     const oldRender=window.renderSelections;
-    const oldCard=window.selectionCard;
     const oldOpenEditor=window.openSelectionEditor;
     const oldOpenFromLink=window.openSelectionEditorFromLink;
 
+    // Keep one clear "Add to Group / Change Group" action on each card.
     window.selectionGroupSelect=(item,index)=>groupControlHTML(item,index);
 
-    if(typeof oldCard==='function'){
-      window.selectionCard=function(item,index){
-        return oldCard(item,index);
-      };
-    }
+    // Named groups now always render with a header, even with only one item.
+    window.renderSelectionOptionGroups=renderExplicitSelectionGroups;
 
     window.renderSelections=function(){
       ensureGroups(project());
@@ -432,7 +532,7 @@ window.JJProduct = (() => {
     if(typeof oldOpenEditor==='function'){
       window.openSelectionEditor=function(...args){
         const result=oldOpenEditor.apply(this,args);
-        hideOldGroupFields();
+        configureEditorAfterOpen();
         return result;
       };
     }
@@ -440,12 +540,12 @@ window.JJProduct = (() => {
     if(typeof oldOpenFromLink==='function'){
       window.openSelectionEditorFromLink=function(...args){
         const result=oldOpenFromLink.apply(this,args);
-        hideOldGroupFields();
+        configureEditorAfterOpen();
         return result;
       };
     }
 
-    // Migrate groups and redraw once after all original app scripts are loaded.
+    // Migrate existing linked selections into the explicit registry and redraw.
     ensureGroups(project());
     try{window.saveState?.(false);}catch{}
     try{window.renderSelections();}catch{}
@@ -458,7 +558,9 @@ window.JJProduct = (() => {
     openAssign:openAssignDialog,
     assign:assignToGroup,
     remove:removeFromGroup,
-    ensure:ensureGroups
+    ensure:ensureGroups,
+    expandAll:()=>setAllSelectionGroups(true),
+    collapseAll:()=>setAllSelectionGroups(false)
   };
 
   if(document.readyState==='complete')setTimeout(install,0);

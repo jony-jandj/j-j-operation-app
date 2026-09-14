@@ -1,35 +1,32 @@
-J&J Operations — Selection Groups Update
+J&J Operations — Selection Groups UI v64
 
 UPLOAD / REPLACE THESE TWO FILES IN GITHUB:
 1. selections-metadata.js
 2. service-worker.js
 
-This update uses the current app's existing Selections workspace. index.html does NOT
-need to be replaced.
+Changes:
+- Removed "+ Another option" from every individual selection card.
+- Added "+ Add Another Option" to the Selection Group header, beside the
+  option count / "tap to compare" area.
+- Added Expand All and Collapse All buttons for Selection Groups.
+- Edit Selection now shows a real Selection Group dropdown.
+- Dropdown includes No group / Standalone plus all groups created for that job.
+- Named groups keep their header even when only one selection is currently in
+  the group, so Add Another Option always has a consistent location.
+- Existing Add to Group / Change Group button stays on each card.
+- Existing Create Group / Manage Groups workflow stays intact.
+- Homeowner portal continues using the same optionGroupId / optionGroupTitle
+  data, so group changes remain shared.
 
-What changes:
-- Replaces the old direct "Link group" dropdown with:
-  • Create Group
-  • Add to Group / Change Group on each selection
-  • Manage Groups
-- Groups can be named anything (Primary Bathroom, First Floor Bathroom,
-  Shower Fixtures, Vanity Package, etc.).
-- Rename a group.
-- View all selections inside a group.
-- Remove a selection from a group without deleting it.
-- Delete a group without deleting its selections.
-- Group name is shown clearly on selection cards.
-- Existing linked selections are migrated into named groups automatically.
-- Uses the existing optionGroupId / optionGroupTitle fields, so the homeowner
-  selection portal sees the same grouping automatically.
-- Keeps the current Selected toggle behavior.
-- Keeps the current persistent project QR behavior.
-- Keeps product photo/link metadata lookup.
+Preserved:
+- photos
+- Selected toggle / unselect
+- homeowner sync
+- persistent project QR behavior
+- product metadata lookup
+- current cloud/auth/app features
 
-Cache version bumped to:
-jj-operations-v63-selection-groups-ui
-
-After committing both files:
-- wait about 1 minute
-- fully close/reopen the app once
-- open Selections
+After committing:
+1. Wait about 1 minute.
+2. Fully close the J&J app/browser tab.
+3. Reopen it and go to Selections.
