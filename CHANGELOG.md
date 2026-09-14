@@ -1,6 +1,6 @@
-# Selection category folders and buyer permissions
+# Selection layout and buyer permissions
 
-- Added collapsible category folders on contractor and homeowner selection pages, with Card/List views inside each folder.
+- Kept each selection as a separate card or list row; category folder grouping was removed per request.
 - Homeowner price display remains tax-inclusive and omits tax details.
 - Removed homeowner Purchased by selector; buyer assignment is staff-only. New homeowner additions are saved as Not assigned. Homeowner edits preserve the existing buyer.
 
