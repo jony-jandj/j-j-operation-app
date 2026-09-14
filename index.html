@@ -7908,12 +7908,49 @@ function createPOsFromSelectedEstimateRows(){
   toast(`${created} P.O. Split${created===1?'':'s'} created`);
 }
 
+const estimateProductChoices=new WeakMap();
+function estimateProductSet(project){
+  if(!estimateProductChoices.has(project))estimateProductChoices.set(project,new Set());
+  const set=estimateProductChoices.get(project);
+  for(const row of set)if(!project.estimate.includes(row)||estimateSelectionExists(project,row))set.delete(row);
+  return set;
+}
+function estimateSelectionExists(project,row){
+  const norm=s=>String(s||'').trim().toLowerCase().replace(/\s+/g,' ');
+  const title=norm(row.title||row.line),room=norm(row.parentGroup||'Unassigned');
+  return (project.selections||[]).some(item=>item.estimateSourceKey===room+'|'+title||(norm(item.title)===title&&norm(item.room)===room));
+}
+function refreshEstimateProducts(){
+  if(document.getElementById('paybyline')?.classList.contains('active'))renderPayByLine();else renderProjectPanel();
+}
+function toggleEstimateProduct(index,checked){
+  const p=selectedProject(),row=p.estimate[index],set=estimateProductSet(p);
+  if(row&&!estimateSelectionExists(p,row)){if(checked)set.add(row);else set.delete(row);}
+  refreshEstimateProducts();
+}
+function selectAllEstimateProducts(checked){
+  const p=selectedProject(),set=estimateProductSet(p);set.clear();
+  if(checked)p.estimate.forEach(row=>{if(!estimateSelectionExists(p,row))set.add(row)});
+  refreshEstimateProducts();
+}
+function addEstimateProducts(){
+  const p=selectedProject(),set=estimateProductSet(p);
+  const count=seedEstimateSelections(p,[...set],true);
+  saveState(false);set.clear();renderAll();refreshEstimateProducts();
+  toast(count?`${count} product${count===1?'':'s'} added to Selections`:'These products are already in Selections');
+}
+function estimateProductsToolbar(p){
+  const count=estimateProductSet(p).size;
+  return `<div class="toolbar" style="margin-top:12px;align-items:center"><b>Send products to Selections</b><button class="btn btn-light" onclick="selectAllEstimateProducts(true)">Select All Products</button><button class="btn btn-light" onclick="selectAllEstimateProducts(false)">Clear Products</button><button class="btn btn-gold" ${count?'':'disabled'} onclick="addEstimateProducts()">Add to Selections (${count})</button><button class="btn btn-light" onclick="openSelections()">Open Selections</button></div><p class="help-text">Check one or more items in the Selection column, then Add to Selections. Any estimate line can be added. Existing products are marked Added and will not be duplicated.</p>`;
+}
+
 function estimateTableHTML(p,mode='hub'){
   const isProject=mode==='project';
   const toggleFn=isProject?'toggleEstimateSelectionProject':'toggleEstimateSelection';
   const updateFn=isProject?'updateEstimate':'updateEstimateFromPOHub';
 
   return `
+    ${estimateProductsToolbar(p)}
     <div class="estimate-table-hint">
       <span>Imported estimate layout: Parent Group + Title · Description · Quantity · Unit · Unit cost · Cost type · Builder Cost</span>
       <span>Scroll sideways on phone to see all columns.</span>
@@ -7925,6 +7962,7 @@ function estimateTableHTML(p,mode='hub'){
           <tr>
             <th class="col-delete">Delete</th>
             <th class="col-po">P.O.</th>
+            <th style="min-width:95px">Selection</th>
             <th class="col-title">Title</th>
             <th class="col-description">Description</th>
             <th class="col-qty">Quantity</th>
@@ -7961,6 +7999,7 @@ function estimateTableHTML(p,mode='hub'){
                   }
                 </td>
 
+                <td style="min-width:95px">${estimateSelectionExists(p,raw)?'<span class="estimate-po-created">Added</span>':`<input type="checkbox" class="estimate-select" aria-label="Add ${esc(r.title)} to Selections" ${estimateProductSet(p).has(raw)?'checked':''} onchange="toggleEstimateProduct(${i},this.checked)">`}</td>
                 <td class="col-title">
                   ${r.parentGroup ? `<div class="estimate-parent-group">${esc(r.parentGroup)}</div>` : ''}
                   <textarea class="estimate-cell-input estimate-item-input" rows="2"
@@ -8951,15 +8990,15 @@ function renderJobCostCards(){
 function finishSelectionCategory(row){
   const text=[row.title,row.line,row.description].join(' ').toLowerCase();
   if(/^(labor|subcontractor)$/i.test(row.type||'') || /\b(demolition|demolish|removal|rough.in|drywall|framing|underlayment|thinset|grout labor)\b/.test(text)) return '';
-  const rules=[['Tile',/\b(tile|backsplash)\b/],['Flooring',/\b(flooring|lvp|hardwood|carpet)\b/],['Plumbing',/\b(faucet|sink|toilet|tub|bathtub|showerhead|shower head|shower trim)\b/],['Cabinetry',/\b(cabinet|cabinetry|vanity|vanities)\b/],['Countertops',/\b(countertop|quartz|granite|marble)\b/],['Lighting',/\b(light fixture|pendant|sconce|chandelier)\b/],['Hardware',/\b(hardware|door handle|knob|pulls)\b/],['Paint',/\b(paint|stain color)\b/],['Doors',/\b(door|doors)\b/],['Appliances',/\b(appliance|refrigerator|dishwasher|range hood)\b/]];
+  const rules=[['Tile',/\b(tile|backsplash)\b/],['Flooring',/\b(flooring|lvp|hardwood|carpet)\b/],['Plumbing',/\b(faucet|sink|toilet|tub|bathtub|showerhead|shower head|shower trim|shower fixtures?|shower faucet|shower system)\b/],['Cabinetry',/\b(cabinet|cabinetry|vanity|vanities)\b/],['Countertops',/\b(countertop|quartz|granite|marble)\b/],['Lighting',/\b(light fixture|pendant|sconce|chandelier)\b/],['Hardware',/\b(hardware|door handle|knob|pulls)\b/],['Paint',/\b(paint|stain color)\b/],['Doors',/\b(door|doors)\b/],['Appliances',/\b(appliance|refrigerator|dishwasher|range hood)\b/]];
   return rules.find(([,pattern])=>pattern.test(text))?.[0]||'';
 }
-function seedEstimateSelections(project){
+function seedEstimateSelections(project,rows=project.estimate||[],manual=false){
   ensureSelectionsData();
   const norm=s=>String(s||'').trim().toLowerCase().replace(/\s+/g,' ');
   let added=0;
-  (project.estimate||[]).forEach(row=>{
-    const category=finishSelectionCategory(row);if(!category)return;
+  rows.forEach(row=>{
+    const category=finishSelectionCategory(row)||(manual?'Other':'');if(!category)return;
     const title=row.title||row.line;
     const room=String(row.parentGroup||'').trim()||'Unassigned';
     const sourceKey=norm(room)+'|'+norm(title);
