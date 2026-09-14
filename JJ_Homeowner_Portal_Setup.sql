@@ -99,6 +99,7 @@ begin
   if p_action='select' then
    if item->>'status' not in ('Pending','Selected') then raise exception 'This item has moved beyond selection. Refresh and try again.'; end if;
    if p_item ? 'expectedStatus' and p_item->>'expectedStatus'<>item->>'status' then raise exception 'Status changed. Refresh and try again.'; end if;
+   if item->>'status'='Pending' and (item->>'optionGroupId') is not null and exists(select 1 from jsonb_array_elements(current_items) other where other->>'id'<>item->>'id' and (other->>'optionGroupId')=item->>'optionGroupId' and other->>'status'='Selected') then raise exception 'Another option in this group is already selected. Unselect it first.'; end if;
    item=jsonb_build_object('status',case when item->>'status'='Selected' then 'Pending' else 'Selected' end,'homeownerSelected',item->>'status'='Pending','homeownerSelectedAt',case when item->>'status'='Pending' then to_jsonb(now()) else 'null'::jsonb end);
   else
    if length(trim(coalesce(p_item->>'title','')))=0 or length(p_item::text)>900000 then raise exception 'Enter a product name and use a smaller photo'; end if;
