@@ -6175,6 +6175,34 @@ function setCloudStatus(label,kind='local'){
   el.className=`cloud-status ${kind}`;
 }
 
+// The app is hosted as a static site, so a transient CDN failure must not
+// permanently leave the session in a broken "Not saved" state. Retry both
+// supported CDN origins before showing the sign-in screen.
+let cloudLibraryPromise=null;
+function ensureSupabaseLoaded(){
+  if(window.supabase?.createClient) return Promise.resolve(true);
+  if(cloudLibraryPromise) return cloudLibraryPromise;
+  cloudLibraryPromise=new Promise(resolve=>{
+    const urls=[
+      'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2',
+      'https://unpkg.com/@supabase/supabase-js@2'
+    ];
+    let index=0;
+    const tryNext=()=>{
+      if(window.supabase?.createClient){resolve(true);return;}
+      if(index>=urls.length){resolve(false);return;}
+      const script=document.createElement('script');
+      script.src=urls[index++];
+      script.async=true;
+      script.onload=()=>window.supabase?.createClient?resolve(true):tryNext();
+      script.onerror=tryNext;
+      document.head.appendChild(script);
+    };
+    tryNext();
+  });
+  return cloudLibraryPromise;
+}
+
 function openCloudSetup(){ return; }
 
 function closeCloudSetup(){ return; }
@@ -6213,8 +6241,12 @@ async function initCloud(forceLogin=false){
   }
 
   if(!window.supabase?.createClient){
-    setCloudStatus('Offline','offline');
-    throw new Error('Supabase library did not load. Check your internet connection and refresh.');
+    setCloudStatus('Connecting…','saving');
+    const loaded=await ensureSupabaseLoaded();
+    if(!loaded){
+      setCloudStatus('Saved locally','local');
+      return false;
+    }
   }
 
   cloudClient=window.supabase.createClient(cfg.url,cfg.key,{
@@ -6603,7 +6635,11 @@ function subscribeCloudState(){
 }
 
 function queueCloudSave(){
-  if(cloudApplying || !cloudClient) return;
+  if(cloudApplying) return;
+  if(!cloudClient){
+    setCloudStatus('Saved locally','local');
+    return;
+  }
   cloudDirty=true;cloudEditSequence++;
   clearTimeout(cloudSaveTimer);
   setCloudStatus('Saving…','saving');
@@ -6646,7 +6682,7 @@ function saveState(show=true){
   preserveSelectionRecovery();
   localStorage.setItem('jj_full_proto',JSON.stringify(state));
   queueCloudSave();
-  if(show) toast(cloudClient?'Saved':'Saved on this device');
+  if(show) toast(cloudClient?'Saving to J&J Cloud…':'Saved on this device');
 }
 function toast(text){
   const el=document.createElement('div'); el.className='toast'; el.textContent=text;
@@ -10667,7 +10703,6 @@ document.querySelector('.brand')?.addEventListener('keydown',e=>{
   }
 });
 </script>
-
 
 
 
