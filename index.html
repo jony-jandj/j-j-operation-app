@@ -4531,6 +4531,17 @@ details[open] > .confirmed-summary .confirmed-expand::after{content:'▾ Collaps
 .confirmed-expanded-meta{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
 .confirmed-slim summary:hover{background:#F6F8FB;border-radius:9px}
 .confirmed-slim summary:focus-visible{outline:2px solid #4E78B7;outline-offset:2px}
+
+.job-cost-card{margin:14px 0;overflow:hidden}
+.job-cost-card>summary{padding:16px;cursor:pointer;list-style-position:inside}
+.job-cost-title{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.job-cost-title>b{font-size:18px;margin-right:auto}
+.job-cost-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.job-cost-metrics b{overflow-wrap:anywhere}
+.job-reserve-track{height:8px;background:#edf0f4;position:relative;margin:14px 0 8px;border-radius:5px}
+.job-reserve-track span{display:block;height:100%;border-radius:5px}
+.job-reserve-track i{position:absolute;left:50%;top:-3px;height:14px;border-left:2px solid var(--navy)}
+@media(max-width:600px){.job-cost-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.job-cost-title strong{width:100%;font-size:14px}}
 </style>
 
   <meta name="theme-color" content="#14234A">
@@ -6026,6 +6037,7 @@ function openBackupImport(){
 function importAppBackup(input){
   const file=input?.files?.[0];
   if(!file) return;
+  const importProject=selectedProject();
 
   const reader=new FileReader();
 
@@ -7720,6 +7732,7 @@ function estimateRowTitle(row){
   return String(row?.title ?? row?.line ?? '').trim();
 }
 
+function estimateSourceMatches(a,b){return String(a).split('||').slice(0,3).join('||')===String(b).split('||').slice(0,3).join('||');}
 function estimateRowSourceKey(row){
   const parentGroup=String(row?.parentGroup||row?.parent_group||'').trim();
   const title=estimateRowTitle(row);
@@ -7746,7 +7759,7 @@ function estimateRowHasPO(p,row){
   return (p.pos||[]).some(po=>{
     // New P.O.s get an exact source key.
     if(po.sourceEstimateKey){
-      return po.sourceEstimateKey===sourceKey;
+      return estimateSourceMatches(po.sourceEstimateKey,sourceKey);
     }
 
     // Compatibility for P.O.s already created before this fix.
@@ -8014,7 +8027,7 @@ function confirmedPayoutGroups(project){
 function confirmedPayoutDescription(project,po){
   const rows=project.estimate||[];
   if(po.sourceEstimateKey){
-    const exact=rows.find(row=>estimateRowSourceKey(row)===po.sourceEstimateKey);
+    const exact=rows.find(row=>estimateSourceMatches(estimateRowSourceKey(row),po.sourceEstimateKey));
     if(exact) return String(exact.description||'').trim();
   }
   const norm=value=>String(value||'').trim().toLowerCase();
@@ -8568,7 +8581,7 @@ function syncPOsFromLabor(p,rows=laborLines(p)){
     const line=baseLine;
     const sourceEstimateKey=estimateRowSourceKey(r);
     const existing=p.pos.find(x=>{
-      if(x.sourceEstimateKey) return x.sourceEstimateKey===sourceEstimateKey;
+      if(x.sourceEstimateKey) return estimateSourceMatches(x.sourceEstimateKey,sourceEstimateKey);
       const poParent=String(getPOParentGroup(x)||x.parentGroup||'').trim();
       const poTitle=String(getPOBaseTitle(x)||x.line||x.title||'').trim();
       return poParent.toLowerCase()===parentGroup.toLowerCase() &&
@@ -8576,7 +8589,11 @@ function syncPOsFromLabor(p,rows=laborLines(p)){
     });
 
     if(existing){
-      existing.builderCost=Number(r.builderCost||0);
+      const nextCost=Number(r.builderCost||0);
+      if(Number(existing.builderCost)!==nextCost){
+        existing.builderCost=nextCost;
+        existing.status='Draft';existing.preApprovedBy='';existing.approvedBy='';
+      }
       return;
     }
 
@@ -8628,8 +8645,22 @@ async function importEstimateFile(input){
       throw new Error(parsed.warning || 'No usable estimate line items were found.');
     }
 
-    const p=selectedProject();
+    const p=importProject;
+    const previousEstimate=p.estimate, previousAttachment=p.estimateAttachment;
+    const previousSelections=JSON.parse(JSON.stringify(p.selections||[]));
+    const previousRooms=[...(p.selectionRooms||[])];
+    // Keep small originals in the existing synced job state; all imports also have a current CSV.
+    let attachment=null;
+    if(file.size<=1024*1024){
+      const encoded=await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=()=>reject(new Error('Could not read estimate file'));reader.readAsDataURL(file);});
+      attachment={name:file.name,data:encoded,importedAt:new Date().toISOString()};
+    }
     p.estimate=parsed.items;
+    p.estimateAttachment=attachment;
+    const selectionCount=seedEstimateSelections(p);
+    try{localStorage.setItem('jj_full_proto',JSON.stringify(state));}
+    catch(error){p.estimate=previousEstimate;p.estimateAttachment=previousAttachment;p.selections=previousSelections;p.selectionRooms=previousRooms;throw new Error('Device storage is full. The previous estimate was preserved. Export a backup and free space before trying again.');}
+    state.selectedProjectId=p.id;
 
     const laborCount=laborLines(p).length;
     selectedEstimateRows.clear();
@@ -8645,7 +8676,7 @@ async function importEstimateFile(input){
     renderPayByLine();
     go('paybyline');
 
-    toast(`Estimate uploaded · ${parsed.items.length} lines · ${laborCount} Labor line${laborCount===1?'':'s'} available for P.O. selection`);
+    toast(`Estimate saved to Files · ${selectionCount} selection placeholders added${attachment?'':' · Current CSV available; original exceeds 1 MB'}`);
 
     if(!laborCount){
       alert('The estimate was imported, but no Labor lines were identified. Change Cost type to Labor on the lines you want to use for P.O. Splits.');
@@ -8690,7 +8721,7 @@ function updateEstimateFromPOHub(i,key,val){
   if(key==='builderCost'){
     const row=p.estimate[i];
     const existing=p.pos.find(po=>{
-      if(po.sourceEstimateKey) return po.sourceEstimateKey===estimateRowSourceKey(row);
+      if(po.sourceEstimateKey) return estimateSourceMatches(po.sourceEstimateKey,estimateRowSourceKey(row));
       const poParent=String(getPOParentGroup(po)||po.parentGroup||'').trim();
       const rowParent=String(row.parentGroup||row.parent_group||'').trim();
       const poTitle=String(getPOBaseTitle(po)||po.line||po.title||'').trim();
@@ -8703,6 +8734,7 @@ function updateEstimateFromPOHub(i,key,val){
       return poTitle.toLowerCase()===rowTitle.toLowerCase();
     });
     if(existing){
+      if(Number(existing.builderCost)!==Number(row.builderCost||0)){existing.status='Draft';existing.preApprovedBy='';existing.approvedBy='';}
       existing.builderCost=Number(row.builderCost||0);
       saveState(false);
     }
@@ -8860,21 +8892,16 @@ ${estimateTableHTML(p,'project')}`:`<div class="empty">No estimate loaded yet.<b
   } else if(projectTab==='files'){
     c.innerHTML=`
       <div class="grid-3">
-        ${['Proposal + Estimate','Selections','Bids + Subcontractors','Drawings / Plans','3D Renderings','Photos'].map(x=>`
+        ${renderEstimateFile(p)}
+        ${['Selections','Bids + Subcontractors','Drawings / Plans','3D Renderings','Photos'].map(x=>`
           <div class="card info-card"><h4>${x}</h4><div class="sub">File upload would live here.</div><div style="margin-top:12px"><button class="btn btn-light" disabled>Upload</button></div></div>`).join('')}
       </div>
     `;
   } else if(projectTab==='jobcost'){
     c.innerHTML=`
-      ${renderEmployeeCosting(p)}
-      <div class="stats">
-        <div class="card stat"><div class="label">Labor Builder Cost</div><div class="value">${money(laborBuilderCost(p))}</div></div>
-        <div class="card stat"><div class="label">Base Crew Payout</div><div class="value">${money(poBase(p))}</div></div>
-        <div class="card stat"><div class="label">Touch-up Bonus</div><div class="value">${money(poBonus(p))}</div></div>
-        <div class="card stat"><div class="label">Reserve</div><div class="value">${money(poReserve(p))}</div></div>
-      </div>
+      ${renderJobCostCards()}
       <div class="section card info-card">
-        <h4>Ready-to-Start Check</h4>
+        <h4>Ready-to-Start Check · ${esc(p.name)}</h4>
         <div class="check-list">
           ${p.readyChecklist.map((x,i)=>{
             const checkColor=userColor(x.checkedBy);
@@ -8890,6 +8917,73 @@ ${estimateTableHTML(p,'project')}`:`<div class="empty">No estimate loaded yet.<b
   }
 }
 
+
+const jobCostOpen = new Set();
+function jobReserveSummary(project){
+  const pos=project.pos||[];
+  const estimateLabor=laborBuilderCost(project);
+  const poLabor=pos.reduce((sum,po)=>sum+Number(po.builderCost||0),0);
+  // Cover the full estimate, including labor not yet converted to P.O.s.
+  const labor=Math.max(estimateLabor,poLabor);
+  const approved=pos.filter(po=>po.status==='Approved');
+  const approvedCost=approved.reduce((sum,po)=>sum+Number(po.builderCost||0),0);
+  const crew=approved.reduce((sum,po)=>sum+(po.splits||[]).reduce((n,s)=>n+(String(s.name||'').trim() && Number(s.pct)>0?Number(po.builderCost||0)*.6*Number(s.pct)/100:0),0),0);
+  const projectedCrew=crew+(labor-approvedCost)*.6;
+  const planned=labor*.35, touch=labor*.05, projected=labor-touch-projectedCrew;
+  const variance=projected-planned;
+  return {labor,planned,touch,crew,projectedCrew,projected,variance,percent:planned?variance/planned*100:null,approved:approved.length,count:pos.length,status:!labor?'No Estimate':Math.abs(variance)<.005?'On Plan':variance>0?'Above Plan':'Below Plan'};
+}
+function renderJobCostCards(){
+  const metric=(label,value)=>`<div class="alloc"><span>${label}</span><b>${value}</b></div>`;
+  return `<h3>Job Costing · All Jobs</h3><p class="help-text">Reserve compares the original 35% plan with final-approved crew splits. Pending labor stays budgeted at 60%; touch-up stays separate at 5%. Approved amounts are not recorded payments.</p>
+    <div class="toolbar"><button class="btn btn-light" onclick="state.projects.forEach(p=>jobCostOpen.add(p.id));renderProject()">Expand All Jobs</button><button class="btn btn-light" onclick="jobCostOpen.clear();renderProject()">Collapse All Jobs</button></div>
+    ${state.projects.map(p=>{
+      const s=jobReserveSummary(p), color=s.variance<-.005?'pill-red':s.variance>.005?'pill-green':'pill-gold';
+      const delta=`${s.variance>=0?'+':''}${selectionMoney(s.variance)} / ${s.percent===null?'—':(s.percent>=0?'+':'')+s.percent.toFixed(1)+'%'}`;
+      const statuses=[...new Set((p.pos||[]).map(po=>po.status||'Draft'))].map(status=>`${p.pos.filter(po=>(po.status||'Draft')===status).length} ${esc(status)}`).join(' · ');
+      return `<details class="card job-cost-card" ${jobCostOpen.has(p.id)?'open':''} ontoggle="this.open?jobCostOpen.add(${Number(p.id)}):jobCostOpen.delete(${Number(p.id)})">
+        <summary><div class="job-cost-title"><b>${esc(p.name||p.jobNo||'Job')}</b><span class="pill ${color}">${s.status}</span><strong>${delta}</strong></div>
+        <div class="job-cost-metrics">${metric('Planned Reserve',selectionMoney(s.planned))}${metric('Projected Reserve',selectionMoney(s.projected))}${metric('Labor Cost',selectionMoney(s.labor))}${metric('Crew · Approved / Projected',selectionMoney(s.crew)+' / '+selectionMoney(s.projectedCrew))}${metric('Touch-up Allocation',selectionMoney(s.touch))}${metric('P.O.s',s.count+' total · '+s.approved+' approved')}</div>
+        <div class="job-reserve-track" aria-label="Projected reserve compared with planned reserve"><span style="width:${Math.max(0,Math.min(100,s.planned?s.projected/(s.planned*2)*100:0))}%;background:${s.variance<-.005?'var(--red)':'var(--green)'}"></span><i title="Planned reserve"></i></div><small class="help-text">Center marker = planned reserve · ${statuses||'No P.O.s'}</small></summary>
+        <div class="info-card">${renderEmployeeCosting(p)}<h4>All P.O.s for this job</h4>${(p.pos||[]).map(po=>`<div class="info-line"><span>${esc(getPOParentGroup(po))} · ${esc(getPOBaseTitle(po))}</span><b>${selectionMoney(po.builderCost)} · ${esc(po.status)}</b></div>`).join('')||'<p>No P.O.s yet.</p>'}</div></details>`;
+    }).join('')}`;
+}
+function finishSelectionCategory(row){
+  const text=[row.title,row.line,row.description].join(' ').toLowerCase();
+  if(/^(labor|subcontractor)$/i.test(row.type||'') || /\b(demolition|demolish|removal|rough.in|drywall|framing|underlayment|thinset|grout labor)\b/.test(text)) return '';
+  const rules=[['Tile',/\b(tile|backsplash)\b/],['Flooring',/\b(flooring|lvp|hardwood|carpet)\b/],['Plumbing',/\b(faucet|sink|toilet|tub|bathtub|showerhead|shower head|shower trim)\b/],['Cabinetry',/\b(cabinet|cabinetry|vanity|vanities)\b/],['Countertops',/\b(countertop|quartz|granite|marble)\b/],['Lighting',/\b(light fixture|pendant|sconce|chandelier)\b/],['Hardware',/\b(hardware|door handle|knob|pulls)\b/],['Paint',/\b(paint|stain color)\b/],['Doors',/\b(door|doors)\b/],['Appliances',/\b(appliance|refrigerator|dishwasher|range hood)\b/]];
+  return rules.find(([,pattern])=>pattern.test(text))?.[0]||'';
+}
+function seedEstimateSelections(project){
+  ensureSelectionsData();
+  const norm=s=>String(s||'').trim().toLowerCase().replace(/\s+/g,' ');
+  let added=0;
+  (project.estimate||[]).forEach(row=>{
+    const category=finishSelectionCategory(row);if(!category)return;
+    const title=row.title||row.line;
+    const room=String(row.parentGroup||'').trim()||'Unassigned';
+    const sourceKey=norm(room)+'|'+norm(title);
+    if(project.selections.some(item=>item.estimateSourceKey===sourceKey || (norm(item.title)===norm(title)&&norm(item.room)===norm(room))))return;
+    if(!project.selectionRooms.includes(room))project.selectionRooms.push(room);
+    project.selections.push({id:Date.now()+added,title,description:row.description||'',category,room,status:'Pending',quantity:Math.max(1,Number(row.quantity)||1),unitPrice:Number(row.unitCost)||0,url:'',image:'',vendor:'',model:'',quality:'Standard',purchasedBy:'Not assigned',leadTimeValue:1,leadTimeUnit:'Day(s)',estimateSourceKey:sourceKey,notes:'Estimate placeholder — verify product, quantity, price and lead time before ordering.'});
+    added++;
+  });return added;
+}
+function downloadJobEstimate(){
+  const p=selectedProject();
+  const headers=['Parent Group','Title','Description','Quantity','Unit','Unit Cost','Cost Type','Builder Cost'];
+  const quote=v=>'"'+String(v??'').replace(/"/g,'""')+'"';
+  const rows=(p.estimate||[]).map(r=>[r.parentGroup,r.title||r.line,r.description,r.quantity,r.unit,r.unitCost,r.type,r.builderCost]);
+  const blob=new Blob(['\ufeff'+[headers,...rows].map(row=>row.map(quote).join(',')).join('\r\n')],{type:'text/csv;charset=utf-8'});
+  const link=document.createElement('a'),url=URL.createObjectURL(blob);link.href=url;link.download=(p.jobNo||'job')+'-estimate.csv';link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+function downloadOriginalEstimate(){
+  const file=selectedProject().estimateAttachment;if(!file)return;
+  const link=document.createElement('a');link.href=file.data;link.download=file.name;link.click();
+}
+function renderEstimateFile(project){
+  return `<div class="card info-card"><h4>Proposal + Estimate</h4>${project.estimate?.length?`<p>${esc(project.estimateAttachment?.name||'Job estimate')} · ${project.estimate.length} lines</p><p class="help-text">Current estimate is automatically available here. Download includes your latest line edits.</p><div class="toolbar"><button class="btn btn-light" onclick="downloadJobEstimate()">Download Current Estimate</button>${project.estimateAttachment?'<button class="btn btn-light" onclick="downloadOriginalEstimate()">Download Original Upload</button>':''}<button class="btn btn-light" onclick="projectTab='estimate';renderProject()">View Estimate</button></div>`:'<p>No estimate added yet.</p>'}</div>`;
+}
 
 function employeeCostSummary(project){
   const employees=new Map();
@@ -9344,7 +9438,7 @@ function updateEstimate(i,key,val){
   if(key==='builderCost'){
     const row=p.estimate[i];
     const existing=p.pos.find(po=>{
-      if(po.sourceEstimateKey) return po.sourceEstimateKey===estimateRowSourceKey(row);
+      if(po.sourceEstimateKey) return estimateSourceMatches(po.sourceEstimateKey,estimateRowSourceKey(row));
       const poParent=String(getPOParentGroup(po)||po.parentGroup||'').trim();
       const rowParent=String(row.parentGroup||row.parent_group||'').trim();
       const poTitle=String(getPOBaseTitle(po)||po.line||po.title||'').trim();
@@ -9357,6 +9451,7 @@ function updateEstimate(i,key,val){
       return poTitle.toLowerCase()===rowTitle.toLowerCase();
     });
     if(existing){
+      if(Number(existing.builderCost)!==Number(row.builderCost||0)){existing.status='Draft';existing.preApprovedBy='';existing.approvedBy='';}
       existing.builderCost=Number(row.builderCost||0);
     }
   }
@@ -9547,8 +9642,14 @@ function setPOStatus(i,status){
   if(!po) return;
 
   const splitTotal=po.splits.reduce((s,x)=>s+Number(x.pct||0),0);
+  if(status==='Pre-Approved'||status==='Approved'){
+    if(!Number.isFinite(splitTotal)||splitTotal<=0||splitTotal>100||po.splits.some(x=>!Number.isFinite(Number(x.pct||0))||Number(x.pct)<0||(Number(x.pct)>0&&!String(x.name||'').trim()))){
+      alert('Assign a name to each payout and enter a total split greater than 0% and no more than 100%.');return;
+    }
+  }
 
   if(status==='Draft'){
+
     if(po.status==='Approved'){
       alert('Gio must undo final approval first.');
       return;
@@ -10258,6 +10359,7 @@ function saveSelectionEditor(){
   if(!category){toast('Enter a category');return;}
   const status=document.getElementById('selectionEditStatus')?.value||'Pending';
   const item={
+    ...(selectionEditIndex===null?{}:selectedProject().selections[selectionEditIndex]),
     id:selectionEditIndex===null?Date.now():(selectedProject().selections[selectionEditIndex]?.id||Date.now()),
     url:safeSelectionUrl(document.getElementById('selectionEditUrl')?.value.trim()||''),
     title,
@@ -10389,6 +10491,7 @@ document.querySelector('.brand')?.addEventListener('keydown',e=>{
   }
 });
 </script>
+
 
 
 
