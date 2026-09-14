@@ -324,6 +324,7 @@ window.JJProduct = (() => {
     style.id=PATCH_ID;
     style.textContent=`
       .jj-selection-top-actions{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 14px}
+      #jjAppViewAll,#jjAppShowGroups{min-width:96px}
       .jj-selection-group-badge{display:inline-flex;align-items:center;gap:5px;margin:7px 0 0;padding:5px 8px;border-radius:999px;background:#EEF3F7;color:#40566A;font-size:10px;font-weight:850}
       .jj-selection-group-btn{border:1px solid var(--line,#dfe4ea);background:#fff;color:var(--navy,#14234A);border-radius:8px;padding:8px 10px;font-size:11px;font-weight:800}
       .jj-group-summary-actions{display:flex;align-items:center;justify-content:flex-end;gap:10px;margin-left:auto}
@@ -554,25 +555,6 @@ window.JJProduct = (() => {
     document.querySelectorAll('#selections details.selection-option-group').forEach(details=>{
       details.open=!!open;
     });
-    updateContractorGroupToggle();
-  }
-
-  function contractorGroupsExpanded(){
-    const groups=[...document.querySelectorAll('#selections details.selection-option-group')];
-    return !!groups.length && groups.every(details=>details.open);
-  }
-
-  function updateContractorGroupToggle(){
-    const button=document.getElementById('jjAppGroupToggle');
-    if(!button)return;
-    const expanded=contractorGroupsExpanded();
-    button.textContent=expanded?'Show Groups':'View All';
-    button.setAttribute('aria-pressed',String(expanded));
-    button.title=expanded?'Collapse selection groups':'Expand all selection groups';
-  }
-
-  function toggleContractorGroups(){
-    setAllSelectionGroups(!contractorGroupsExpanded());
   }
 
   function configureEditorGroupDropdown(){
@@ -677,11 +659,12 @@ window.JJProduct = (() => {
 
     const heading=root.querySelector('.selection-heading');
 
-    // Remove older group-view controls from earlier builds so the app only
-    // ever shows one View All / Show Groups toggle.
+    // Remove only stale controls from older builds. Keep the current
+    // explicit app buttons: View All + Show Groups.
     root.querySelectorAll('button').forEach(btn=>{
       const t=(btn.textContent||'').trim().toLowerCase();
-      if(['expand all','collapse all','view all','show groups'].includes(t) && btn.id!=='jjAppGroupToggle'){
+      const keep=['jjAppViewAll','jjAppShowGroups'].includes(btn.id);
+      if(['expand all','collapse all','view all','show groups'].includes(t) && !keep){
         btn.remove();
       }
     });
@@ -692,7 +675,8 @@ window.JJProduct = (() => {
         <button class="btn btn-gold" type="button" onclick="openSelectionEditor()">+ Add Selection</button>
         <button class="btn btn-light" type="button" onclick="window.JJSelectionGroups.create()">Create Group</button>
         <button class="btn btn-light" type="button" onclick="window.JJSelectionGroups.manage()">Manage Groups</button>
-        <button class="btn btn-light" type="button" id="jjAppGroupToggle" onclick="window.JJSelectionGroups.toggleGroups()">Show Groups</button>`;
+        <button class="btn btn-light" type="button" id="jjAppViewAll" onclick="window.JJSelectionGroups.expandAll()">View All</button>
+        <button class="btn btn-light" type="button" id="jjAppShowGroups" onclick="window.JJSelectionGroups.collapseAll()">Show Groups</button>`;
       heading.insertAdjacentElement('afterend',actions);
     }
 
@@ -741,7 +725,6 @@ window.JJProduct = (() => {
       }
     });
 
-    updateContractorGroupToggle();
   }
 
   function configureEditorAfterOpen(){
@@ -751,6 +734,50 @@ window.JJProduct = (() => {
 
   function homeownerItemsSafe(){
     try{return Array.isArray(items)?items:[];}catch{return [];}
+  }
+
+  const homeownerGroupOpenState=new Map();
+  let homeownerMassToggle=false;
+  let homeownerEnhancing=false;
+
+  function homeownerGroupKey(details){
+    if(!details)return '';
+    if(details.dataset.jjGroup)return String(details.dataset.jjGroup);
+    const firstOption=details.querySelector('[data-option]')?.dataset.option;
+    if(firstOption){
+      const row=homeownerItemsSafe().find(item=>String(item.id)===String(firstOption));
+      if(row?.optionGroupId)return String(row.optionGroupId);
+    }
+    return (details.querySelector('.jj-ho-summary-title')?.textContent||details.querySelector('summary')?.textContent||'').trim();
+  }
+
+  function rememberHomeownerGroupState(){
+    document.querySelectorAll('#items details.option-group').forEach(details=>{
+      const key=homeownerGroupKey(details);
+      if(key)homeownerGroupOpenState.set(key,!!details.open);
+    });
+  }
+
+  function restoreHomeownerGroupState(){
+    document.querySelectorAll('#items details.option-group').forEach(details=>{
+      const key=homeownerGroupKey(details);
+      if(key && homeownerGroupOpenState.has(key)){
+        details.open=homeownerGroupOpenState.get(key);
+      }
+    });
+  }
+
+  function bindHomeownerIndividualGroupToggles(){
+    document.querySelectorAll('#items details.option-group').forEach(details=>{
+      if(details.dataset.jjToggleBound==='1')return;
+      details.dataset.jjToggleBound='1';
+      details.addEventListener('toggle',()=>{
+        if(homeownerMassToggle||homeownerEnhancing)return;
+        const key=homeownerGroupKey(details);
+        if(key)homeownerGroupOpenState.set(key,!!details.open);
+        updateHomeownerGroupToggle();
+      });
+    });
   }
 
   function homeownerGroupsExpanded(){
@@ -768,7 +795,14 @@ window.JJProduct = (() => {
   }
 
   function homeownerGroupMode(open){
-    document.querySelectorAll('#items details.option-group').forEach(details=>details.open=!!open);
+    const groups=[...document.querySelectorAll('#items details.option-group')];
+    homeownerMassToggle=true;
+    groups.forEach(details=>{
+      details.open=!!open;
+      const key=homeownerGroupKey(details);
+      if(key)homeownerGroupOpenState.set(key,!!open);
+    });
+    homeownerMassToggle=false;
     updateHomeownerGroupToggle();
   }
 
@@ -778,7 +812,9 @@ window.JJProduct = (() => {
 
   function enhanceHomeownerGroups(){
     const itemsRoot=document.getElementById('items');
-    if(!itemsRoot)return;
+    if(!itemsRoot || homeownerEnhancing)return;
+    homeownerEnhancing=true;
+    rememberHomeownerGroupState();
 
     // Add homeowner group controls next to Card/List view.
     const viewActions=document.querySelector('.actions[aria-label="Selections view"]');
@@ -893,15 +929,24 @@ window.JJProduct = (() => {
       list.style.padding='10px';
     }
 
+    restoreHomeownerGroupState();
+    bindHomeownerIndividualGroupToggles();
     updateHomeownerGroupToggle();
+    homeownerEnhancing=false;
   }
 
   function installHomeownerEnhancements(){
+    homeownerEnhancing=false;
     const itemsRoot=document.getElementById('items');
     if(!itemsRoot || document.body.dataset.jjHoGroupsInstalled==='1')return false;
     document.body.dataset.jjHoGroupsInstalled='1';
 
-    const run=()=>setTimeout(enhanceHomeownerGroups,0);
+    let timer=null;
+    const run=()=>{
+      if(homeownerEnhancing)return;
+      clearTimeout(timer);
+      timer=setTimeout(enhanceHomeownerGroups,25);
+    };
     const observer=new MutationObserver(run);
     observer.observe(itemsRoot,{childList:true,subtree:true});
     run();
@@ -966,8 +1011,7 @@ window.JJProduct = (() => {
     remove:removeFromGroup,
     ensure:ensureGroups,
     expandAll:()=>setAllSelectionGroups(true),
-    collapseAll:()=>setAllSelectionGroups(false),
-    toggleGroups:toggleContractorGroups
+    collapseAll:()=>setAllSelectionGroups(false)
   };
 
   if(document.readyState==='complete')setTimeout(install,0);
