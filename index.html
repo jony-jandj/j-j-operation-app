@@ -900,7 +900,7 @@ tr:last-child td{border-bottom:0}
 }
 .po-hub-nav{
   display:grid;
-  grid-template-columns:repeat(3,minmax(0,1fr));
+  grid-template-columns:1fr 1fr;
   gap:9px;
   margin-bottom:12px;
 }
@@ -3442,7 +3442,7 @@ textarea.estimate-cell-input{
   .health-issue{display:none}
   .po-job-head{display:none}
   .po-job-row{
-    grid-template-columns:minmax(115px,1.4fr) repeat(4,38px);
+    grid-template-columns:minmax(115px,1.4fr) repeat(5,38px);
   }
   .po-cost{
     grid-column:1/-1;
@@ -3823,7 +3823,7 @@ textarea.estimate-cell-input{
 }
 .po-job-head,
 .po-job-row{
-  grid-template-columns:minmax(170px,1.6fr) 54px 62px 62px 62px 100px 100px!important;
+  grid-template-columns:minmax(170px,1.6fr) 54px 62px 62px 100px 100px!important;
 }
 .po-job-row{
   padding:10px 11px!important;
@@ -4230,13 +4230,6 @@ textarea.estimate-cell-input{
 .operations-app .project-side-main{grid-template-columns:1fr 27px;padding:9px 7px 9px 11px}
 .operations-app .project-side-open{color:#D5E0E9}
 .operations-app .project-side-open b{color:#D5E0E9;font-size:12px}
-.operations-app .project-side-wrap.active{background:#25435E;box-shadow:inset 3px 0 0 var(--shell-gold)}
-.operations-app .project-side-wrap.active .project-side-open,
-.operations-app .project-side-wrap.active .project-side-open b{color:#FFFFFF}
-.operations-app .project-side-wrap.active .project-side-open small,
-.operations-app .project-side-wrap.active .project-side-status span,
-.operations-app .project-side-wrap.active .project-side-status strong{color:#DCE8F2}
-
 .operations-app .project-side-open small,
 .operations-app .project-side-status span{color:#70869A}
 .operations-app .project-side-status strong{color:#AFC0CE}
@@ -4340,14 +4333,6 @@ body.topbar-collapsed .operations-app .top-nav{display:flex!important}
 body.topbar-collapsed .operations-app > .sidebar{top:0;min-height:100vh}
 
 /* Selections */
-.selection-grid.selection-list{grid-template-columns:1fr}.selection-option-group{grid-column:1/-1;border:1px solid #d9e0e6;border-radius:14px;background:#f8fafb;overflow:hidden;box-shadow:0 3px 12px rgba(19,35,52,.05)}.selection-option-group-title{display:flex;justify-content:space-between;align-items:center;color:var(--navy);font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.5px;padding:16px;background:#fff;cursor:pointer;list-style:none}.selection-option-group-title::-webkit-details-marker{display:none}.selection-option-group-title:before{content:"▸";margin-right:8px;transition:transform .15s}.selection-option-group[open] .selection-option-group-title:before{transform:rotate(90deg)}.selection-option-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;padding:14px}.selection-list .selection-option-grid{grid-template-columns:1fr}@media(max-width:900px){.selection-option-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:620px){.selection-option-grid{grid-template-columns:1fr}}
-.selection-list .selection-card{display:grid;grid-template-columns:150px minmax(0,1fr);align-items:start}
-.selection-list .selection-card>label{grid-column:1/-1}
-.selection-list .selection-photo{height:140px;margin:0 12px 12px}
-.selection-list .selection-card-body{grid-column:2;padding-top:4px}
-.selection-list .selection-card:not(:has(.selection-photo)) .selection-card-body{grid-column:1/-1}
-@media(max-width:600px){.selection-list .selection-card{grid-template-columns:90px minmax(0,1fr)}.selection-list .selection-photo{height:90px;margin:0 4px}.selection-card-bottom{flex-wrap:wrap}}
-
 .selections-workspace{color:var(--text)}
 .selection-heading{display:flex;justify-content:space-between;gap:18px;align-items:flex-end;margin-bottom:18px}
 .selection-heading h2{margin:0;color:var(--navy);font-size:28px}
@@ -4375,9 +4360,9 @@ body.topbar-collapsed .operations-app > .sidebar{top:0;min-height:100vh}
 .selection-filter.active{border-color:var(--shell-navy);background:var(--shell-navy);color:#fff}
 .selection-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
 .selection-card{overflow:hidden;border:1px solid var(--line);border-radius:13px;background:#fff;box-shadow:0 2px 8px rgba(19,35,52,.04)}
-.selection-photo{position:relative;overflow:hidden;min-height:0;height:220px;display:grid;place-items:center;background:#E8EDF0 center/cover no-repeat;color:#7B8793;font-size:12px}
-.selection-photo img{position:absolute;inset:0;width:100%;height:100%;max-height:100%;min-height:0;display:block;object-fit:contain;background:#fff}
-.selection-card-body{padding:14px;min-width:0;position:relative;background:#fff;overflow-wrap:anywhere}
+.selection-photo{height:165px;display:grid;place-items:center;background:#E8EDF0 center/cover no-repeat;color:#7B8793;font-size:12px}
+.selection-photo img{width:100%;height:100%;display:block;object-fit:cover}
+.selection-card-body{padding:14px}
 .selection-card-meta{color:var(--muted);font-size:10px;font-weight:850;letter-spacing:.6px;text-transform:uppercase}
 .selection-card h3{margin:6px 0 5px;color:var(--text);font-size:15px;line-height:1.35}
 .selection-vendor{color:var(--muted);font-size:11px}
@@ -4385,10 +4370,8 @@ body.topbar-collapsed .operations-app > .sidebar{top:0;min-height:100vh}
 .selection-price{color:var(--navy);font-size:17px;font-weight:900}
 .selection-price small{display:block;margin-top:2px;color:var(--muted);font-size:10px;font-weight:500}
 .selection-status{padding:5px 7px;border-radius:999px;background:#F4EFE5;color:#775F2D;font-size:10px;font-weight:900}
-.selection-card-actions{display:flex;flex-wrap:wrap;gap:12px;margin-top:12px}.selection-card-actions button,.selection-card-actions a{min-height:36px;display:inline-flex;align-items:center}.selection-group-inline{display:inline-flex;align-items:center;gap:5px;color:#173E67;font-size:10px;font-weight:850}.selection-group-inline select{max-width:150px;padding:6px;border:1px solid var(--line);border-radius:6px;background:#fff;color:#173E67;font-size:10px}
+.selection-card-actions{display:flex;gap:7px;margin-top:12px}
 .selection-card-actions button,.selection-card-actions a{border:0;background:transparent;color:#173E67;padding:0;font-size:10px;font-weight:850;text-decoration:none}
-.selection-card-actions .selection-status-toggle{border-radius:8px;padding:8px 12px;background:#173E67;color:#fff;min-width:104px;justify-content:center}
-.selection-card-actions .selection-status-toggle[aria-pressed="true"]{background:#2e7a55}
 .selection-empty{grid-column:1/-1;padding:36px 20px;border:1.5px dashed #B9C4CD;border-radius:13px;background:#F8FAFB;color:var(--muted);text-align:center}
 .selection-empty button{width:46px;height:46px;border:0;border-radius:50%;background:#E7EDF2;color:var(--navy);font-size:25px}
 .selection-empty strong{display:block;margin:9px 0 4px;color:var(--text)}
@@ -4496,62 +4479,6 @@ body.topbar-collapsed .operations-app > .sidebar{top:0;min-height:100vh}
   .selection-modal-foot{padding:12px 14px}
 }
 
-
-.confirmed-summary{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(280px,1fr);gap:18px;align-items:start;list-style:none}
-.confirmed-summary::-webkit-details-marker{display:none}
-.confirmed-summary h3{font-size:19px;margin:6px 0}
-.confirmed-summary-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-.confirmed-badge{font-size:10px;font-weight:800;background:#E8F4ED;color:#256343;padding:5px 8px;border-radius:20px}
-.confirmed-description{color:#596579;font-size:12px;line-height:1.5;margin:8px 0;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.confirmed-crew{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
-.confirmed-crew span{background:#EDF2F8;color:#233D5A;padding:6px 9px;border-radius:7px;font-size:11px}
-.confirmed-money{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
-.confirmed-money div{border:1px solid #E3E7ED;background:#F6F8FB;border-radius:9px;padding:10px}
-.confirmed-money small{display:block;font-size:10px;color:#596579;font-weight:800;margin-bottom:4px}
-.confirmed-money b{font-size:17px;color:#14234A}
-.confirmed-money .touch{background:#FFF8E9;border-color:#EFDEB4}
-.confirmed-money .builder{background:#EAF4FF;border-color:#C7DFF5}
-.confirmed-money .payout{background:#F2ECFA;border-color:#DDCFEE}
-.confirmed-money .reserve{background:#EDF7EE;border-color:#CBE4CF}
-.confirmed-expand{font-size:11px;color:#334F70;font-weight:800;margin-top:10px}
-.confirmed-expand::after{content:'▸ Expand details'}
-details[open] > .confirmed-summary .confirmed-expand::after{content:'▾ Collapse details'}
-@media(max-width:650px){.confirmed-summary{grid-template-columns:1fr;gap:12px}}
-
-
-.confirmed-compact .confirmed-summary{grid-template-columns:1fr;gap:0}
-.confirmed-compact:not([open]) .confirmed-description{-webkit-line-clamp:1;margin:4px 0}
-.confirmed-compact .confirmed-summary h3{font-size:16px;margin:4px 0}
-.confirmed-compact .confirmed-crew{margin-top:6px}
-.confirmed-compact .confirmed-expand{margin-top:6px}
-.cost-chart-row{padding:12px 0;border-bottom:1px solid #E3E7ED}
-.cost-chart-bar{height:10px;background:#ECE5F6;border-radius:6px;margin:6px 0;overflow:hidden}
-.cost-chart-bar span{display:block;height:100%;background:#9676BC;border-radius:6px}
-
-.confirmed-slim{padding:0;margin-bottom:6px;border-radius:9px;box-shadow:none}
-.confirmed-slim .confirmed-summary{display:grid;grid-template-columns:minmax(0,1fr) auto 16px;gap:16px;align-items:center;padding:13px 16px;cursor:pointer}
-.confirmed-row-title{display:flex;align-items:baseline;gap:10px;min-width:0;flex-wrap:wrap}
-.confirmed-row-title small{color:#697689;font-size:11px}
-.confirmed-row-title b{font-size:14px;color:#14234A}
-.confirmed-row-amount{font-size:14px;font-variant-numeric:tabular-nums;color:#14234A;white-space:nowrap}
-.confirmed-row-chevron{font-size:22px;color:#7A8290;text-align:center;transition:transform .15s}
-.confirmed-slim[open] .confirmed-row-chevron{transform:rotate(90deg)}
-.confirmed-slim[open] .confirmed-summary{border-bottom:1px solid #E3E7ED}
-.confirmed-expanded-content{padding:14px 16px}
-.confirmed-expanded-meta{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
-.confirmed-slim summary:hover{background:#F6F8FB;border-radius:9px}
-.confirmed-slim summary:focus-visible{outline:2px solid #4E78B7;outline-offset:2px}
-
-.job-cost-card{margin:14px 0;overflow:hidden}
-.job-cost-card>summary{padding:16px;cursor:pointer;list-style-position:inside}
-.job-cost-title{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px}
-.job-cost-title>b{font-size:18px;margin-right:auto}
-.job-cost-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
-.job-cost-metrics b{overflow-wrap:anywhere}
-.job-reserve-track{height:8px;background:#edf0f4;position:relative;margin:14px 0 8px;border-radius:5px}
-.job-reserve-track span{display:block;height:100%;border-radius:5px}
-.job-reserve-track i{position:absolute;left:50%;top:-3px;height:14px;border-left:2px solid var(--navy)}
-@media(max-width:600px){.job-cost-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.job-cost-title strong{width:100%;font-size:14px}}
 </style>
 
   <meta name="theme-color" content="#14234A">
@@ -4561,11 +4488,9 @@ details[open] > .confirmed-summary .confirmed-expand::after{content:'▾ Collaps
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
 
-<script src="./qrcode.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"
   onerror="this.onerror=null;this.src='https://unpkg.com/@supabase/supabase-js@2';"></script>
-<script src="selections-metadata.js"></script>
 </head>
 <body>
 
@@ -4606,15 +4531,15 @@ details[open] > .confirmed-summary .confirmed-expand::after{content:'▾ Collaps
     <div class="login-users">
       <button onclick="signInAs('Jony')" style="--user-color:#4E78B7">
         <span class="login-user-dot"></span>
-        <span><b>Jony</b><small>Pre-Approver</small></span>
+        <span><b>Jony</b><small>Project Operator</small></span>
       </button>
       <button onclick="signInAs('Adair')" style="--user-color:#B59A62">
         <span class="login-user-dot"></span>
-        <span><b>Adair</b><small>Pre-Approver</small></span>
+        <span><b>Adair</b><small>Project Manager</small></span>
       </button>
       <button onclick="signInAs('Gio')" style="--user-color:#4F8A68">
         <span class="login-user-dot"></span>
-        <span><b>Gio</b><small>Final Approver</small></span>
+        <span><b>Gio</b><small>Owner / Approver</small></span>
       </button>
     </div>
 
@@ -4750,7 +4675,7 @@ details[open] > .confirmed-summary .confirmed-expand::after{content:'▾ Collaps
     <div class="sidebar-account-wrap">
       <button class="sidebar-account" id="sidebarAccountButton" onclick="toggleSidebarAccountMenu(event)" aria-expanded="false">
         <span class="sidebar-avatar" id="sidebarUserAvatar">J</span>
-        <span><strong id="sidebarUserName">Jony</strong><small id="sidebarUserRole">Pre-Approver</small></span>
+        <span><strong id="sidebarUserName">Jony</strong><small id="sidebarUserRole">Project Operator</small></span>
         <span class="sidebar-account-caret">⌃</span>
       </button>
       <div class="sidebar-account-menu" id="sidebarAccountMenu">
@@ -5125,28 +5050,22 @@ let poMenuOpen=false;
 
 
 const USERS = [
-  {name:'Jony',role:'Pre-Approver',color:'#4E78B7'},
-  {name:'Adair',role:'Pre-Approver',color:'#B59A62'},
-  {name:'Gio',role:'Final Approver',color:'#4F8A68'},
-  {name:'Hayden Gross',role:'Admin',color:'#5F6F82'}
+  {name:'Jony',role:'Project Operator',color:'#4E78B7'},
+  {name:'Adair',role:'Project Manager',color:'#B59A62'},
+  {name:'Gio',role:'Owner / Approver',color:'#4F8A68'}
 ];
 
 function userColor(name){
   return USERS.find(u=>u.name===name)?.color || '#8B929D';
 }
 function userInitial(name){
-  const parts=String(name||'?').trim().split(/\s+/).filter(Boolean);
-  if(parts.length>=2) return (parts[0][0]+parts[parts.length-1][0]).toUpperCase();
-  return (parts[0]||'?').charAt(0).toUpperCase();
+  return (name || '?').trim().charAt(0).toUpperCase();
 }
 function poNeedsReviewForCurrentUser(po){
-  if(state.currentUser==='Hayden Gross') return false;
-  if(state.currentUser==='Gio') return po.status==='Pre-Approved';
-  return po.status==='Draft';
+  return canApprovePO() && po.status==='Draft';
 }
 function reviewStageLabel(){
-  if(state.currentUser==='Hayden Gross') return 'Admin Oversight';
-  return state.currentUser==='Gio' ? 'Pre-Approved ↔ Approved' : 'Draft ↔ Pre-Approved';
+  return canApprovePO() ? 'Awaiting one approval' : 'Approval handled by Gio';
 }
 
 function ensureUserData(){
@@ -5158,12 +5077,13 @@ function ensureUserData(){
     });
 
     (p.pos||[]).forEach(po=>{
-      // Migrate the previous prototype's status names.
+      // Migrate the previous two-step prototype into one approval step.
       if(po.status==='Complete'){
         po.status='Approved';
-        if(!po.approvedBy) po.approvedBy='Gio';
-      }else if(po.status==='Approved' && !po.preApprovedBy && !po.approvedBy){
-        po.status='Pre-Approved';
+        if(!po.approvedBy) po.approvedBy=po.preApprovedBy||'Gio';
+      }else if(po.status==='Pre-Approved'){
+        po.status='Draft';
+        po.preApprovedBy='';
       }
 
       if(typeof po.preApprovedBy!=='string') po.preApprovedBy='';
@@ -5180,6 +5100,9 @@ function canPreApprove(){
 }
 function canFinalApprove(){
   return state.currentUser==='Gio';
+}
+function canApprovePO(){
+  return canFinalApprove();
 }
 
 function signInAs(name){
@@ -5696,7 +5619,7 @@ function openProjectFromSidebar(id){
   }
 
   if(currentPage==='paybyline' || currentPage==='estimates'){
-    const keepView=['estimate','payouts'].includes(poHubView)?poHubView:'splits';
+    const keepView=poHubView==='estimate'?'estimate':'splits';
     state.selectedProjectId=Number(id);
     poHubView=keepView;
     openPOIds.clear();
@@ -6007,7 +5930,8 @@ function openProject(id){
 
 function exportAppBackup(){
   try{
-    // Export the live state even when browser storage or cloud saving fails.
+    saveState(false);
+
     const backup={
       app:'J&J Home Renovations Operations Prototype',
       version:1,
@@ -6026,7 +5950,7 @@ function exportAppBackup(){
     document.body.appendChild(a);
     a.click();
     a.remove();
-    setTimeout(()=>URL.revokeObjectURL(url),60000);
+    URL.revokeObjectURL(url);
 
     toast('Backup exported');
   }catch(err){
@@ -6076,7 +6000,7 @@ function importAppBackup(input){
       if(typeof ensureUserData==='function') ensureUserData();
       if(typeof ensurePreconData==='function') ensurePreconData();
 
-      writeLocalState();
+      localStorage.setItem('jj_full_proto',JSON.stringify(state));
 
       if(typeof selectedPOIds!=='undefined') selectedPOIds.clear();
       if(typeof selectedEstimateRows!=='undefined') selectedEstimateRows.clear();
@@ -6122,66 +6046,57 @@ let cloudChannel=null;
 let cloudSaveTimer=null;
 let cloudApplying=false;
 let cloudLastRemoteAt=0;
-let cloudRevision=null,cloudDirty=false,cloudWriteBusy=false,cloudEditSequence=0;
-// Recovery copies use IndexedDB, separate from the small localStorage quota.
-function openRecoveryDB(){
-  if(openRecoveryDB.promise)return openRecoveryDB.promise;
-  openRecoveryDB.promise=new Promise((resolve,reject)=>{
-    const request=indexedDB.open('jj_operations_recovery',1);
-    request.onupgradeneeded=()=>request.result.createObjectStore('snapshots');
-    request.onsuccess=()=>resolve(request.result);
-    request.onerror=()=>reject(request.error);
-    request.onblocked=()=>reject(new Error('Recovery storage is blocked'));
-  }).catch(error=>{openRecoveryDB.promise=null;throw error;});
-  return openRecoveryDB.promise;
-}
-function writeLocalState(){
-  try{
-    localStorage.setItem('jj_full_proto',JSON.stringify(state));
-    writeLocalState.failed=false;
-    return true;
-  }catch(error){
-    writeLocalState.failed=true;
-    console.warn('Device save unavailable; cloud save and backup export remain available',error);
-    return false;
-  }
-}
-function preserveSelectionRecovery(){
-  // Capture immediately, before callers replace or mutate state.
-  const encoded=JSON.stringify(state);
-  const legacyKeys=['jj_selection_recovery_latest','jj_selection_recovery_previous'];
-  let legacy=[];
-  try{legacy=legacyKeys.map(key=>[key,localStorage.getItem(key)]).filter(([,value])=>value!==null);}catch(e){}
-  const task=async()=>{
-    const db=await openRecoveryDB();
-    await new Promise((resolve,reject)=>{
-      const tx=db.transaction('snapshots','readwrite'),store=tx.objectStore('snapshots');
-      for(const [key,value] of legacy)store.put(value,'legacy:'+key);
-      const old=store.get('latest');
-      old.onsuccess=()=>{
-        if(old.result!==encoded){
-          if(old.result)store.put(old.result,'previous');
-          store.put(encoded,'latest');
-        }
-      };
-      tx.oncomplete=resolve;
-      tx.onerror=()=>reject(tx.error);
-      tx.onabort=()=>reject(tx.error||new Error('Recovery save aborted'));
-    });
-    // Only retire the quota-consuming copies after the transaction commits.
-    for(const [key,value] of legacy){
-      try{if(localStorage.getItem(key)===value)localStorage.removeItem(key);}catch(e){}
-    }
-    // Retry the current state, never the earlier snapshot captured above.
-    if(legacy.length&&writeLocalState.failed)writeLocalState();
-    return true;
-  };
-  preserveSelectionRecovery.pending=(preserveSelectionRecovery.pending||Promise.resolve()).then(task).catch(error=>{
-    console.warn('Recovery snapshot unavailable',error);return false;
-  });
-  return preserveSelectionRecovery.pending;
+let cloudBaseState=null;
+let cloudSaveInFlight=false;
+let cloudSaveQueued=false;
+let cloudRetryCount=0;
+
+function cloneCloudValue(value){
+  return value==null ? value : JSON.parse(JSON.stringify(value));
 }
 
+function sharedCloudState(source=state){
+  const shared=cloneCloudValue(source||{});
+  if(shared && typeof shared==='object') delete shared.currentUser;
+  return shared;
+}
+
+function cloudValuesEqual(a,b){
+  return JSON.stringify(a)===JSON.stringify(b);
+}
+
+// Merge at the field/item level so a remote edit to another P.O. or project is
+// kept while this browser's unsaved edit remains intact. When both people edit
+// the exact same field, the local value wins and is sent back on the next save.
+function mergeCloudValues(base,local,incoming){
+  if(cloudValuesEqual(local,base)) return cloneCloudValue(incoming);
+  if(cloudValuesEqual(incoming,base)) return cloneCloudValue(local);
+
+  if(Array.isArray(base)&&Array.isArray(local)&&Array.isArray(incoming)){
+    const keyed=base.concat(local,incoming).every(item=>item && typeof item==='object' && item.id!=null);
+    if(keyed){
+      const ids=[...new Set([...base,...local,...incoming].map(item=>item.id))];
+      return ids.map(id=>mergeCloudValues(
+        base.find(item=>item.id===id),
+        local.find(item=>item.id===id),
+        incoming.find(item=>item.id===id)
+      ));
+    }
+    return cloneCloudValue(local);
+  }
+
+  if(base&&local&&incoming && typeof base==='object' && typeof local==='object' && typeof incoming==='object'){
+    const keys=[...new Set([...Object.keys(base),...Object.keys(local),...Object.keys(incoming)])];
+    const merged={};
+    keys.forEach(key=>{
+      if(key==='currentUser') return;
+      merged[key]=mergeCloudValues(base[key],local[key],incoming[key]);
+    });
+    return merged;
+  }
+
+  return cloneCloudValue(local);
+}
 
 function looksLikePasswordRecoveryUrl(url=RECOVERY_URL_AT_LOAD){
   try{
@@ -6227,34 +6142,6 @@ function setCloudStatus(label,kind='local'){
   el.className=`cloud-status ${kind}`;
 }
 
-// The app is hosted as a static site, so a transient CDN failure must not
-// permanently leave the session in a broken "Not saved" state. Retry both
-// supported CDN origins before showing the sign-in screen.
-let cloudLibraryPromise=null;
-function ensureSupabaseLoaded(){
-  if(window.supabase?.createClient) return Promise.resolve(true);
-  if(cloudLibraryPromise) return cloudLibraryPromise;
-  cloudLibraryPromise=new Promise(resolve=>{
-    const urls=[
-      'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2',
-      'https://unpkg.com/@supabase/supabase-js@2'
-    ];
-    let index=0;
-    const tryNext=()=>{
-      if(window.supabase?.createClient){resolve(true);return;}
-      if(index>=urls.length){resolve(false);return;}
-      const script=document.createElement('script');
-      script.src=urls[index++];
-      script.async=true;
-      script.onload=()=>window.supabase?.createClient?resolve(true):tryNext();
-      script.onerror=tryNext;
-      document.head.appendChild(script);
-    };
-    tryNext();
-  });
-  return cloudLibraryPromise;
-}
-
 function openCloudSetup(){ return; }
 
 function closeCloudSetup(){ return; }
@@ -6293,12 +6180,8 @@ async function initCloud(forceLogin=false){
   }
 
   if(!window.supabase?.createClient){
-    setCloudStatus('Connecting…','saving');
-    const loaded=await ensureSupabaseLoaded();
-    if(!loaded){
-      setCloudStatus('Saved locally','local');
-      return false;
-    }
+    setCloudStatus('Offline','offline');
+    throw new Error('Supabase library did not load. Check your internet connection and refresh.');
   }
 
   cloudClient=window.supabase.createClient(cfg.url,cfg.key,{
@@ -6513,8 +6396,7 @@ function appUserFromEmail(email=''){
   const known={
     'jony@jandjhomerenovations.com':'Jony',
     'adair@jandjhomerenovations.com':'Adair',
-    'jovani@jandjhomerenovations.com':'Gio',
-    'hayden@educo.io':'Hayden Gross'
+    'jovani@jandjhomerenovations.com':'Gio'
   };
 
   return known[e] || '';
@@ -6605,9 +6487,7 @@ async function loadCloudState(){
     cloudApplying=true;
 
     const sessionUser=state.currentUser;
-    preserveSelectionRecovery();
     state=data.state;
-    cloudRevision=data.updated_at;
 
     if(USERS.some(u=>u.name===sessionUser)){
       state.currentUser=sessionUser;
@@ -6615,7 +6495,8 @@ async function loadCloudState(){
 
     ensureUserData();
     ensurePreconData();
-    writeLocalState();
+    localStorage.setItem('jj_full_proto',JSON.stringify(state));
+    cloudBaseState=sharedCloudState(state);
     cloudApplying=false;
     cloudLastRemoteAt=Date.parse(data.updated_at||0)||Date.now();
   }else{
@@ -6647,37 +6528,34 @@ function subscribeCloudState(){
         const incomingAt=Date.parse(incoming.updated_at||0)||Date.now();
         if(incomingAt<=cloudLastRemoteAt) return;
 
-        if(cloudDirty||cloudWriteBusy||homeownerSyncBusy)return;
-        cloudRevision=incoming.updated_at;
-        preserveSelectionRecovery();
         cloudLastRemoteAt=incomingAt;
         cloudApplying=true;
 
-        // Preserve the authenticated person's identity locally.
-        let signedInName='';
-        try{
-          const sessionUser=cloudClient?.auth?.getSession
-            ? null
-            : null;
-        }catch(e){}
-
         const currentLocalUser=state.currentUser;
-        state=incoming.state;
+        const localShared=sharedCloudState(state);
+        const remoteShared=sharedCloudState(incoming.state);
+        const merged=cloudBaseState
+          ? mergeCloudValues(cloudBaseState,localShared,remoteShared)
+          : remoteShared;
+        state=merged;
 
         // Shared project data is global, but "who am I" is device/session-specific.
-        if(USERS.some(u=>u.name===currentLocalUser)){
-          state.currentUser=currentLocalUser;
-        }
+        if(USERS.some(u=>u.name===currentLocalUser)) state.currentUser=currentLocalUser;
 
         ensureUserData();
         ensurePreconData();
-        writeLocalState();
+        localStorage.setItem('jj_full_proto',JSON.stringify(state));
+        cloudBaseState=remoteShared;
         cloudApplying=false;
 
         renderAll();
         buildNav();
         syncUserSelector();
         setCloudStatus('Live','saved');
+
+        // If local edits were merged with this remote update, send the merged
+        // result back so the other browser receives both people’s changes.
+        if(!cloudValuesEqual(sharedCloudState(state),remoteShared)) queueCloudSave();
       }
     )
     .subscribe(status=>{
@@ -6687,56 +6565,93 @@ function subscribeCloudState(){
 }
 
 function queueCloudSave(){
-  if(cloudApplying) return;
-  if(!cloudClient){
-    setCloudStatus('Saved locally','local');
-    return;
-  }
-  cloudDirty=true;cloudEditSequence++;
+  if(cloudApplying || !cloudClient) return;
+  cloudSaveQueued=true;
   clearTimeout(cloudSaveTimer);
   setCloudStatus('Saving…','saving');
   cloudSaveTimer=setTimeout(pushCloudState,450);
 }
 
 async function pushCloudState(){
-  if(cloudApplying || !cloudClient || cloudWriteBusy) return;
-  if(homeownerSyncBusy){cloudSaveTimer=setTimeout(pushCloudState,450);return;}
-  cloudWriteBusy=true;
-  const sequence=cloudEditSequence;
+  if(cloudApplying || !cloudClient) return;
+  if(cloudSaveInFlight){
+    cloudSaveQueued=true;
+    return;
+  }
+  cloudSaveInFlight=true;
+  cloudSaveQueued=false;
+
   try{
     const {data:{user}}=await cloudClient.auth.getUser();
-    if(!user){setCloudStatus('Sign In','offline');return;}
-    const sharedState=JSON.parse(JSON.stringify(state));delete sharedState.currentUser;
-    const now=new Date().toISOString();
-    let query=cloudClient.from('app_state');
-    if(cloudRevision){
-      query=query.update({state:sharedState,updated_at:now,updated_by:user.id})
-        .eq('org_id',CLOUD_ORG_ID).eq('updated_at',cloudRevision);
-    }else{
-      query=query.insert({org_id:CLOUD_ORG_ID,state:sharedState,updated_at:now,updated_by:user.id});
-    }
-    const {data,error}=await query.select('updated_at');
-    if(error)throw error;
-    if(!data?.length){
-      preserveSelectionRecovery();
-      setCloudStatus('Save conflict','offline');
-      toast('Cloud data changed. Your edits are kept on this device. Export a backup before reopening; this save did not overwrite the cloud.');
+    if(!user){
+      setCloudStatus('Sign In','offline');
       return;
     }
-    cloudRevision=data[0].updated_at;cloudLastRemoteAt=Date.parse(cloudRevision);
-    if(sequence===cloudEditSequence){cloudDirty=false;setCloudStatus('Saved','saved');}
-    else{cloudSaveTimer=setTimeout(pushCloudState,450);}
-  }catch(err){console.error('Cloud save failed',err);setCloudStatus('Not saved','offline');}
-  finally{cloudWriteBusy=false;}
+
+    const now=new Date().toISOString();
+    const localUserName=state.currentUser;
+
+    // Re-read the row before writing. If another browser saved first, merge
+    // its changes into this browser's local edits instead of overwriting them.
+    const {data:latest,error:latestError}=await cloudClient
+      .from('app_state')
+      .select('state,updated_at')
+      .eq('org_id',CLOUD_ORG_ID)
+      .maybeSingle();
+    if(latestError) throw latestError;
+
+    let sharedState=sharedCloudState(state);
+    if(latest?.state){
+      const latestShared=sharedCloudState(latest.state);
+      const latestAt=Date.parse(latest.updated_at||0)||0;
+      if(!cloudBaseState) cloudBaseState=latestShared;
+      if(latestAt>cloudLastRemoteAt || !cloudValuesEqual(latestShared,cloudBaseState)){
+        sharedState=mergeCloudValues(cloudBaseState,sharedState,latestShared);
+        state=sharedState;
+        state.currentUser=USERS.some(u=>u.name===localUserName)?localUserName:'Jony';
+        cloudBaseState=latestShared;
+        localStorage.setItem('jj_full_proto',JSON.stringify(state));
+        renderAll();
+      }
+    }
+
+    const {error}=await cloudClient
+      .from('app_state')
+      .upsert({
+        org_id:CLOUD_ORG_ID,
+        state:sharedState,
+        updated_at:now,
+        updated_by:user.id
+      },{onConflict:'org_id'});
+
+    if(error) throw error;
+
+    cloudBaseState=sharedCloudState(state);
+    cloudLastRemoteAt=Date.parse(now);
+    cloudRetryCount=0;
+    setCloudStatus('Saved','saved');
+  }catch(err){
+    console.error('Cloud save failed',err);
+    cloudRetryCount+=1;
+    if(cloudRetryCount<=3){
+      cloudSaveQueued=true;
+      clearTimeout(cloudSaveTimer);
+      setCloudStatus('Syncing changes…','saving');
+      cloudSaveTimer=setTimeout(pushCloudState,Math.min(6000,1000*cloudRetryCount));
+    }else{
+      cloudRetryCount=0;
+      setCloudStatus('Saved locally — sync paused','offline');
+    }
+  }finally{
+    cloudSaveInFlight=false;
+    if(cloudSaveQueued && cloudRetryCount===0) queueCloudSave();
+  }
 }
 
 function saveState(show=true){
-  const savedLocally=writeLocalState();
-  preserveSelectionRecovery();
-  // A failed device write must never prevent cloud saving or close/render steps.
+  localStorage.setItem('jj_full_proto',JSON.stringify(state));
   queueCloudSave();
-  if(!savedLocally&&!cloudClient)setCloudStatus('Device storage full — export backup','offline');
-  if(show)toast(cloudClient?'Saving to J&J Cloud…':savedLocally?'Saved on this device':'Device storage full. Export a backup; keep this app open.');
+  if(show) toast(cloudClient?'Saved':'Saved on this device');
 }
 function toast(text){
   const el=document.createElement('div'); el.className='toast'; el.textContent=text;
@@ -6750,7 +6665,7 @@ function projectNextAction(p){
   if(reviewPOs.length){
     return {
       title:`${reviewPOs.length} P.O.${reviewPOs.length===1?'':'s'} need your review`,
-      detail:state.currentUser==='Gio' ? 'Pre-Approved → Approved' : 'Draft → Pre-Approved',
+      detail:'One approval is still needed',
       label:'Review P.Os',
       action:`openProjectPOHub(${p.id},'splits')`
     };
@@ -7054,12 +6969,11 @@ function renderDashboard(){
 
       <div class="po-job-list">
         <div class="po-job-head">
-          <div>Job</div><div>Draft</div><div>Pre-App.</div><div>Approved</div><div>Review</div><div>Labor Cost</div><div>Crew Payout</div>
+          <div>Job</div><div>Draft</div><div>Approved</div><div>Review</div><div>Labor Cost</div><div>Crew Payout</div>
         </div>
         ${state.projects.map(p=>{
           const color=projectColorHex(p.color);
           const drafts=p.pos.filter(x=>x.status==='Draft').length;
-          const pre=p.pos.filter(x=>x.status==='Pre-Approved').length;
           const approved=p.pos.filter(x=>x.status==='Approved').length;
           const review=p.pos.filter(po=>poNeedsReviewForCurrentUser(po)).length;
           const labor=laborBuilderCost(p);
@@ -7070,7 +6984,6 @@ function renderDashboard(){
               <small>${p.jobNo} · ${p.pos.length} total P.O.${p.pos.length===1?'':'s'}</small>
             </div>
             <div class="po-cell">${drafts}</div>
-            <div class="po-cell">${pre}</div>
             <div class="po-cell">${approved}</div>
             <div class="po-cell ${review?'review':''}">${review}</div>
             <div class="po-cost">${money(labor)}</div>
@@ -7081,7 +6994,7 @@ function renderDashboard(){
 
       <div class="dashboard-mini-legend">
         <span><i style="background:var(--red)"></i> Review = action needed by ${state.currentUser}</span>
-        <span><i style="background:var(--green)"></i> Approved = final approval complete</span>
+        <span><i style="background:var(--green)"></i> Approved = approval complete</span>
       </div>
     </div>
   `;
@@ -7408,12 +7321,8 @@ function poPrintHTML(p,po,index,addPageBreak=false){
 
       <div class="print-approval">
         <div>
-          <span>Pre-Approval</span>
-          <b>${po.preApprovedBy ? `Pre-Approved by ${printSafe(po.preApprovedBy)}` : 'Waiting for Jony or Adair'}</b>
-        </div>
-        <div>
-          <span>Final Approval</span>
-          <b>${po.approvedBy ? `Approved by ${printSafe(po.approvedBy)}` : 'Waiting for Gio'}</b>
+          <span>Approval</span>
+          <b>${po.approvedBy ? `Approved by ${printSafe(po.approvedBy)}` : 'Waiting for approval'}</b>
         </div>
       </div>
     </section>`;
@@ -7806,7 +7715,7 @@ function openProjectPOHub(id,view='splits'){
 }
 
 function openPOHub(view='splits'){
-  poHubView = ['estimate','payouts'].includes(view) ? view : 'splits';
+  poHubView = view === 'estimate' ? 'estimate' : 'splits';
   openPOIds.clear();
   deletePOIndex = null;
   selectedPOIds.clear();
@@ -7819,7 +7728,7 @@ function openPOHub(view='splits'){
 }
 
 function setPOHubView(view){
-  poHubView = ['estimate','payouts'].includes(view) ? view : 'splits';
+  poHubView = view === 'estimate' ? 'estimate' : 'splits';
   openPOIds.clear();
   deletePOIndex = null;
   selectedPOIds.clear();
@@ -7843,7 +7752,6 @@ function estimateRowTitle(row){
   return String(row?.title ?? row?.line ?? '').trim();
 }
 
-function estimateSourceMatches(a,b){return String(a).split('||').slice(0,3).join('||')===String(b).split('||').slice(0,3).join('||');}
 function estimateRowSourceKey(row){
   const parentGroup=String(row?.parentGroup||row?.parent_group||'').trim();
   const title=estimateRowTitle(row);
@@ -7870,7 +7778,7 @@ function estimateRowHasPO(p,row){
   return (p.pos||[]).some(po=>{
     // New P.O.s get an exact source key.
     if(po.sourceEstimateKey){
-      return estimateSourceMatches(po.sourceEstimateKey,sourceKey);
+      return po.sourceEstimateKey===sourceKey;
     }
 
     // Compatibility for P.O.s already created before this fix.
@@ -8020,49 +7928,12 @@ function createPOsFromSelectedEstimateRows(){
   toast(`${created} P.O. Split${created===1?'':'s'} created`);
 }
 
-const estimateProductChoices=new WeakMap();
-function estimateProductSet(project){
-  if(!estimateProductChoices.has(project))estimateProductChoices.set(project,new Set());
-  const set=estimateProductChoices.get(project);
-  for(const row of set)if(!project.estimate.includes(row)||estimateSelectionExists(project,row))set.delete(row);
-  return set;
-}
-function estimateSelectionExists(project,row){
-  const norm=s=>String(s||'').trim().toLowerCase().replace(/\s+/g,' ');
-  const title=norm(row.title||row.line),room=norm(row.parentGroup||'Unassigned');
-  return (project.selections||[]).some(item=>item.estimateSourceKey===room+'|'+title||(norm(item.title)===title&&norm(item.room)===room));
-}
-function refreshEstimateProducts(){
-  if(document.getElementById('paybyline')?.classList.contains('active'))renderPayByLine();else renderProjectPanel();
-}
-function toggleEstimateProduct(index,checked){
-  const p=selectedProject(),row=p.estimate[index],set=estimateProductSet(p);
-  if(row&&!estimateSelectionExists(p,row)){if(checked)set.add(row);else set.delete(row);}
-  refreshEstimateProducts();
-}
-function selectAllEstimateProducts(checked){
-  const p=selectedProject(),set=estimateProductSet(p);set.clear();
-  if(checked)p.estimate.forEach(row=>{if(!estimateSelectionExists(p,row))set.add(row)});
-  refreshEstimateProducts();
-}
-function addEstimateProducts(){
-  const p=selectedProject(),set=estimateProductSet(p);
-  const count=seedEstimateSelections(p,[...set],true);
-  saveState(false);set.clear();renderAll();refreshEstimateProducts();
-  toast(count?`${count} product${count===1?'':'s'} added to Selections`:'These products are already in Selections');
-}
-function estimateProductsToolbar(p){
-  const count=estimateProductSet(p).size;
-  return `<div class="toolbar" style="margin-top:12px;align-items:center"><b>Send products to Selections</b><button class="btn btn-light" onclick="selectAllEstimateProducts(true)">Select All Products</button><button class="btn btn-light" onclick="selectAllEstimateProducts(false)">Clear Products</button><button class="btn btn-gold" ${count?'':'disabled'} onclick="addEstimateProducts()">Add to Selections (${count})</button><button class="btn btn-light" onclick="openSelections()">Open Selections</button></div><p class="help-text">Check one or more items in the Selection column, then Add to Selections. Any estimate line can be added. Existing products are marked Added and will not be duplicated.</p>`;
-}
-
 function estimateTableHTML(p,mode='hub'){
   const isProject=mode==='project';
   const toggleFn=isProject?'toggleEstimateSelectionProject':'toggleEstimateSelection';
   const updateFn=isProject?'updateEstimate':'updateEstimateFromPOHub';
 
   return `
-    ${estimateProductsToolbar(p)}
     <div class="estimate-table-hint">
       <span>Imported estimate layout: Parent Group + Title · Description · Quantity · Unit · Unit cost · Cost type · Builder Cost</span>
       <span>Scroll sideways on phone to see all columns.</span>
@@ -8074,7 +7945,6 @@ function estimateTableHTML(p,mode='hub'){
           <tr>
             <th class="col-delete">Delete</th>
             <th class="col-po">P.O.</th>
-            <th style="min-width:95px">Selection</th>
             <th class="col-title">Title</th>
             <th class="col-description">Description</th>
             <th class="col-qty">Quantity</th>
@@ -8111,7 +7981,6 @@ function estimateTableHTML(p,mode='hub'){
                   }
                 </td>
 
-                <td style="min-width:95px">${estimateSelectionExists(p,raw)?'<span class="estimate-po-created">Added</span>':`<input type="checkbox" class="estimate-select" aria-label="Add ${esc(r.title)} to Selections" ${estimateProductSet(p).has(raw)?'checked':''} onchange="toggleEstimateProduct(${i},this.checked)">`}</td>
                 <td class="col-title">
                   ${r.parentGroup ? `<div class="estimate-parent-group">${esc(r.parentGroup)}</div>` : ''}
                   <textarea class="estimate-cell-input estimate-item-input" rows="2"
@@ -8160,85 +8029,6 @@ function estimateTableHTML(p,mode='hub'){
     </div>`;
 }
 
-// Read-only view: use the same final approval status and base crew pay as P.O. Splits.
-function confirmedPayoutGroups(project){
-  return (project.pos||[]).filter(po=>po.status==='Approved').map(po=>({
-    po,
-    recipients:(po.splits||[]).filter(split=>
-      String(split.name||'').trim() && Number.isFinite(Number(split.pct)) && Number(split.pct)>0
-    ).map(split=>({
-      name:String(split.name).trim(),
-      pct:Number(split.pct),
-      amount:Number(po.builderCost||0)*0.60*Number(split.pct)/100
-    }))
-  })).filter(group=>group.recipients.length);
-}
-
-function confirmedPayoutDescription(project,po){
-  const rows=project.estimate||[];
-  if(po.sourceEstimateKey){
-    const exact=rows.find(row=>estimateSourceMatches(estimateRowSourceKey(row),po.sourceEstimateKey));
-    if(exact) return String(exact.description||'').trim();
-  }
-  const norm=value=>String(value||'').trim().toLowerCase();
-  const title=norm(getPOBaseTitle(po));
-  const group=norm(po.parentGroup || (String(po.line||'').includes(' · ')?String(po.line).split(' · ')[0]:''));
-  let matches=rows.filter(row=>norm(estimateRowTitle(row))===title && norm(row.parentGroup||row.parent_group)===group);
-  if(matches.length>1) matches=matches.filter(row=>Number(row.builderCost||0)===Number(po.builderCost||0));
-  // Never borrow a description from a different room or an ambiguous estimate line.
-  return matches.length===1 ? String(matches[0].description||'').trim() : '';
-}
-
-function printConfirmedPayouts(){
-  const project=selectedProject();
-  if(!confirmedPayoutGroups(project).length){toast('No confirmed payouts to print.');return;}
-  launchPrint(`<div class="print-doc-header"><h1>J&J Home Renovations</h1><h2>Confirmed Payouts</h2><p>${esc(project.name)} · ${esc(project.jobNo||'')}</p></div>` + renderConfirmedPayouts(project,true));
-}
-
-function confirmedPayoutIsOpen(projectId,poId){
-  const key=JSON.stringify([projectId,poId]);
-  return !(confirmedPayoutIsOpen.closed || new Set()).has(key);
-}
-function rememberConfirmedPayoutOpen(projectId,poId,open){
-  const closed=confirmedPayoutIsOpen.closed ||= new Set();
-  const key=JSON.stringify([projectId,poId]);
-  if(open) closed.delete(key);else closed.add(key);
-}
-function setAllConfirmedPayoutsOpen(open){
-  const project=selectedProject();
-  confirmedPayoutGroups(project).forEach(({po})=>rememberConfirmedPayoutOpen(project.id,po.id,open));
-  renderPayByLine();
-}
-function confirmedAllocationCards(cost,forPrint=false){
-  return `<div class="${forPrint?'print-alloc-grid':'stats'}" style="margin-bottom:12px">
-    ${[['Base Crew',60],['Touch-up',5],['Reserve',35]].map(([label,pct])=>`<div class="${forPrint?'print-alloc':'card stat'}"><div class="label">${label} · ${pct}%</div><b style="font-size:${forPrint?'16':'22'}px">${money(cost*pct/100)}</b></div>`).join('')}
-  </div>`;
-}
-function renderConfirmedPayouts(project,forPrint=false){
-  const groups=confirmedPayoutGroups(project);
-  const total=groups.reduce((sum,group)=>sum+group.recipients.reduce((n,r)=>n+r.amount,0),0);
-  const cost=groups.reduce((sum,{po})=>sum+Number(po.builderCost||0),0);
-  return `${forPrint?'':`<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px"><button class="btn btn-navy" onclick="printConfirmedPayouts()" ${groups.length?'':'disabled'}>Print Confirmed Payouts</button><button class="btn btn-light" onclick="setAllConfirmedPayoutsOpen(true)">Expand All</button><button class="btn btn-light" onclick="setAllConfirmedPayoutsOpen(false)">Collapse All</button></div>`}<div class="po-hub-section-title"><h3>Confirmed Payouts</h3><span>${groups.length} approved P.O.s · ${money(total)} crew payouts</span></div>
-    
-    <p class="help-text" style="margin-bottom:14px">Approved employee payouts. Crew splits apply to the 60% base crew pool.</p>
-    ${groups.length ? groups.map(({po,recipients})=>{
-      const heading=`<div class="eyebrow">${esc(getPOParentGroup(po))}</div><h3 style="margin:4px 0 8px">${esc(getPOBaseTitle(po))}</h3><div class="help-text">Crew ${money(recipients.reduce((sum,r)=>sum+r.amount,0))}</div>`;
-      const description=confirmedPayoutDescription(project,po);
-      const body=`<div style="padding-top:12px">
-        ${description?`<p style="white-space:pre-wrap;overflow-wrap:anywhere;margin:0 0 12px;line-height:1.5">${esc(description)}</p>`:''}
-        <table style="width:100%;table-layout:fixed" aria-label="Confirmed crew payouts">
-          <thead><tr><th style="width:46%;text-align:left">Employee</th><th style="width:22%;text-align:right">Split</th><th style="width:32%;text-align:right">Payout</th></tr></thead>
-          <tbody>${recipients.map(r=>`<tr><td style="padding:12px 4px;overflow-wrap:anywhere"><b>${esc(r.name)}</b></td><td style="text-align:right;padding:12px 4px">${r.pct}%</td><td style="text-align:right;padding:12px 4px">${money(r.amount)}</td></tr>`).join('')}</tbody>
-        </table></div>`;
-      if(forPrint) return `<section style="padding:16px;margin-bottom:12px;break-inside:avoid">${heading}${body}</section>`;
-      const crewTotal=recipients.reduce((sum,r)=>sum+r.amount,0);
-      const assignedPct=recipients.reduce((sum,r)=>sum+r.pct,0);
-      const overview=`<span class="confirmed-row-title">${getPOParentGroup(po)?`<small>${esc(getPOParentGroup(po))}</small>`:''}<b>${esc(getPOBaseTitle(po))}</b></span><b class="confirmed-row-amount">${money(crewTotal)}</b><span class="confirmed-row-chevron" aria-hidden="true">›</span>`;
-      const approval=`<div class="confirmed-expanded-meta"><span class="confirmed-badge">Approved${po.approvedBy?` by ${esc(po.approvedBy)}`:''}</span><span class="help-text">${recipients.length} crew recipient${recipients.length===1?'':'s'} · ${assignedPct}% assigned${po.preApprovedBy?` · Pre-approved by ${esc(po.preApprovedBy)}`:''}</span></div>`;
-      return `<details class="card confirmed-compact confirmed-slim" ${confirmedPayoutIsOpen(project.id,po.id)?'open':''} ontoggle="rememberConfirmedPayoutOpen(${esc(JSON.stringify(project.id))},${esc(JSON.stringify(po.id))},this.open)"><summary class="confirmed-summary">${overview}</summary><div class="confirmed-expanded-content">${approval}${body}</div></details>`;
-    }).join('') : '<div class="empty"><strong>No confirmed payouts yet.</strong><br>Named crew members with a positive split appear here after final P.O. approval.</div>'}`;
-}
-
 function renderPayByLine(){
   const p=selectedProject();
   const color=projectColorHex(p.color);
@@ -8247,7 +8037,6 @@ function renderPayByLine(){
   const materialTotal=estimateTotal-laborTotal;
   ensureUserData();
   const draftCount=p.pos.filter(x=>x.status==='Draft').length;
-  const preApprovedCount=p.pos.filter(x=>x.status==='Pre-Approved').length;
   const approvedCount=p.pos.filter(x=>x.status==='Approved').length;
   const splitReview=p.pos.filter(po=>poNeedsReviewForCurrentUser(po)).length;
 
@@ -8308,11 +8097,7 @@ function renderPayByLine(){
       <div class="po-hub-nav" style="--project-color:${color}">
         <button class="${poHubView==='splits'?'active':''}" onclick="setPOHubView('splits')">
           P.O. Splits
-          <span>${p.pos.length} P.O.s · ${preApprovedCount} pre-approved · ${approvedCount} approved</span>
-        </button>
-        <button class="${poHubView==='payouts'?'active':''}" onclick="setPOHubView('payouts')">
-          Confirmed Payouts
-          <span>Approved crew names, rates &amp; amounts</span>
+          <span>${p.pos.length} P.O.s · ${draftCount} awaiting approval · ${approvedCount} approved</span>
         </button>
         <button class="${poHubView==='estimate'?'active':''}" onclick="setPOHubView('estimate')">
           Estimate
@@ -8321,11 +8106,6 @@ function renderPayByLine(){
       </div>
 
   `;
-
-  if(poHubView==='payouts'){
-    paybyline.innerHTML = header + renderConfirmedPayouts(p) + '</div>';
-    return;
-  }
 
   if(poHubView==='estimate'){
     paybyline.innerHTML = header + `
@@ -8414,10 +8194,7 @@ ${estimateTableHTML(p,'hub')}
       <button class="quick-action" onclick="applyBulkSplit(2)">2-Way Pay Split</button>
       <button class="quick-action" onclick="applyBulkSplit(3)">3-Way Pay Split</button>
       <button class="quick-action" onclick="applyBulkSplit(4)">4-Way Pay Split</button>
-      <button class="quick-action" onclick="bulkPreApprove()">Pre-Approve</button>
       <button class="quick-action primary" onclick="bulkApprove()">Approve</button>
-      <button class="quick-action" onclick="bulkUndoPOApproval('Pre-Approved')" ${canPreApprove()?'':'disabled'} title="Return selected pre-approved P.O.s to Draft">Undo Pre-Approval</button>
-      <button class="quick-action" onclick="bulkUndoPOApproval('Approved')" ${canFinalApprove()?'':'disabled'} title="Return selected approved P.O.s to Pre-Approved">Undo Approval</button>
       <button class="btn btn-danger" style="padding:8px 10px;font-size:11px" onclick="requestBulkDelete()">Delete Selected</button>
       <div class="po-bulk-count">${selectedPOs().length} selected</div>
     </div>
@@ -8434,7 +8211,7 @@ ${estimateTableHTML(p,'hub')}
       <div class="card stat"><div class="label">Base Crew · 60%</div><div class="value">${money(poBase(p))}</div></div>
       <div class="card stat"><div class="label">Touch-up · 5%</div><div class="value">${money(poBonus(p))}</div></div>
       <div class="card stat"><div class="label">Reserve · 35%</div><div class="value">${money(poReserve(p))}</div></div>
-      <div class="card stat"><div class="label">Pre-Approved</div><div class="value">${preApprovedCount}</div></div>
+      <div class="card stat"><div class="label">Awaiting Approval</div><div class="value">${draftCount}</div></div>
     </div>
 
     ${p.pos.length
@@ -8731,7 +8508,7 @@ function syncPOsFromLabor(p,rows=laborLines(p)){
     const line=baseLine;
     const sourceEstimateKey=estimateRowSourceKey(r);
     const existing=p.pos.find(x=>{
-      if(x.sourceEstimateKey) return estimateSourceMatches(x.sourceEstimateKey,sourceEstimateKey);
+      if(x.sourceEstimateKey) return x.sourceEstimateKey===sourceEstimateKey;
       const poParent=String(getPOParentGroup(x)||x.parentGroup||'').trim();
       const poTitle=String(getPOBaseTitle(x)||x.line||x.title||'').trim();
       return poParent.toLowerCase()===parentGroup.toLowerCase() &&
@@ -8739,11 +8516,7 @@ function syncPOsFromLabor(p,rows=laborLines(p)){
     });
 
     if(existing){
-      const nextCost=Number(r.builderCost||0);
-      if(Number(existing.builderCost)!==nextCost){
-        existing.builderCost=nextCost;
-        existing.status='Draft';existing.preApprovedBy='';existing.approvedBy='';
-      }
+      existing.builderCost=Number(r.builderCost||0);
       return;
     }
 
@@ -8773,7 +8546,6 @@ function syncPOsFromLabor(p,rows=laborLines(p)){
 async function importEstimateFile(input){
   const file=input?.files?.[0];
   if(!file) return;
-  const importProject=selectedProject();
 
   try{
     if(typeof XLSX==='undefined'){
@@ -8796,22 +8568,8 @@ async function importEstimateFile(input){
       throw new Error(parsed.warning || 'No usable estimate line items were found.');
     }
 
-    const p=importProject;
-    const previousEstimate=p.estimate, previousAttachment=p.estimateAttachment;
-    const previousSelections=JSON.parse(JSON.stringify(p.selections||[]));
-    const previousRooms=[...(p.selectionRooms||[])];
-    // Keep small originals in the existing synced job state; all imports also have a current CSV.
-    let attachment=null;
-    if(file.size<=1024*1024){
-      const encoded=await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=()=>reject(new Error('Could not read estimate file'));reader.readAsDataURL(file);});
-      attachment={name:file.name,data:encoded,importedAt:new Date().toISOString()};
-    }
+    const p=selectedProject();
     p.estimate=parsed.items;
-    p.estimateAttachment=attachment;
-    const selectionCount=seedEstimateSelections(p);
-    try{writeLocalState();}
-    catch(error){p.estimate=previousEstimate;p.estimateAttachment=previousAttachment;p.selections=previousSelections;p.selectionRooms=previousRooms;throw new Error('Device storage is full. The previous estimate was preserved. Export a backup and free space before trying again.');}
-    state.selectedProjectId=p.id;
 
     const laborCount=laborLines(p).length;
     selectedEstimateRows.clear();
@@ -8827,7 +8585,7 @@ async function importEstimateFile(input){
     renderPayByLine();
     go('paybyline');
 
-    toast(`Estimate saved to Files · ${selectionCount} selection placeholders added${attachment?'':' · Current CSV available; original exceeds 1 MB'}`);
+    toast(`Estimate uploaded · ${parsed.items.length} lines · ${laborCount} Labor line${laborCount===1?'':'s'} available for P.O. selection`);
 
     if(!laborCount){
       alert('The estimate was imported, but no Labor lines were identified. Change Cost type to Labor on the lines you want to use for P.O. Splits.');
@@ -8872,7 +8630,7 @@ function updateEstimateFromPOHub(i,key,val){
   if(key==='builderCost'){
     const row=p.estimate[i];
     const existing=p.pos.find(po=>{
-      if(po.sourceEstimateKey) return estimateSourceMatches(po.sourceEstimateKey,estimateRowSourceKey(row));
+      if(po.sourceEstimateKey) return po.sourceEstimateKey===estimateRowSourceKey(row);
       const poParent=String(getPOParentGroup(po)||po.parentGroup||'').trim();
       const rowParent=String(row.parentGroup||row.parent_group||'').trim();
       const poTitle=String(getPOBaseTitle(po)||po.line||po.title||'').trim();
@@ -8885,7 +8643,6 @@ function updateEstimateFromPOHub(i,key,val){
       return poTitle.toLowerCase()===rowTitle.toLowerCase();
     });
     if(existing){
-      if(Number(existing.builderCost)!==Number(row.builderCost||0)){existing.status='Draft';existing.preApprovedBy='';existing.approvedBy='';}
       existing.builderCost=Number(row.builderCost||0);
       saveState(false);
     }
@@ -9043,16 +8800,20 @@ ${estimateTableHTML(p,'project')}`:`<div class="empty">No estimate loaded yet.<b
   } else if(projectTab==='files'){
     c.innerHTML=`
       <div class="grid-3">
-        ${renderEstimateFile(p)}
-        ${['Selections','Bids + Subcontractors','Drawings / Plans','3D Renderings','Photos'].map(x=>`
+        ${['Proposal + Estimate','Selections','Bids + Subcontractors','Drawings / Plans','3D Renderings','Photos'].map(x=>`
           <div class="card info-card"><h4>${x}</h4><div class="sub">File upload would live here.</div><div style="margin-top:12px"><button class="btn btn-light" disabled>Upload</button></div></div>`).join('')}
       </div>
     `;
   } else if(projectTab==='jobcost'){
     c.innerHTML=`
-      ${renderJobCostCards()}
+      <div class="stats">
+        <div class="card stat"><div class="label">Labor Builder Cost</div><div class="value">${money(laborBuilderCost(p))}</div></div>
+        <div class="card stat"><div class="label">Base Crew Payout</div><div class="value">${money(poBase(p))}</div></div>
+        <div class="card stat"><div class="label">Touch-up Bonus</div><div class="value">${money(poBonus(p))}</div></div>
+        <div class="card stat"><div class="label">Reserve</div><div class="value">${money(poReserve(p))}</div></div>
+      </div>
       <div class="section card info-card">
-        <h4>Ready-to-Start Check · ${esc(p.name)}</h4>
+        <h4>Ready-to-Start Check</h4>
         <div class="check-list">
           ${p.readyChecklist.map((x,i)=>{
             const checkColor=userColor(x.checkedBy);
@@ -9068,101 +8829,6 @@ ${estimateTableHTML(p,'project')}`:`<div class="empty">No estimate loaded yet.<b
   }
 }
 
-
-const jobCostOpen = new Set();
-function jobReserveSummary(project){
-  const pos=project.pos||[];
-  const estimateLabor=laborBuilderCost(project);
-  const poLabor=pos.reduce((sum,po)=>sum+Number(po.builderCost||0),0);
-  // Cover the full estimate, including labor not yet converted to P.O.s.
-  const labor=Math.max(estimateLabor,poLabor);
-  const approved=pos.filter(po=>po.status==='Approved');
-  const approvedCost=approved.reduce((sum,po)=>sum+Number(po.builderCost||0),0);
-  const crew=approved.reduce((sum,po)=>sum+(po.splits||[]).reduce((n,s)=>n+(String(s.name||'').trim() && Number(s.pct)>0?Number(po.builderCost||0)*.6*Number(s.pct)/100:0),0),0);
-  const projectedCrew=crew+(labor-approvedCost)*.6;
-  const planned=labor*.35, touch=labor*.05, projected=labor-touch-projectedCrew;
-  const variance=projected-planned;
-  return {labor,planned,touch,crew,projectedCrew,projected,variance,percent:planned?variance/planned*100:null,approved:approved.length,count:pos.length,status:!labor?'No Estimate':Math.abs(variance)<.005?'On Plan':variance>0?'Above Plan':'Below Plan'};
-}
-function renderJobCostCards(){
-  const metric=(label,value)=>`<div class="alloc"><span>${label}</span><b>${value}</b></div>`;
-  return `<h3>Job Costing · All Jobs</h3><p class="help-text">Reserve compares the original 35% plan with final-approved crew splits. Pending labor stays budgeted at 60%; touch-up stays separate at 5%. Approved amounts are not recorded payments.</p>
-    <div class="toolbar"><button class="btn btn-light" onclick="state.projects.forEach(p=>jobCostOpen.add(p.id));renderProject()">Expand All Jobs</button><button class="btn btn-light" onclick="jobCostOpen.clear();renderProject()">Collapse All Jobs</button></div>
-    ${state.projects.map(p=>{
-      const s=jobReserveSummary(p), color=s.variance<-.005?'pill-red':s.variance>.005?'pill-green':'pill-gold';
-      const delta=`${s.variance>=0?'+':''}${selectionMoney(s.variance)} / ${s.percent===null?'—':(s.percent>=0?'+':'')+s.percent.toFixed(1)+'%'}`;
-      const statuses=[...new Set((p.pos||[]).map(po=>po.status||'Draft'))].map(status=>`${p.pos.filter(po=>(po.status||'Draft')===status).length} ${esc(status)}`).join(' · ');
-      return `<details class="card job-cost-card" ${jobCostOpen.has(p.id)?'open':''} ontoggle="this.open?jobCostOpen.add(${Number(p.id)}):jobCostOpen.delete(${Number(p.id)})">
-        <summary><div class="job-cost-title"><b>${esc(p.name||p.jobNo||'Job')}</b><span class="pill ${color}">${s.status}</span><strong>${delta}</strong></div>
-        <div class="job-cost-metrics">${metric('Planned Reserve',selectionMoney(s.planned))}${metric('Projected Reserve',selectionMoney(s.projected))}${metric('Labor Cost',selectionMoney(s.labor))}${metric('Crew · Approved / Projected',selectionMoney(s.crew)+' / '+selectionMoney(s.projectedCrew))}${metric('Touch-up Allocation',selectionMoney(s.touch))}${metric('P.O.s',s.count+' total · '+s.approved+' approved')}</div>
-        <div class="job-reserve-track" aria-label="Projected reserve compared with planned reserve"><span style="width:${Math.max(0,Math.min(100,s.planned?s.projected/(s.planned*2)*100:0))}%;background:${s.variance<-.005?'var(--red)':'var(--green)'}"></span><i title="Planned reserve"></i></div><small class="help-text">Center marker = planned reserve · ${statuses||'No P.O.s'}</small></summary>
-        <div class="info-card">${renderEmployeeCosting(p)}<h4>All P.O.s for this job</h4>${(p.pos||[]).map(po=>`<div class="info-line"><span>${esc(getPOParentGroup(po))} · ${esc(getPOBaseTitle(po))}</span><b>${selectionMoney(po.builderCost)} · ${esc(po.status)}</b></div>`).join('')||'<p>No P.O.s yet.</p>'}</div></details>`;
-    }).join('')}`;
-}
-function finishSelectionCategory(row){
-  const text=[row.title,row.line,row.description].join(' ').toLowerCase();
-  if(/^(labor|subcontractor)$/i.test(row.type||'') || /\b(demolition|demolish|removal|rough.in|drywall|framing|underlayment|thinset|grout labor)\b/.test(text)) return '';
-  const rules=[['Tile',/\b(tile|backsplash)\b/],['Flooring',/\b(flooring|lvp|hardwood|carpet)\b/],['Plumbing',/\b(faucet|sink|toilet|tub|bathtub|showerhead|shower head|shower trim|shower fixtures?|shower faucet|shower system)\b/],['Cabinetry',/\b(cabinet|cabinetry|vanity|vanities)\b/],['Countertops',/\b(countertop|quartz|granite|marble)\b/],['Lighting',/\b(light fixture|pendant|sconce|chandelier)\b/],['Hardware',/\b(hardware|door handle|knob|pulls)\b/],['Paint',/\b(paint|stain color)\b/],['Doors',/\b(door|doors)\b/],['Appliances',/\b(appliance|refrigerator|dishwasher|range hood)\b/]];
-  return rules.find(([,pattern])=>pattern.test(text))?.[0]||'';
-}
-function seedEstimateSelections(project,rows=project.estimate||[],manual=false){
-  ensureSelectionsData();
-  const norm=s=>String(s||'').trim().toLowerCase().replace(/\s+/g,' ');
-  let added=0;
-  rows.forEach(row=>{
-    const category=finishSelectionCategory(row)||(manual?'Other':'');if(!category)return;
-    const title=row.title||row.line;
-    const room=String(row.parentGroup||'').trim()||'Unassigned';
-    const sourceKey=norm(room)+'|'+norm(title);
-    if(project.selections.some(item=>item.estimateSourceKey===sourceKey || (norm(item.title)===norm(title)&&norm(item.room)===norm(room))))return;
-    if(!project.selectionRooms.includes(room))project.selectionRooms.push(room);
-    project.selections.push({id:Date.now()+added,title,description:row.description||'',category,room,status:'Pending',quantity:Math.max(1,Number(row.quantity)||1),unitPrice:Number(row.unitCost)||0,url:'',image:'',vendor:'',model:'',quality:'Standard',purchasedBy:'Not assigned',leadTimeValue:1,leadTimeUnit:'Day(s)',estimateSourceKey:sourceKey,notes:'Estimate placeholder — verify product, quantity, price and lead time before ordering.'});
-    added++;
-  });return added;
-}
-function downloadJobEstimate(){
-  const p=selectedProject();
-  const headers=['Parent Group','Title','Description','Quantity','Unit','Unit Cost','Cost Type','Builder Cost'];
-  const quote=v=>'"'+String(v??'').replace(/"/g,'""')+'"';
-  const rows=(p.estimate||[]).map(r=>[r.parentGroup,r.title||r.line,r.description,r.quantity,r.unit,r.unitCost,r.type,r.builderCost]);
-  const blob=new Blob(['\ufeff'+[headers,...rows].map(row=>row.map(quote).join(',')).join('\r\n')],{type:'text/csv;charset=utf-8'});
-  const link=document.createElement('a'),url=URL.createObjectURL(blob);link.href=url;link.download=(p.jobNo||'job')+'-estimate.csv';link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
-}
-function downloadOriginalEstimate(){
-  const file=selectedProject().estimateAttachment;if(!file)return;
-  const link=document.createElement('a');link.href=file.data;link.download=file.name;link.click();
-}
-function renderEstimateFile(project){
-  return `<div class="card info-card"><h4>Proposal + Estimate</h4>${project.estimate?.length?`<p>${esc(project.estimateAttachment?.name||'Job estimate')} · ${project.estimate.length} lines</p><p class="help-text">Current estimate is automatically available here. Download includes your latest line edits.</p><div class="toolbar"><button class="btn btn-light" onclick="downloadJobEstimate()">Download Current Estimate</button>${project.estimateAttachment?'<button class="btn btn-light" onclick="downloadOriginalEstimate()">Download Original Upload</button>':''}<button class="btn btn-light" onclick="projectTab='estimate';renderProject()">View Estimate</button></div>`:'<p>No estimate added yet.</p>'}</div>`;
-}
-
-function employeeCostSummary(project){
-  const employees=new Map();
-  confirmedPayoutGroups(project).forEach(({po,recipients})=>{
-    const ticketNames=new Set();
-    recipients.forEach(r=>{
-      const key=r.name.trim().toLowerCase();
-      if(!employees.has(key)) employees.set(key,{name:r.name,payout:0,tickets:0});
-      const employee=employees.get(key);
-      employee.payout+=r.amount;
-      if(!ticketNames.has(key)){employee.tickets++;ticketNames.add(key);}
-    });
-  });
-  return [...employees.values()].sort((a,b)=>b.payout-a.payout||a.name.localeCompare(b.name));
-}
-function renderEmployeeCosting(project){
-  const groups=confirmedPayoutGroups(project);
-  const employees=employeeCostSummary(project);
-  const max=Math.max(1,...employees.map(e=>e.payout));
-  return `<section class="card info-card" style="margin-bottom:16px"><h3>Employee Payouts &amp; Tickets</h3>
-    <p class="help-text">Current job · final-approved P.O.s only. One ticket is one P.O. assigned to an employee. These are approved payouts, not recorded payments.</p>
-    ${employees.length?employees.map(e=>`<div class="cost-chart-row"><div style="display:flex;justify-content:space-between;gap:12px"><b>${esc(e.name)}</b><b>${money(e.payout)}</b></div><div class="cost-chart-bar"><span style="width:${e.payout/max*100}%"></span></div><div class="help-text">${e.tickets} ticket${e.tickets===1?'':'s'} · ${money(e.payout/e.tickets)} average per ticket</div></div>`).join(''):'<div class="empty">Approve a P.O. with assigned employees to see the comparison.</div>'}
-  </section><section class="card info-card"><h3>Approved P.O. Allocations</h3>
-    ${confirmedAllocationCards(groups.reduce((sum,{po})=>sum+Number(po.builderCost||0),0))}
-    <p class="help-text">Allocations, not remaining balances or employee gains/losses.</p>
-    ${groups.map(({po,recipients})=>`<div style="margin-top:14px"><h4>${esc(getPOParentGroup(po))} ${esc(getPOBaseTitle(po))}</h4><div class="confirmed-money"><div class="builder"><small>Builder Cost</small><b>${money(Number(po.builderCost||0))}</b></div><div class="payout"><small>Confirmed Crew Payout</small><b>${money(recipients.reduce((sum,r)=>sum+r.amount,0))}</b></div><div class="touch"><small>Touch-up · 5%</small><b>${money(Number(po.builderCost||0)*.05)}</b></div><div class="reserve"><small>Reserve · 35%</small><b>${money(Number(po.builderCost||0)*.35)}</b></div></div></div>`).join('')}
-  </section>`;
-}
 
 function selectedPOs(){
   const p=selectedProject();
@@ -9208,37 +8874,17 @@ function confirmBulkDelete(){
   go('paybyline');
   toast(`${ids.size} P.O.${ids.size===1?'':'s'} deleted`);
 }
-function bulkPreApprove(){
+function bulkApprove(){
   const items=selectedPOs();
   if(!items.length){ toast('Select at least one P.O.'); return; }
-  if(!canPreApprove()){ alert('Only Jony or Adair can pre-approve P.O.s.'); return; }
+  if(!canApprovePO()){ alert('Only Gio can approve P.O.s.'); return; }
 
   let updated=0, skipped=0;
   items.forEach(po=>{
     const total=po.splits.reduce((s,x)=>s+Number(x.pct||0),0);
-    if(total>0 && total<=100 && po.status!=='Approved'){
-      po.status='Pre-Approved';
-      po.preApprovedBy=state.currentUser;
-      po.approvedBy='';
-      updated++;
-    }else skipped++;
-  });
-
-  saveState(false);
-  renderAll();
-  renderPayByLine();
-  toast(skipped ? `${updated} pre-approved · ${skipped} skipped` : `${updated} pre-approved`);
-}
-function bulkApprove(){
-  const items=selectedPOs();
-  if(!items.length){ toast('Select at least one P.O.'); return; }
-  if(!canFinalApprove()){ alert('Only Gio can approve P.O.s.'); return; }
-
-  let updated=0, skipped=0;
-  items.forEach(po=>{
-    if(po.status==='Pre-Approved'){
+    if(po.status!=='Approved' && total>0 && total<=100){
       po.status='Approved';
-      po.approvedBy='Gio';
+      po.approvedBy=state.currentUser;
       updated++;
     }else skipped++;
   });
@@ -9246,30 +8892,8 @@ function bulkApprove(){
   saveState(false);
   renderAll();
   renderPayByLine();
-  toast(skipped ? `${updated} approved · ${skipped} need pre-approval` : `${updated} approved`);
+  toast(skipped ? `${updated} approved · ${skipped} skipped` : `${updated} approved`);
 }
-function bulkUndoPOApproval(status){
-  if(status!=='Approved' && status!=='Pre-Approved') return;
-  const items=selectedPOs();
-  if(!items.length){toast('Select at least one P.O.');return;}
-  const finalApproval=status==='Approved';
-  if(finalApproval ? !canFinalApprove() : !canPreApprove()){
-    alert(finalApproval?'Only Gio can undo final approval.':'Only Jony or Adair can undo pre-approval.');
-    return;
-  }
-  let updated=0;
-  items.forEach(po=>{
-    if(po.status!==status) return;
-    po.status=finalApproval?'Pre-Approved':'Draft';
-    po.approvedBy='';
-    if(!finalApproval) po.preApprovedBy='';
-    updated++;
-  });
-  if(updated){saveState(false);renderAll();renderPayByLine();}
-  const skipped=items.length-updated;
-  toast(`${updated} returned to ${finalApproval?'Pre-Approved':'Draft'}${skipped?` · ${skipped} skipped (different status)`:''}`);
-}
-
 function applyBulkSplit(count){
   const items=selectedPOs();
   if(!items.length){ toast('Select at least one P.O.'); return; }
@@ -9371,36 +8995,11 @@ function renderPO(po,i){
   const expanded=openPOIds.has(po.id);
 
   const splitValid=total>0 && total<=100;
-  const preApproveDisabled=!canPreApprove() || !splitValid || po.status!=='Draft';
-  const approveDisabled=!canFinalApprove() || po.status!=='Pre-Approved';
-
-  const preApproveHelp = canPreApprove()
-    ? (splitValid
-        ? (total===100
-            ? 'Jony or Adair can pre-approve this P.O.'
-            : `Partial crew payout: ${total}% of base crew pay. Ready for pre-approval.`)
-        : (total<=0
-            ? 'Enter a crew payout before pre-approval.'
-            : 'Crew split cannot exceed 100%.'))
-    : 'Only Jony or Adair can pre-approve.';
-
-  const approveHelp = canFinalApprove()
-    ? (po.status==='Pre-Approved' ? 'Ready for Gio final approval.' : 'P.O. must be pre-approved first.')
-    : 'Only Gio can give final approval.';
-
-  const canUndoPreApproval=po.status==='Pre-Approved' && canPreApprove();
-  const canUndoFinalApproval=po.status==='Approved' && canFinalApprove();
-
-  const undoHelp =
-    po.status==='Approved'
-      ? (canFinalApprove()
-          ? 'Gio can return this P.O. to Pre-Approved.'
-          : 'Only Gio can undo final approval.')
-      : (po.status==='Pre-Approved'
-          ? (canPreApprove()
-              ? 'Jony or Adair can return this P.O. to Draft.'
-              : 'Only Jony or Adair can undo pre-approval.')
-          : '');
+  const approveDisabled=!canApprovePO() || !splitValid || po.status==='Approved';
+  const approveHelp = canApprovePO()
+    ? (splitValid ? (po.status==='Approved' ? 'This P.O. is already approved.' : 'Approve this P.O. once the crew split is ready.') : 'Enter a crew payout before approval.')
+    : 'Only Gio can approve P.O.s.';
+  const canUndoApproval=po.status==='Approved' && canApprovePO();
 
   return `<div class="card po ${expanded?'expanded':''} ${isPOSelected(po)?'po-selected':''}">
     <div class="po-head" onclick="togglePO(${i})">
@@ -9468,26 +9067,17 @@ function renderPO(po,i){
       </div>
 
       <div class="approval-trail">
-        <div class="approval-step ${po.preApprovedBy?'done':''}">
-          <span>Pre-Approval</span>
-          <b>${po.preApprovedBy ? `Pre-Approved by ${po.preApprovedBy}` : 'Waiting for Jony or Adair'}</b>
-        </div>
         <div class="approval-step ${po.approvedBy?'done':''}">
-          <span>Final Approval</span>
-          <b>${po.approvedBy ? `Approved by ${po.approvedBy}` : 'Waiting for Gio'}</b>
+          <span>Approval</span>
+          <b>${po.approvedBy ? `Approved by ${po.approvedBy}` : 'Waiting for approval'}</b>
         </div>
       </div>
 
       <div class="po-actions">
-        ${po.status==='Pre-Approved'
-          ? `<button class="btn btn-light" ${canUndoPreApproval?'':'disabled'} title="${undoHelp}" onclick="event.stopPropagation();undoPOApproval(${i})">Undo Pre-Approval</button>`
-          : ''
-        }
         ${po.status==='Approved'
-          ? `<button class="btn btn-light" ${canUndoFinalApproval?'':'disabled'} title="${undoHelp}" onclick="event.stopPropagation();undoPOApproval(${i})">Undo Approval</button>`
+          ? `<button class="btn btn-light" ${canUndoApproval?'':'disabled'} title="${canUndoApproval?'Undo this approval.':'Only Gio can undo approval.'}" onclick="event.stopPropagation();undoPOApproval(${i})">Undo Approval</button>`
           : ''
         }
-        <button class="btn btn-navy" data-preapprove-po="${i}" ${preApproveDisabled?'disabled':''} title="${preApproveHelp}" onclick="event.stopPropagation();setPOStatus(${i},'Pre-Approved')">Pre-Approve</button>
         <button class="btn btn-gold" data-approve-po="${i}" ${approveDisabled?'disabled':''} title="${approveHelp}" onclick="event.stopPropagation();setPOStatus(${i},'Approved')">Approve</button>
       </div>
       <div class="role-note">Signed in as ${state.currentUser} · ${currentUser().role}</div>
@@ -9589,7 +9179,7 @@ function updateEstimate(i,key,val){
   if(key==='builderCost'){
     const row=p.estimate[i];
     const existing=p.pos.find(po=>{
-      if(po.sourceEstimateKey) return estimateSourceMatches(po.sourceEstimateKey,estimateRowSourceKey(row));
+      if(po.sourceEstimateKey) return po.sourceEstimateKey===estimateRowSourceKey(row);
       const poParent=String(getPOParentGroup(po)||po.parentGroup||'').trim();
       const rowParent=String(row.parentGroup||row.parent_group||'').trim();
       const poTitle=String(getPOBaseTitle(po)||po.line||po.title||'').trim();
@@ -9602,7 +9192,6 @@ function updateEstimate(i,key,val){
       return poTitle.toLowerCase()===rowTitle.toLowerCase();
     });
     if(existing){
-      if(Number(existing.builderCost)!==Number(row.builderCost||0)){existing.status='Draft';existing.preApprovedBy='';existing.approvedBy='';}
       existing.builderCost=Number(row.builderCost||0);
     }
   }
@@ -9677,24 +9266,18 @@ function refreshSplitCalculations(pi){
       : 'Enter at least one crew payout percentage.';
   }
 
-  const preBtn=document.querySelector(`[data-preapprove-po="${pi}"]`);
-  if(preBtn){
-    const disabled=!canPreApprove() || !splitValid || po.status!=='Draft';
-    preBtn.disabled=disabled;
-
-    if(!canPreApprove()){
-      preBtn.title='Only Jony or Adair can pre-approve.';
-    }else if(total<=0){
-      preBtn.title='Enter a crew payout before pre-approval.';
-    }else if(total>100){
-      preBtn.title='Crew split cannot exceed 100%.';
-    }else if(po.status!=='Draft'){
-      preBtn.title='Only Draft P.O.s can be pre-approved.';
-    }else if(total<100){
-      preBtn.title=`Partial payout: ${total}% of crew base pay. Ready for pre-approval.`;
-    }else{
-      preBtn.title='Ready for pre-approval.';
-    }
+  const approveBtn=document.querySelector(`[data-approve-po="${pi}"]`);
+  if(approveBtn){
+    approveBtn.disabled=!canApprovePO() || !splitValid || po.status==='Approved';
+    approveBtn.title=!canApprovePO()
+      ? 'Only Gio can approve P.O.s.'
+      : total<=0
+        ? 'Enter a crew payout before approval.'
+        : total>100
+          ? 'Crew split cannot exceed 100%.'
+          : po.status==='Approved'
+            ? 'This P.O. is already approved.'
+            : 'Ready for approval.';
   }
 }
 
@@ -9752,24 +9335,14 @@ function undoPOApproval(i){
   if(!po) return;
 
   if(po.status==='Approved'){
-    if(!canFinalApprove()){
-      alert('Only Gio can undo final approval.');
-      return;
-    }
-
-    po.status='Pre-Approved';
-    po.approvedBy='';
-    toast('Approval removed — P.O. returned to Pre-Approved');
-  }else if(po.status==='Pre-Approved'){
-    if(!canPreApprove()){
-      alert('Only Jony or Adair can undo pre-approval.');
+    if(!canApprovePO()){
+      alert('Only Gio can undo approval.');
       return;
     }
 
     po.status='Draft';
-    po.preApprovedBy='';
     po.approvedBy='';
-    toast('Pre-approval removed — P.O. returned to Draft');
+    toast('Approval removed — P.O. returned to Draft');
   }else{
     return;
   }
@@ -9793,52 +9366,23 @@ function setPOStatus(i,status){
   if(!po) return;
 
   const splitTotal=po.splits.reduce((s,x)=>s+Number(x.pct||0),0);
-  if(status==='Pre-Approved'||status==='Approved'){
-    if(!Number.isFinite(splitTotal)||splitTotal<=0||splitTotal>100||po.splits.some(x=>!Number.isFinite(Number(x.pct||0))||Number(x.pct)<0||(Number(x.pct)>0&&!String(x.name||'').trim()))){
-      alert('Assign a name to each payout and enter a total split greater than 0% and no more than 100%.');return;
-    }
-  }
 
-  if(status==='Draft'){
-
-    if(po.status==='Approved'){
-      alert('Gio must undo final approval first.');
-      return;
-    }
-    if(po.status==='Pre-Approved' && !canPreApprove()){
-      alert('Only Jony or Adair can return a pre-approved P.O. to Draft.');
-      return;
-    }
-    po.status='Draft';
-    po.preApprovedBy='';
-    po.approvedBy='';
-  }else if(status==='Pre-Approved'){
-    if(!canPreApprove()){
-      alert('Only Jony or Adair can pre-approve a P.O.');
+  if(status==='Approved'){
+    if(!canApprovePO()){
+      alert('Only Gio can approve P.O.s.');
       return;
     }
     if(splitTotal<=0){
-      alert('Enter a crew payout before this P.O. can be pre-approved.');
+      alert('Enter a crew payout before approval.');
       return;
     }
     if(splitTotal>100){
       alert('The P.O. crew split cannot exceed 100%.');
       return;
     }
-    po.status='Pre-Approved';
-    po.preApprovedBy=state.currentUser;
-    po.approvedBy='';
-  }else if(status==='Approved'){
-    if(!canFinalApprove()){
-      alert('Only Gio can give final approval.');
-      return;
-    }
-    if(po.status!=='Pre-Approved'){
-      alert('Jony or Adair must pre-approve this P.O. before Gio can approve it.');
-      return;
-    }
+    if(po.status==='Approved') return;
     po.status='Approved';
-    po.approvedBy='Gio';
+    po.approvedBy=state.currentUser;
   }
 
   saveState(false);
@@ -9987,7 +9531,6 @@ function openAccountSignIn(){
 /* Selections */
 let selectionFilter='All';
 let selectionEditIndex=null;
-let selectionOptionParentIndex=null;
 let selectionLookupInFlight='';
 let selectionLookupCompleted='';
 
@@ -10021,120 +9564,6 @@ function openSelections(){
   if(isTabletLayout()) closeJobsDrawer();
 }
 
-const selectionBulkChoices=new WeakMap();
-function selectionBulkSet(p=selectedProject()){
-  if(!selectionBulkChoices.has(p))selectionBulkChoices.set(p,new Set());
-  const set=selectionBulkChoices.get(p);
-  for(const item of set)if(!p.selections.includes(item))set.delete(item);
-  return set;
-}
-function toggleSelectionBulk(index,checked){
-  const p=selectedProject(),item=p.selections[index],set=selectionBulkSet(p);
-  if(item){if(checked)set.add(item);else set.delete(item);}renderSelections();
-}
-function selectAllSelections(checked){
-  const p=selectedProject(),set=selectionBulkSet(p);set.clear();
-  if(checked)p.selections.filter(item=>selectionFilter==='All'||item.category===selectionFilter).forEach(item=>set.add(item));
-  renderSelections();
-}
-function selectionBulkToolbar(p){
-  const count=selectionBulkSet(p).size,disabled=count?'':'disabled';
-  return `<section class="card info-card" style="margin-bottom:16px"><div class="toolbar" style="align-items:center"><button class="btn btn-light" onclick="selectAllSelections(true)">${selectionFilter==='All'?'Select All':'Select All Shown'}</button><button class="btn btn-light" onclick="selectAllSelections(false)">Clear</button><strong>${count} checked</strong></div><div class="toolbar">
-    <select class="input" style="width:auto" id="selectionBulkStatus" aria-label="Bulk selection status">${['Pending','Selected','Approved','Ordered','Received'].map(s=>`<option>${s}</option>`).join('')}</select><button class="btn btn-gold" ${disabled} onclick="applySelectionBulk('status')">Apply Status</button>
-    <input class="input" style="width:90px" id="selectionBulkLead" aria-label="Bulk lead time" type="number" min="1" step="1" value="1"><select class="input" style="width:auto" id="selectionBulkUnit" aria-label="Lead time unit"><option>Day(s)</option><option>Week(s)</option></select><button class="btn btn-light" ${disabled} onclick="applySelectionBulk('lead')">Set Lead Time</button><button class="btn btn-light" ${disabled} onclick="applySelectionBulk('stock')">Mark In Stock</button>
-    <button class="btn btn-danger" ${disabled} onclick="applySelectionBulk('delete')">Delete Checked</button></div><p class="help-text">Actions affect only checked products in this job. Changing the category filter clears checks. Approved is a product status, separate from P.O. approval.</p></section>`;
-}
-function applySelectionBulk(action){
-  const p=selectedProject(),set=selectionBulkSet(p),items=[...set];if(!items.length)return;
-  if(action==='delete'){
-    if(!confirm(`Delete ${items.length} checked product${items.length===1?'':'s'} from ${p.name}?`))return;
-    p.selections=p.selections.filter(item=>!set.has(item));set.clear();
-  }else if(action==='status'){
-    const status=document.getElementById('selectionBulkStatus').value;
-    if(!['Pending','Selected','Approved','Ordered','Received'].includes(status))return;
-    items.forEach(item=>{item.status=status;});
-  }else if(action==='lead'){
-    const value=Number(document.getElementById('selectionBulkLead').value),unit=document.getElementById('selectionBulkUnit').value;
-    if(!Number.isInteger(value)||value<1||!['Day(s)','Week(s)'].includes(unit)){toast('Enter a whole number of days or weeks, at least 1.');return;}
-    items.forEach(item=>{item.leadTimeValue=value;item.leadTimeUnit=unit;item.inStock=false;});
-  }else if(action==='stock'){items.forEach(item=>{item.inStock=true;});}else return;
-  saveState(false);renderSelections();toast(`${items.length} product${items.length===1?'':'s'} ${action==='delete'?'deleted':'updated'}`);
-}
-
-async function openHomeownerQR(){
-  document.getElementById('homeownerQRDialog')?.remove();
-  const dialog=document.createElement('dialog');dialog.id='homeownerQRDialog';dialog.style.cssText='max-width:480px;width:95%;border:1px solid #ddd;border-radius:14px;padding:22px';
-  dialog.innerHTML=`<h3>Homeowner QR Code · ${esc(selectedProject().name)}</h3><p>No sign-in. Anyone with this code can view and edit this job’s selections, add photos and products, and toggle Selected. Pricing is visible and read-only for homeowners.</p><p>Generating a new code replaces any previous code for this job.</p><div id="homeownerQRMessage" role="status"></div><div id="homeownerQRRestore" hidden><label for="homeownerQROldLink">Existing homeowner link</label><input id="homeownerQROldLink" class="input" placeholder="Paste the link from your existing QR"><button class="btn btn-light" onclick="restoreHomeownerQR()">Keep Existing QR</button></div><div id="homeownerQRCode" style="margin:20px auto;width:256px"></div><input id="homeownerQRLink" class="input" readonly aria-label="Private homeowner link" hidden><div class="toolbar" style="margin-top:16px"><button class="btn btn-gold" id="homeownerQRGenerate" onclick="generateHomeownerQR()">Generate New QR</button><button class="btn btn-light" id="homeownerQRPrint" hidden onclick="printHomeownerQR()">Print QR Code</button><button class="btn btn-light" onclick="revokeHomeownerQR()">Deactivate Link</button><button class="btn btn-light" onclick="document.getElementById('homeownerQRDialog').close()">Close</button></div>`;
-  dialog.dataset.job=String(selectedProject().id);document.body.appendChild(dialog);dialog.showModal();
-  const button=document.getElementById('homeownerQRGenerate');button.disabled=true;
-  try{const {data,error}=await cloudClient.rpc('jj_portal_get_link',{p_job:dialog.dataset.job});if(error)throw error;
-    if(!dialog.isConnected)return;
-    if(data?.token)displayHomeownerQR(data.token);
-    else {document.getElementById('homeownerQRRestore').hidden=!data?.exists;document.getElementById('homeownerQRMessage').textContent=data?.exists?'To keep an older QR, scan it and paste its link below. A deactivated link cannot be restored. Generate New QR only when you want to replace the code.':'No QR yet. Choose Generate New QR to create one.';}
-  }catch(e){document.getElementById('homeownerQRMessage').textContent='Unable to retrieve the saved QR. Apply the included database update if needed. '+(e.message||'');}finally{button.disabled=false;}
-
-}
-async function generateHomeownerQR(){
-  const dialog=document.getElementById('homeownerQRDialog'),msg=document.getElementById('homeownerQRMessage'),button=document.getElementById('homeownerQRGenerate');
-  if(!cloudClient||typeof QRCode==='undefined'){msg.textContent='Connect to the cloud and refresh the app before generating a code.';return;}
-  if(!confirm('Generate a new QR for this project? Any previous QR will stop working.'))return;
-  button.disabled=true;msg.textContent='Creating private link…';
-  try{
-    const token=Array.from(crypto.getRandomValues(new Uint8Array(32)),v=>v.toString(16).padStart(2,'0')).join('');
-    const {error}=await cloudClient.rpc('jj_portal_link',{p_job:dialog.dataset.job,p_token:token});if(error)throw error;
-    displayHomeownerQR(token);
-  }catch(e){msg.textContent='QR setup is not ready or access was denied. Apply JJ_Homeowner_Portal_Setup.sql in Supabase, then try again. '+(e.message||'');}finally{button.disabled=false;}
-}
-async function restoreHomeownerQR(){
- const msg=document.getElementById('homeownerQRMessage');
- try{const url=new URL(document.getElementById('homeownerQROldLink').value.trim());const token=new URLSearchParams(url.hash.slice(1)).get('key');
- if(!/^[a-f0-9]{64}$/.test(token||''))throw Error('Paste the full homeowner link, including its key.');
- const {error}=await cloudClient.rpc('jj_portal_restore_link',{p_job:document.getElementById('homeownerQRDialog').dataset.job,p_token:token});if(error)throw error;displayHomeownerQR(token);
- }catch(e){msg.textContent=e.message||'Unable to restore that link.';}
-}
-function displayHomeownerQR(token){
-    document.getElementById('homeownerQRRestore').hidden=true;
-    const url=new URL('homeowner.html',location.href);url.hash='key='+token;
-    const input=document.getElementById('homeownerQRLink');input.hidden=false;input.value=url.href;input.onclick=()=>input.select();
-    const target=document.getElementById('homeownerQRCode');target.replaceChildren();new QRCode(target,{text:url.href,width:256,height:256,correctLevel:QRCode.CorrectLevel.M});
-    document.getElementById('homeownerQRPrint').hidden=false;document.getElementById('homeownerQRMessage').textContent='Saved project QR. Reuse this code through edits and refreshes.';
-}
-async function revokeHomeownerQR(){
-  if(!cloudClient)return;const dialog=document.getElementById('homeownerQRDialog');
-  const {error}=await cloudClient.rpc('jj_portal_revoke',{p_job:dialog.dataset.job});
-  document.getElementById('homeownerQRMessage').textContent=error?error.message:'The previous link and QR code are now inactive.';
-  if(!error){document.getElementById('homeownerQRCode').replaceChildren();document.getElementById('homeownerQRLink').hidden=true;document.getElementById('homeownerQRPrint').hidden=true;}
-}
-function printHomeownerQR(){
-  const source=document.querySelector('#homeownerQRCode canvas')?.toDataURL()||document.querySelector('#homeownerQRCode img')?.src;if(!source)return;
-  launchPrint(`<div style="text-align:center;padding:40px"><h1>J&J Home Renovations</h1><h2>Your Selections</h2><img src="${source}" width="300" height="300"><p>Scan to view and add selections. No sign-in needed.</p><p>Private job link — share only with your household.</p></div>`);
-}
-async function acceptHomeownerSync(sequence){
- const {data,error}=await cloudClient.from('app_state').select('state,updated_at').eq('org_id',CLOUD_ORG_ID).maybeSingle();
- if(error)throw error;
- if(!data||sequence!==cloudEditSequence||cloudDirty||cloudWriteBusy)return false;
- preserveSelectionRecovery();const user=state.currentUser;state=data.state;state.currentUser=user;
- cloudRevision=data.updated_at;cloudLastRemoteAt=Date.parse(data.updated_at);
- writeLocalState();renderAll();return true;
-}
-async function syncHomeownerSelections(){
- if(!cloudClient||cloudDirty||cloudWriteBusy||homeownerSyncBusy){toast('Wait for your changes to save first.');return;}
- homeownerSyncBusy=true;const sequence=cloudEditSequence;
- try{const {data,error}=await cloudClient.rpc('jj_portal_sync',{p_job:String(selectedProject().id)});if(error)throw error;
- if(data)await acceptHomeownerSync(sequence);toast(data?'Homeowner updates checked':'No new homeowner updates');
- }catch(e){toast('Homeowner sync could not finish. Your local changes are preserved.');}finally{homeownerSyncBusy=false;}
-}
-let homeownerSyncBusy=false;
-async function autoSyncHomeownerSelections(){
- if(homeownerSyncBusy||cloudDirty||cloudWriteBusy||!cloudClient||document.hidden||!['Live','Saved'].includes(document.getElementById('cloudStatus')?.textContent)||document.querySelector('.selection-modal-backdrop.open')||document.querySelector('dialog[open]')||['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName))return;
- homeownerSyncBusy=true;const sequence=cloudEditSequence;
- try{const {data,error}=await cloudClient.rpc('jj_portal_sync_pending');if(error)throw error;if(data)await acceptHomeownerSync(sequence);
- }catch(e){console.warn('Homeowner sync deferred',e);}finally{homeownerSyncBusy=false;}
-}
-setInterval(autoSyncHomeownerSelections,8000);
-
-let selectionView=localStorage.getItem('jj-selection-view')==='list'?'list':'cards';
-function setSelectionView(value){selectionView=value==='list'?'list':'cards';localStorage.setItem('jj-selection-view',selectionView);renderSelections();}
 function renderSelections(){
   const root=document.getElementById('selections');
   if(!root) return;
@@ -10147,7 +9576,7 @@ function renderSelections(){
   project.selectionActiveRoom=selectedRoom;
   const filtered=items.filter(item=>selectionFilter==='All' || item.category===selectionFilter);
   const categories=[...new Set(items.map(item=>item.category).filter(Boolean))];
-  const selectedCount=items.filter(item=>item.status==='Selected' || item.status==='Approved' || item.status==='Ordered' || item.status==='Received').length;
+  const selectedCount=items.filter(item=>item.status==='Selected' || item.status==='Ordered' || item.status==='Received').length;
   const pendingCount=items.filter(item=>item.status==='Pending').length;
   const total=items.reduce((sum,item)=>sum+selectionTotal(item),0);
 
@@ -10192,11 +9621,8 @@ function renderSelections(){
       <button class="selection-filter" style="margin-left:auto" onclick="openSelectionEditor()">＋ Add manually</button>
     </div>
 
-    <div class="toolbar"><button class="btn btn-light" onclick="openHomeownerQR()">Homeowner QR Code</button><button class="btn btn-light" onclick="syncHomeownerSelections()">Refresh Homeowner Updates</button></div>
-    ${selectionBulkToolbar(project)}
-    <div class="toolbar" role="group" aria-label="Selections view" style="margin:14px 0"><button class="btn ${selectionView==='cards'?'btn-gold':'btn-light'}" aria-pressed="${selectionView==='cards'}" onclick="setSelectionView('cards')">Card view</button><button class="btn ${selectionView==='list'?'btn-gold':'btn-light'}" aria-pressed="${selectionView==='list'}" onclick="setSelectionView('list')">List view</button></div>
-    <div class="selection-grid ${selectionView==='list'?'selection-list':''}">
-      ${filtered.length ? renderSelectionOptionGroups(filtered,items) : `
+    <div class="selection-grid">
+      ${filtered.length ? filtered.map(item=>selectionCard(item,items.indexOf(item))).join('') : `
         <div class="selection-empty">
           <button onclick="openSelectionEditor()">+</button>
           <strong>${items.length?'No selections match this filter':'No selections added yet'}</strong>
@@ -10207,65 +9633,35 @@ function renderSelections(){
   </div>`;
 }
 
-function selectionCategoryFolders(filtered,allItems){
- const groups=new Map();filtered.forEach(item=>{const key=(item.category||'Other').trim()||'Other';if(!groups.has(key))groups.set(key,[]);groups.get(key).push(item);});
- return [...groups].map(([category,group])=>`<details class="selection-folder" open><summary>${esc(category)} <span class="selection-folder-count">${group.length} selection${group.length===1?'':'s'}</span></summary><div class="selection-folder-grid">${group.map(item=>selectionCard(item,allItems.indexOf(item))).join('')}</div></details>`).join('');
-}
-
-function renderSelectionOptionGroups(filtered,allItems){
- const groups=new Map();filtered.forEach(item=>{const key=item.optionGroupId||item.id;if(!groups.has(key))groups.set(key,[]);groups.get(key).push(item);});
- return [...groups].map(([key,group])=>group.length>1?`<details class="selection-option-group"><summary class="selection-option-group-title"><span>${esc(group[0].optionGroupTitle||group[0].title||'Selection options')}</span><span>${group.length} options · tap to compare</span></summary><div class="selection-option-grid">${group.map(item=>selectionCard(item,allItems.indexOf(item))).join('')}</div></details>`:selectionCard(group[0],allItems.indexOf(group[0]))).join('');
-}
-
-function selectionGroupSelect(item,index){
- const groups=new Map();(selectedProject()?.selections||[]).forEach(i=>{const id=i.optionGroupId||i.id;if(!groups.has(id))groups.set(id,i.optionGroupTitle||i.title||'Selection');});
- const current=item.optionGroupId||item.id;
- return `<label class="selection-group-inline">Link group<select aria-label="Link ${esc(item.title||'selection')} to group" onchange="linkSelectionGroup(${index},this.value)"><option value="">Standalone selection</option>${[...groups].map(([id,title])=>`<option value="${esc(id)}" ${String(id)===String(current)&&item.optionGroupId?'selected':''}>${esc(title)}</option>`).join('')}</select></label>`;
-}
-function linkSelectionGroup(index,value){
- const project=selectedProject(),item=project?.selections?.[index];if(!item)return;
- if(!value){delete item.optionGroupId;delete item.optionGroupTitle;delete item.optionLabel;}
- else {const target=project.selections.find(i=>(i.optionGroupId||i.id)===value);if(!target)return;const groupId=target.optionGroupId||target.id;const title=target.optionGroupTitle||target.title||'Selection options';project.selections.forEach(other=>{if((other.optionGroupId||other.id)===groupId||other.id===target.id){other.optionGroupId=groupId;other.optionGroupTitle=title;if(other.id!==target.id)other.optionLabel=other.optionLabel||'Another option';}});item.optionGroupId=groupId;item.optionGroupTitle=title;item.optionLabel=item.optionLabel||'Another option';}
- saveState(false);renderSelections();toast(value?'Selections linked into one option group':'Selection removed from group');
-}
-
 function selectionCard(item,index){
   const productUrl=safeSelectionUrl(item.url);
-  const imageUrl=JJProduct.image(item.image)||(/^data:image\//.test(item.image||'')?safeSelectionImageUrl(item.image):'');
+  const imageUrl=safeSelectionImageUrl(item.image);
   const taxNote=item.addTax?' · tax included':'';
-  const lead=item.inStock ? 'In Stock' : item.leadTimeValue
+  const lead=item.leadTimeValue
     ? `${item.leadTimeValue} ${String(item.leadTimeUnit||'days').toLowerCase()}`
     : '';
-  const photo=imageUrl?`<img src="${esc(imageUrl)}" alt="${esc(item.title)}" onerror="this.parentElement.remove()">`:'';
-  return `<article class="selection-card" role="group" style="${item.homeownerSelected?'border:3px solid #2e7a55;box-shadow:0 0 0 2px #e5f4eb':''}">
-    <label style="display:flex;gap:8px;align-items:center;padding:10px"><input type="checkbox" aria-label="Select ${esc(item.title)}" ${selectionBulkSet().has(item)?'checked':''} onchange="toggleSelectionBulk(${index},this.checked)">Select product</label>
-    ${photo?`<div class="selection-photo">${photo}</div>`:''}
+  const photo=imageUrl
+    ? `<img src="${esc(imageUrl)}" alt="${esc(item.title)}" onerror="this.remove();this.parentElement.insertAdjacentText('beforeend','No picture')">`
+    : 'No picture';
+  return `<article class="selection-card">
+    <div class="selection-photo">${photo}</div>
     <div class="selection-card-body">
       <div class="selection-card-meta">${esc(item.room)} · ${esc(item.category||'Selection')}</div>
-      <div style="margin-top:8px;font-size:13px"><strong>Purchased by:</strong> ${esc(item.purchasedBy||'Not assigned')}</div>
-      <h3>${esc(item.title||'Untitled product')}</h3>${item.homeownerSelected?'<p style="color:#246441;font-weight:800">H.O. has selected</p>':''}
+      <h3>${esc(item.title||'Untitled product')}</h3>
       <div class="selection-vendor">${esc(item.vendor||'Vendor not entered')} · ${esc(item.model||'Model/SKU not entered')}</div>
       <div class="selection-card-bottom">
-        <div class="selection-price">${item.unitPrice===null||item.unitPrice===undefined||item.unitPrice===''?'Price not set':selectionMoney(selectionTotal(item))}<small>${Math.max(1,Number(item.quantity||1))} item${Number(item.quantity||1)===1?'':'s'}${taxNote}</small></div>
+        <div class="selection-price">${selectionMoney(selectionTotal(item))}<small>${Math.max(1,Number(item.quantity||1))} item${Number(item.quantity||1)===1?'':'s'}${taxNote}</small></div>
         <span class="selection-status">${esc(item.status||'Pending')}${lead?` · ${esc(lead)}`:''}</span>
       </div>
       <div class="selection-card-actions">
         ${productUrl?`<a href="${esc(productUrl)}" target="_blank" rel="noopener">View product ↗</a>`:''}
-        ${['Pending','Selected'].includes(item.status||'Pending')?`<button type="button" class="selection-status-toggle" aria-pressed="${item.status==='Selected'}" onclick="toggleSelectionStatus(${index})">${item.status==='Selected'?'Selected':'Mark Selected'}</button>`:''}
-        <button onclick="addSelectionOption(${index})">＋ Another option</button>${selectionGroupSelect(item,index)}<button onclick="openSelectionEditor(${index})">Edit</button>
+        <button onclick="openSelectionEditor(${index})">Edit</button>
       </div>
     </div>
   </article>`;
 }
 
-function toggleSelectionStatus(index){
- const item=selectedProject().selections[index];if(!item||!['Pending','Selected'].includes(item.status||'Pending'))return;
- item.status=item.status==='Selected'?'Pending':'Selected';
- if(item.status==='Pending'){item.homeownerSelected=false;item.homeownerSelectedAt=null;}
- saveState(false);renderSelections();
-}
 function setSelectionFilter(value){
-  selectionBulkSet().clear();
   selectionFilter=value;
   renderSelections();
 }
@@ -10307,9 +9703,8 @@ function selectionImageDragLeave(event){
   event.currentTarget?.classList.remove('dragover');
 }
 
-function handleSelectionPhotoDrop(event){
+function selectionImageDrop(event){
   event.preventDefault();
-  event.stopPropagation();
   event.currentTarget?.classList.remove('dragover');
   const file=event.dataTransfer?.files?.[0];
   if(file) selectionImageFile(file);
@@ -10320,12 +9715,8 @@ function selectionImageFileSelected(event){
   if(file) selectionImageFile(file);
 }
 
-function handleSelectionPhotoPaste(event){
-  const file=Array.from(event.clipboardData?.items||[]).find(item=>item.kind==='file'&&item.type.startsWith('image/'))?.getAsFile();
-  if(file){event.preventDefault();selectionImageFile(file);}
-}
 function selectionImageFile(file){
-  if(!(file.type||'').startsWith('image/') && !/\.(png|jpe?g|webp|gif|heic|heif)$/i.test(file.name||'')){
+  if(!file.type || !file.type.startsWith('image/')){
     toast('Please choose an image file');
     return;
   }
@@ -10342,7 +9733,7 @@ function selectionImageFile(file){
       context.drawImage(source,0,0,canvas.width,canvas.height);
       selectionImageSetValue(canvas.toDataURL('image/jpeg',.82),file.name);
     };
-    source.onerror=()=>toast('This photo format could not be read. Use a JPG, PNG or WebP image.');
+    source.onerror=()=>toast('That image could not be read');
     source.src=reader.result;
   };
   reader.onerror=()=>toast('That image could not be read');
@@ -10404,7 +9795,38 @@ function selectionCategoryFromText(value){
   return rules.find(([pattern])=>pattern.test(text))?.[1]||'';
 }
 
-function productGuessFromUrl(url){return JJProduct.guess(url);}
+function productGuessFromUrl(url){
+  if(!url) return {vendor:'',title:'',category:'',model:''};
+  try{
+    const parsed=new URL(url);
+    const host=parsed.hostname.replace(/^www\./i,'').toLowerCase();
+    const vendorMap={
+      'homedepot.com':'The Home Depot',
+      'lowes.com':"Lowe's",
+      'flooranddecor.com':'Floor & Decor',
+      'wayfair.com':'Wayfair',
+      'build.com':'Build.com',
+      'ferguson.com':'Ferguson',
+      'amazon.com':'Amazon'
+    };
+    const vendor=vendorMap[host]||selectionTitleCase(host.split('.')[0].replace(/[-_]/g,' '));
+    const pathParts=parsed.pathname.split('/').filter(Boolean);
+    let raw=decodeURIComponent(pathParts[pathParts.length-1]||'');
+    if(pathParts[0]?.toLowerCase()==='p' && pathParts[1]) raw=decodeURIComponent(pathParts.slice(1).join('-'));
+    if(/^[A-Z0-9]{6,}$/i.test(raw) && pathParts.length>1){
+      raw=decodeURIComponent(pathParts[pathParts.length-2]||'')+'-'+raw;
+    }
+    raw=raw.replace(/\.(html?|aspx?)$/i,'');
+    const queryModel=parsed.searchParams.get('sku')||parsed.searchParams.get('model')||parsed.searchParams.get('productId')||'';
+    const trailingId=raw.match(/(?:^|[-_])([A-Z0-9]{6,})$/i)?.[1]||'';
+    const model=queryModel||trailingId;
+    const withoutId=trailingId ? raw.slice(0,raw.length-trailingId.length).replace(/[-_]+$/,'') : raw;
+    const title=selectionCleanProductTitle(withoutId.replace(/[-_]+/g,' '));
+    return {vendor,title:title.length>3?title:'',category:selectionCategoryFromText(title+' '+raw),model};
+  }catch(e){
+    return {vendor:'',title:'',category:'',model:''};
+  }
+}
 
 function selectionLookupUrl(url){
   const params=new URLSearchParams({
@@ -10433,7 +9855,29 @@ function selectionMetadataTitle(value){
   return text.replace(/\s*[-|]\s*(The Home Depot|Lowe's|Wayfair).*$/i,'').trim();
 }
 
-async function fetchSelectionMetadata(url){return JJProduct.lookup(url);}
+async function fetchSelectionMetadata(url){
+  const controller=new AbortController();
+  const timeout=setTimeout(()=>controller.abort(),10000);
+  try{
+    const response=await fetch(selectionLookupUrl(url),{signal:controller.signal,headers:{Accept:'application/json'}});
+    if(!response.ok) return null;
+    const payload=await response.json();
+    const data=payload?.data||{};
+    const image=typeof data.image==='string'?data.image:data.image?.url||'';
+    return {
+      title:selectionMetadataTitle(data.title),
+      description:String(data.description||'').trim(),
+      image:safeSelectionUrl(image),
+      unitPrice:selectionNumber(data.price),
+      model:String(data.sku||'').trim(),
+      blocked:Number(payload?.statusCode||0)>=400
+    };
+  }catch(e){
+    return null;
+  }finally{
+    clearTimeout(timeout);
+  }
+}
 
 function setSelectionLookupStatus(message,tone=''){
   const node=document.getElementById('selectionLookupStatus');
@@ -10447,39 +9891,39 @@ function fillSelectionField(id,value,overwrite=false){
   if(field && value && (overwrite || !String(field.value||'').trim())) field.value=value;
 }
 
-let selectionLookupGeneration=0,selectionEditorLastUrl='';
 async function enrichSelectionEditorFromUrl(url,overwrite=false){
- const normalized=safeSelectionUrl(url);if(!normalized)return;
- if(selectionLookupInFlight===normalized)return;
- const generation=++selectionLookupGeneration;selectionLookupInFlight=normalized;
- const changed=normalized!==selectionEditorLastUrl;selectionEditorLastUrl=normalized;
- const ids={title:'selectionEditTitle',vendor:'selectionEditVendor',category:'selectionEditCategory',model:'selectionEditModel',description:'selectionEditDescription',unitPrice:'selectionEditPrice',image:'selectionEditImage'};
- const before=Object.fromEntries(Object.entries(ids).map(([k,id])=>[k,document.getElementById(id)?.value||'']));
- setSelectionLookupStatus('Reading product name, photo and pricing…','loading');
- let metadata=null;
- try{
-   metadata=await Promise.race([
-     fetchSelectionMetadata(normalized),
-     new Promise(resolve=>setTimeout(()=>resolve(null),9000))
-   ]);
- }catch(error){
-   console.warn('Product lookup failed; manual entry remains available.',error);
-   metadata=null;
- }
- if(generation===selectionLookupGeneration)selectionLookupInFlight='';
- if(generation!==selectionLookupGeneration||document.getElementById('selectionEditUrl')?.value.trim()!==normalized||!document.getElementById('selectionModalBackdrop')?.classList.contains('open'))return;
- const values={...productGuessFromUrl(normalized)};for(const [key,value] of Object.entries(metadata||{})){if(value!==''&&value!==null&&value!==undefined)values[key]=value;}
- for(const [key,id] of Object.entries(ids)){const field=document.getElementById(id);if(!field||field.value!==before[key])continue;
- const value=values[key];
- if(key==='unitPrice'){if(value!==null&&value!==undefined)field.value=Number(value).toFixed(2);continue;}
- if(key==='image'){if(value&&(changed||overwrite||!field.value)){field.value=value;const preview=document.getElementById('selectionImagePreview');if(preview)preview.innerHTML=selectionImageMarkup(value);}continue;}
- if(value&&(changed||overwrite||!field.value))field.value=value;
- }
- const foundPrice=metadata?.unitPrice!==null&&metadata?.unitPrice!==undefined;
- setSelectionLookupStatus(foundPrice?'Retailer product details and price found. Review the unit/pack and price before saving.':metadata?'Product details found. A reliable price was not available; existing pricing was kept.':'Retailer could not be read. Available details were inferred from the link; review them and enter pricing manually.',foundPrice?'success':'warn');
- updateSelectionTotals();selectionLookupCompleted=normalized;selectionLookupInFlight='';
+  const normalized=String(url||'').trim();
+  if(!normalized) return;
+  if(!overwrite && (selectionLookupInFlight===normalized || selectionLookupCompleted===normalized)) return;
+  selectionLookupInFlight=normalized;
+  const guess=productGuessFromUrl(normalized);
+  fillSelectionField('selectionEditTitle',guess.title,overwrite);
+  fillSelectionField('selectionEditVendor',guess.vendor,overwrite);
+  fillSelectionField('selectionEditCategory',guess.category,overwrite);
+  fillSelectionField('selectionEditModel',guess.model,overwrite);
+  setSelectionLookupStatus('Reading the product link…','loading');
+  const metadata=await fetchSelectionMetadata(normalized);
+  if(metadata){
+    fillSelectionField('selectionEditTitle',metadata.title,overwrite);
+    fillSelectionField('selectionEditDescription',metadata.description,overwrite);
+    selectionImageSetValue(metadata.image,'Image from product link',overwrite);
+    fillSelectionField('selectionEditModel',metadata.model,overwrite);
+    if(metadata.unitPrice) fillSelectionField('selectionEditPrice',metadata.unitPrice.toFixed(2),overwrite);
+  }
+  const hasPrice=Number(document.getElementById('selectionEditPrice')?.value||0)>0;
+  const hasDetails=Boolean(document.getElementById('selectionEditTitle')?.value.trim() && document.getElementById('selectionEditCategory')?.value.trim());
+  if(hasPrice && hasDetails) setSelectionLookupStatus('Product details and price found — review before saving.','success');
+  else if(hasDetails) setSelectionLookupStatus('Product name, vendor, category, and SKU were filled from the link. This retailer did not expose a live price, so enter it below.','warn');
+  else setSelectionLookupStatus('We could not read this link. You can still enter the product details manually.','warn');
+  updateSelectionTotals();
+  selectionLookupCompleted=normalized;
+  if(selectionLookupInFlight===normalized) selectionLookupInFlight='';
 }
-function selectionLookupFromEditorUrl(){const url=document.getElementById('selectionEditUrl')?.value.trim();if(url)enrichSelectionEditorFromUrl(url,true);}
+
+function selectionLookupFromEditorUrl(){
+  const url=document.getElementById('selectionEditUrl')?.value.trim()||'';
+  if(url) enrichSelectionEditorFromUrl(url,false);
+}
 
 function openSelectionEditorFromLink(){
   const url=document.getElementById('selectionProductUrl')?.value.trim()||'';
@@ -10491,22 +9935,10 @@ function openSelectionEditorFromLink(){
   document.getElementById('selectionProductUrl').value='';
 }
 
-function addSelectionOption(index){
- const base=selectedProject()?.selections?.[index];if(!base)return;
- selectionOptionParentIndex=index;openSelectionEditor(null,base.url||'');
-}
-
-function selectionGroupChoices(project,current){
- const groups=new Map();(project.selections||[]).forEach(i=>{const id=i.optionGroupId||i.id;if(!groups.has(id))groups.set(id,{title:i.optionGroupTitle||i.title||'Selection',count:0});groups.get(id).count++;});
- return [...groups].map(([id,g])=>`<option value="${esc(id)}" ${String(id)===String(current)?'selected':''}>${esc(g.title)} · ${g.count} option${g.count===1?'':'s'}</option>`).join('');
-}
-
 function openSelectionEditor(index=null,prefillUrl=''){
   const project=selectedProject();
   ensureSelectionsData();
   selectionEditIndex=Number.isInteger(index)?index:null;
-  if(selectionEditIndex!==null)selectionOptionParentIndex=null;
-  selectionLookupGeneration++;selectionEditorLastUrl='';
   selectionLookupInFlight='';
   selectionLookupCompleted='';
   const existing=selectionEditIndex===null?null:project.selections[selectionEditIndex];
@@ -10514,11 +9946,11 @@ function openSelectionEditor(index=null,prefillUrl=''){
   const item=existing||{
     url:prefillUrl,title:guess.title,vendor:guess.vendor,category:guess.category,room:project.selectionActiveRoom||project.selectionRooms[0],
     model:guess.model,image:'',description:'',quality:'Standard',unitPrice:'',quantity:1,addTax:false,
-    purchasedBy:'J&J',status:'Pending',optionGroupId:selectionOptionParentIndex!==null?(project.selections[selectionOptionParentIndex]?.optionGroupId||project.selections[selectionOptionParentIndex]?.id):null,optionGroupTitle:selectionOptionParentIndex!==null?(project.selections[selectionOptionParentIndex]?.optionGroupTitle||project.selections[selectionOptionParentIndex]?.title):'',optionLabel:selectionOptionParentIndex!==null?'Another option':'',leadTimeValue:1,leadTimeUnit:'Day(s)',notes:''
+    purchasedBy:'J&J',status:'Pending',leadTimeValue:1,leadTimeUnit:'Day(s)',notes:''
   };
   const host=document.getElementById('selectionModalBackdrop');
   if(!host) return;
-  host.innerHTML=`<div class="selection-modal" ondragover="event.preventDefault();event.dataTransfer.dropEffect='copy'" ondrop="handleSelectionPhotoDrop(event)" onpaste="handleSelectionPhotoPaste(event)" role="dialog" aria-modal="true" aria-labelledby="selectionModalTitle">
+  host.innerHTML=`<div class="selection-modal" role="dialog" aria-modal="true" aria-labelledby="selectionModalTitle">
     <div class="selection-modal-head">
       <h3 id="selectionModalTitle">${existing?'Edit selection':'Review product information'}</h3>
       <button onclick="closeSelectionEditor()" aria-label="Close">×</button>
@@ -10529,16 +9961,14 @@ function openSelectionEditor(index=null,prefillUrl=''){
       <div class="selection-field full"><label>Product name</label><input id="selectionEditTitle" value="${esc(item.title||'')}" placeholder="Product name"></div>
       <div class="selection-field"><label>Vendor</label><input id="selectionEditVendor" value="${esc(item.vendor||'')}" placeholder="Home Depot"></div>
       <div class="selection-field"><label>Category</label><input id="selectionEditCategory" value="${esc(item.category||'')}" placeholder="Tile, Plumbing, Vanity…"></div>
-      <div class="selection-field full"><label>Option group</label><select id="selectionEditGroup"><option value="">Standalone selection</option>${selectionGroupChoices(project,item.optionGroupId)}</select><input id="selectionEditGroupName" placeholder="Optional group name (for example: Shower fixture)" value="${esc(item.optionGroupTitle||'')}" style="margin-top:8px"></div>
-      <div class="selection-field"><label for="selectionEditRoom">Room</label><select id="selectionEditRoom">${[...new Set([...project.selectionRooms,item.room].filter(Boolean))].map(room=>`<option ${room===item.room?'selected':''}>${esc(room)}</option>`).join('')}</select>
-        <div style="display:flex;gap:8px;margin-top:8px"><input id="selectionEditorNewRoom" placeholder="New room name" aria-label="New room name" onkeydown="if(event.key==='Enter'){event.preventDefault();addRoomInSelectionEditor()}"><button type="button" class="btn btn-light" onclick="addRoomInSelectionEditor()">Add Room</button></div></div>
+      <div class="selection-field"><label>Room</label><select id="selectionEditRoom">${project.selectionRooms.map(room=>`<option ${room===item.room?'selected':''}>${esc(room)}</option>`).join('')}</select></div>
       <div class="selection-field"><label>Quality</label><select id="selectionEditQuality">
         ${['Budget','Standard','Premium','Luxury'].map(q=>`<option ${q===(item.quality||'Standard')?'selected':''}>${q}</option>`).join('')}
       </select></div>
       <div class="selection-field"><label>Model / SKU</label><input id="selectionEditModel" value="${esc(item.model||'')}"></div>
-      <div class="selection-field full"><label>Product picture</label><div id="selectionImageDrop" class="selection-image-drop" ondragover="selectionImageDragOver(event)" ondragleave="selectionImageDragLeave(event)" ondrop="handleSelectionPhotoDrop(event)">
+      <div class="selection-field full"><label>Product picture</label><div id="selectionImageDrop" class="selection-image-drop" ondragover="selectionImageDragOver(event)" ondragleave="selectionImageDragLeave(event)" ondrop="selectionImageDrop(event)">
         <div id="selectionImagePreview" class="selection-image-preview">${selectionImageMarkup(item.image)}</div>
-        <div class="selection-image-copy"><strong>Drop a photo anywhere in this window</strong><span>or paste a copied photo (Command/Ctrl + V)</span><button type="button" onclick="document.getElementById('selectionImageFile')?.click()">Choose image</button><span id="selectionImageName" class="selection-image-name">${item.image?'Image ready':'No image selected'}</span></div>
+        <div class="selection-image-copy"><strong>Drag and drop an image here</strong><span>or choose one from your computer</span><button type="button" onclick="document.getElementById('selectionImageFile')?.click()">Choose image</button><span id="selectionImageName" class="selection-image-name">${item.image?'Image ready':'No image selected'}</span></div>
         <input id="selectionImageFile" type="file" accept="image/*" hidden onchange="selectionImageFileSelected(event)">
         <input id="selectionEditImage" type="hidden" value="${esc(safeSelectionImageUrl(item.image))}">
       </div></div>
@@ -10546,13 +9976,12 @@ function openSelectionEditor(index=null,prefillUrl=''){
       <div class="selection-field"><label>Quantity</label><input id="selectionEditQuantity" type="number" min="1" step="1" value="${Math.max(1,Number(item.quantity||1))}" oninput="updateSelectionTotals()"></div>
       <div class="selection-tax-row"><label><input id="selectionEditTax" type="checkbox" ${item.addTax?'checked':''} onchange="updateSelectionTotals()"> Add taxes (8.25%)</label><span id="selectionEditTaxText">Tax: $0.00</span></div>
       <div class="selection-field"><label>Purchased by</label><select id="selectionEditPurchasedBy">${['J&J','Homeowner','Not assigned'].map(v=>`<option ${v===(item.purchasedBy||'J&J')?'selected':''}>${v}</option>`).join('')}</select></div>
-      <div class="selection-field"><label>Status</label><select id="selectionEditStatus">${['Pending','Selected','Approved','Ordered','Received'].map(v=>`<option ${v===(item.status||'Pending')?'selected':''}>${v}</option>`).join('')}</select>
+      <div class="selection-field"><label>Status</label><select id="selectionEditStatus">${['Pending','Selected','Ordered','Received'].map(v=>`<option ${v===(item.status||'Pending')?'selected':''}>${v}</option>`).join('')}</select>
         <div id="selectionLeadTime" class="selection-lead-time">
           <div class="selection-lead-label">Lead time</div>
           <input id="selectionEditLeadValue" type="number" min="1" step="1" value="${Math.max(1,Number(item.leadTimeValue||1))}" aria-label="Lead time amount">
           <select id="selectionEditLeadUnit" aria-label="Lead time unit">${['Day(s)','Week(s)'].map(v=>`<option ${v===(item.leadTimeUnit||'Day(s)')?'selected':''}>${v}</option>`).join('')}</select>
         </div>
-        <button type="button" id="selectionEditInStock" class="btn ${item.inStock?'btn-gold':'btn-light'}" style="margin-top:8px" aria-pressed="${item.inStock?'true':'false'}" onclick="toggleSelectionInStock()">In Stock</button>
       </div>
       <div class="selection-field full"><label>Description</label><textarea id="selectionEditDescription" placeholder="Product description">${esc(item.description||'')}</textarea></div>
       <div class="selection-field full"><label>Notes</label><textarea id="selectionEditNotes" placeholder="Compatibility, quantities, installation notes…">${esc(item.notes||'')}</textarea></div>
@@ -10564,36 +9993,9 @@ function openSelectionEditor(index=null,prefillUrl=''){
     </div>
   </div>`;
   host.classList.add('open');
-  refreshSelectionInStock();
   updateSelectionTotals();
   setTimeout(()=>document.getElementById('selectionEditTitle')?.focus(),30);
   if(prefillUrl && !existing) enrichSelectionEditorFromUrl(prefillUrl,false);
-}
-
-function addRoomInSelectionEditor(){
-  const input=document.getElementById('selectionEditorNewRoom');
-  const select=document.getElementById('selectionEditRoom');
-  const name=input.value.trim();
-  if(!name){input.focus();return;}
-  const existing=Array.from(select.options).find(option=>option.value.toLowerCase()===name.toLowerCase());
-  if(existing) select.value=existing.value;
-  else {const option=document.createElement('option');option.value=name;option.textContent=name;select.appendChild(option);select.value=name;}
-  input.value='';
-}
-
-function refreshSelectionInStock(){
-  const button=document.getElementById('selectionEditInStock');
-  const active=button?.getAttribute('aria-pressed')==='true';
-  for(const id of ['selectionEditLeadValue','selectionEditLeadUnit']){
-    const input=document.getElementById(id);if(input) input.disabled=active;
-  }
-  if(button){button.classList.toggle('btn-gold',active);button.classList.toggle('btn-light',!active);}
-}
-
-function toggleSelectionInStock(){
-  const button=document.getElementById('selectionEditInStock');
-  button.setAttribute('aria-pressed',button.getAttribute('aria-pressed')==='true'?'false':'true');
-  refreshSelectionInStock();
 }
 
 function closeSelectionEditor(){
@@ -10623,7 +10025,6 @@ function saveSelectionEditor(){
   if(!category){toast('Enter a category');return;}
   const status=document.getElementById('selectionEditStatus')?.value||'Pending';
   const item={
-    ...(selectionEditIndex===null?{}:selectedProject().selections[selectionEditIndex]),
     id:selectionEditIndex===null?Date.now():(selectedProject().selections[selectionEditIndex]?.id||Date.now()),
     url:safeSelectionUrl(document.getElementById('selectionEditUrl')?.value.trim()||''),
     title,
@@ -10633,33 +10034,21 @@ function saveSelectionEditor(){
     quality:document.getElementById('selectionEditQuality')?.value||'Standard',
     model:document.getElementById('selectionEditModel')?.value.trim()||'',
     image:safeSelectionImageUrl(document.getElementById('selectionEditImage')?.value.trim()||''),
-    unitPrice:document.getElementById('selectionEditPrice')?.value.trim()===''?null:Number(document.getElementById('selectionEditPrice')?.value||0),
+    unitPrice:Number(document.getElementById('selectionEditPrice')?.value||0),
     quantity:Math.max(1,Number(document.getElementById('selectionEditQuantity')?.value||1)),
     addTax:!!document.getElementById('selectionEditTax')?.checked,
     purchasedBy:document.getElementById('selectionEditPurchasedBy')?.value||'J&J',
-    optionLabel:selectionEditIndex===null&&selectionOptionParentIndex!==null?'Another option':undefined,
-    optionGroupId:document.getElementById('selectionEditGroup')?.value||undefined,
-    optionGroupTitle:document.getElementById('selectionEditGroupName')?.value.trim()||undefined,
     status,
-    inStock:document.getElementById('selectionEditInStock')?.getAttribute('aria-pressed')==='true',
     leadTimeValue:Math.max(1,Number(document.getElementById('selectionEditLeadValue')?.value||1)),
     leadTimeUnit:document.getElementById('selectionEditLeadUnit')?.value||'Day(s)',
     description:document.getElementById('selectionEditDescription')?.value.trim()||'',
     notes:document.getElementById('selectionEditNotes')?.value.trim()||''
   };
-  if(status!=='Selected'){item.homeownerSelected=false;item.homeownerSelectedAt=null;}
-  const customGroupName=document.getElementById('selectionEditGroupName')?.value.trim()||'';
   const project=selectedProject();
-  if(!item.optionGroupId && customGroupName){item.optionGroupId='group-'+Date.now();item.optionGroupTitle=customGroupName;}
-  if(item.optionGroupId && !item.optionGroupTitle){const group=project.selections.find(i=>(i.optionGroupId||i.id)===item.optionGroupId);item.optionGroupTitle=group?.optionGroupTitle||group?.title||item.title;}
-  if(item.optionGroupId && item.optionGroupTitle){project.selections.forEach(existingItem=>{if((existingItem.optionGroupId||existingItem.id)===item.optionGroupId)existingItem.optionGroupTitle=item.optionGroupTitle;});}
-  if(!project.selectionRooms.includes(item.room)) project.selectionRooms.push(item.room);
-  project.selectionActiveRoom=item.room;
   if(selectionEditIndex===null) project.selections.push(item);
   else project.selections[selectionEditIndex]=item;
   saveState(false);
   selectionEditIndex=null;
-  selectionOptionParentIndex=null;
   renderAll();
   go('selections');
   toast('Selection saved');
@@ -10670,7 +10059,6 @@ function deleteSelection(index){
   selectedProject().selections.splice(index,1);
   saveState(false);
   selectionEditIndex=null;
-  selectionOptionParentIndex=null;
   renderAll();
   go('selections');
   toast('Selection deleted');
@@ -10765,6 +10153,3 @@ document.querySelector('.brand')?.addEventListener('keydown',e=>{
   }
 });
 </script>
-
-
-
