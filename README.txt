@@ -1,20 +1,35 @@
-J&J Operations — Clean Printing
+J&J Operations — Selection Groups Update
 
-Changes:
-- Print on an individual P.O. prints only that P.O.
-- Print All P.O.s prints one P.O. per page.
-- Printing a Preconstruction section prints each checklist line item on its own page.
-- Print All Preconstruction prints every checklist line item on its own page.
-- The app interface/navigation is hidden from print output.
-- Printed P.O.s keep Parent Group and Builder Cost information.
-
-Preserves all current app features including:
-- independent P.O. open/close
-- Parent Group duplicate handling
-- partial split approvals
-- iPad Jobs behavior
-- cloud/password recovery
-
-Upload/replace:
-1. index.html
+UPLOAD / REPLACE THESE TWO FILES IN GITHUB:
+1. selections-metadata.js
 2. service-worker.js
+
+This update uses the current app's existing Selections workspace. index.html does NOT
+need to be replaced.
+
+What changes:
+- Replaces the old direct "Link group" dropdown with:
+  • Create Group
+  • Add to Group / Change Group on each selection
+  • Manage Groups
+- Groups can be named anything (Primary Bathroom, First Floor Bathroom,
+  Shower Fixtures, Vanity Package, etc.).
+- Rename a group.
+- View all selections inside a group.
+- Remove a selection from a group without deleting it.
+- Delete a group without deleting its selections.
+- Group name is shown clearly on selection cards.
+- Existing linked selections are migrated into named groups automatically.
+- Uses the existing optionGroupId / optionGroupTitle fields, so the homeowner
+  selection portal sees the same grouping automatically.
+- Keeps the current Selected toggle behavior.
+- Keeps the current persistent project QR behavior.
+- Keeps product photo/link metadata lookup.
+
+Cache version bumped to:
+jj-operations-v63-selection-groups-ui
+
+After committing both files:
+- wait about 1 minute
+- fully close/reopen the app once
+- open Selections
