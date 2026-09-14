@@ -324,7 +324,8 @@ window.JJProduct = (() => {
     style.id=PATCH_ID;
     style.textContent=`
       .jj-selection-top-actions{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 14px}
-      #jjAppViewAll,#jjAppShowGroups{min-width:96px}
+      .jj-app-group-controls{display:inline-flex;gap:7px;align-items:center;margin-left:8px}
+      .jj-app-group-controls .btn{min-width:94px!important;font-size:11px!important;line-height:1.1!important;padding:9px 11px!important}
       .jj-selection-group-badge{display:inline-flex;align-items:center;gap:5px;margin:7px 0 0;padding:5px 8px;border-radius:999px;background:#EEF3F7;color:#40566A;font-size:10px;font-weight:850}
       .jj-selection-group-btn{border:1px solid var(--line,#dfe4ea);background:#fff;color:var(--navy,#14234A);border-radius:8px;padding:8px 10px;font-size:11px;font-weight:800}
       .jj-group-summary-actions{display:flex;align-items:center;justify-content:flex-end;gap:10px;margin-left:auto}
@@ -491,6 +492,8 @@ window.JJProduct = (() => {
         .jj-group-row-head{display:grid}
         .jj-group-row-head>div:last-child{justify-content:flex-start}
         .jj-selection-top-actions .btn{flex:1}
+        .jj-app-group-controls{display:flex;width:100%;margin-left:0;margin-top:6px}
+        .jj-app-group-controls .btn{flex:1!important;min-width:0!important}
         .jj-group-foot .btn{flex:1}
         .selection-option-group-title{align-items:flex-start;flex-wrap:wrap}
         .jj-group-summary-actions{width:100%;justify-content:space-between;margin-left:0}
@@ -534,7 +537,8 @@ window.JJProduct = (() => {
       // contains only one selection. This makes the header the permanent
       // place to add another option.
       return `<details class="selection-option-group" data-selection-group-id="${escLocal(first.optionGroupId)}" open>
-        <summary class="selection-option-group-title">
+        <summary class="selection-option-group-title"
+          onclick="if(event.target.closest('button'))return;event.preventDefault();this.parentElement.open=!this.parentElement.open">
           <span class="jj-group-title-text">${escLocal(title)}</span>
           <span class="jj-group-summary-actions">
             <span class="jj-group-summary-count">${count} option${count===1?'':'s'} · tap to compare</span>
@@ -659,24 +663,15 @@ window.JJProduct = (() => {
 
     const heading=root.querySelector('.selection-heading');
 
-    // Remove stale selection-group controls from older builds. Keep only the
-    // current app buttons: Expand All + Collapse All.
-    root.querySelectorAll('button').forEach(btn=>{
-      const t=(btn.textContent||'').trim().toLowerCase();
-      const keep=['jjAppViewAll','jjAppShowGroups'].includes(btn.id);
-      if(['expand all','collapse all','view all','show groups'].includes(t) && !keep){
-        btn.remove();
-      }
-    });
+    // Remove stale selection-group controls from older builds.
+    root.querySelectorAll('#jjAppViewAll,#jjAppShowGroups').forEach(btn=>btn.remove());
     if(heading && !root.querySelector('.jj-selection-top-actions')){
       const actions=document.createElement('div');
       actions.className='jj-selection-top-actions';
       actions.innerHTML=`
         <button class="btn btn-gold" type="button" onclick="openSelectionEditor()">+ Add Selection</button>
         <button class="btn btn-light" type="button" onclick="window.JJSelectionGroups.create()">Create Group</button>
-        <button class="btn btn-light" type="button" onclick="window.JJSelectionGroups.manage()">Manage Groups</button>
-        <button class="btn btn-light" type="button" id="jjAppViewAll" onclick="window.JJSelectionGroups.expandAll()">Expand All</button>
-        <button class="btn btn-light" type="button" id="jjAppShowGroups" onclick="window.JJSelectionGroups.collapseAll()">Collapse All</button>`;
+        <button class="btn btn-light" type="button" onclick="window.JJSelectionGroups.manage()">Manage Groups</button>`;
       heading.insertAdjacentElement('afterend',actions);
     }
 
@@ -708,6 +703,23 @@ window.JJProduct = (() => {
     });
 
     // Use compact symbols for Card / List view on the contractor app.
+    const viewHost=root.querySelector('.toolbar[role="group"][aria-label="Selections view"], [role="group"][aria-label="Selections view"]');
+    if(viewHost && !root.querySelector('.jj-app-group-controls')){
+      const controls=document.createElement('span');
+      controls.className='jj-app-group-controls';
+      controls.innerHTML=`
+        <button type="button" class="btn btn-light" data-jj-app-expand>Expand All</button>
+        <button type="button" class="btn btn-light" data-jj-app-collapse>Collapse All</button>`;
+      viewHost.appendChild(controls);
+
+      controls.querySelector('[data-jj-app-expand]').addEventListener('click',()=>{
+        setAllSelectionGroups(true);
+      });
+      controls.querySelector('[data-jj-app-collapse]').addEventListener('click',()=>{
+        setAllSelectionGroups(false);
+      });
+    }
+
     const viewButtons=[...root.querySelectorAll('[aria-label="Selections view"] button, .toolbar[role="group"][aria-label="Selections view"] button')];
     viewButtons.forEach((btn,idx)=>{
       const txt=(btn.textContent||'').trim().toLowerCase();
@@ -1037,6 +1049,8 @@ window.JJProduct = (() => {
     expandAll:()=>setAllSelectionGroups(true),
     collapseAll:()=>setAllSelectionGroups(false)
   };
+  window.expandAllSelectionGroups=()=>setAllSelectionGroups(true);
+  window.collapseAllSelectionGroups=()=>setAllSelectionGroups(false);
 
   if(document.readyState==='complete')setTimeout(install,0);
   else window.addEventListener('load',install,{once:true});
