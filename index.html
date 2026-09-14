@@ -4340,7 +4340,7 @@ body.topbar-collapsed .operations-app .top-nav{display:flex!important}
 body.topbar-collapsed .operations-app > .sidebar{top:0;min-height:100vh}
 
 /* Selections */
-.selection-grid.selection-list{grid-template-columns:1fr}.selection-option-group{grid-column:1/-1;border:1px solid #d9e0e6;border-radius:14px;background:#f8fafb;padding:12px}.selection-option-group-title{display:flex;justify-content:space-between;align-items:center;color:var(--navy);font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.5px;margin:0 2px 10px}.selection-option-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}.selection-list .selection-option-grid{grid-template-columns:1fr}@media(max-width:900px){.selection-option-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:620px){.selection-option-grid{grid-template-columns:1fr}}
+.selection-grid.selection-list{grid-template-columns:1fr}.selection-option-group{grid-column:1/-1;border:1px solid #d9e0e6;border-radius:14px;background:#f8fafb;overflow:hidden;box-shadow:0 3px 12px rgba(19,35,52,.05)}.selection-option-group-title{display:flex;justify-content:space-between;align-items:center;color:var(--navy);font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.5px;padding:16px;background:#fff;cursor:pointer;list-style:none}.selection-option-group-title::-webkit-details-marker{display:none}.selection-option-group-title:before{content:"▸";margin-right:8px;transition:transform .15s}.selection-option-group[open] .selection-option-group-title:before{transform:rotate(90deg)}.selection-option-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;padding:14px}.selection-list .selection-option-grid{grid-template-columns:1fr}@media(max-width:900px){.selection-option-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:620px){.selection-option-grid{grid-template-columns:1fr}}
 .selection-list .selection-card{display:grid;grid-template-columns:150px minmax(0,1fr);align-items:start}
 .selection-list .selection-card>label{grid-column:1/-1}
 .selection-list .selection-photo{height:140px;margin:0 12px 12px}
@@ -10106,7 +10106,7 @@ function selectionCategoryFolders(filtered,allItems){
 
 function renderSelectionOptionGroups(filtered,allItems){
  const groups=new Map();filtered.forEach(item=>{const key=item.optionGroupId||item.id;if(!groups.has(key))groups.set(key,[]);groups.get(key).push(item);});
- return [...groups].map(([key,group])=>group.length>1?`<section class="selection-option-group"><div class="selection-option-group-title"><span>${esc(group[0].optionGroupTitle||group[0].title||'Selection options')}</span><span>${group.length} options</span></div><div class="selection-option-grid">${group.map(item=>selectionCard(item,allItems.indexOf(item))).join('')}</div></section>`:selectionCard(group[0],allItems.indexOf(group[0]))).join('');
+ return [...groups].map(([key,group])=>group.length>1?`<details class="selection-option-group"><summary class="selection-option-group-title"><span>${esc(group[0].optionGroupTitle||group[0].title||'Selection options')}</span><span>${group.length} options · tap to compare</span></summary><div class="selection-option-grid">${group.map(item=>selectionCard(item,allItems.indexOf(item))).join('')}</div></details>`:selectionCard(group[0],allItems.indexOf(group[0]))).join('');
 }
 
 function selectionGroupSelect(item,index){
@@ -10117,8 +10117,8 @@ function selectionGroupSelect(item,index){
 function linkSelectionGroup(index,value){
  const project=selectedProject(),item=project?.selections?.[index];if(!item)return;
  if(!value){delete item.optionGroupId;delete item.optionGroupTitle;delete item.optionLabel;}
- else {const target=project.selections.find(i=>(i.optionGroupId||i.id)===value);if(!target)return;item.optionGroupId=target.optionGroupId||target.id;item.optionGroupTitle=target.optionGroupTitle||target.title||'Selection options';item.optionLabel=item.optionLabel||'Another option';}
- saveState(false);renderSelections();toast(value?'Selection linked to group':'Selection removed from group');
+ else {const target=project.selections.find(i=>(i.optionGroupId||i.id)===value);if(!target)return;const groupId=target.optionGroupId||target.id;const title=target.optionGroupTitle||target.title||'Selection options';project.selections.forEach(other=>{if((other.optionGroupId||other.id)===groupId||other.id===target.id){other.optionGroupId=groupId;other.optionGroupTitle=title;if(other.id!==target.id)other.optionLabel=other.optionLabel||'Another option';}});item.optionGroupId=groupId;item.optionGroupTitle=title;item.optionLabel=item.optionLabel||'Another option';}
+ saveState(false);renderSelections();toast(value?'Selections linked into one option group':'Selection removed from group');
 }
 
 function selectionCard(item,index){

@@ -17,7 +17,7 @@ function renderItem(i){const selected=i.status==='Selected',unavailable=optionUn
 
 function render(){
  const groups=new Map();items.forEach(i=>{const key=i.optionGroupId||i.id;if(!groups.has(key))groups.set(key,[]);groups.get(key).push(i);});
- $('items').innerHTML=[...groups].map(([key,group])=>group.length>1?`<details class="option-group" open><summary>${esc(group[0].optionGroupTitle||group[0].title||'Selection options')} <span>${group.length} options</span></summary><div class="option-group-items">${group.map(renderItem).join('')}</div></details>`:renderItem(group[0])).join('')||'<p>No selections yet. Use + Add Selection to add your first product.</p>';
+ $('items').innerHTML=[...groups].map(([key,group])=>group.length>1?`<details class="option-group"><summary>${esc(group[0].optionGroupTitle||group[0].title||'Selection options')} <span>${group.length} options · tap to compare</span></summary><div class="option-group-items">${group.map(renderItem).join('')}</div></details>`:renderItem(group[0])).join('')||'<p>No selections yet. Use + Add Selection to add your first product.</p>';
 }
 async function refresh(silent=false){
  if(reading)return; if(!client){msg.textContent='Unable to connect. Check your connection and refresh.';return;}
