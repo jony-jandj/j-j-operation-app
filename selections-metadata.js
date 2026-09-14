@@ -336,6 +336,10 @@ window.JJProduct = (() => {
       .jj-editor-group-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:8px}
       .jj-ho-group-toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:0 0 16px}
       .jj-ho-group-toolbar button{min-height:42px}
+      #jjHOGroupToggle{min-width:118px;font-weight:800}
+      #cardView,#listView{width:44px;min-width:44px;padding:10px!important;font-size:19px;line-height:1}
+      #selections [aria-label="Selections view"] button,
+      #selections .toolbar[role="group"][aria-label="Selections view"] button{min-width:44px;padding:9px 12px;font-size:18px;line-height:1}
       .jj-ho-group-add-option{float:none!important;margin-left:10px;min-height:34px!important;padding:7px 10px!important;border-radius:8px!important;background:#edf0f5!important;color:#14234a!important;font-size:12px!important;font-weight:800!important}
       .option-group>summary.jj-ho-summary{display:flex!important;align-items:center;gap:10px}
       .option-group>summary.jj-ho-summary>.jj-ho-summary-title{min-width:0;flex:1}
@@ -424,6 +428,25 @@ window.JJProduct = (() => {
     document.querySelectorAll('#selections details.selection-option-group').forEach(details=>{
       details.open=!!open;
     });
+    updateContractorGroupToggle();
+  }
+
+  function contractorGroupsExpanded(){
+    const groups=[...document.querySelectorAll('#selections details.selection-option-group')];
+    return !!groups.length && groups.every(details=>details.open);
+  }
+
+  function updateContractorGroupToggle(){
+    const button=document.getElementById('jjAppGroupToggle');
+    if(!button)return;
+    const expanded=contractorGroupsExpanded();
+    button.textContent=expanded?'Show Groups':'View All';
+    button.setAttribute('aria-pressed',String(expanded));
+    button.title=expanded?'Collapse selection groups':'Expand all selection groups';
+  }
+
+  function toggleContractorGroups(){
+    setAllSelectionGroups(!contractorGroupsExpanded());
   }
 
   function configureEditorGroupDropdown(){
@@ -534,8 +557,7 @@ window.JJProduct = (() => {
         <button class="btn btn-gold" type="button" onclick="openSelectionEditor()">+ Add Selection</button>
         <button class="btn btn-light" type="button" onclick="window.JJSelectionGroups.create()">Create Group</button>
         <button class="btn btn-light" type="button" onclick="window.JJSelectionGroups.manage()">Manage Groups</button>
-        <button class="btn btn-light" type="button" onclick="window.JJSelectionGroups.expandAll()">Expand All</button>
-        <button class="btn btn-light" type="button" onclick="window.JJSelectionGroups.collapseAll()">Collapse All</button>`;
+        <button class="btn btn-light" type="button" id="jjAppGroupToggle" onclick="window.JJSelectionGroups.toggleGroups()">Show Groups</button>`;
       heading.insertAdjacentElement('afterend',actions);
     }
 
@@ -565,6 +587,23 @@ window.JJProduct = (() => {
       badge.textContent=`Group: ${name}`;
       titleNode.insertAdjacentElement('afterend',badge);
     });
+
+    // Use compact symbols for Card / List view on the contractor app.
+    const viewButtons=[...root.querySelectorAll('[aria-label="Selections view"] button, .toolbar[role="group"][aria-label="Selections view"] button')];
+    viewButtons.forEach(btn=>{
+      const txt=(btn.textContent||'').trim().toLowerCase();
+      if(txt.includes('card')){
+        btn.textContent='▦';
+        btn.title='Card view';
+        btn.setAttribute('aria-label','Card view');
+      }else if(txt.includes('list')){
+        btn.textContent='☰';
+        btn.title='List view';
+        btn.setAttribute('aria-label','List view');
+      }
+    });
+
+    updateContractorGroupToggle();
   }
 
   function configureEditorAfterOpen(){
@@ -576,12 +615,27 @@ window.JJProduct = (() => {
     try{return Array.isArray(items)?items:[];}catch{return [];}
   }
 
+  function homeownerGroupsExpanded(){
+    const groups=[...document.querySelectorAll('#items details.option-group')];
+    return !!groups.length && groups.every(details=>details.open);
+  }
+
+  function updateHomeownerGroupToggle(){
+    const button=document.getElementById('jjHOGroupToggle');
+    if(!button)return;
+    const expanded=homeownerGroupsExpanded();
+    button.textContent=expanded?'Show Groups':'View All';
+    button.setAttribute('aria-pressed',String(expanded));
+    button.title=expanded?'Collapse selection groups':'Expand all selection groups';
+  }
+
   function homeownerGroupMode(open){
     document.querySelectorAll('#items details.option-group').forEach(details=>details.open=!!open);
-    const viewAll=document.getElementById('jjHOViewAll');
-    const showGroups=document.getElementById('jjHOShowGroups');
-    if(viewAll)viewAll.setAttribute('aria-pressed',String(!!open));
-    if(showGroups)showGroups.setAttribute('aria-pressed',String(!open));
+    updateHomeownerGroupToggle();
+  }
+
+  function toggleHomeownerGroups(){
+    homeownerGroupMode(!homeownerGroupsExpanded());
   }
 
   function enhanceHomeownerGroups(){
@@ -596,11 +650,9 @@ window.JJProduct = (() => {
       toolbar.className='jj-ho-group-toolbar';
       toolbar.setAttribute('aria-label','Selection groups');
       toolbar.innerHTML=`
-        <button type="button" id="jjHOViewAll" class="secondary" aria-pressed="false">View All</button>
-        <button type="button" id="jjHOShowGroups" class="secondary" aria-pressed="true">Show Groups</button>`;
+        <button type="button" id="jjHOGroupToggle" class="secondary" aria-pressed="true">Show Groups</button>`;
       viewActions.insertAdjacentElement('afterend',toolbar);
-      toolbar.querySelector('#jjHOViewAll').addEventListener('click',()=>homeownerGroupMode(true));
-      toolbar.querySelector('#jjHOShowGroups').addEventListener('click',()=>homeownerGroupMode(false));
+      toolbar.querySelector('#jjHOGroupToggle').addEventListener('click',toggleHomeownerGroups);
     }
 
     const hoItems=homeownerItemsSafe();
@@ -677,6 +729,22 @@ window.JJProduct = (() => {
     // Any standalone selection should not keep a per-card "Another option"
     // action. A group is created/managed from the contractor side first.
     itemsRoot.querySelectorAll(':scope > article [data-option]').forEach(btn=>btn.remove());
+
+    // Use compact symbols for homeowner Card / List view.
+    const card=document.getElementById('cardView');
+    const list=document.getElementById('listView');
+    if(card){
+      card.textContent='▦';
+      card.title='Card view';
+      card.setAttribute('aria-label','Card view');
+    }
+    if(list){
+      list.textContent='☰';
+      list.title='List view';
+      list.setAttribute('aria-label','List view');
+    }
+
+    updateHomeownerGroupToggle();
   }
 
   function installHomeownerEnhancements(){
@@ -749,7 +817,8 @@ window.JJProduct = (() => {
     remove:removeFromGroup,
     ensure:ensureGroups,
     expandAll:()=>setAllSelectionGroups(true),
-    collapseAll:()=>setAllSelectionGroups(false)
+    collapseAll:()=>setAllSelectionGroups(false),
+    toggleGroups:toggleContractorGroups
   };
 
   if(document.readyState==='complete')setTimeout(install,0);

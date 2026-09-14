@@ -1,4 +1,4 @@
-const CACHE_NAME = 'jj-operations-v65-homeowner-group-view';
+const CACHE_NAME = 'jj-operations-v66-single-group-toggle-icons';
 const APP_SHELL = ['./','./index.html','./qrcode.min.js','./selections-metadata.js','./jj-original-logo.png','./manifest.webmanifest','./icons/icon-192.png','./icons/icon-512.png'];
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE_NAME).then(cache=>cache.addAll(APP_SHELL)).then(()=>self.skipWaiting()));

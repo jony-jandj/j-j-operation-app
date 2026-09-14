@@ -1,36 +1,35 @@
-J&J Operations — Homeowner Selection Groups v65
+J&J Operations — Selections UI v66
 
 UPLOAD / REPLACE:
 1. selections-metadata.js
 2. service-worker.js
 
-Homeowner side:
-- Adds View All and Show Groups controls.
-- View All expands every selection group.
-- Show Groups collapses groups to a quick group-header view.
-- Removes + Another option from each homeowner product card.
-- Adds + Add Option directly in the homeowner group header.
-- One-item named groups now still show a group header, so Add Option stays in
-  the same predictable location.
+Changes on BOTH contractor app and homeowner side:
 
-Contractor Edit Selection:
-- Group dropdown stays visible.
-- Adds + Create Group directly inside Edit Selection.
-- Adds Delete Group directly inside Edit Selection.
-- Deleting a group keeps every selection; the products simply become standalone.
-- Creating a group in Edit Selection immediately selects that new group.
+GROUP VIEW
+- View All / Show Groups is now ONE toggle button.
+- When groups are open it says "Show Groups".
+- When groups are collapsed it says "View All".
+- Contractor app now has the same group-view toggle as the homeowner side.
 
-Preserved:
-- Create Group / Manage Groups controls
-- Add to Group / Change Group on cards
-- Expand All / Collapse All
-- selected/unselected toggle
+CARD / LIST VIEW
+- Card View text replaced with symbol: ▦
+- List View text replaced with symbol: ☰
+- Tooltips / accessibility labels still say Card view and List view.
+
+Preserved from v65:
+- + Add Option in group headers
+- no per-card Another Option button
+- create/delete groups from Edit Selection
+- group dropdown in Edit Selection
+- homeowner group controls
 - photos
+- Selected toggle
 - homeowner sync
-- persistent project QR
-- cloud/auth and all other current app features
+- persistent QR
+- all current app/cloud/auth features
 
-After uploading both files:
-1. Commit to main.
+After uploading:
+1. Commit both files to main.
 2. Wait about one minute.
-3. Fully close/reopen the J&J app and homeowner QR page once.
+3. Fully close/reopen the app and homeowner QR page.
