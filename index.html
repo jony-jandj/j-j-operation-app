@@ -4385,7 +4385,7 @@ body.topbar-collapsed .operations-app > .sidebar{top:0;min-height:100vh}
 .selection-price{color:var(--navy);font-size:17px;font-weight:900}
 .selection-price small{display:block;margin-top:2px;color:var(--muted);font-size:10px;font-weight:500}
 .selection-status{padding:5px 7px;border-radius:999px;background:#F4EFE5;color:#775F2D;font-size:10px;font-weight:900}
-.selection-card-actions{display:flex;flex-wrap:wrap;gap:12px;margin-top:12px}.selection-card-actions button,.selection-card-actions a{min-height:36px;display:inline-flex;align-items:center}
+.selection-card-actions{display:flex;flex-wrap:wrap;gap:12px;margin-top:12px}.selection-card-actions button,.selection-card-actions a{min-height:36px;display:inline-flex;align-items:center}.selection-group-inline{display:inline-flex;align-items:center;gap:5px;color:#173E67;font-size:10px;font-weight:850}.selection-group-inline select{max-width:150px;padding:6px;border:1px solid var(--line);border-radius:6px;background:#fff;color:#173E67;font-size:10px}
 .selection-card-actions button,.selection-card-actions a{border:0;background:transparent;color:#173E67;padding:0;font-size:10px;font-weight:850;text-decoration:none}
 .selection-empty{grid-column:1/-1;padding:36px 20px;border:1.5px dashed #B9C4CD;border-radius:13px;background:#F8FAFB;color:var(--muted);text-align:center}
 .selection-empty button{width:46px;height:46px;border:0;border-radius:50%;background:#E7EDF2;color:var(--navy);font-size:25px}
@@ -10109,6 +10109,18 @@ function renderSelectionOptionGroups(filtered,allItems){
  return [...groups].map(([key,group])=>group.length>1?`<section class="selection-option-group"><div class="selection-option-group-title"><span>${esc(group[0].optionGroupTitle||group[0].title||'Selection options')}</span><span>${group.length} options</span></div><div class="selection-option-grid">${group.map(item=>selectionCard(item,allItems.indexOf(item))).join('')}</div></section>`:selectionCard(group[0],allItems.indexOf(group[0]))).join('');
 }
 
+function selectionGroupSelect(item,index){
+ const groups=new Map();(selectedProject()?.selections||[]).forEach(i=>{const id=i.optionGroupId||i.id;if(!groups.has(id))groups.set(id,i.optionGroupTitle||i.title||'Selection');});
+ const current=item.optionGroupId||item.id;
+ return `<label class="selection-group-inline">Link group<select aria-label="Link ${esc(item.title||'selection')} to group" onchange="linkSelectionGroup(${index},this.value)"><option value="">Standalone selection</option>${[...groups].map(([id,title])=>`<option value="${esc(id)}" ${String(id)===String(current)&&item.optionGroupId?'selected':''}>${esc(title)}</option>`).join('')}</select></label>`;
+}
+function linkSelectionGroup(index,value){
+ const project=selectedProject(),item=project?.selections?.[index];if(!item)return;
+ if(!value){delete item.optionGroupId;delete item.optionGroupTitle;delete item.optionLabel;}
+ else {const target=project.selections.find(i=>(i.optionGroupId||i.id)===value);if(!target)return;item.optionGroupId=target.optionGroupId||target.id;item.optionGroupTitle=target.optionGroupTitle||target.title||'Selection options';item.optionLabel=item.optionLabel||'Another option';}
+ saveState(false);renderSelections();toast(value?'Selection linked to group':'Selection removed from group');
+}
+
 function selectionCard(item,index){
   const productUrl=safeSelectionUrl(item.url);
   const imageUrl=JJProduct.image(item.image)||(/^data:image\//.test(item.image||'')?safeSelectionImageUrl(item.image):'');
@@ -10132,7 +10144,7 @@ function selectionCard(item,index){
       <div class="selection-card-actions">
         ${productUrl?`<a href="${esc(productUrl)}" target="_blank" rel="noopener">View product ↗</a>`:''}
         ${['Pending','Selected'].includes(item.status||'Pending')?`<button aria-pressed="${item.status==='Selected'}" onclick="toggleSelectionStatus(${index})">${item.status==='Selected'?'Selected':'Mark Selected'}</button>`:''}
-        <button onclick="addSelectionOption(${index})">＋ Another option</button><button onclick="openSelectionEditor(${index})">Edit</button>
+        <button onclick="addSelectionOption(${index})">＋ Another option</button>${selectionGroupSelect(item,index)}<button onclick="openSelectionEditor(${index})">Edit</button>
       </div>
     </div>
   </article>`;
