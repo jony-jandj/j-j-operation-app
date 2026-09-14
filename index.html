@@ -10367,6 +10367,11 @@ function addSelectionOption(index){
  selectionOptionParentIndex=index;openSelectionEditor(null,base.url||'');
 }
 
+function selectionGroupChoices(project,current){
+ const groups=new Map();(project.selections||[]).forEach(i=>{const id=i.optionGroupId||i.id;if(!groups.has(id))groups.set(id,{title:i.optionGroupTitle||i.title||'Selection',count:0});groups.get(id).count++;});
+ return [...groups].map(([id,g])=>`<option value="${esc(id)}" ${String(id)===String(current)?'selected':''}>${esc(g.title)} · ${g.count} option${g.count===1?'':'s'}</option>`).join('');
+}
+
 function openSelectionEditor(index=null,prefillUrl=''){
   const project=selectedProject();
   ensureSelectionsData();
@@ -10395,6 +10400,7 @@ function openSelectionEditor(index=null,prefillUrl=''){
       <div class="selection-field full"><label>Product name</label><input id="selectionEditTitle" value="${esc(item.title||'')}" placeholder="Product name"></div>
       <div class="selection-field"><label>Vendor</label><input id="selectionEditVendor" value="${esc(item.vendor||'')}" placeholder="Home Depot"></div>
       <div class="selection-field"><label>Category</label><input id="selectionEditCategory" value="${esc(item.category||'')}" placeholder="Tile, Plumbing, Vanity…"></div>
+      <div class="selection-field full"><label>Option group</label><select id="selectionEditGroup"><option value="">Standalone selection</option>${selectionGroupChoices(project,item.optionGroupId)}</select><input id="selectionEditGroupName" placeholder="Optional group name (for example: Shower fixture)" value="${esc(item.optionGroupTitle||'')}" style="margin-top:8px"></div>
       <div class="selection-field"><label for="selectionEditRoom">Room</label><select id="selectionEditRoom">${[...new Set([...project.selectionRooms,item.room].filter(Boolean))].map(room=>`<option ${room===item.room?'selected':''}>${esc(room)}</option>`).join('')}</select>
         <div style="display:flex;gap:8px;margin-top:8px"><input id="selectionEditorNewRoom" placeholder="New room name" aria-label="New room name" onkeydown="if(event.key==='Enter'){event.preventDefault();addRoomInSelectionEditor()}"><button type="button" class="btn btn-light" onclick="addRoomInSelectionEditor()">Add Room</button></div></div>
       <div class="selection-field"><label>Quality</label><select id="selectionEditQuality">
@@ -10503,9 +10509,9 @@ function saveSelectionEditor(){
     quantity:Math.max(1,Number(document.getElementById('selectionEditQuantity')?.value||1)),
     addTax:!!document.getElementById('selectionEditTax')?.checked,
     purchasedBy:document.getElementById('selectionEditPurchasedBy')?.value||'J&J',
-    optionGroupId:selectionEditIndex===null&&selectionOptionParentIndex!==null?(selectedProject().selections[selectionOptionParentIndex]?.optionGroupId||selectedProject().selections[selectionOptionParentIndex]?.id):undefined,
-    optionGroupTitle:selectionEditIndex===null&&selectionOptionParentIndex!==null?(selectedProject().selections[selectionOptionParentIndex]?.optionGroupTitle||selectedProject().selections[selectionOptionParentIndex]?.title):undefined,
     optionLabel:selectionEditIndex===null&&selectionOptionParentIndex!==null?'Another option':undefined,
+    optionGroupId:document.getElementById('selectionEditGroup')?.value||undefined,
+    optionGroupTitle:document.getElementById('selectionEditGroupName')?.value.trim()||undefined,
     status,
     inStock:document.getElementById('selectionEditInStock')?.getAttribute('aria-pressed')==='true',
     leadTimeValue:Math.max(1,Number(document.getElementById('selectionEditLeadValue')?.value||1)),
@@ -10514,7 +10520,11 @@ function saveSelectionEditor(){
     notes:document.getElementById('selectionEditNotes')?.value.trim()||''
   };
   if(status!=='Selected'){item.homeownerSelected=false;item.homeownerSelectedAt=null;}
+  const customGroupName=document.getElementById('selectionEditGroupName')?.value.trim()||'';
   const project=selectedProject();
+  if(!item.optionGroupId && customGroupName){item.optionGroupId='group-'+Date.now();item.optionGroupTitle=customGroupName;}
+  if(item.optionGroupId && !item.optionGroupTitle){const group=project.selections.find(i=>(i.optionGroupId||i.id)===item.optionGroupId);item.optionGroupTitle=group?.optionGroupTitle||group?.title||item.title;}
+  if(item.optionGroupId && item.optionGroupTitle){project.selections.forEach(existingItem=>{if((existingItem.optionGroupId||existingItem.id)===item.optionGroupId)existingItem.optionGroupTitle=item.optionGroupTitle;});}
   if(!project.selectionRooms.includes(item.room)) project.selectionRooms.push(item.room);
   project.selectionActiveRoom=item.room;
   if(selectionEditIndex===null) project.selections.push(item);
