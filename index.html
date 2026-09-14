@@ -10033,6 +10033,7 @@ function selectionCard(item,index){
     <div class="selection-photo">${photo}</div>
     <div class="selection-card-body">
       <div class="selection-card-meta">${esc(item.room)} · ${esc(item.category||'Selection')}</div>
+      <div style="margin-top:8px;font-size:13px"><strong>Purchased by:</strong> ${esc(item.purchasedBy||'Not assigned')}</div>
       <h3>${esc(item.title||'Untitled product')}</h3>
       <div class="selection-vendor">${esc(item.vendor||'Vendor not entered')} · ${esc(item.model||'Model/SKU not entered')}</div>
       <div class="selection-card-bottom">
