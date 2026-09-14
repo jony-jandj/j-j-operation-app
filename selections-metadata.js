@@ -1055,3 +1055,303 @@ window.JJProduct = (() => {
   if(document.readyState==='complete')setTimeout(install,0);
   else window.addEventListener('load',install,{once:true});
 })();
+
+
+/* -------------------------------------------------------------------------
+   J&J Selection Data Safety v73
+   Emergency protection against homeowner portal sync replacing the whole app
+   state with an older/incomplete snapshot.
+
+   Key rule:
+   - Homeowner sync may ADD missing selections.
+   - It may fill blank fields.
+   - It NEVER deletes an app selection.
+   - It NEVER replaces the entire app state.
+   ------------------------------------------------------------------------- */
+(() => {
+  if (window.__jjSelectionDataSafetyV73) return;
+  window.__jjSelectionDataSafetyV73 = true;
+
+  let safeRpc = null;
+  let safeSyncBusy = false;
+  let rpcPatched = false;
+
+  const clone = value => {
+    try { return JSON.parse(JSON.stringify(value)); }
+    catch { return value; }
+  };
+
+  function currentState(){
+    try { return state; } catch { return null; }
+  }
+
+  function saveRecoverySnapshot(reason='before-sync'){
+    const s=currentState();
+    if(!s?.projects) return;
+
+    try{
+      // Keep a lightweight recovery copy so product names/links/groups survive
+      // even when photos are large base64 strings.
+      const snapshot={
+        at:new Date().toISOString(),
+        reason,
+        selectedProjectId:s.selectedProjectId,
+        projects:s.projects.map(p=>({
+          id:p.id,
+          name:p.name,
+          jobNo:p.jobNo,
+          selectionRooms:clone(p.selectionRooms||[]),
+          selectionGroups:clone(p.selectionGroups||[]),
+          selections:(p.selections||[]).map(item=>({
+            ...clone(item),
+            image:typeof item.image==='string' && item.image.startsWith('data:image/')
+              ? ''
+              : item.image
+          }))
+        }))
+      };
+
+      const key='jj_selection_recovery_history_v73';
+      let history=[];
+      try{ history=JSON.parse(localStorage.getItem(key)||'[]'); }catch{}
+      history.unshift(snapshot);
+      history=history.slice(0,3);
+      localStorage.setItem(key,JSON.stringify(history));
+    }catch(err){
+      console.warn('Selection recovery snapshot could not be saved:',err);
+    }
+  }
+
+  function projectMatch(localProjects,remoteProject){
+    return localProjects.find(p=>String(p.id)===String(remoteProject.id))
+      || localProjects.find(p=>remoteProject.jobNo && p.jobNo===remoteProject.jobNo)
+      || localProjects.find(p=>remoteProject.name && p.name===remoteProject.name);
+  }
+
+  function meaningful(value){
+    return value !== undefined && value !== null && value !== '';
+  }
+
+  function mergeOneSelection(localItem,remoteItem){
+    // Local/app record wins by default. Only fill information that is missing
+    // locally. This prevents older homeowner snapshots from rolling products
+    // backward while still allowing recovery of incomplete records.
+    const merged={...localItem};
+
+    const fillIfBlank=[
+      'url','title','vendor','category','room','quality','model','image',
+      'unitPrice','quantity','purchasedBy','optionGroupId','optionGroupTitle',
+      'optionLabel','description','notes','leadTimeValue','leadTimeUnit'
+    ];
+
+    fillIfBlank.forEach(key=>{
+      if(!meaningful(merged[key]) && meaningful(remoteItem[key])){
+        merged[key]=clone(remoteItem[key]);
+      }
+    });
+
+    // Homeowner may positively select something. Accept that positive action,
+    // but never downgrade Ordered/Received/Approved or delete the local record.
+    if(remoteItem.homeownerSelected===true){
+      merged.homeownerSelected=true;
+      if(remoteItem.homeownerSelectedAt) merged.homeownerSelectedAt=remoteItem.homeownerSelectedAt;
+      if((merged.status||'Pending')==='Pending') merged.status='Selected';
+    }
+
+    if(remoteItem.inStock===true && !merged.inStock) merged.inStock=true;
+
+    return merged;
+  }
+
+  function safeMergeRemoteState(remoteState,source='homeowner'){
+    const s=currentState();
+    if(!s?.projects || !remoteState?.projects) return {added:0,filled:0};
+
+    saveRecoverySnapshot('before-'+source);
+
+    let added=0;
+    let filled=0;
+
+    remoteState.projects.forEach(remoteProject=>{
+      const localProject=projectMatch(s.projects,remoteProject);
+      if(!localProject) return;
+
+      if(!Array.isArray(localProject.selections)) localProject.selections=[];
+      if(!Array.isArray(localProject.selectionRooms)) localProject.selectionRooms=[];
+      if(!Array.isArray(localProject.selectionGroups)) localProject.selectionGroups=[];
+
+      // Never remove rooms/groups from the app. Union only.
+      for(const room of remoteProject.selectionRooms||[]){
+        if(room && !localProject.selectionRooms.includes(room)){
+          localProject.selectionRooms.push(room);
+        }
+      }
+
+      const localGroups=new Map(localProject.selectionGroups.map(g=>[String(g.id),g]));
+      for(const group of remoteProject.selectionGroups||[]){
+        if(!group?.id) continue;
+        if(!localGroups.has(String(group.id))){
+          localProject.selectionGroups.push(clone(group));
+          localGroups.set(String(group.id),group);
+        }
+      }
+
+      const byId=new Map(
+        localProject.selections
+          .filter(item=>item?.id!==undefined && item?.id!==null)
+          .map(item=>[String(item.id),item])
+      );
+
+      for(const remoteItem of remoteProject.selections||[]){
+        if(!remoteItem) continue;
+        const key=remoteItem.id!==undefined && remoteItem.id!==null
+          ? String(remoteItem.id)
+          : '';
+
+        if(key && byId.has(key)){
+          const localItem=byId.get(key);
+          const before=JSON.stringify(localItem);
+          const merged=mergeOneSelection(localItem,remoteItem);
+          Object.assign(localItem,merged);
+          if(JSON.stringify(localItem)!==before) filled++;
+          continue;
+        }
+
+        // If an older portal record lacks a stable id, avoid duplicate recovery
+        // by checking a product fingerprint first.
+        const fingerprint = x => [
+          String(x.title||'').trim().toLowerCase(),
+          String(x.url||'').trim().toLowerCase(),
+          String(x.model||'').trim().toLowerCase(),
+          String(x.room||'').trim().toLowerCase()
+        ].join('|');
+
+        const fp=fingerprint(remoteItem);
+        const existing=localProject.selections.find(item=>fingerprint(item)===fp && fp!=='|||');
+        if(existing){
+          const before=JSON.stringify(existing);
+          Object.assign(existing,mergeOneSelection(existing,remoteItem));
+          if(JSON.stringify(existing)!==before) filled++;
+        }else{
+          localProject.selections.push(clone(remoteItem));
+          added++;
+        }
+      }
+    });
+
+    // Persist the merged/union state. This intentionally pushes the union back
+    // to cloud so an incomplete portal copy cannot remain authoritative.
+    try{
+      localStorage.setItem('jj_full_proto',JSON.stringify(s));
+      if(typeof saveState==='function') saveState(false);
+      if(typeof renderAll==='function') renderAll();
+    }catch(err){
+      console.error('Safe selection merge save failed:',err);
+    }
+
+    return {added,filled};
+  }
+
+  async function safeManualSync(){
+    if(safeSyncBusy) return;
+    if(!safeRpc){
+      try{ toast('Cloud is still connecting'); }catch{}
+      return;
+    }
+
+    let project=null;
+    try{ project=selectedProject(); }catch{}
+    if(!project) return;
+
+    safeSyncBusy=true;
+    try{
+      const {data,error}=await safeRpc('jj_portal_sync',{p_job:String(project.id)});
+      if(error) throw error;
+      if(!data){
+        try{ toast('No new homeowner updates'); }catch{}
+        return;
+      }
+
+      const result=safeMergeRemoteState(data,'manual-homeowner-sync');
+      try{
+        toast(result.added
+          ? `Recovered ${result.added} missing selection${result.added===1?'':'s'}`
+          : 'Homeowner updates merged safely');
+      }catch{}
+    }catch(err){
+      console.error('Safe homeowner sync error:',err);
+      try{ toast('Homeowner sync unavailable'); }catch{}
+    }finally{
+      safeSyncBusy=false;
+    }
+  }
+
+  async function safeAutoSync(){
+    if(safeSyncBusy || document.hidden || !safeRpc) return;
+
+    // Avoid changing state while the user is editing.
+    if(document.querySelector('.selection-modal-backdrop.open')
+      || document.querySelector('dialog[open]')
+      || ['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName)){
+      return;
+    }
+
+    safeSyncBusy=true;
+    try{
+      const {data,error}=await safeRpc('jj_portal_sync_pending');
+      if(!error && data){
+        safeMergeRemoteState(data,'auto-homeowner-sync');
+      }
+    }catch(err){
+      console.warn('Safe auto homeowner sync:',err);
+    }finally{
+      safeSyncBusy=false;
+    }
+  }
+
+  function installRpcGuard(){
+    let client=null;
+    try{ client=cloudClient; }catch{}
+    if(!client?.rpc || rpcPatched) return false;
+
+    rpcPatched=true;
+    safeRpc=client.rpc.bind(client);
+
+    // The original app created an 8-second interval using the old destructive
+    // autoSyncHomeownerSelections function. We cannot recover that interval id,
+    // so guard the RPC it uses. Returning null prevents that old callback from
+    // replacing the entire app state.
+    client.rpc=function(functionName,args,options){
+      if(functionName==='jj_portal_sync_pending' && !window.__jjSafePortalRpcPass){
+        return Promise.resolve({data:null,error:null});
+      }
+      return safeRpc(functionName,args,options);
+    };
+
+    // Replace the manual Refresh Homeowner Updates action with safe union merge.
+    window.syncHomeownerSelections=safeManualSync;
+
+    // Our safe interval performs union-only recovery.
+    setInterval(safeAutoSync,8000);
+
+    console.info('J&J selection data safety v73 active');
+    return true;
+  }
+
+  // cloudClient is initialized asynchronously after this shared file loads.
+  const installer=setInterval(()=>{
+    if(installRpcGuard()){
+      clearInterval(installer);
+      // Run a safe recovery pass once after cloud is connected.
+      setTimeout(safeAutoSync,1200);
+    }
+  },500);
+
+  // Public emergency helper for console/debug use.
+  window.JJSelectionRecovery={
+    syncNow:safeManualSync,
+    merge:safeMergeRemoteState,
+    snapshot:()=>saveRecoverySnapshot('manual')
+  };
+})();
+
