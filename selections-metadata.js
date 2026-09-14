@@ -338,6 +338,132 @@ window.JJProduct = (() => {
       .jj-ho-group-toolbar button{min-height:42px}
       #jjHOGroupToggle{min-width:118px;font-weight:800}
       #cardView,#listView{width:44px;min-width:44px;padding:10px!important;font-size:19px;line-height:1}
+
+      /* Homeowner cards mirror the contractor Selections card layout */
+      #items{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+      #items>.option-group{grid-column:1/-1;margin:0;border:1px solid #d9e0e6;border-radius:14px;background:#f8fafb;overflow:hidden;box-shadow:0 3px 12px rgba(19,35,52,.05)}
+      #items>.option-group>summary,
+      #items>.option-group>summary.jj-ho-summary{
+        display:flex!important;
+        align-items:center!important;
+        gap:12px!important;
+        min-height:58px;
+        padding:14px 16px!important;
+        background:#fff!important;
+        color:#14234a!important;
+        font-size:12px!important;
+        font-weight:900!important;
+        letter-spacing:.35px;
+        text-transform:uppercase;
+        list-style:none;
+        overflow:visible!important;
+      }
+      #items>.option-group>summary::-webkit-details-marker{display:none}
+      #items>.option-group>summary:before{content:"▸";flex:none;transition:transform .15s}
+      #items>.option-group[open]>summary:before{transform:rotate(90deg)}
+      #items>.option-group>summary .jj-ho-summary-title{
+        min-width:0;
+        flex:1 1 auto;
+        overflow:hidden;
+        text-overflow:ellipsis;
+        white-space:nowrap;
+      }
+      #items>.option-group>summary .jj-ho-summary-actions{
+        flex:0 0 auto;
+        display:flex!important;
+        align-items:center;
+        gap:10px;
+        margin-left:auto!important;
+        white-space:nowrap;
+      }
+      #items>.option-group>summary .jj-ho-summary-count{
+        color:#657083!important;
+        font-size:11px!important;
+        font-weight:800!important;
+        text-transform:none;
+        letter-spacing:0;
+      }
+      #items>.option-group .jj-ho-group-add-option{
+        flex:none;
+        margin:0!important;
+        min-height:34px!important;
+        padding:7px 10px!important;
+        border:1px solid #d9dfe7!important;
+        border-radius:8px!important;
+        background:#f5f7fa!important;
+        color:#14234a!important;
+        font-size:10px!important;
+        font-weight:900!important;
+        text-transform:none;
+        white-space:nowrap;
+      }
+      #items>.option-group>.option-group-items{
+        display:grid!important;
+        grid-template-columns:repeat(3,minmax(0,1fr))!important;
+        gap:14px!important;
+        padding:14px!important;
+      }
+      #items article{
+        overflow:hidden;
+        min-width:0;
+        background:#fff;
+        border:1px solid #e3e7ed;
+        border-radius:13px;
+        box-shadow:0 2px 8px rgba(19,35,52,.04);
+      }
+      #items article.chosen{border:2px solid #2e7a55}
+      #items article .photo{
+        width:100%;
+        height:220px;
+        object-fit:contain;
+        background:#fff;
+        margin:0!important;
+      }
+      #items article .card-body{padding:14px!important;background:#fff;min-width:0;overflow-wrap:anywhere}
+      #items article .card-body>small:first-child{
+        margin:0 0 6px;
+        color:#7a8290;
+        font-size:10px;
+        font-weight:850;
+        letter-spacing:.45px;
+        text-transform:uppercase;
+      }
+      #items article h2{margin:6px 0 5px;color:#202633;font-size:15px;line-height:1.35}
+      #items article .detail{color:#536171;font-size:12px;line-height:1.45}
+      #items article .price{color:#14234a;font-size:17px;font-weight:900}
+      #items article .actions{gap:10px;margin-top:12px}
+      #items article .actions button{min-height:36px;padding:8px 11px}
+      #items.list{grid-template-columns:1fr!important}
+      #items.list>.option-group>.option-group-items{grid-template-columns:1fr!important}
+      #items.list article{display:grid!important;grid-template-columns:150px minmax(0,1fr)!important;align-items:start}
+      #items.list article .photo{height:140px!important}
+      #items.list article .card-body{grid-column:2}
+      #items.list article:not(:has(.photo)) .card-body{grid-column:1/-1}
+      @media(max-width:900px){
+        #items{grid-template-columns:repeat(2,minmax(0,1fr))}
+        #items>.option-group>.option-group-items{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+      }
+      @media(max-width:620px){
+        #items{grid-template-columns:1fr}
+        #items>.option-group>.option-group-items{grid-template-columns:1fr!important}
+        #items>.option-group>summary,
+        #items>.option-group>summary.jj-ho-summary{
+          align-items:flex-start!important;
+          flex-wrap:wrap!important;
+        }
+        #items>.option-group>summary .jj-ho-summary-title{white-space:normal}
+        #items>.option-group>summary .jj-ho-summary-actions{
+          width:100%;
+          margin-left:22px!important;
+          justify-content:space-between;
+        }
+        #items>.option-group>summary .jj-ho-summary-count{
+          white-space:normal;
+          line-height:1.25;
+        }
+        #items.list article{grid-template-columns:90px minmax(0,1fr)!important}
+        #items.list article .photo{height:90px!important}
+      }
       #selections [aria-label="Selections view"] button,
       #selections .toolbar[role="group"][aria-label="Selections view"] button{min-width:44px;padding:9px 12px;font-size:18px;line-height:1}
       .jj-ho-group-add-option{float:none!important;margin-left:10px;min-height:34px!important;padding:7px 10px!important;border-radius:8px!important;background:#edf0f5!important;color:#14234a!important;font-size:12px!important;font-weight:800!important}
@@ -550,6 +676,15 @@ window.JJProduct = (() => {
     ensureGroups(p);
 
     const heading=root.querySelector('.selection-heading');
+
+    // Remove older group-view controls from earlier builds so the app only
+    // ever shows one View All / Show Groups toggle.
+    root.querySelectorAll('button').forEach(btn=>{
+      const t=(btn.textContent||'').trim().toLowerCase();
+      if(['expand all','collapse all','view all','show groups'].includes(t) && btn.id!=='jjAppGroupToggle'){
+        btn.remove();
+      }
+    });
     if(heading && !root.querySelector('.jj-selection-top-actions')){
       const actions=document.createElement('div');
       actions.className='jj-selection-top-actions';
@@ -590,13 +725,16 @@ window.JJProduct = (() => {
 
     // Use compact symbols for Card / List view on the contractor app.
     const viewButtons=[...root.querySelectorAll('[aria-label="Selections view"] button, .toolbar[role="group"][aria-label="Selections view"] button')];
-    viewButtons.forEach(btn=>{
+    viewButtons.forEach((btn,idx)=>{
       const txt=(btn.textContent||'').trim().toLowerCase();
-      if(txt.includes('card')){
+      const label=(btn.getAttribute('aria-label')||'').toLowerCase();
+      const isCard=txt.includes('card')||label.includes('card')||idx===0;
+      const isList=txt.includes('list')||label.includes('list')||idx===1;
+      if(isCard){
         btn.textContent='▦';
         btn.title='Card view';
         btn.setAttribute('aria-label','Card view');
-      }else if(txt.includes('list')){
+      }else if(isList){
         btn.textContent='☰';
         btn.title='List view';
         btn.setAttribute('aria-label','List view');
@@ -644,6 +782,9 @@ window.JJProduct = (() => {
 
     // Add homeowner group controls next to Card/List view.
     const viewActions=document.querySelector('.actions[aria-label="Selections view"]');
+
+    // Clean up any older two-button View All / Show Groups controls.
+    document.querySelectorAll('#jjHOViewAll,#jjHOShowGroups').forEach(node=>node.remove());
     if(viewActions && !document.getElementById('jjHOGroupToolbar')){
       const toolbar=document.createElement('div');
       toolbar.id='jjHOGroupToolbar';
@@ -699,8 +840,10 @@ window.JJProduct = (() => {
       details.querySelectorAll('.option-group-items [data-option]').forEach(btn=>btn.remove());
 
       if(!summary.querySelector('.jj-ho-group-add-option')){
-        const oldText=(summary.childNodes[0]?.textContent||summary.textContent||'Selection Group').trim();
-        const oldCount=summary.querySelector('span')?.textContent?.trim()||'';
+        const existingSpan=summary.querySelector('span');
+        const oldCount=existingSpan?.textContent?.trim()||'';
+        if(existingSpan)existingSpan.remove();
+        const oldText=(summary.textContent||'Selection Group').replace(/\s+/g,' ').trim();
         summary.textContent='';
         summary.classList.add('jj-ho-summary');
 
@@ -737,11 +880,17 @@ window.JJProduct = (() => {
       card.textContent='▦';
       card.title='Card view';
       card.setAttribute('aria-label','Card view');
+      card.style.fontSize='19px';
+      card.style.width='44px';
+      card.style.padding='10px';
     }
     if(list){
       list.textContent='☰';
       list.title='List view';
       list.setAttribute('aria-label','List view');
+      list.style.fontSize='19px';
+      list.style.width='44px';
+      list.style.padding='10px';
     }
 
     updateHomeownerGroupToggle();

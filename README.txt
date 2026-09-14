@@ -1,35 +1,41 @@
-J&J Operations — Selections UI v66
+J&J Operations — Selections UI v67
 
 UPLOAD / REPLACE:
 1. selections-metadata.js
 2. service-worker.js
 
-Changes on BOTH contractor app and homeowner side:
+FIXES:
+- Homeowner group header wording no longer overlaps.
+- Homeowner group cards now span the full selections width like the contractor app.
+- Products inside each group use the same 3-column card layout style as the app.
+- Tablet: 2 columns.
+- Phone: 1 column.
+- List view remains a clean one-row-per-selection layout.
 
-GROUP VIEW
-- View All / Show Groups is now ONE toggle button.
-- When groups are open it says "Show Groups".
-- When groups are collapsed it says "View All".
-- Contractor app now has the same group-view toggle as the homeowner side.
+GROUP VIEW:
+- Contractor app: ONE button only.
+- Homeowner side: ONE button only.
+- Button toggles between:
+    Show Groups = collapse to group headers
+    View All = expand all groups
+- Old duplicate View All / Show Groups / Expand All / Collapse All buttons are cleaned up.
 
-CARD / LIST VIEW
-- Card View text replaced with symbol: ▦
-- List View text replaced with symbol: ☰
-- Tooltips / accessibility labels still say Card view and List view.
+VIEW SWITCHER:
+- Card View = ▦
+- List View = ☰
+- Same symbols on contractor app and homeowner side.
 
-Preserved from v65:
-- + Add Option in group headers
-- no per-card Another Option button
-- create/delete groups from Edit Selection
-- group dropdown in Edit Selection
-- homeowner group controls
+PRESERVED:
+- + Add Option in group header
+- Create/Delete Group from Edit Selection
+- Group dropdown in Edit Selection
+- Add to Group / Change Group
 - photos
 - Selected toggle
 - homeowner sync
 - persistent QR
-- all current app/cloud/auth features
+- current app/cloud/auth features
 
-After uploading:
-1. Commit both files to main.
-2. Wait about one minute.
-3. Fully close/reopen the app and homeowner QR page.
+IMPORTANT:
+Use these newest files even if you uploaded an older v64/v65/v66 ZIP.
+After commit, wait about a minute and fully close/reopen both pages.
