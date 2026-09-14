@@ -6121,6 +6121,15 @@ let cloudChannel=null;
 let cloudSaveTimer=null;
 let cloudApplying=false;
 let cloudLastRemoteAt=0;
+let cloudRevision=null,cloudDirty=false,cloudWriteBusy=false,cloudEditSequence=0;
+function preserveSelectionRecovery(){
+ try{const selections=(state.projects||[]).map(p=>({id:p.id,name:p.name,selections:p.selections||[]}));
+ const encoded=JSON.stringify(selections);if(!selections.some(p=>p.selections.length))return;
+ const previous=localStorage.getItem('jj_selection_recovery_latest');
+ if(previous!==encoded){if(previous)localStorage.setItem('jj_selection_recovery_previous',previous);localStorage.setItem('jj_selection_recovery_latest',encoded);}
+ }catch(e){console.warn('Selection recovery storage unavailable',e);}
+}
+
 
 function looksLikePasswordRecoveryUrl(url=RECOVERY_URL_AT_LOAD){
   try{
@@ -6512,7 +6521,9 @@ async function loadCloudState(){
     cloudApplying=true;
 
     const sessionUser=state.currentUser;
+    preserveSelectionRecovery();
     state=data.state;
+    cloudRevision=data.updated_at;
 
     if(USERS.some(u=>u.name===sessionUser)){
       state.currentUser=sessionUser;
@@ -6552,6 +6563,9 @@ function subscribeCloudState(){
         const incomingAt=Date.parse(incoming.updated_at||0)||Date.now();
         if(incomingAt<=cloudLastRemoteAt) return;
 
+        if(cloudDirty||cloudWriteBusy||homeownerSyncBusy)return;
+        cloudRevision=incoming.updated_at;
+        preserveSelectionRecovery();
         cloudLastRemoteAt=incomingAt;
         cloudApplying=true;
 
@@ -6590,48 +6604,46 @@ function subscribeCloudState(){
 
 function queueCloudSave(){
   if(cloudApplying || !cloudClient) return;
+  cloudDirty=true;cloudEditSequence++;
   clearTimeout(cloudSaveTimer);
   setCloudStatus('Saving…','saving');
   cloudSaveTimer=setTimeout(pushCloudState,450);
 }
 
 async function pushCloudState(){
-  if(cloudApplying || !cloudClient) return;
-
+  if(cloudApplying || !cloudClient || cloudWriteBusy) return;
+  if(homeownerSyncBusy){cloudSaveTimer=setTimeout(pushCloudState,450);return;}
+  cloudWriteBusy=true;
+  const sequence=cloudEditSequence;
   try{
     const {data:{user}}=await cloudClient.auth.getUser();
-    if(!user){
-      setCloudStatus('Sign In','offline');
+    if(!user){setCloudStatus('Sign In','offline');return;}
+    const sharedState=JSON.parse(JSON.stringify(state));delete sharedState.currentUser;
+    const now=new Date().toISOString();
+    let query=cloudClient.from('app_state');
+    if(cloudRevision){
+      query=query.update({state:sharedState,updated_at:now,updated_by:user.id})
+        .eq('org_id',CLOUD_ORG_ID).eq('updated_at',cloudRevision);
+    }else{
+      query=query.insert({org_id:CLOUD_ORG_ID,state:sharedState,updated_at:now,updated_by:user.id});
+    }
+    const {data,error}=await query.select('updated_at');
+    if(error)throw error;
+    if(!data?.length){
+      preserveSelectionRecovery();
+      setCloudStatus('Save conflict','offline');
+      toast('Cloud data changed. Your edits are kept on this device. Export a backup before reopening; this save did not overwrite the cloud.');
       return;
     }
-
-    const now=new Date().toISOString();
-
-    // Do not let one person's device overwrite another person's signed-in identity.
-    // currentUser is session-specific; the rest of the app state remains shared.
-    const sharedState=JSON.parse(JSON.stringify(state));
-    delete sharedState.currentUser;
-
-    const {error}=await cloudClient
-      .from('app_state')
-      .upsert({
-        org_id:CLOUD_ORG_ID,
-        state:sharedState,
-        updated_at:now,
-        updated_by:user.id
-      },{onConflict:'org_id'});
-
-    if(error) throw error;
-
-    cloudLastRemoteAt=Date.parse(now);
-    setCloudStatus('Saved','saved');
-  }catch(err){
-    console.error('Cloud save failed',err);
-    setCloudStatus('Offline','offline');
-  }
+    cloudRevision=data[0].updated_at;cloudLastRemoteAt=Date.parse(cloudRevision);
+    if(sequence===cloudEditSequence){cloudDirty=false;setCloudStatus('Saved','saved');}
+    else{cloudSaveTimer=setTimeout(pushCloudState,450);}
+  }catch(err){console.error('Cloud save failed',err);setCloudStatus('Not saved','offline');}
+  finally{cloudWriteBusy=false;}
 }
 
 function saveState(show=true){
+  preserveSelectionRecovery();
   localStorage.setItem('jj_full_proto',JSON.stringify(state));
   queueCloudSave();
   if(show) toast(cloudClient?'Saved':'Saved on this device');
@@ -10007,24 +10019,30 @@ function printHomeownerQR(){
   const source=document.querySelector('#homeownerQRCode canvas')?.toDataURL()||document.querySelector('#homeownerQRCode img')?.src;if(!source)return;
   launchPrint(`<div style="text-align:center;padding:40px"><h1>J&J Home Renovations</h1><h2>Your Selections</h2><img src="${source}" width="300" height="300"><p>Scan to view and add selections. No sign-in needed.</p><p>Private job link — share only with your household.</p></div>`);
 }
-async function syncHomeownerSelections(){
-  if(!cloudClient){toast('Connect to the cloud first');return;}
-  if(!['Live','Saved'].includes(document.getElementById('cloudStatus')?.textContent)){toast('Wait for cloud saving to finish before refreshing homeowner updates.');return;}
-  const {data,error}=await cloudClient.rpc('jj_portal_sync',{p_job:String(selectedProject().id)});
-  if(error){toast('Homeowner sync unavailable. Check portal database setup.');return;}
-  if(data){const user=state.currentUser;state=data;state.currentUser=user;localStorage.setItem('jj_full_proto',JSON.stringify(state));renderAll();}
-  toast(data?'Homeowner selections updated':'No new homeowner updates');
+async function acceptHomeownerSync(sequence){
+ const {data,error}=await cloudClient.from('app_state').select('state,updated_at').eq('org_id',CLOUD_ORG_ID).maybeSingle();
+ if(error)throw error;
+ if(!data||sequence!==cloudEditSequence||cloudDirty||cloudWriteBusy)return false;
+ preserveSelectionRecovery();const user=state.currentUser;state=data.state;state.currentUser=user;
+ cloudRevision=data.updated_at;cloudLastRemoteAt=Date.parse(data.updated_at);
+ localStorage.setItem('jj_full_proto',JSON.stringify(state));renderAll();return true;
 }
-
+async function syncHomeownerSelections(){
+ if(!cloudClient||cloudDirty||cloudWriteBusy||homeownerSyncBusy){toast('Wait for your changes to save first.');return;}
+ homeownerSyncBusy=true;const sequence=cloudEditSequence;
+ try{const {data,error}=await cloudClient.rpc('jj_portal_sync',{p_job:String(selectedProject().id)});if(error)throw error;
+ if(data)await acceptHomeownerSync(sequence);toast(data?'Homeowner updates checked':'No new homeowner updates');
+ }catch(e){toast('Homeowner sync could not finish. Your local changes are preserved.');}finally{homeownerSyncBusy=false;}
+}
 let homeownerSyncBusy=false;
 async function autoSyncHomeownerSelections(){
- if(homeownerSyncBusy||!cloudClient||document.hidden||!['Live','Saved'].includes(document.getElementById('cloudStatus')?.textContent)||document.querySelector('.selection-modal-backdrop.open')||document.querySelector('dialog[open]')||['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName))return;
- const job=selectedProject();if(!job)return;homeownerSyncBusy=true;
- try{const {data,error}=await cloudClient.rpc('jj_portal_sync_pending');
- if(!error&&data){const user=state.currentUser;state=data;state.currentUser=user;localStorage.setItem('jj_full_proto',JSON.stringify(state));renderAll();}
- }catch(e){}finally{homeownerSyncBusy=false;}
+ if(homeownerSyncBusy||cloudDirty||cloudWriteBusy||!cloudClient||document.hidden||!['Live','Saved'].includes(document.getElementById('cloudStatus')?.textContent)||document.querySelector('.selection-modal-backdrop.open')||document.querySelector('dialog[open]')||['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName))return;
+ homeownerSyncBusy=true;const sequence=cloudEditSequence;
+ try{const {data,error}=await cloudClient.rpc('jj_portal_sync_pending');if(error)throw error;if(data)await acceptHomeownerSync(sequence);
+ }catch(e){console.warn('Homeowner sync deferred',e);}finally{homeownerSyncBusy=false;}
 }
 setInterval(autoSyncHomeownerSelections,8000);
+
 let selectionView=localStorage.getItem('jj-selection-view')==='list'?'list':'cards';
 function setSelectionView(value){selectionView=value==='list'?'list':'cards';localStorage.setItem('jj-selection-view',selectionView);renderSelections();}
 function renderSelections(){
@@ -10649,6 +10667,7 @@ document.querySelector('.brand')?.addEventListener('keydown',e=>{
   }
 });
 </script>
+
 
 
 
