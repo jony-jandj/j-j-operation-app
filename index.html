@@ -4340,7 +4340,7 @@ body.topbar-collapsed .operations-app .top-nav{display:flex!important}
 body.topbar-collapsed .operations-app > .sidebar{top:0;min-height:100vh}
 
 /* Selections */
-.selection-grid.selection-list{grid-template-columns:1fr}
+.selection-grid.selection-list{grid-template-columns:1fr}.selection-option-group{grid-column:1/-1;border:1px solid #d9e0e6;border-radius:14px;background:#f8fafb;padding:12px}.selection-option-group-title{display:flex;justify-content:space-between;align-items:center;color:var(--navy);font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.5px;margin:0 2px 10px}.selection-option-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}.selection-list .selection-option-grid{grid-template-columns:1fr}@media(max-width:900px){.selection-option-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:620px){.selection-option-grid{grid-template-columns:1fr}}
 .selection-list .selection-card{display:grid;grid-template-columns:150px minmax(0,1fr);align-items:start}
 .selection-list .selection-card>label{grid-column:1/-1}
 .selection-list .selection-photo{height:140px;margin:0 12px 12px}
@@ -9885,6 +9885,7 @@ function openAccountSignIn(){
 /* Selections */
 let selectionFilter='All';
 let selectionEditIndex=null;
+let selectionOptionParentIndex=null;
 let selectionLookupInFlight='';
 let selectionLookupCompleted='';
 
@@ -10087,7 +10088,7 @@ function renderSelections(){
     ${selectionBulkToolbar(project)}
     <div class="toolbar" role="group" aria-label="Selections view" style="margin:14px 0"><button class="btn ${selectionView==='cards'?'btn-gold':'btn-light'}" aria-pressed="${selectionView==='cards'}" onclick="setSelectionView('cards')">Card view</button><button class="btn ${selectionView==='list'?'btn-gold':'btn-light'}" aria-pressed="${selectionView==='list'}" onclick="setSelectionView('list')">List view</button></div>
     <div class="selection-grid ${selectionView==='list'?'selection-list':''}">
-      ${filtered.length ? filtered.map(item=>selectionCard(item,items.indexOf(item))).join('') : `
+      ${filtered.length ? renderSelectionOptionGroups(filtered,items) : `
         <div class="selection-empty">
           <button onclick="openSelectionEditor()">+</button>
           <strong>${items.length?'No selections match this filter':'No selections added yet'}</strong>
@@ -10101,6 +10102,11 @@ function renderSelections(){
 function selectionCategoryFolders(filtered,allItems){
  const groups=new Map();filtered.forEach(item=>{const key=(item.category||'Other').trim()||'Other';if(!groups.has(key))groups.set(key,[]);groups.get(key).push(item);});
  return [...groups].map(([category,group])=>`<details class="selection-folder" open><summary>${esc(category)} <span class="selection-folder-count">${group.length} selection${group.length===1?'':'s'}</span></summary><div class="selection-folder-grid">${group.map(item=>selectionCard(item,allItems.indexOf(item))).join('')}</div></details>`).join('');
+}
+
+function renderSelectionOptionGroups(filtered,allItems){
+ const groups=new Map();filtered.forEach(item=>{const key=item.optionGroupId||item.id;if(!groups.has(key))groups.set(key,[]);groups.get(key).push(item);});
+ return [...groups].map(([key,group])=>group.length>1?`<section class="selection-option-group"><div class="selection-option-group-title"><span>${esc(group[0].optionGroupTitle||group[0].title||'Selection options')}</span><span>${group.length} options</span></div><div class="selection-option-grid">${group.map(item=>selectionCard(item,allItems.indexOf(item))).join('')}</div></section>`:selectionCard(group[0],allItems.indexOf(group[0]))).join('');
 }
 
 function selectionCard(item,index){
@@ -10126,7 +10132,7 @@ function selectionCard(item,index){
       <div class="selection-card-actions">
         ${productUrl?`<a href="${esc(productUrl)}" target="_blank" rel="noopener">View product ↗</a>`:''}
         ${['Pending','Selected'].includes(item.status||'Pending')?`<button aria-pressed="${item.status==='Selected'}" onclick="toggleSelectionStatus(${index})">${item.status==='Selected'?'Selected':'Mark Selected'}</button>`:''}
-        <button onclick="openSelectionEditor(${index})">Edit</button>
+        <button onclick="addSelectionOption(${index})">＋ Another option</button><button onclick="openSelectionEditor(${index})">Edit</button>
       </div>
     </div>
   </article>`;
@@ -10356,10 +10362,16 @@ function openSelectionEditorFromLink(){
   document.getElementById('selectionProductUrl').value='';
 }
 
+function addSelectionOption(index){
+ const base=selectedProject()?.selections?.[index];if(!base)return;
+ selectionOptionParentIndex=index;openSelectionEditor(null,base.url||'');
+}
+
 function openSelectionEditor(index=null,prefillUrl=''){
   const project=selectedProject();
   ensureSelectionsData();
   selectionEditIndex=Number.isInteger(index)?index:null;
+  if(selectionEditIndex!==null)selectionOptionParentIndex=null;
   selectionLookupGeneration++;selectionEditorLastUrl='';
   selectionLookupInFlight='';
   selectionLookupCompleted='';
@@ -10368,7 +10380,7 @@ function openSelectionEditor(index=null,prefillUrl=''){
   const item=existing||{
     url:prefillUrl,title:guess.title,vendor:guess.vendor,category:guess.category,room:project.selectionActiveRoom||project.selectionRooms[0],
     model:guess.model,image:'',description:'',quality:'Standard',unitPrice:'',quantity:1,addTax:false,
-    purchasedBy:'J&J',status:'Pending',leadTimeValue:1,leadTimeUnit:'Day(s)',notes:''
+    purchasedBy:'J&J',status:'Pending',optionGroupId:selectionOptionParentIndex!==null?(project.selections[selectionOptionParentIndex]?.optionGroupId||project.selections[selectionOptionParentIndex]?.id):null,optionGroupTitle:selectionOptionParentIndex!==null?(project.selections[selectionOptionParentIndex]?.optionGroupTitle||project.selections[selectionOptionParentIndex]?.title):'',optionLabel:selectionOptionParentIndex!==null?'Another option':'',leadTimeValue:1,leadTimeUnit:'Day(s)',notes:''
   };
   const host=document.getElementById('selectionModalBackdrop');
   if(!host) return;
@@ -10491,6 +10503,9 @@ function saveSelectionEditor(){
     quantity:Math.max(1,Number(document.getElementById('selectionEditQuantity')?.value||1)),
     addTax:!!document.getElementById('selectionEditTax')?.checked,
     purchasedBy:document.getElementById('selectionEditPurchasedBy')?.value||'J&J',
+    optionGroupId:selectionEditIndex===null&&selectionOptionParentIndex!==null?(selectedProject().selections[selectionOptionParentIndex]?.optionGroupId||selectedProject().selections[selectionOptionParentIndex]?.id):undefined,
+    optionGroupTitle:selectionEditIndex===null&&selectionOptionParentIndex!==null?(selectedProject().selections[selectionOptionParentIndex]?.optionGroupTitle||selectedProject().selections[selectionOptionParentIndex]?.title):undefined,
+    optionLabel:selectionEditIndex===null&&selectionOptionParentIndex!==null?'Another option':undefined,
     status,
     inStock:document.getElementById('selectionEditInStock')?.getAttribute('aria-pressed')==='true',
     leadTimeValue:Math.max(1,Number(document.getElementById('selectionEditLeadValue')?.value||1)),
@@ -10506,6 +10521,7 @@ function saveSelectionEditor(){
   else project.selections[selectionEditIndex]=item;
   saveState(false);
   selectionEditIndex=null;
+  selectionOptionParentIndex=null;
   renderAll();
   go('selections');
   toast('Selection saved');
@@ -10516,6 +10532,7 @@ function deleteSelection(index){
   selectedProject().selections.splice(index,1);
   saveState(false);
   selectionEditIndex=null;
+  selectionOptionParentIndex=null;
   renderAll();
   go('selections');
   toast('Selection deleted');

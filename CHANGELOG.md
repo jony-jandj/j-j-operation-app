@@ -1,3 +1,9 @@
+# Selection alternatives
+
+- Added “Another option” to each contractor selection. Alternative products stay grouped under the original selection while remaining separate cards.
+- Homeowner view shows grouped alternatives and their individual status, price, photo and details.
+- Option group metadata is preserved through the homeowner portal sync.
+
 # Selection layout and buyer permissions
 
 - Kept each selection as a separate card or list row; category folder grouping was removed per request.
