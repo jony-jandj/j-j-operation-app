@@ -1,40 +1,19 @@
-J&J Operations — v72 Clean Selections Group Bug Fix + H.O. QR Repair
+J&J Selections — H.O. / QR / Controls Fix
 
-This is a clean replacement of the shared selections script, not another patch
-layer on top of the older v63-v71 code.
+Upload and replace all three files in the GitHub repository root:
+1. index.html
+2. selections-metadata.js
+3. service-worker.js
 
-REPLACE IN GITHUB:
-1. selections-metadata.js
-2. service-worker.js
+The metadata script was previously uploaded without being loaded by index.html,
+which is why the last updates had no visible effect.
 
-H.O. BUG FIXES
-- View All / Show Groups button is recreated reliably after async portal loads.
-- Button directly opens/closes the actual <details> groups.
-- Selection groups are re-detected after homeowner data refreshes.
-- One-selection named groups are wrapped into a visible group header.
-- Every group stores its own open/closed state.
-- Closing one group cannot close the other groups.
-- + Add Option stays in each group header.
-- Card/List symbols remain.
-- H.O. cards keep the app-style responsive layout.
-- H.O. Selections / QR opens a read-only homeowner page and QR link.
-- App and homeowner group controls are one toggle: View All / Show Groups.
-- Card/List controls are the ▦ and ☰ icons.
+This update adds the H.O. Selections / QR action, a read-only homeowner page,
+one View All / Show Groups toggle, and ▦ / ☰ Card/List icons. It does not add
+the later save-conflict recovery layer. It also restores Create Group, Manage
+Groups, Selection group in the editor, and Add to Group / Change Group on cards.
+The edit form keeps the room assignment internally without showing a Room
+column, and link lookup checks SKU/model plus UPC/GTIN metadata automatically.
 
-APP SIDE
-- Expand All / Collapse All remain beside Card/List.
-- Every individual group uses native independent expand/collapse.
-- Create Group / Manage Groups stay available.
-- Edit Selection group dropdown is preserved.
-- Create/Delete group controls remain in Edit Selection.
-- Add to Group / Change Group remains on cards.
-
-TEST H.O.
-1. Scan/open QR.
-2. Confirm View All appears under Card/List.
-3. Tap View All.
-4. Close ONE group — all others must remain open.
-5. Close another — only that group closes.
-6. Tap Show Groups to collapse all.
-
-After commit, wait about one minute and fully close/reopen both pages once.
+After committing, wait for GitHub Pages to finish, then fully close/reopen the
+app. If the old cached screen remains, hard-refresh once.

@@ -108,6 +108,7 @@ window.JJProduct = (() => {
       title:goodTitle(product.name)||goodTitle(data.productName)||goodTitle(data.title),
       description:text(product.description)||text(data.description),
       model:text(product.sku)||text(product.mpn)||text(data.sku),
+      upc:text(product.gtin)||text(product.gtin12)||text(product.gtin13)||text(product.gtin14)||text(data.upc)||text(data.gtin),
       image:img,
       unitPrice,
       category:category(text(product.name)||text(data.title))
@@ -125,8 +126,10 @@ window.JJProduct = (() => {
       'data.price.attr':'content',
       'data.currency.selector':'meta[property="product:price:currency"],meta[itemprop="priceCurrency"]',
       'data.currency.attr':'content',
-      'data.sku.selector':'meta[itemprop="sku"],meta[property="product:retailer_item_id"]',
+      'data.sku.selector':'meta[itemprop="sku"],meta[property="product:retailer_item_id"],meta[name="sku"],meta[name="model"],meta[itemprop="mpn"]',
       'data.sku.attr':'content',
+      'data.upc.selector':'meta[itemprop="gtin"],meta[itemprop="gtin12"],meta[itemprop="gtin13"],meta[itemprop="gtin14"],meta[itemprop="upc"],meta[property="product:upc"],meta[name="upc"],meta[name="gtin"]',
+      'data.upc.attr':'content',
       'data.productImage.selector':'meta[property="og:image"]',
       'data.productImage.attr':'content'
     });
@@ -171,6 +174,10 @@ window.JJProduct = (() => {
       .jj-app-group-controls{display:inline-flex;gap:7px;align-items:center;margin-left:8px}
       .jj-app-group-controls .btn{min-width:118px!important;font-size:11px!important;padding:9px 11px!important}
       .jj-group-card-button{border:1px solid var(--line,#dfe4ea);background:#fff;color:var(--navy,#14234A);border-radius:8px;padding:8px 10px;font-size:11px;font-weight:800}
+      .jj-host-selection-group{grid-column:1/-1;border:1px solid #d9e0e6;border-radius:14px;background:#f8fafb;overflow:hidden;box-shadow:0 3px 12px rgba(19,35,52,.05)}
+      .jj-host-selection-group>summary{display:flex;align-items:center;gap:12px;min-height:52px;padding:13px 15px;background:#fff;color:#14234a;font-size:12px;font-weight:900;cursor:pointer;list-style:none}
+      .jj-host-selection-group>summary::-webkit-details-marker{display:none}.jj-host-selection-group>summary:before{content:'▸';transition:transform .15s}.jj-host-selection-group[open]>summary:before{transform:rotate(90deg)}
+      .jj-host-selection-group>summary span{margin-left:auto;color:#657083;font-size:11px;font-weight:800}.jj-host-selection-group>.selection-grid{padding:14px}
       .jj-group-badge{display:inline-flex;margin:7px 0 0;padding:5px 8px;border-radius:999px;background:#eef3f7;color:#40566a;font-size:10px;font-weight:850}
       .jj-group-summary-actions{display:flex;align-items:center;gap:10px;margin-left:auto}
       .jj-group-summary-count{color:#657083;font-size:11px;font-weight:800;white-space:nowrap}
@@ -204,7 +211,7 @@ window.JJProduct = (() => {
       .jj-qr-dialog img{width:220px;height:220px;display:block;margin:0 auto 14px;border:8px solid #fff;box-shadow:0 3px 14px rgba(9,25,39,.15)}
       .jj-qr-link{display:block;padding:9px;border-radius:8px;background:#f3f6f8;color:#4a5b6b;font-size:10px;word-break:break-all}
       .jj-qr-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}.jj-qr-actions button{border:1px solid #d3dae1;border-radius:8px;background:#fff;color:#14234a;padding:8px 12px;font-size:11px;font-weight:900}.jj-qr-actions .primary{border-color:#14234a;background:#14234a;color:#fff}
-      .jj-ho-page-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}@media(max-width:900px){.jj-ho-page-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:620px){.jj-ho-page-grid{grid-template-columns:1fr}}
+      .jj-ho-page-toolbar{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin:16px 0 4px}.jj-ho-page-toolbar button{border:1px solid #d3dae1;border-radius:8px;background:#fff;color:#14234a;padding:8px 11px;font-size:11px;font-weight:900}.jj-ho-page-toolbar button.active,.jj-ho-page-toolbar button.primary{border-color:#14234a;background:#14234a;color:#fff}.jj-ho-page-toolbar .spacer{flex:1}.jj-ho-page-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.jj-ho-page-grid.list{grid-template-columns:1fr}.jj-ho-page-grid.list article{display:grid;grid-template-columns:150px 1fr}.jj-ho-page-grid.list article img{height:100%}@media(max-width:900px){.jj-ho-page-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:620px){.jj-ho-page-grid{grid-template-columns:1fr}.jj-ho-page-grid.list article{grid-template-columns:90px 1fr}}
       #items{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
       #items>.option-group{grid-column:1/-1;margin:0;border:1px solid #d9e0e6;border-radius:14px;background:#f8fafb;overflow:hidden;box-shadow:0 3px 12px rgba(19,35,52,.05)}
       #items>.option-group>summary.jj-ho-summary{display:flex!important;align-items:center!important;gap:12px!important;min-height:58px;padding:14px 16px!important;background:#fff!important;color:#14234a!important;font-size:12px!important;font-weight:900!important;list-style:none}
@@ -327,22 +334,49 @@ window.JJProduct = (() => {
 
   function setAllAppGroups(open){
     document.querySelectorAll('#selections details.selection-option-group').forEach(details=>details.open=!!open);
+    document.querySelectorAll('#selections details.jj-host-selection-group').forEach(details=>details.open=!!open);
+    document.querySelectorAll('#selections .selection-room-group').forEach(group=>group.classList.toggle('collapsed',!open));
     updateAppGroupToggle();
+  }
+
+  function enhanceHostGroupedCards(project){
+    const root=document.getElementById('selections');
+    root?.querySelectorAll('.selection-room-group .selection-grid:not(.selection-list)').forEach(grid=>{
+      if(grid.querySelector('.jj-host-selection-group'))return;
+      const cards=[...grid.querySelectorAll(':scope > .selection-card')];
+      const groups=new Map();
+      cards.forEach(card=>{
+        const title=card.querySelector('h3')?.textContent?.trim()||'';
+        const item=(project?.selections||[]).find(x=>String(x.title||'').trim()===title);
+        if(item?.optionGroupId){const id=String(item.optionGroupId);if(!groups.has(id))groups.set(id,{item,cards:[]});groups.get(id).cards.push(card)}
+      });
+      groups.forEach(({item,cards:members})=>{
+        const details=document.createElement('details');details.className='jj-host-selection-group';details.open=true;details.dataset.selectionGroupId=String(item.optionGroupId);
+        const group=(project.selectionGroups||[]).find(x=>String(x.id)===String(item.optionGroupId));
+        details.innerHTML=`<summary>${escapeHtml(group?.name||item.optionGroupTitle||'Selection Group')}<span>${members.length} option${members.length===1?'':'s'} · tap to compare</span></summary><div class="selection-grid"></div>`;
+        const inner=details.querySelector('.selection-grid');members.forEach(card=>inner.appendChild(card));
+        grid.appendChild(details);
+      });
+    });
+  }
+
+  function appGroupNodes(){
+    return [...document.querySelectorAll('#selections details.selection-option-group,#selections details.jj-host-selection-group,#selections .selection-room-group')];
   }
 
   function updateAppGroupToggle(){
     const button=document.getElementById('jjAppGroupToggle');
     if(!button)return;
-    const groups=[...document.querySelectorAll('#selections details.selection-option-group')];
-    const allOpen=groups.length>0&&groups.every(details=>details.open);
+    const groups=appGroupNodes();
+    const allOpen=groups.length>0&&groups.every(details=>details.matches('.selection-room-group')?!details.classList.contains('collapsed'):details.open);
     button.textContent=allOpen?'Show Groups':'View All';
     button.title=allOpen?'Collapse all selection groups':'Expand all selection groups';
     button.setAttribute('aria-label',button.title);
   }
 
   function toggleAppGroups(){
-    const groups=[...document.querySelectorAll('#selections details.selection-option-group')];
-    setAllAppGroups(!(groups.length>0&&groups.every(details=>details.open)));
+    const groups=appGroupNodes();
+    setAllAppGroups(!(groups.length>0&&groups.every(details=>details.matches('.selection-room-group')?!details.classList.contains('collapsed'):details.open)));
   }
 
   function openCreateGroup(assignIndex=null){
@@ -526,8 +560,16 @@ window.JJProduct = (() => {
   }
 
   function enhanceEditorGroupField(){
-    const select=document.getElementById('selectionEditGroup');
-    if(!select)return;
+    let select=document.getElementById('selectionEditGroup');
+    if(!select){
+      const room=document.getElementById('selectionEditRoom');
+      const roomField=room?.closest('.selection-field');
+      if(!roomField)return;
+      const field=document.createElement('div');field.className='selection-field';
+      field.innerHTML='<label>Selection group</label><select id="selectionEditGroup"><option value="">No group / Standalone</option></select>';
+      roomField.insertAdjacentElement('afterend',field);
+      select=field.querySelector('#selectionEditGroup');
+    }
     const p=appProject(),groups=ensureAppGroups(p);
     const current=String(select.value||'');
     const field=select.closest('.selection-field')||select.parentElement;
@@ -644,6 +686,22 @@ window.JJProduct = (() => {
       badge.textContent='Group: '+(group?.name||item.optionGroupTitle||'Selection Group');
       h3.insertAdjacentElement('afterend',badge);
     });
+
+    // Keep group assignment available even when the host renderer uses the
+    // older room-card layout instead of the option-group renderer.
+    root.querySelectorAll('.selection-card').forEach(card=>{
+      const h3=card.querySelector('h3');
+      const actions=card.querySelector('.selection-card-actions');
+      if(!h3||!actions||actions.querySelector('.jj-group-card-button'))return;
+      const index=(p.selections||[]).findIndex(x=>String(x.title||'').trim()===(h3.textContent||'').trim());
+      if(index<0)return;
+      const button=document.createElement('button');
+      button.type='button';button.className='jj-group-card-button';
+      button.textContent=p.selections[index].optionGroupId?'Change Group':'Add to Group';
+      button.addEventListener('click',()=>openAssign(index));
+      actions.appendChild(button);
+    });
+    enhanceHostGroupedCards(p);
   }
 
   function installApp(){
@@ -674,6 +732,24 @@ window.JJProduct = (() => {
       window.openSelectionEditorFromLink=function(...args){
         const result=originalFromLink.apply(this,args);
         setTimeout(enhanceEditorGroupField,0);
+        return result;
+      };
+    }
+
+    const originalSave=window.saveSelectionEditor;
+    if(typeof originalSave==='function'){
+      window.saveSelectionEditor=function(...args){
+        const groupId=document.getElementById('selectionEditGroup')?.value||'';
+        const title=document.getElementById('selectionEditTitle')?.value?.trim()||'';
+        const result=originalSave.apply(this,args);
+        if(title){
+          const p=appProject(),item=(p?.selections||[]).find(x=>String(x.title||'').trim()===title);
+          if(item){
+            if(groupId){const group=ensureAppGroups(p).find(x=>String(x.id)===String(groupId));if(group){item.optionGroupId=group.id;item.optionGroupTitle=group.name;}}
+            else{delete item.optionGroupId;delete item.optionGroupTitle;}
+            try{window.saveState?.(false);window.renderSelections?.()}catch{}
+          }
+        }
         return result;
       };
     }
@@ -718,10 +794,18 @@ window.JJProduct = (() => {
     const items=Array.isArray(project.selections)?project.selections:[];
     const rooms=[...new Set(items.map(item=>item.room||'Unassigned'))];
     const page=document.createElement('div');page.id='jjHomeownerPage';page.className='jj-qr-backdrop';
-    page.innerHTML=`<div class="jj-qr-dialog" style="width:min(1120px,100%);text-align:left;max-height:92vh;overflow:auto"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><div><small style="color:#b59a62;font-weight:900;letter-spacing:.8px">HOMEOWNER SELECTIONS</small><h3 style="margin-top:4px">${escapeHtml(project.name||'Selections')}</h3></div><button type="button" data-close class="primary">Close</button></div><div id="jjHomeownerItems" style="margin-top:16px"></div></div>`;
+    page.innerHTML=`<div class="jj-qr-dialog" style="width:min(1120px,100%);text-align:left;max-height:92vh;overflow:auto"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><div><small style="color:#b59a62;font-weight:900;letter-spacing:.8px">HOMEOWNER SELECTIONS</small><h3 style="margin-top:4px">${escapeHtml(project.name||'Selections')}</h3></div><button type="button" data-close class="primary">Close</button></div><div class="jj-ho-page-toolbar"><button type="button" data-ho-toggle>View All</button><button type="button" data-ho-view="cards" class="active" aria-label="Card view" title="Card view">▦</button><button type="button" data-ho-view="list" aria-label="List view" title="List view">☰</button><span class="spacer"></span><button type="button" data-ho-add class="primary">+ Add Selection</button></div><div id="jjHomeownerItems" style="margin-top:8px"></div></div>`;
     const root=page.querySelector('#jjHomeownerItems');
     if(!items.length){root.innerHTML='<p style="color:#657382">No selections have been added yet.</p>'}
-    else root.innerHTML=rooms.map(room=>{const group=items.filter(item=>(item.room||'Unassigned')===room);return `<section style="margin-top:16px"><div style="display:flex;justify-content:space-between;gap:8px"><strong style="color:#14234a">${escapeHtml(room)}</strong><span style="color:#657382;font-size:11px">${group.length} selection${group.length===1?'':'s'}</span></div><div class="jj-ho-page-grid">${group.map(item=>{const img=String(item.image||'');return `<article style="margin-top:9px;border:1px solid #dce2e9;border-radius:12px;overflow:hidden;background:#fff"><img src="${/^https?:\/\//i.test(img)?escapeHtml(img):''}" alt="" style="width:100%;height:150px;object-fit:cover;background:#f6f8f9" onerror="this.style.display='none'"><div style="padding:11px"><small style="color:#657382;font-weight:850;text-transform:uppercase">${escapeHtml(item.category||'Selection')}</small><div style="margin-top:4px;font-weight:850;color:#14234a">${escapeHtml(item.title||'Untitled selection')}</div><div style="margin-top:4px;color:#657382;font-size:11px">${escapeHtml(item.vendor||'')} ${item.model?`· ${escapeHtml(item.model)}`:''}</div></div></article>`}).join('')}</div></section>`}).join('');
+    else root.innerHTML=rooms.map(room=>{const group=items.filter(item=>(item.room||'Unassigned')===room);return `<details class="jj-ho-page-group" open style="margin-top:16px"><summary style="display:flex;justify-content:space-between;gap:8px;cursor:pointer;color:#14234a;font-weight:900;padding:5px 0;list-style:none"><strong>${escapeHtml(room)}</strong><span style="color:#657382;font-size:11px">${group.length} selection${group.length===1?'':'s'}</span></summary><div class="jj-ho-page-grid">${group.map(item=>{const img=String(item.image||'');return `<article style="margin-top:9px;border:1px solid #dce2e9;border-radius:12px;overflow:hidden;background:#fff"><img src="${/^https?:\/\//i.test(img)?escapeHtml(img):''}" alt="" style="width:100%;height:150px;object-fit:cover;background:#f6f8f9" onerror="this.style.display='none'"><div style="padding:11px"><small style="color:#657382;font-weight:850;text-transform:uppercase">${escapeHtml(item.category||'Selection')}</small><div style="margin-top:4px;font-weight:850;color:#14234a">${escapeHtml(item.title||'Untitled selection')}</div><div style="margin-top:4px;color:#657382;font-size:11px">${escapeHtml(item.vendor||'')} ${item.model?`· ${escapeHtml(item.model)}`:''}</div></div></article>`}).join('')}</div></details>`}).join('');
+    const groups=[...page.querySelectorAll('.jj-ho-page-group')];
+    const toggle=page.querySelector('[data-ho-toggle]');
+    const updateToggle=()=>{const allOpen=groups.length>0&&groups.every(group=>group.open);if(toggle){toggle.textContent=allOpen?'Show Groups':'View All';toggle.title=allOpen?'Collapse all selection groups':'Expand all selection groups'}};
+    toggle?.addEventListener('click',()=>{const open=!(groups.length>0&&groups.every(group=>group.open));groups.forEach(group=>group.open=open);updateToggle()});
+    groups.forEach(group=>group.addEventListener('toggle',updateToggle));
+    page.querySelectorAll('[data-ho-view]').forEach(button=>button.addEventListener('click',()=>{page.querySelectorAll('[data-ho-view]').forEach(other=>other.classList.toggle('active',other===button));page.querySelectorAll('.jj-ho-page-grid').forEach(grid=>grid.classList.toggle('list',button.dataset.hoView==='list'))}));
+    page.querySelector('[data-ho-add]')?.addEventListener('click',()=>{page.remove();closeQR();if(typeof window.openSelectionEditor==='function')window.openSelectionEditor(null,'');else window.toast?.('Open the app to add a selection')});
+    updateToggle();
     page.addEventListener('click',event=>{if(event.target===page||event.target.closest('[data-close]'))page.remove()});
     document.body.appendChild(page);
   }
@@ -785,7 +869,7 @@ window.JJProduct = (() => {
   }
 
   function ensureHOToolbar(){
-    const view=document.querySelector('.actions[aria-label="Selections view"]');
+    const view=document.querySelector('.actions[aria-label="Selections view"],[role="group"][aria-label="Selections view"],#items')?.parentElement;
     if(!view)return;
     document.querySelectorAll('#jjHOViewAll,#jjHOShowGroups').forEach(n=>n.remove());
 
@@ -793,7 +877,7 @@ window.JJProduct = (() => {
     if(!bar){
       bar=document.createElement('div');
       bar.id='jjHOGroupToolbar';
-      bar.innerHTML='<button type="button" id="jjHOGroupToggle" class="secondary">View All</button>';
+      bar.innerHTML='<button type="button" id="jjHOGroupToggle" class="secondary">View All</button><button type="button" id="jjHOAddSelection" class="secondary">+ Add Selection</button><button type="button" id="jjHOCardView" class="secondary" aria-label="Card view" title="Card view">▦</button><button type="button" id="jjHOListView" class="secondary" aria-label="List view" title="List view">☰</button>';
       view.insertAdjacentElement('afterend',bar);
     }
 
@@ -807,6 +891,15 @@ window.JJProduct = (() => {
         setHOGroups(!groups.every(d=>d.open));
       });
     }
+    const add=document.getElementById('jjHOAddSelection');
+    if(add&&add.dataset.bound!=='1'){
+      add.dataset.bound='1';
+      add.addEventListener('click',()=>{if(typeof window.openSelectionEditor==='function')window.openSelectionEditor(null,'');else window.toast?.('Open the app to add a selection')});
+    }
+    const card=document.getElementById('jjHOCardView');
+    const list=document.getElementById('jjHOListView');
+    card?.addEventListener('click',()=>{document.getElementById('items')?.classList.remove('list');card.classList.add('active');list?.classList.remove('active')});
+    list?.addEventListener('click',()=>{document.getElementById('items')?.classList.add('list');list.classList.add('active');card?.classList.remove('active')});
   }
 
   function wrapHOSingleGroups(root){

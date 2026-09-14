@@ -4337,6 +4337,10 @@ body.topbar-collapsed .operations-app > .sidebar{top:0;min-height:100vh}
 .selection-heading{display:flex;justify-content:space-between;gap:18px;align-items:flex-end;margin-bottom:18px}
 .selection-heading h2{margin:0;color:var(--navy);font-size:28px}
 .selection-heading p{margin:5px 0 0;color:var(--muted);font-size:13px}
+.selection-heading-right{display:flex;align-items:flex-end;gap:20px}
+.selection-heading-actions{display:flex;gap:9px;align-items:center}
+.selection-header-button{border:1px solid #D3DAE1;border-radius:9px;background:#fff;color:var(--navy);padding:9px 14px;font-size:11px;font-weight:900;white-space:nowrap}
+.selection-header-button.primary{border-color:var(--shell-navy);background:var(--shell-navy);color:#fff}
 .selection-summary{display:flex;gap:20px;color:var(--muted);font-size:11px;text-align:right}
 .selection-summary b{display:block;margin-bottom:2px;color:var(--navy);font-size:19px}
 .selection-linkbox{
@@ -4364,18 +4368,22 @@ body.topbar-collapsed .operations-app > .sidebar{top:0;min-height:100vh}
 .selection-view-button.active{background:#fff;color:var(--navy);box-shadow:0 1px 4px rgba(19,35,52,.13)}
 .selection-group-action{white-space:nowrap;border:0;background:transparent;color:#173E67;padding:6px 3px;font-size:10px;font-weight:850}
 .selection-groups{display:grid;gap:13px}
-.selection-room-group{overflow:hidden;border:1px solid var(--line);border-radius:13px;background:#F8FAFB}
-.selection-room-heading{width:100%;display:flex;align-items:center;justify-content:space-between;gap:12px;border:0;background:#fff;color:var(--navy);padding:12px 14px;text-align:left}
+.selection-room-group{overflow:visible;border:0;border-radius:0;background:transparent}
+.selection-room-heading{width:100%;display:flex;align-items:center;justify-content:space-between;gap:12px;border:0;background:transparent;color:var(--navy);padding:0 0 10px;text-align:left}
 .selection-room-heading b{display:block;font-size:14px}
 .selection-room-heading small{display:block;margin-top:2px;color:var(--muted);font-size:10px;font-weight:650}
 .selection-room-chevron{font-size:17px;transition:transform .15s ease}
 .selection-room-group.collapsed .selection-room-chevron{transform:rotate(-90deg)}
 .selection-room-group.collapsed .selection-room-content{display:none}
-.selection-room-content{padding:13px}
+.selection-room-content{padding:0}
 .selection-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
 .selection-card{overflow:hidden;border:1px solid var(--line);border-radius:13px;background:#fff;box-shadow:0 2px 8px rgba(19,35,52,.04)}
-.selection-photo{height:210px;display:grid;place-items:center;padding:12px;border-bottom:1px solid #EDF0F2;background:#F7F9FA;color:#7B8793;font-size:12px}
-.selection-photo img{width:100%;height:100%;display:block;object-fit:contain}
+.selection-photo{position:relative;height:178px;display:grid;place-items:center;overflow:hidden;border-bottom:1px solid #EDF0F2;background:#F7F9FA;color:#7B8793;font-size:12px}
+.selection-photo img{width:100%;height:100%;display:block;object-fit:cover}
+.selection-photo-status{position:absolute;z-index:1;top:11px;left:11px;padding:5px 9px;border-radius:999px;background:#fff;color:#33785D;font-size:10px;font-weight:900;box-shadow:0 1px 3px rgba(13,29,43,.13)}
+.selection-photo-status.pending{color:#8A631A}
+.selection-photo-status.ordered,.selection-photo-status.received{color:#33785D}
+.selection-card-menu{position:absolute;z-index:1;top:10px;right:10px;width:32px;height:32px;border:0;border-radius:8px;background:#fff;color:var(--navy);font-weight:900;letter-spacing:1px;box-shadow:0 1px 3px rgba(13,29,43,.15)}
 .selection-photo-empty{display:grid;place-items:center;gap:5px;color:#8B98A5;text-align:center}
 .selection-photo-empty span{display:grid;place-items:center;width:42px;height:42px;border:1px solid #D7E0E7;border-radius:10px;background:#fff;color:#A4AFB9;font-size:20px}
 .selection-photo-empty small{font-size:10px;font-weight:750}
@@ -4386,7 +4394,9 @@ body.topbar-collapsed .operations-app > .sidebar{top:0;min-height:100vh}
 .selection-card-bottom{display:flex;justify-content:space-between;gap:10px;align-items:flex-end;margin-top:13px;padding-top:12px;border-top:1px solid #EDF0F2}
 .selection-price{color:var(--navy);font-size:17px;font-weight:900}
 .selection-price small{display:block;margin-top:2px;color:var(--muted);font-size:10px;font-weight:500}
-.selection-status{padding:5px 7px;border-radius:999px;background:#F4EFE5;color:#775F2D;font-size:10px;font-weight:900}
+.selection-purchased{color:var(--muted);font-size:10px;line-height:1.3;text-align:right}
+.selection-purchased b{color:var(--navy);font-size:11px}
+.selection-purchased small{display:block;color:var(--muted);font-size:9px}
 .selection-card-actions{display:flex;gap:7px;margin-top:12px}
 .selection-card-actions button,.selection-card-actions a{border:0;background:transparent;color:#173E67;padding:0;font-size:10px;font-weight:850;text-decoration:none}
 .selection-grid.selection-list{display:flex;flex-direction:column;gap:9px}
@@ -4438,6 +4448,17 @@ body.topbar-collapsed .operations-app > .sidebar{top:0;min-height:100vh}
 .selection-modal-foot{display:flex;justify-content:space-between;gap:9px;padding:14px 20px;border-top:1px solid var(--line);background:#F8FAFB}
 .selection-modal-foot-right{display:flex;gap:8px}
 .selection-danger{border:1px solid #F0D1D1!important;background:#FFF2F2!important;color:var(--red)!important}
+.homeowner-overlay{position:fixed;inset:0;z-index:10120;overflow:auto;background:#F4F6F8;padding:24px}
+.homeowner-page{width:min(1120px,100%);margin:0 auto;border-radius:16px;background:#fff;box-shadow:0 18px 60px rgba(9,25,39,.18);overflow:hidden}
+.homeowner-top{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:18px 24px;border-bottom:1px solid #E5E9ED}
+.homeowner-brand{display:flex;align-items:center;gap:10px;color:var(--navy);font-weight:900}.homeowner-brand-mark{display:grid;place-items:center;width:32px;height:32px;border-radius:9px;background:var(--shell-gold);font-size:11px}
+.homeowner-actions{display:flex;gap:8px}.homeowner-actions button{border:1px solid #D3DAE1;border-radius:8px;background:#fff;color:var(--navy);padding:8px 12px;font-size:11px;font-weight:900}.homeowner-actions button.primary{border-color:var(--shell-navy);background:var(--shell-navy);color:#fff}
+.homeowner-body{padding:24px}.homeowner-body h2{margin:0;color:var(--navy);font-size:27px}.homeowner-body>p{margin:6px 0 18px;color:var(--muted);font-size:13px}
+.homeowner-group{margin-top:18px}.homeowner-group-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}.homeowner-group-head h3{margin:0;color:var(--navy);font-size:16px}.homeowner-group-head span{color:var(--muted);font-size:11px}
+.homeowner-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}.homeowner-card{overflow:hidden;border:1px solid #E1E6EA;border-radius:12px;background:#fff}.homeowner-card img{width:100%;height:172px;display:block;object-fit:cover;background:#F6F8F9}.homeowner-card .empty{height:172px;display:grid;place-items:center;background:#F6F8F9;color:#8B98A5;font-size:11px}.homeowner-card-body{padding:12px}.homeowner-card-body small{color:#71808D;font-size:10px;font-weight:850;letter-spacing:.45px;text-transform:uppercase}.homeowner-card-body h4{margin:5px 0;color:var(--navy);font-size:14px;line-height:1.3}.homeowner-card-body p{margin:4px 0;color:#677582;font-size:11px}.homeowner-card-body strong{display:block;margin-top:9px;color:var(--navy);font-size:15px}.homeowner-empty{padding:45px 20px;text-align:center;color:var(--muted)}
+.qr-modal{width:min(430px,100%);border-radius:16px;background:#fff;padding:22px;box-shadow:0 22px 70px rgba(0,0,0,.28);text-align:center}.qr-modal h3{margin:0;color:var(--navy);font-size:19px}.qr-modal p{margin:7px 0 15px;color:var(--muted);font-size:12px}.qr-modal img{width:220px;height:220px;display:block;margin:0 auto 14px;border:8px solid #fff;box-shadow:0 3px 14px rgba(9,25,39,.15)}.qr-link{display:block;padding:9px;border-radius:8px;background:#F3F6F8;color:#4A5B6B;font-size:10px;word-break:break-all}.qr-modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
+@media(max-width:820px){.homeowner-overlay{padding:10px}.homeowner-top,.homeowner-body{padding:16px}.homeowner-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:560px){.selection-heading-right{display:block}.selection-heading-actions{margin-top:10px}.homeowner-top{align-items:flex-start;flex-direction:column}.homeowner-actions{width:100%}.homeowner-actions button{flex:1}.homeowner-grid{grid-template-columns:1fr}}
 
 @media(min-width:1181px){
   .operations-app > .sidebar{
@@ -4491,6 +4512,8 @@ body.topbar-collapsed .operations-app > .sidebar{top:0;min-height:100vh}
   .operations-header .header-actions{gap:5px}
   .operations-main > .content{padding:14px 10px 82px}
   .selection-heading{align-items:flex-start;flex-direction:column}
+  .selection-heading-right{width:100%;align-items:flex-start;justify-content:space-between;gap:10px}
+  .selection-heading-actions{margin-left:auto}
   .selection-toolbar-spacer{display:none}
   .selection-view-controls{margin-left:auto}
   .selection-room-content{padding:9px}
@@ -9638,6 +9661,7 @@ function ensureSelectionsData(){
     project.selections.forEach(item=>{
       if(!item.leadTimeValue) item.leadTimeValue=1;
       if(!item.leadTimeUnit) item.leadTimeUnit='Day(s)';
+      if(item.upc===undefined || item.upc===null) item.upc='';
     });
   });
 }
@@ -9671,7 +9695,7 @@ function renderSelections(){
   project.selectionActiveRoom=selectedRoom;
   const filtered=items.filter(item=>selectionFilter==='All' || item.category===selectionFilter);
   const visibleRooms=[...new Set(filtered.map(item=>item.room||'Unassigned'))];
-  const categories=[...new Set(items.map(item=>item.category).filter(Boolean))];
+  const categories=[...new Set(['Tile','Plumbing','Vanities','Lighting','Hardware',...items.map(item=>item.category).filter(Boolean)])];
   const selectedCount=items.filter(item=>item.status==='Selected' || item.status==='Ordered' || item.status==='Received').length;
   const pendingCount=items.filter(item=>item.status==='Pending').length;
   const total=items.reduce((sum,item)=>sum+selectionTotal(item),0);
@@ -9683,10 +9707,16 @@ function renderSelections(){
         <h2>Selections</h2>
         <p>${esc(project.name)} · ${esc(project.type)}</p>
       </div>
-      <div class="selection-summary">
-        <span><b>${selectedCount}</b>Selected</span>
-        <span><b>${pendingCount}</b>Pending</span>
-        <span><b>${selectionMoney(total)}</b>Total</span>
+      <div class="selection-heading-right">
+        <div class="selection-summary">
+          <span><b>${selectedCount}</b>Selected</span>
+          <span><b>${pendingCount}</b>Pending</span>
+          <span><b>${selectionMoney(total)}</b>Total</span>
+        </div>
+        <div class="selection-heading-actions">
+          <button class="selection-header-button" onclick="openHomeownerView()">Customer View</button>
+          <button class="selection-header-button primary" onclick="exportSelectionsPdf()">Export PDF</button>
+        </div>
       </div>
     </div>
 
@@ -9695,9 +9725,9 @@ function renderSelections(){
         <label for="selectionProductUrl">Add a product from a link</label>
         <div class="selection-url-row">
           <input id="selectionProductUrl" type="url" placeholder="Paste a Home Depot, Lowe's, Floor & Decor, or other product link…">
-          <button onclick="openSelectionEditorFromLink()">Review product</button>
+          <button onclick="openSelectionEditorFromLink()">Get product info</button>
         </div>
-        <div class="selection-hint">Paste the link once, then review the picture, description, SKU/model number, quality, and price.</div>
+        <div class="selection-hint">We’ll pull the picture, name, description, model number, and current price for you.</div>
       </div>
       <div class="selection-room-picker">
         <label for="selectionActiveRoom">Add to room</label>
@@ -9715,9 +9745,9 @@ function renderSelections(){
     <div class="selection-toolbar" aria-label="Selection filters">
       ${['All',...categories].map(cat=>`<button class="selection-filter ${selectionFilter===cat?'active':''}" onclick="setSelectionFilter(decodeURIComponent('${encodeURIComponent(cat)}'))">${cat==='All'?'All selections':esc(cat)}</button>`).join('')}
       <span class="selection-toolbar-spacer"></span>
-      <div class="selection-view-controls" aria-label="Selection view">
-        <button class="selection-view-button ${selectionViewMode==='cards'?'active':''}" aria-pressed="${selectionViewMode==='cards'}" onclick="setSelectionView('cards')">Cards</button>
-        <button class="selection-view-button ${selectionViewMode==='list'?'active':''}" aria-pressed="${selectionViewMode==='list'}" onclick="setSelectionView('list')">List</button>
+      <div class="selection-view-controls" aria-label="Selections view">
+        <button class="selection-view-button ${selectionViewMode==='cards'?'active':''}" aria-label="Card view" title="Card view" aria-pressed="${selectionViewMode==='cards'}" onclick="setSelectionView('cards')">▦</button>
+        <button class="selection-view-button ${selectionViewMode==='list'?'active':''}" aria-label="List view" title="List view" aria-pressed="${selectionViewMode==='list'}" onclick="setSelectionView('list')">☰</button>
       </div>
       <button class="selection-group-action" onclick="expandAllSelectionGroups()">Expand all</button>
       <button class="selection-group-action" onclick="collapseAllSelectionGroups()">Collapse all</button>
@@ -9744,9 +9774,10 @@ function selectionRoomGroup(project,room,roomItems,allItems){
   const key=selectionRoomStateKey(project,room);
   const collapsed=selectionCollapsedRooms.has(key);
   const encodedRoom=encodeURIComponent(room).replace(/'/g,'%27');
+  const complete=roomItems.filter(item=>['Selected','Ordered','Received'].includes(item.status)).length;
   return `<section class="selection-room-group ${collapsed?'collapsed':''}">
     <button class="selection-room-heading" onclick="toggleSelectionRoom(decodeURIComponent('${encodedRoom}'))" aria-expanded="${!collapsed}">
-      <span><b>${esc(room)}</b><small>${roomItems.length} selection${roomItems.length===1?'':'s'}</small></span>
+      <span><b>${esc(room)}</b><small>${complete} of ${roomItems.length} selections complete</small></span>
       <span class="selection-room-chevron" aria-hidden="true">⌄</span>
     </button>
     <div class="selection-room-content">
@@ -9755,6 +9786,68 @@ function selectionRoomGroup(project,room,roomItems,allItems){
       </div>
     </div>
   </section>`;
+}
+
+function homeownerShareUrl(project=selectedProject()){
+  const base=(location.href||'').split('#')[0];
+  return `${base}#homeowner=${encodeURIComponent(project?.id ?? '')}`;
+}
+
+function closeHomeownerOverlay(){
+  document.getElementById('homeownerOverlay')?.remove();
+  if(location.hash.startsWith('#homeowner')) history.replaceState(null,'',location.pathname+location.search);
+}
+
+function homeownerCard(item){
+  const image=safeSelectionImageUrl(item.image);
+  const price=selectionMoney(selectionTotal(item));
+  return `<article class="homeowner-card">
+    ${image?`<img src="${esc(image)}" alt="${esc(item.title||'Selected product')}" loading="lazy" onerror="this.outerHTML='<div class=\\"empty\\">No product photo</div>'">`:'<div class="empty">No product photo</div>'}
+    <div class="homeowner-card-body"><small>${esc(item.category||'Selection')}</small><h4>${esc(item.title||'Untitled product')}</h4><p>${esc(item.vendor||'')} ${item.model?`· Model ${esc(item.model)}`:''}</p><strong>${price}</strong><p>${esc(item.purchasedBy||'Not assigned')} · ${esc(item.status||'Pending')}</p></div>
+  </article>`;
+}
+
+function openHomeownerView(project=selectedProject()){
+  if(!project) return;
+  window.homeownerActiveProject=project;
+  document.getElementById('homeownerOverlay')?.remove();
+  const items=project.selections||[];
+  const rooms=[...new Set(items.map(item=>item.room||'Unassigned'))];
+  const overlay=document.createElement('div');
+  overlay.id='homeownerOverlay';
+  overlay.className='homeowner-overlay';
+  overlay.innerHTML=`<div class="homeowner-page" role="dialog" aria-modal="true" aria-label="Homeowner selections">
+    <header class="homeowner-top"><div class="homeowner-brand"><span class="homeowner-brand-mark">J&J</span><span>J&J Home Renovations</span></div><div class="homeowner-actions"><button onclick="openHomeownerShare()">Share / QR code</button><button class="primary" onclick="closeHomeownerOverlay()">Back to app</button></div></header>
+    <main class="homeowner-body"><div class="eyebrow">${esc(project.jobNo||'Selections')}</div><h2>${esc(project.name)} · Selections</h2><p>Review the selections for your project. Prices shown include any taxes added by J&J.</p>
+      ${rooms.length?rooms.map(room=>{const roomItems=items.filter(item=>(item.room||'Unassigned')===room); const complete=roomItems.filter(item=>['Selected','Ordered','Received'].includes(item.status)).length; return `<section class="homeowner-group"><div class="homeowner-group-head"><h3>${esc(room)}</h3><span>${complete} of ${roomItems.length} selections complete</span></div><div class="homeowner-grid">${roomItems.map(homeownerCard).join('')}</div></section>`}).join(''):'<div class="homeowner-empty">No selections have been added yet.</div>'}
+    </main></div>`;
+  overlay.addEventListener('click',e=>{if(e.target===overlay)closeHomeownerOverlay()});
+  document.body.appendChild(overlay);
+}
+
+function openHomeownerShare(project=window.homeownerActiveProject||selectedProject()){
+  if(!project) return;
+  const url=homeownerShareUrl(project);
+  document.getElementById('qrBackdrop')?.remove();
+  const backdrop=document.createElement('div');
+  backdrop.id='qrBackdrop'; backdrop.className='selection-modal-backdrop open';
+  const qr=`https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(url)}`;
+  backdrop.innerHTML=`<div class="qr-modal" role="dialog" aria-modal="true" aria-labelledby="qrModalTitle"><h3 id="qrModalTitle">Homeowner page QR code</h3><p>Scan this code to open a read-only selections page for ${esc(project.name)}.</p><img src="${qr}" alt="QR code for homeowner selections" onerror="this.alt='QR code unavailable';this.style.opacity='.35'"><span class="qr-link">${esc(url)}</span><div class="qr-modal-actions"><button class="btn btn-light" onclick="copyHomeownerLink()">Copy link</button><button class="btn btn-light" onclick="document.getElementById('qrBackdrop')?.remove()">Close</button><button class="btn btn-gold" onclick="openHomeownerView();document.getElementById('qrBackdrop')?.remove()">Open page</button></div></div>`;
+  backdrop.addEventListener('click',e=>{if(e.target===backdrop)backdrop.remove()});
+  document.body.appendChild(backdrop);
+}
+
+async function copyHomeownerLink(){
+  const url=homeownerShareUrl(window.homeownerActiveProject||selectedProject());
+  try{await navigator.clipboard.writeText(url);toast('Homeowner link copied');}
+  catch(e){window.prompt('Copy this homeowner link:',url)}
+}
+
+function exportSelectionsPdf(){
+  const p=selectedProject(); if(!p) return;
+  const items=p.selections||[];
+  const html=printProjectHeader(p,'Selections')+items.map((item,i)=>`<section class="print-section ${i?'print-page-break':''}"><div class="print-section-title"><div><h2>${printSafe(item.title||'Selection')}</h2><p>${printSafe(item.room||'Unassigned')} · ${printSafe(item.category||'Selection')}</p></div><div class="print-status">${printSafe(item.status||'Pending')}</div></div><div class="print-meta-grid"><div class="print-meta-box"><span>Vendor / Model</span>${printSafe(item.vendor||'')} · ${printSafe(item.model||'')}</div><div class="print-meta-box"><span>Price</span>${printSafe(selectionMoney(selectionTotal(item)))}</div><div class="print-meta-box full"><span>Description</span>${printSafe(item.description||'')}</div></div></section>`).join('')+`<div class="print-footer">J&J Home Renovations · ${printSafe(p.name)}</div>`;
+  launchPrint(html);
 }
 
 function selectionCard(item,index){
@@ -9767,15 +9860,18 @@ function selectionCard(item,index){
   const photo=imageUrl
     ? `<img src="${esc(imageUrl)}" alt="${esc(item.title)}" loading="lazy" onerror="selectionPhotoFallback(this)">`
     : selectionPhotoPlaceholder();
+  const status=item.status||'Pending';
+  const statusClass=status.toLowerCase().replace(/[^a-z]+/g,'-');
+  const statusIcon=status==='Pending'?'◷ ':['Selected','Ordered','Received'].includes(status)?'✓ ':'';
   return `<article class="selection-card">
-    <div class="selection-photo">${photo}</div>
+    <div class="selection-photo"><div class="selection-photo-status ${statusClass}">${statusIcon}${esc(status)}</div><button class="selection-card-menu" onclick="openSelectionEditor(${index})" aria-label="Selection actions">•••</button>${photo}</div>
     <div class="selection-card-body">
-      <div class="selection-card-meta">${esc(item.room)} · ${esc(item.category||'Selection')}</div>
+      <div class="selection-card-meta">${esc(item.category||'Selection')}</div>
       <h3>${esc(item.title||'Untitled product')}</h3>
-      <div class="selection-vendor">${esc(item.vendor||'Vendor not entered')} · ${esc(item.model||'Model/SKU not entered')}</div>
+      <div class="selection-vendor">${esc(item.vendor||'Vendor not entered')} · ${esc(item.model||item.upc||'Model/SKU/UPC not entered')}</div>
       <div class="selection-card-bottom">
         <div class="selection-price">${selectionMoney(selectionTotal(item))}<small>${Math.max(1,Number(item.quantity||1))} item${Number(item.quantity||1)===1?'':'s'}${taxNote}</small></div>
-        <span class="selection-status">${esc(item.status||'Pending')}${lead?` · ${esc(lead)}`:''}</span>
+        <span class="selection-purchased">Purchased by<br><b>${esc(item.purchasedBy||'Not assigned')}</b>${lead?`<small> · ${esc(lead)}</small>`:''}</span>
       </div>
       <div class="selection-card-actions">
         ${productUrl?`<a href="${esc(productUrl)}" target="_blank" rel="noopener">View product ↗</a>`:''}
@@ -9995,8 +10091,10 @@ function selectionLookupUrl(url){
     url,
     'data.price.selector':'meta[itemprop="price"],meta[property="product:price:amount"]',
     'data.price.attr':'content',
-    'data.sku.selector':'meta[itemprop="sku"],meta[property="product:retailer_item_id"]',
+    'data.sku.selector':'meta[itemprop="sku"],meta[property="product:retailer_item_id"],meta[name="sku"],meta[name="model"],meta[itemprop="mpn"]',
     'data.sku.attr':'content',
+    'data.upc.selector':'meta[itemprop="gtin"],meta[itemprop="gtin12"],meta[itemprop="gtin13"],meta[itemprop="gtin14"],meta[itemprop="upc"],meta[property="product:upc"],meta[name="upc"],meta[name="gtin"]',
+    'data.upc.attr':'content',
     'data.description.selector':'meta[name="description"],meta[property="og:description"]',
     'data.description.attr':'content'
   });
@@ -10031,7 +10129,8 @@ async function fetchSelectionMetadata(url){
       description:String(data.description||'').trim(),
       image:safeSelectionUrl(image),
       unitPrice:selectionNumber(data.price),
-      model:String(data.sku||'').trim(),
+      model:String(data.sku||data.mpn||data.model||'').trim(),
+      upc:String(data.upc||data.gtin||data.gtin12||data.gtin13||data.gtin14||'').trim(),
       blocked:Number(payload?.statusCode||0)>=400
     };
   }catch(e){
@@ -10070,12 +10169,14 @@ async function enrichSelectionEditorFromUrl(url,overwrite=false){
     fillSelectionField('selectionEditDescription',metadata.description,overwrite);
     selectionImageSetValue(metadata.image,'Image from product link',overwrite);
     fillSelectionField('selectionEditModel',metadata.model,overwrite);
+    fillSelectionField('selectionEditUpc',metadata.upc,overwrite);
     if(metadata.unitPrice) fillSelectionField('selectionEditPrice',metadata.unitPrice.toFixed(2),overwrite);
   }
   const hasPrice=Number(document.getElementById('selectionEditPrice')?.value||0)>0;
-  const hasDetails=Boolean(document.getElementById('selectionEditTitle')?.value.trim() && document.getElementById('selectionEditCategory')?.value.trim());
+    const hasIdentifier=Boolean(document.getElementById('selectionEditModel')?.value.trim() || document.getElementById('selectionEditUpc')?.value.trim());
+    const hasDetails=Boolean(document.getElementById('selectionEditTitle')?.value.trim() && document.getElementById('selectionEditCategory')?.value.trim());
   if(hasPrice && hasDetails) setSelectionLookupStatus('Product details and price found — review before saving.','success');
-  else if(hasDetails) setSelectionLookupStatus('Product name, vendor, category, and SKU were filled from the link. This retailer did not expose a live price, so enter it below.','warn');
+  else if(hasDetails) setSelectionLookupStatus(`Product details filled${hasIdentifier?' with SKU/model or UPC':''}. This retailer did not expose a live price, so enter it below.`,'warn');
   else setSelectionLookupStatus('We could not read this link. You can still enter the product details manually.','warn');
   updateSelectionTotals();
   selectionLookupCompleted=normalized;
@@ -10107,7 +10208,7 @@ function openSelectionEditor(index=null,prefillUrl=''){
   const guess=productGuessFromUrl(prefillUrl);
   const item=existing||{
     url:prefillUrl,title:guess.title,vendor:guess.vendor,category:guess.category,room:project.selectionActiveRoom||project.selectionRooms[0],
-    model:guess.model,image:'',description:'',quality:'Standard',unitPrice:'',quantity:1,addTax:false,
+    model:guess.model,upc:'',image:'',description:'',quality:'Standard',unitPrice:'',quantity:1,addTax:false,
     purchasedBy:'J&J',status:'Pending',leadTimeValue:1,leadTimeUnit:'Day(s)',notes:''
   };
   const host=document.getElementById('selectionModalBackdrop');
@@ -10123,11 +10224,12 @@ function openSelectionEditor(index=null,prefillUrl=''){
       <div class="selection-field full"><label>Product name</label><input id="selectionEditTitle" value="${esc(item.title||'')}" placeholder="Product name"></div>
       <div class="selection-field"><label>Vendor</label><input id="selectionEditVendor" value="${esc(item.vendor||'')}" placeholder="Home Depot"></div>
       <div class="selection-field"><label>Category</label><input id="selectionEditCategory" value="${esc(item.category||'')}" placeholder="Tile, Plumbing, Vanity…"></div>
-      <div class="selection-field"><label>Room</label><select id="selectionEditRoom">${project.selectionRooms.map(room=>`<option ${room===item.room?'selected':''}>${esc(room)}</option>`).join('')}</select></div>
+      <div class="selection-field" style="display:none"><label>Room</label><select id="selectionEditRoom">${project.selectionRooms.map(room=>`<option ${room===item.room?'selected':''}>${esc(room)}</option>`).join('')}</select></div>
       <div class="selection-field"><label>Quality</label><select id="selectionEditQuality">
         ${['Budget','Standard','Premium','Luxury'].map(q=>`<option ${q===(item.quality||'Standard')?'selected':''}>${q}</option>`).join('')}
       </select></div>
       <div class="selection-field"><label>Model / SKU</label><input id="selectionEditModel" value="${esc(item.model||'')}"></div>
+      <div class="selection-field"><label>UPC / GTIN</label><input id="selectionEditUpc" value="${esc(item.upc||'')}" inputmode="numeric"></div>
       <div class="selection-field full"><label>Product picture</label><div id="selectionImageDrop" class="selection-image-drop" ondragover="selectionImageDragOver(event)" ondragleave="selectionImageDragLeave(event)" ondrop="selectionImageDrop(event)">
         <div id="selectionImagePreview" class="selection-image-preview">${selectionImageMarkup(item.image)}</div>
         <div class="selection-image-copy"><strong>Drag and drop an image here</strong><span>or choose one from your computer</span><button type="button" onclick="document.getElementById('selectionImageFile')?.click()">Choose image</button><span id="selectionImageName" class="selection-image-name">${item.image?'Image ready':'No image selected'}</span></div>
@@ -10195,6 +10297,7 @@ function saveSelectionEditor(){
     room:document.getElementById('selectionEditRoom')?.value||selectedProject().selectionRooms[0],
     quality:document.getElementById('selectionEditQuality')?.value||'Standard',
     model:document.getElementById('selectionEditModel')?.value.trim()||'',
+    upc:document.getElementById('selectionEditUpc')?.value.trim()||'',
     image:safeSelectionImageUrl(document.getElementById('selectionEditImage')?.value.trim()||''),
     unitPrice:Number(document.getElementById('selectionEditPrice')?.value||0),
     quantity:Math.max(1,Number(document.getElementById('selectionEditQuantity')?.value||1)),
@@ -10245,6 +10348,13 @@ renderAll();
 syncUserSelector();
 restoreLayoutPreferences();
 
+// QR links open the read-only homeowner page without requiring a staff sign-in.
+if(location.hash.startsWith('#homeowner=')){
+  const homeownerId=decodeURIComponent(location.hash.slice('#homeowner='.length));
+  const homeownerProject=state.projects.find(project=>String(project.id)===String(homeownerId));
+  if(homeownerProject) setTimeout(()=>openHomeownerView(homeownerProject),80);
+}
+
 (async()=>{
   document.getElementById('loginOverlay')?.classList.add('hidden');
 
@@ -10294,6 +10404,9 @@ if ('serviceWorker' in navigator) {
   });
 }
 </script>
+
+<!-- Selections / homeowner enhancements. This must load after the app script. -->
+<script src="./selections-metadata.js"></script>
 
 <script>
 document.addEventListener('click',function(e){
