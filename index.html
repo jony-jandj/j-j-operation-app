@@ -6037,7 +6037,6 @@ function openBackupImport(){
 function importAppBackup(input){
   const file=input?.files?.[0];
   if(!file) return;
-  const importProject=selectedProject();
 
   const reader=new FileReader();
 
@@ -8623,6 +8622,7 @@ function syncPOsFromLabor(p,rows=laborLines(p)){
 async function importEstimateFile(input){
   const file=input?.files?.[0];
   if(!file) return;
+  const importProject=selectedProject();
 
   try{
     if(typeof XLSX==='undefined'){

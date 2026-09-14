@@ -1,4 +1,4 @@
-const CACHE_NAME = 'jj-operations-v54-job-cost-estimate-files';
+const CACHE_NAME = 'jj-operations-v55-estimate-upload-fix';
 const APP_SHELL = ['./','./index.html','./jj-original-logo.png','./manifest.webmanifest','./icons/icon-192.png','./icons/icon-512.png'];
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE_NAME).then(cache=>cache.addAll(APP_SHELL)).then(()=>self.skipWaiting()));
