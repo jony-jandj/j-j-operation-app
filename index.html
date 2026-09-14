@@ -10402,7 +10402,16 @@ async function enrichSelectionEditorFromUrl(url,overwrite=false){
  const ids={title:'selectionEditTitle',vendor:'selectionEditVendor',category:'selectionEditCategory',model:'selectionEditModel',description:'selectionEditDescription',unitPrice:'selectionEditPrice',image:'selectionEditImage'};
  const before=Object.fromEntries(Object.entries(ids).map(([k,id])=>[k,document.getElementById(id)?.value||'']));
  setSelectionLookupStatus('Reading product name, photo and pricing…','loading');
- const metadata=await fetchSelectionMetadata(normalized);
+ let metadata=null;
+ try{
+   metadata=await Promise.race([
+     fetchSelectionMetadata(normalized),
+     new Promise(resolve=>setTimeout(()=>resolve(null),9000))
+   ]);
+ }catch(error){
+   console.warn('Product lookup failed; manual entry remains available.',error);
+   metadata=null;
+ }
  if(generation===selectionLookupGeneration)selectionLookupInFlight='';
  if(generation!==selectionLookupGeneration||document.getElementById('selectionEditUrl')?.value.trim()!==normalized||!document.getElementById('selectionModalBackdrop')?.classList.contains('open'))return;
  const values={...productGuessFromUrl(normalized)};for(const [key,value] of Object.entries(metadata||{})){if(value!==''&&value!==null&&value!==undefined)values[key]=value;}
@@ -10703,7 +10712,6 @@ document.querySelector('.brand')?.addEventListener('keydown',e=>{
   }
 });
 </script>
-
 
 
 
