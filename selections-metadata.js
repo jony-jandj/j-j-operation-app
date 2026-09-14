@@ -333,6 +333,14 @@ window.JJProduct = (() => {
       .selection-option-group-title{gap:12px}
       .selection-option-group-title>.jj-group-title-text{min-width:0;overflow:hidden;text-overflow:ellipsis}
       #selectionEditGroup{display:block!important}
+      .jj-editor-group-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:8px}
+      .jj-ho-group-toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:0 0 16px}
+      .jj-ho-group-toolbar button{min-height:42px}
+      .jj-ho-group-add-option{float:none!important;margin-left:10px;min-height:34px!important;padding:7px 10px!important;border-radius:8px!important;background:#edf0f5!important;color:#14234a!important;font-size:12px!important;font-weight:800!important}
+      .option-group>summary.jj-ho-summary{display:flex!important;align-items:center;gap:10px}
+      .option-group>summary.jj-ho-summary>.jj-ho-summary-title{min-width:0;flex:1}
+      .option-group>summary.jj-ho-summary>.jj-ho-summary-actions{display:flex;align-items:center;gap:8px;margin-left:auto}
+      .jj-ho-summary-count{color:#657080;font-size:12px;font-weight:600;white-space:nowrap}
       .jj-group-dialog{width:min(620px,calc(100% - 24px));max-height:88dvh;padding:0;border:0;border-radius:16px;color:#202633;box-shadow:0 24px 70px rgba(12,28,45,.32)}
       .jj-group-dialog::backdrop{background:rgba(7,18,31,.55)}
       .jj-group-head,.jj-group-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 18px;background:#fff;position:sticky;z-index:2}
@@ -356,6 +364,10 @@ window.JJProduct = (() => {
         .selection-option-group-title{align-items:flex-start;flex-wrap:wrap}
         .jj-group-summary-actions{width:100%;justify-content:space-between;margin-left:0}
         .jj-group-add-option{padding:8px 10px}
+        .jj-editor-group-actions .btn{flex:1}
+        .option-group>summary.jj-ho-summary{flex-wrap:wrap}
+        .option-group>summary.jj-ho-summary>.jj-ho-summary-actions{width:100%;justify-content:space-between;margin-left:0}
+        .jj-ho-group-add-option{margin-left:0}
       }
     `;
     document.head.appendChild(style);
@@ -427,15 +439,18 @@ window.JJProduct = (() => {
     if(field)field.style.display='';
     if(label)label.textContent='Selection Group';
 
-    select.innerHTML=
-      `<option value="">No group / Standalone</option>`+
-      groups.map(group=>{
-        const count=(p.selections||[]).filter(item=>String(item.optionGroupId||'')===String(group.id)).length;
-        return `<option value="${escLocal(group.id)}">${escLocal(group.name)} · ${count} selection${count===1?'':'s'}</option>`;
-      }).join('');
-
-    if(groups.some(group=>String(group.id)===current))select.value=current;
-    else select.value='';
+    const rebuild=(preferred=current)=>{
+      const liveGroups=ensureGroups(p);
+      select.innerHTML=
+        `<option value="">No group / Standalone</option>`+
+        liveGroups.map(group=>{
+          const count=(p.selections||[]).filter(item=>String(item.optionGroupId||'')===String(group.id)).length;
+          return `<option value="${escLocal(group.id)}">${escLocal(group.name)} · ${count} selection${count===1?'':'s'}</option>`;
+        }).join('');
+      if(liveGroups.some(group=>String(group.id)===String(preferred)))select.value=String(preferred);
+      else select.value='';
+    };
+    rebuild(current);
 
     // The original app saves optionGroupTitle from this input. Keep it as a
     // hidden backing field and automatically sync it to the selected group.
@@ -446,11 +461,63 @@ window.JJProduct = (() => {
     }
 
     const syncGroupName=()=>{
-      const group=groups.find(g=>String(g.id)===String(select.value));
+      const group=ensureGroups(p).find(g=>String(g.id)===String(select.value));
       if(nameInput)nameInput.value=group?.name||'';
+      const del=document.getElementById('jjEditorDeleteGroup');
+      if(del)del.disabled=!group;
     };
     syncGroupName();
     select.addEventListener('change',syncGroupName);
+
+    if(field && !field.querySelector('.jj-editor-group-actions')){
+      const actions=document.createElement('div');
+      actions.className='jj-editor-group-actions';
+      actions.innerHTML=`
+        <button type="button" class="btn btn-light" id="jjEditorCreateGroup">+ Create Group</button>
+        <button type="button" class="btn btn-danger" id="jjEditorDeleteGroup">Delete Group</button>`;
+      field.appendChild(actions);
+
+      actions.querySelector('#jjEditorCreateGroup').addEventListener('click',()=>{
+        const name=prompt('New selection group name');
+        if(name===null)return;
+        const clean=name.trim();
+        if(!clean)return;
+        const liveGroups=ensureGroups(p);
+        const existing=liveGroups.find(g=>g.name.trim().toLowerCase()===clean.toLowerCase());
+        if(existing){
+          rebuild(existing.id);
+          syncGroupName();
+          window.toast?.('That group already exists');
+          return;
+        }
+        const group={id:makeGroupId(),name:clean};
+        liveGroups.push(group);
+        rebuild(group.id);
+        syncGroupName();
+        window.toast?.(`Group "${clean}" added`);
+      });
+
+      actions.querySelector('#jjEditorDeleteGroup').addEventListener('click',()=>{
+        const group=ensureGroups(p).find(g=>String(g.id)===String(select.value));
+        if(!group)return;
+        const members=(p.selections||[]).filter(item=>String(item.optionGroupId||'')===String(group.id));
+        if(!confirm(`Delete the group "${group.name}"? ${members.length} selection${members.length===1?'':'s'} will stay in the job and become standalone.`))return;
+
+        p.selectionGroups=ensureGroups(p).filter(g=>String(g.id)!==String(group.id));
+        members.forEach(item=>{
+          delete item.optionGroupId;
+          delete item.optionGroupTitle;
+          delete item.optionLabel;
+        });
+
+        rebuild('');
+        syncGroupName();
+        try{window.saveState?.(false);}catch{}
+        window.toast?.('Group deleted — selections were kept');
+      });
+    }
+
+    syncGroupName();
   }
 
   function enhanceRenderedSelections(){
@@ -504,13 +571,135 @@ window.JJProduct = (() => {
     setTimeout(configureEditorGroupDropdown,0);
   }
 
+
+  function homeownerItemsSafe(){
+    try{return Array.isArray(items)?items:[];}catch{return [];}
+  }
+
+  function homeownerGroupMode(open){
+    document.querySelectorAll('#items details.option-group').forEach(details=>details.open=!!open);
+    const viewAll=document.getElementById('jjHOViewAll');
+    const showGroups=document.getElementById('jjHOShowGroups');
+    if(viewAll)viewAll.setAttribute('aria-pressed',String(!!open));
+    if(showGroups)showGroups.setAttribute('aria-pressed',String(!open));
+  }
+
+  function enhanceHomeownerGroups(){
+    const itemsRoot=document.getElementById('items');
+    if(!itemsRoot)return;
+
+    // Add homeowner group controls next to Card/List view.
+    const viewActions=document.querySelector('.actions[aria-label="Selections view"]');
+    if(viewActions && !document.getElementById('jjHOGroupToolbar')){
+      const toolbar=document.createElement('div');
+      toolbar.id='jjHOGroupToolbar';
+      toolbar.className='jj-ho-group-toolbar';
+      toolbar.setAttribute('aria-label','Selection groups');
+      toolbar.innerHTML=`
+        <button type="button" id="jjHOViewAll" class="secondary" aria-pressed="false">View All</button>
+        <button type="button" id="jjHOShowGroups" class="secondary" aria-pressed="true">Show Groups</button>`;
+      viewActions.insertAdjacentElement('afterend',toolbar);
+      toolbar.querySelector('#jjHOViewAll').addEventListener('click',()=>homeownerGroupMode(true));
+      toolbar.querySelector('#jjHOShowGroups').addEventListener('click',()=>homeownerGroupMode(false));
+    }
+
+    const hoItems=homeownerItemsSafe();
+
+    // If a named group only has one item, the original homeowner renderer
+    // draws a standalone card. Wrap it so the homeowner still sees the group
+    // header and has a consistent Add Option location.
+    const counts=new Map();
+    hoItems.forEach(item=>{
+      if(item?.optionGroupId){
+        const id=String(item.optionGroupId);
+        counts.set(id,(counts.get(id)||0)+1);
+      }
+    });
+
+    [...itemsRoot.querySelectorAll(':scope > article')].forEach(article=>{
+      const opt=article.querySelector('[data-option]');
+      if(!opt)return;
+      const item=hoItems.find(row=>String(row.id)===String(opt.dataset.option));
+      if(!item?.optionGroupId)return;
+
+      const id=String(item.optionGroupId);
+      const details=document.createElement('details');
+      details.className='option-group';
+      details.dataset.jjGroup=id;
+      details.innerHTML=`
+        <summary>
+          ${escLocal(item.optionGroupTitle||item.title||'Selection Group')}
+          <span>${counts.get(id)||1} option${(counts.get(id)||1)===1?'':'s'} · tap to compare</span>
+        </summary>
+        <div class="option-group-items"></div>`;
+      article.replaceWith(details);
+      details.querySelector('.option-group-items').appendChild(article);
+    });
+
+    // Move the homeowner Add Option action into each group header.
+    itemsRoot.querySelectorAll('details.option-group').forEach(details=>{
+      const summary=details.querySelector(':scope > summary');
+      const optionButton=details.querySelector('.option-group-items [data-option]');
+      if(!summary || !optionButton)return;
+
+      const optionId=optionButton.dataset.option;
+      // Remove the card-level "Another option" buttons in this group.
+      details.querySelectorAll('.option-group-items [data-option]').forEach(btn=>btn.remove());
+
+      if(!summary.querySelector('.jj-ho-group-add-option')){
+        const oldText=(summary.childNodes[0]?.textContent||summary.textContent||'Selection Group').trim();
+        const oldCount=summary.querySelector('span')?.textContent?.trim()||'';
+        summary.textContent='';
+        summary.classList.add('jj-ho-summary');
+
+        const title=document.createElement('span');
+        title.className='jj-ho-summary-title';
+        title.textContent=oldText;
+
+        const actions=document.createElement('span');
+        actions.className='jj-ho-summary-actions';
+
+        const count=document.createElement('span');
+        count.className='jj-ho-summary-count';
+        count.textContent=oldCount;
+
+        const add=document.createElement('button');
+        add.type='button';
+        add.className='jj-ho-group-add-option secondary';
+        add.dataset.option=optionId;
+        add.textContent='+ Add Option';
+
+        actions.append(count,add);
+        summary.append(title,actions);
+      }
+    });
+
+    // Any standalone selection should not keep a per-card "Another option"
+    // action. A group is created/managed from the contractor side first.
+    itemsRoot.querySelectorAll(':scope > article [data-option]').forEach(btn=>btn.remove());
+  }
+
+  function installHomeownerEnhancements(){
+    const itemsRoot=document.getElementById('items');
+    if(!itemsRoot || document.body.dataset.jjHoGroupsInstalled==='1')return false;
+    document.body.dataset.jjHoGroupsInstalled='1';
+
+    const run=()=>setTimeout(enhanceHomeownerGroups,0);
+    const observer=new MutationObserver(run);
+    observer.observe(itemsRoot,{childList:true,subtree:true});
+    run();
+    return true;
+  }
+
   function install(){
     if(window.__jjSelectionGroupsInstalled)return;
     window.__jjSelectionGroupsInstalled=true;
     injectStyles();
 
-    // Do nothing on the homeowner page. The homeowner portal already reads
-    // the same optionGroupId / optionGroupTitle values written here.
+    // Homeowner portal: enhance its existing cards/groups without changing
+    // authentication or the portal database contract.
+    if(installHomeownerEnhancements())return;
+
     if(typeof window.renderSelections!=='function' || typeof window.selectedProject!=='function')return;
 
     const oldRender=window.renderSelections;
