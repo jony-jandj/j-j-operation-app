@@ -1,0 +1,102 @@
+        const summary=details.querySelector(':scope > summary');
+        const firstButton=details.querySelector('.option-group-items [data-option]');
+        if(!summary||!firstButton)return;
+        const firstId=firstButton.dataset.option;
+        const item=data.find(row=>String(row.id)===String(firstId));
+        const sameGroup=item?.optionGroupId
+          ? data.filter(row=>String(row.optionGroupId||'')===String(item.optionGroupId)).length
+          : details.querySelectorAll('.option-group-items article').length;
+        const title=item?.optionGroupTitle||summary.textContent.replace(/\d+\s+options?.*$/i,'').trim()||item?.title||'Selection Group';
+
+        // Remove per-card Another option controls.
+        details.querySelectorAll('.option-group-items [data-option]').forEach(btn=>btn.remove());
+
+        summary.classList.add('jj-ho-summary');
+        summary.innerHTML=`<span class="jj-ho-title">${esc(title)}</span><span class="jj-ho-count">${sameGroup} option${sameGroup===1?'':'s'} · tap to compare</span><button type="button" class="secondary jj-ho-add">+ Add Option</button>`;
+        summary.querySelector('.jj-ho-add').onclick=e=>{
+          e.preventDefault();e.stopPropagation();
+          try{addAnotherOption(firstId)}catch{}
+        };
+        if(details.dataset.jjV82Toggle!=='1'){
+          details.dataset.jjV82Toggle='1';
+          details.addEventListener('toggle',()=>setTimeout(updateHOToggle,0));
+        }
+      });
+
+      // Standalone items should not keep per-card Another Option.
+      root.querySelectorAll(':scope > article [data-option]').forEach(btn=>btn.remove());
+      updateHOToggle();
+    }finally{
+      enhancingHO=false;
+    }
+    return true;
+  }
+
+  function installHO(){
+    if(hoInstalled)return true;
+    const root=document.getElementById('items');
+    if(!root)return false;
+    hoInstalled=true;
+    stabilizeHO();
+    hoObserver=new MutationObserver(()=>setTimeout(stabilizeHO,0));
+    hoObserver.observe(root,{childList:true,subtree:false});
+    return true;
+  }
+
+  /* ==================== BOOT ==================== */
+  function installApp(){
+    if(appInstalled)return;
+    if(typeof window.renderSelections!=='function'||typeof window.selectionCard!=='function')return;
+    appInstalled=true;
+
+    installCardWrapper();
+    installEditorWrappers();
+    installRenderWrapper();
+
+    // API expected by the CURRENT native index.html group header.
+    window.JJSelectionGroups={
+      ...(window.JJSelectionGroups||{}),
+      addOption,
+      create:()=>openCreateGroup(null),
+      manage:manageGroups,
+      delete:deleteGroup
+    };
+
+    document.addEventListener('change',e=>{
+      const box=e.target?.closest?.('#selections [data-jj-bulk-id]');
+      if(!box)return;
+      const id=String(box.dataset.jjBulkId);
+      if(box.checked)bulkSet().add(id);else bulkSet().delete(id);
+      bulkDeleteArmed=false;
+      const label=box.closest('.jj-bulk-card-select')?.querySelector('span');
+      if(label)label.textContent=box.checked?'Selected':'Select';
+      renderBulkBar();
+    });
+
+    // Current page re-renders selection DOM often; one observer is enough.
+    const root=document.getElementById('selections');
+    if(root){
+      appObserver=new MutationObserver(()=>setTimeout(()=>{
+        installCardWrapper();
+        installEditorWrappers();
+        renderBulkBar();
+        renderGroupActions();
+        enhanceEditor();
+      },0));
+      appObserver.observe(root,{childList:true,subtree:true});
+    }
+
+    // Re-render once so the wrapped selectionCard produces real checkboxes.
+    try{window.renderSelections()}catch{}
+  }
+
+  function boot(){
+    injectStyles();
+    // homeowner.html has #items; index.html has renderSelections.
+    if(installHO())return;
+    installApp();
+  }
+
+  if(document.readyState==='complete')setTimeout(boot,0);
+  else window.addEventListener('load',()=>setTimeout(boot,0),{once:true});
+})();
