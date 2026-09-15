@@ -1,0 +1,167 @@
+    const current=editContext.pendingGroupId || editContext.original?.optionGroupId || '';
+    groupSelect.innerHTML=editorGroupHTML(current);
+    groupSelect.value=String(current||'');
+
+    field.querySelector('#jjEditCreateGroupV82').onclick=()=>{
+      const name=prompt('New selection group name');
+      if(name===null||!name.trim())return;
+      const g=createGroup(name);
+      groupSelect.innerHTML=editorGroupHTML(g.id);
+      groupSelect.value=g.id;
+      try{window.saveState?.(false)}catch{}
+    };
+    field.querySelector('#jjEditDeleteGroupV82').onclick=()=>{
+      const id=groupSelect.value;
+      if(!id)return;
+      deleteGroup(id);
+      groupSelect.innerHTML=editorGroupHTML('');
+      groupSelect.value='';
+    };
+  }
+
+  function installEditorWrappers(){
+    if(typeof window.openSelectionEditor==='function' && !window.openSelectionEditor.__v82){
+      const original=window.openSelectionEditor;
+      const wrapped=function(index=null,prefillUrl=''){
+        const project=p();
+        editContext.index=Number.isInteger(index)?index:null;
+        editContext.original=editContext.index===null?null:JSON.parse(JSON.stringify(project?.selections?.[editContext.index]||null));
+        if(editContext.index!==null)editContext.pendingGroupId='';
+        const result=original.apply(this,arguments);
+        setTimeout(enhanceEditor,0);
+        return result;
+      };
+      wrapped.__v82=true;
+      window.openSelectionEditor=wrapped;
+    }
+
+    if(typeof window.saveSelectionEditor==='function' && !window.saveSelectionEditor.__v82){
+      const original=window.saveSelectionEditor;
+      const wrapped=function(){
+        const project=p();
+        const before=editContext.original?JSON.parse(JSON.stringify(editContext.original)):null;
+        const index=editContext.index;
+        const groupIdValue=document.getElementById('jjEditGroupV82')?.value||'';
+        const inStock=document.getElementById('selectionEditInStock')?.getAttribute('aria-pressed')==='true';
+
+        const preserved=before?{
+          additionalLinks:before.additionalLinks,
+          identifiers:before.identifiers,
+          budget:before.budget,
+          homeownerSelected:before.homeownerSelected,
+          homeownerSelectedAt:before.homeownerSelectedAt
+        }:{};
+
+        const result=original.apply(this,arguments);
+
+        // Native save replaces the object; restore/attach fields native editor does not know.
+        const targetProject=p();
+        let item=null;
+        if(index!==null) item=targetProject?.selections?.[index];
+        else item=targetProject?.selections?.[targetProject.selections.length-1];
+
+        if(item){
+          item.inStock=inStock;
+          Object.entries(preserved).forEach(([key,value])=>{
+            if(value!==undefined)item[key]=value;
+          });
+
+          if(groupIdValue){
+            const g=groups().find(x=>String(x.id)===String(groupIdValue));
+            if(g){
+              item.optionGroupId=g.id;
+              item.optionGroupTitle=g.name;
+              item.optionLabel=item.optionLabel||'Option';
+            }
+          }else{
+            delete item.optionGroupId;
+            delete item.optionGroupTitle;
+            delete item.optionLabel;
+          }
+          try{window.saveState?.(false)}catch{}
+          try{window.renderSelections?.()}catch{}
+        }
+
+        editContext={index:null,original:null,pendingGroupId:''};
+        return result;
+      };
+      wrapped.__v82=true;
+      window.saveSelectionEditor=wrapped;
+    }
+  }
+
+  /* ==================== BULK SELECTION ==================== */
+  function bulkSet(){
+    const project=p();
+    if(!project)return new Set();
+    const key=String(project.id);
+    if(!bulkByProject.has(key))bulkByProject.set(key,new Set());
+    return bulkByProject.get(key);
+  }
+
+  function selectedItems(){
+    const project=p(),set=bulkSet();
+    return (project?.selections||[]).filter(item=>set.has(String(item.id)));
+  }
+
+  function installCardWrapper(){
+    if(typeof window.selectionCard!=='function'||window.selectionCard.__v82)return;
+    const original=window.selectionCard;
+    const wrapped=function(item,index){
+      let html=original.apply(this,arguments);
+      const checked=bulkSet().has(String(item.id));
+      const select=`<label class="jj-bulk-card-select" title="Select for bulk edit">
+        <input type="checkbox" data-jj-bulk-id="${esc(item.id)}" ${checked?'checked':''}>
+        <span>${checked?'Selected':'Select'}</span>
+      </label>`;
+      html=html.replace('<div class="selection-photo">',`<div class="selection-photo">${select}`);
+      return html;
+    };
+    wrapped.__v82=true;
+    window.selectionCard=wrapped;
+  }
+
+  function openDialog(title,body,onApply,label='Apply'){
+    document.getElementById('jjV82Dialog')?.remove();
+    const dialog=document.createElement('dialog');
+    dialog.id='jjV82Dialog';dialog.className='jj-v82-dialog';
+    dialog.innerHTML=`<div class="jj-v82-head"><div><small>BULK EDIT</small><h3>${esc(title)}</h3></div><button class="btn btn-light" data-close>×</button></div>
+      <div class="jj-v82-body">${body}</div>
+      <div class="jj-v82-foot"><button class="btn btn-light" data-close>Cancel</button><button class="btn btn-gold" id="jjV82Apply">${esc(label)}</button></div>`;
+    document.body.appendChild(dialog);
+    dialog.querySelectorAll('[data-close]').forEach(btn=>btn.onclick=()=>dialog.close());
+    dialog.querySelector('#jjV82Apply').onclick=()=>{if(onApply(dialog)!==false)dialog.close()};
+    dialog.addEventListener('close',()=>dialog.remove());
+    dialog.showModal();
+  }
+
+  function bulkStatus(){
+    const items=selectedItems(); if(!items.length)return;
+    openDialog(`Change Status · ${items.length} selected`,
+      `<label>Status<select id="jjV82Status"><option>Pending</option><option>Recommended</option><option>Selected</option><option>Ordered</option><option>Received</option></select></label>
+       <div class="jj-v82-note">Only the checked selections will change.</div>`,
+      dialog=>{
+        const value=dialog.querySelector('#jjV82Status').value;
+        items.forEach(item=>{
+          item.status=value;
+          if(value!=='Selected'){item.homeownerSelected=false;item.homeownerSelectedAt=null}
+        });
+        bulkSet().clear();save(`${items.length} selection${items.length===1?'':'s'} changed to ${value}`);
+      });
+  }
+
+  function bulkGroup(){
+    const project=p(),items=selectedItems();if(!project||!items.length)return;
+    openDialog(`Change Group · ${items.length} selected`,
+      `<label>Group<select id="jjV82Group"><option value="">No group / Standalone</option>${groups().map(g=>`<option value="${esc(g.id)}">${esc(g.name)}</option>`).join('')}<option value="__new__">＋ Create New Group…</option></select></label>
+       <div id="jjV82NewGroup" hidden><label>New group name<input id="jjV82NewGroupName" placeholder="Shower Fixtures…"></label></div>
+       <div class="jj-v82-note">This moves the checked selections without duplicating them.</div>`,
+      dialog=>{
+        let id=dialog.querySelector('#jjV82Group').value,g=null;
+        if(id==='__new__'){
+          const name=dialog.querySelector('#jjV82NewGroupName').value.trim();
+          if(!name)return false;
+          g=createGroup(name);id=g.id;
+        }else if(id)g=groups().find(x=>String(x.id)===String(id));
+        items.forEach(item=>{
+          if(!id){delete item.optionGroupId;delete item.optionGroupTitle;delete item.optionLabel}
