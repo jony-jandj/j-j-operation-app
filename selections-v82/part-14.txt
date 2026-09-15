@@ -1,114 +1,44 @@
 
 /* -------------------------------------------------------------------------
-   J&J Project Switching Reliability Fix v82.2
-   Installs AFTER the current page scripts exist, so every job keeps its exact
-   stored id type and Selections switches to the clicked project reliably.
+   J&J Project Selection Core v82.5
+   One small compatibility layer only. No timers, observers, or rerender loops.
    ------------------------------------------------------------------------- */
 (() => {
-  if(window.__jjProjectSwitchV822) return;
-  window.__jjProjectSwitchV822=true;
+  if(window.__jjProjectSelectionCoreV825) return;
+  window.__jjProjectSelectionCoreV825=true;
 
-  function projectFor(id){
-    try{return state?.projects?.find(project=>String(project.id)===String(id))||null}catch{return null}
+  function findProject(id){
+    try{
+      return state?.projects?.find(project=>String(project.id)===String(id)) || null;
+    }catch{return null}
   }
 
-  function setProject(id){
-    const project=projectFor(id);
-    if(!project)return null;
-    state.selectedProjectId=project.id;
-    return project;
-  }
+  // Native selectedProject used strict equality. Cloud/local restores can leave
+  // the same id represented as a number on one device and a string on another.
+  window.selectedProject=function(){
+    try{
+      return findProject(state.selectedProjectId) || state.projects?.[0] || null;
+    }catch{return null}
+  };
 
-  function install(){
-    if(typeof window.openProjectFromSidebar!=='function' || typeof window.openProject!=='function') return false;
-    if(window.openProjectFromSidebar.__jjV822) return true;
-
-    window.selectedProject=function(){
-      try{return state.projects.find(project=>String(project.id)===String(state.selectedProjectId)) || state.projects[0] || null}
-      catch{return null}
+  // Keep direct project links tolerant of either numeric or string ids.
+  const wrapIdHelper=name=>{
+    const original=window[name];
+    if(typeof original!=='function' || original.__jjV825) return;
+    const wrapped=function(id,...rest){
+      const project=findProject(id);
+      if(project) state.selectedProjectId=project.id;
+      return original.call(this,project?project.id:id,...rest);
     };
+    wrapped.__jjV825=true;
+    window[name]=wrapped;
+  };
 
-    const nativeOpenProject=window.openProject;
-    window.openProject=function(id){
-      const project=setProject(id);
-      return nativeOpenProject.call(this,project?project.id:id);
-    };
-    window.openProject.__jjV822=true;
+  // These helpers are used outside the left sidebar too.
+  wrapIdHelper('openProject');
+  wrapIdHelper('openPreconstructionForProject');
+  wrapIdHelper('setPreconProject');
+  wrapIdHelper('openProjectPOHub');
 
-    window.openProjectFromSidebar=function(id){
-      const project=setProject(id);
-      if(!project)return;
-
-      try{if(typeof closeMobileSidebar==='function')closeMobileSidebar()}catch{}
-      try{if(typeof closeJobsDrawer==='function')closeJobsDrawer()}catch{}
-
-      const page=document.querySelector('.page.active')?.id||'';
-
-      if(page==='selections'){
-        try{saveState(false)}catch{}
-        try{renderSelections()}catch{}
-        try{buildProjectSidebar()}catch{}
-        try{go('selections')}catch{}
-        return;
-      }
-
-      if(page==='preconstruction'){
-        try{openPreconSection=0;openPreconAccordion=null;preconView='overview'}catch{}
-        try{ensurePreconData()}catch{}
-        try{saveState(false)}catch{}
-        try{renderPreconstruction()}catch{}
-        try{buildProjectSidebar()}catch{}
-        try{go('preconstruction')}catch{}
-        return;
-      }
-
-      if(page==='paybyline' || page==='estimates'){
-        try{
-          const keepView=poHubView==='estimate'?'estimate':'splits';
-          poHubView=keepView;
-          openPOIds?.clear?.();
-          selectedPOIds?.clear?.();
-          deletePOIndex=null;
-          bulkDeletePending=false;
-          saveState(false);
-          renderAll();
-          openPOHub(keepView);
-          return;
-        }catch{}
-      }
-
-      try{saveState(false)}catch{}
-      try{return window.openProject(project.id)}catch{}
-    };
-    window.openProjectFromSidebar.__jjV822=true;
-
-    // Also harden direct project-specific helpers that still coerce with Number().
-    if(typeof window.openPreconstructionForProject==='function' && !window.openPreconstructionForProject.__jjV822){
-      const original=window.openPreconstructionForProject;
-      window.openPreconstructionForProject=function(id){const project=setProject(id);return original.call(this,project?project.id:id)};
-      window.openPreconstructionForProject.__jjV822=true;
-    }
-    if(typeof window.setPreconProject==='function' && !window.setPreconProject.__jjV822){
-      const original=window.setPreconProject;
-      window.setPreconProject=function(id){const project=setProject(id);return original.call(this,project?project.id:id)};
-      window.setPreconProject.__jjV822=true;
-    }
-    if(typeof window.openProjectPOHub==='function' && !window.openProjectPOHub.__jjV822){
-      const original=window.openProjectPOHub;
-      window.openProjectPOHub=function(id,view){const project=setProject(id);return original.call(this,project?project.id:id,view)};
-      window.openProjectPOHub.__jjV822=true;
-    }
-
-    try{buildProjectSidebar()}catch{}
-    return true;
-  }
-
-  if(!install()){
-    window.addEventListener('load',install,{once:true});
-    let tries=0;
-    const timer=setInterval(()=>{
-      tries++;
-      if(install()||tries>40)clearInterval(timer);
-    },250);
-  }
+  window.JJProjectSelectionV825={findProject};
 })();
