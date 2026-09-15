@@ -1,0 +1,87 @@
+
+/* -------------------------------------------------------------------------
+   J&J Project ID / Selection Switching Fix v82.1
+   Some jobs use string/UUID ids while older navigation coerced ids with Number().
+   Number('uuid') becomes NaN, and selectedProject() then fell back to project[0].
+   That made Selections appear to work only for the first job.
+   ------------------------------------------------------------------------- */
+(() => {
+  if(window.__jjProjectIdFixV821) return;
+  window.__jjProjectIdFixV821=true;
+
+  function actualProject(id){
+    try{return state?.projects?.find(project=>String(project.id)===String(id))||null}catch{return null}
+  }
+
+  // Make selectedProject tolerant of number/string id differences everywhere.
+  window.selectedProject=function(){
+    try{
+      return state.projects.find(project=>String(project.id)===String(state.selectedProjectId)) || state.projects[0];
+    }catch{return null}
+  };
+
+  // Dashboard / project links may pass the id as a string even when the stored id is numeric.
+  if(typeof window.openProject==='function' && !window.openProject.__jjIdFixV821){
+    const originalOpenProject=window.openProject;
+    const wrapped=function(id){
+      const project=actualProject(id);
+      return originalOpenProject.call(this,project?project.id:id);
+    };
+    wrapped.__jjIdFixV821=true;
+    window.openProject=wrapped;
+  }
+
+  // Sidebar behavior needs a direct fix because the native function calls Number(id).
+  // Preserve the existing active page, but always keep the project's ORIGINAL id type.
+  if(typeof window.openProjectFromSidebar==='function' && !window.openProjectFromSidebar.__jjIdFixV821){
+    const originalSidebar=window.openProjectFromSidebar;
+    const wrapped=function(id){
+      const project=actualProject(id);
+      if(!project)return originalSidebar.call(this,id);
+
+      try{ if(typeof isMobileLayout==='function' && isMobileLayout()) closeMobileSidebar?.(); }catch{}
+      try{ if(typeof isTabletLayout==='function' && isTabletLayout()) closeJobsDrawer?.(); }catch{}
+
+      const currentPage=document.querySelector('.page.active')?.id;
+      state.selectedProjectId=project.id;
+
+      if(currentPage==='selections'){
+        try{saveState(false)}catch{}
+        try{renderAll()}catch{}
+        try{openSelections()}catch{try{renderSelections();go('selections')}catch{}}
+        return;
+      }
+
+      if(currentPage==='preconstruction'){
+        try{openPreconSection=0;openPreconAccordion=null;preconView='overview'}catch{}
+        try{ensurePreconData()}catch{}
+        try{saveState(false)}catch{}
+        try{renderAll()}catch{}
+        try{renderPreconstruction()}catch{}
+        try{go('preconstruction')}catch{}
+        return;
+      }
+
+      if(currentPage==='paybyline' || currentPage==='estimates'){
+        try{
+          const keepView=poHubView==='estimate'?'estimate':'splits';
+          poHubView=keepView;
+          openPOIds?.clear?.();
+          selectedPOIds?.clear?.();
+          deletePOIndex=null;
+          bulkDeletePending=false;
+          saveState(false);
+          renderAll();
+          openPOHub(keepView);
+          return;
+        }catch{}
+      }
+
+      // For every other page, preserve the selected job id and open the project normally.
+      try{saveState(false)}catch{}
+      try{return window.openProject(project.id)}catch{return originalSidebar.call(this,project.id)}
+    };
+    wrapped.__jjIdFixV821=true;
+    window.openProjectFromSidebar=wrapped;
+  }
+})();
