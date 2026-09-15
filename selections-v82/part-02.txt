@@ -1,0 +1,179 @@
+        return;
+      }
+
+      const result=safeMergeRemoteState(data,'manual-homeowner-sync');
+      try{
+        toast(result.added
+          ? `Recovered ${result.added} missing selection${result.added===1?'':'s'}`
+          : 'Homeowner updates merged safely');
+      }catch{}
+    }catch(err){
+      console.error('Safe homeowner sync error:',err);
+      try{ toast('Homeowner sync unavailable'); }catch{}
+    }finally{
+      safeSyncBusy=false;
+    }
+  }
+
+  async function safeAutoSync(){
+    if(safeSyncBusy || document.hidden || !safeRpc) return;
+
+    // Avoid changing state while the user is editing.
+    if(document.querySelector('.selection-modal-backdrop.open')
+      || document.querySelector('dialog[open]')
+      || ['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName)){
+      return;
+    }
+
+    safeSyncBusy=true;
+    try{
+      const {data,error}=await safeRpc('jj_portal_sync_pending');
+      if(!error && data){
+        safeMergeRemoteState(data,'auto-homeowner-sync');
+      }
+    }catch(err){
+      console.warn('Safe auto homeowner sync:',err);
+    }finally{
+      safeSyncBusy=false;
+    }
+  }
+
+  function installRpcGuard(){
+    let client=null;
+    try{ client=cloudClient; }catch{}
+    if(!client?.rpc || rpcPatched) return false;
+
+    rpcPatched=true;
+    safeRpc=client.rpc.bind(client);
+
+    // The original app created an 8-second interval using the old destructive
+    // autoSyncHomeownerSelections function. We cannot recover that interval id,
+    // so guard the RPC it uses. Returning null prevents that old callback from
+    // replacing the entire app state.
+    client.rpc=function(functionName,args,options){
+      if(functionName==='jj_portal_sync_pending' && !window.__jjSafePortalRpcPass){
+        return Promise.resolve({data:null,error:null});
+      }
+      return safeRpc(functionName,args,options);
+    };
+
+    // Replace the manual Refresh Homeowner Updates action with safe union merge.
+    window.syncHomeownerSelections=safeManualSync;
+
+    // Our safe interval performs union-only recovery.
+    setInterval(safeAutoSync,8000);
+
+    console.info('J&J selection data safety v73 active');
+    return true;
+  }
+
+  // cloudClient is initialized asynchronously after this shared file loads.
+  const installer=setInterval(()=>{
+    if(installRpcGuard()){
+      clearInterval(installer);
+      // Run a safe recovery pass once after cloud is connected.
+      setTimeout(safeAutoSync,1200);
+    }
+  },500);
+
+  // Public emergency helper for console/debug use.
+  window.JJSelectionRecovery={
+    syncNow:safeManualSync,
+    merge:safeMergeRemoteState,
+    snapshot:()=>saveRecoverySnapshot('manual')
+  };
+})();
+
+/* -------------------------------------------------------------------------
+   J&J Smart Selection PDF Import v79
+   Built around the actual J&J PDF layouts:
+   - 3-column comparison sheets (Alyssa / Ashley style)
+   - vertical product-card sheets (Adam / Tracey style)
+   Pulls: product photo crop, all product links, Model/SKU/UPC/Internet/Item IDs,
+   price, budget, vendor, description, selection status, and option group.
+   SAFETY:
+   - Rejects unrelated/non-J&J-selection PDFs.
+   - Review-first only; nothing imports until confirmed.
+   - Never deletes/replaces existing selections.
+   - Dedupes within the upload and against the current project.
+   ------------------------------------------------------------------------- */
+(() => {
+  if(window.__jjSmartPdfImportV79) return;
+  window.__jjSmartPdfImportV79 = true;
+
+  const PDFJS_SRC='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+  const PDFJS_WORKER='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  const STYLE_ID='jj-smart-pdf-import-v79';
+
+  const esc=v=>String(v??'').replace(/[&<>"']/g,ch=>({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[ch]));
+  const clean=v=>String(v??'').replace(/\s+/g,' ').trim();
+  const norm=v=>clean(v).toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+
+  function injectStyles(){
+    if(document.getElementById(STYLE_ID))return;
+    const style=document.createElement('style');
+    style.id=STYLE_ID;
+    style.textContent=`
+      #jjUploadSelectionPdfV76{display:none!important}
+      .jj-smart-upload-help{
+        margin:-4px 0 12px;color:#667386;font-size:10px;line-height:1.4
+      }
+      .jj-v79-review{
+        width:min(1100px,calc(100% - 20px));max-height:92dvh;border:0;border-radius:16px;
+        padding:0;color:#202633;box-shadow:0 24px 70px rgba(12,28,45,.35)
+      }
+      .jj-v79-review::backdrop{background:rgba(7,18,31,.6)}
+      .jj-v79-head,.jj-v79-foot{
+        position:sticky;z-index:4;display:flex;align-items:center;justify-content:space-between;
+        gap:12px;padding:15px 17px;background:#fff
+      }
+      .jj-v79-head{top:0;border-bottom:1px solid #E2E6EC}
+      .jj-v79-foot{bottom:0;border-top:1px solid #E2E6EC;justify-content:flex-end;flex-wrap:wrap}
+      .jj-v79-head small{display:block;color:#B59A62;font-size:9px;font-weight:950;letter-spacing:.9px}
+      .jj-v79-head h3{margin:2px 0 0;color:#14234A}
+      .jj-v79-body{padding:16px;background:#F6F8FA;overflow:auto}
+      .jj-v79-file-report{display:grid;gap:8px;margin-bottom:12px}
+      .jj-v79-file-row{
+        display:flex;justify-content:space-between;gap:12px;align-items:center;
+        padding:9px 11px;border:1px solid #DCE2E9;border-radius:9px;background:#fff;font-size:11px
+      }
+      .jj-v79-file-row strong{color:#14234A}
+      .jj-v79-file-row.good span{color:#246441;font-weight:850}
+      .jj-v79-file-row.skip span{color:#A43A2A;font-weight:850}
+      .jj-v79-summary{
+        display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px;padding:11px 13px;
+        border:1px solid #DCE2E9;border-radius:10px;background:#fff;color:#596779;font-size:11px
+      }
+      .jj-v79-summary b{color:#14234A}
+      .jj-v79-safety{
+        width:100%;padding-top:4px;color:#246441;font-weight:850
+      }
+      .jj-v79-list{display:grid;gap:10px}
+      .jj-v79-item{
+        display:grid;grid-template-columns:auto 105px minmax(0,1fr);gap:11px;
+        padding:12px;border:1px solid #DCE2E9;border-radius:12px;background:#fff
+      }
+      .jj-v79-item.duplicate{opacity:.62;background:#FAFAFA}
+      .jj-v79-item.review{border-style:dashed;background:#FFFDF7}
+      .jj-v79-check input{width:18px;height:18px;margin-top:4px}
+      .jj-v79-photo{
+        width:105px;height:92px;object-fit:contain;border:1px solid #E1E6EC;border-radius:8px;background:#fff
+      }
+      .jj-v79-photo-empty{
+        display:grid;place-items:center;width:105px;height:92px;border:1px dashed #D0D7E0;border-radius:8px;
+        color:#8A95A2;font-size:9px;text-align:center
+      }
+      .jj-v79-title{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-bottom:7px}
+      .jj-v79-title strong{color:#14234A;font-size:13px}
+      .jj-v79-chip{
+        display:inline-flex;padding:4px 7px;border-radius:999px;background:#EEF3F7;color:#536174;
+        font-size:9px;font-weight:850
+      }
+      .jj-v79-chip.good{background:#EAF5EE;color:#246441}
+      .jj-v79-chip.warn{background:#FFF1D9;color:#865E0A}
+      .jj-v79-grid{display:grid;grid-template-columns:1.35fr .8fr .9fr .85fr;gap:8px}
+      .jj-v79-grid label{font-size:9px;font-weight:850;color:#667386;text-transform:uppercase;letter-spacing:.4px}
+      .jj-v79-grid input,.jj-v79-grid select{
+        width:100%;margin-top:4px;padding:8px 9px;border:1px solid #C9D1DB;border-radius:7px;
