@@ -1,4 +1,4 @@
-/* J&J shared product lookup + selections group UI v77 */
+/* J&J shared product lookup + selections group UI v79 */
 window.JJProduct = (() => {
   const text=v=>typeof v==='string'?v.trim():typeof v==='number'?String(v):'';
   const safe=u=>/^https?:\/\//i.test(text(u))?text(u):'';
@@ -160,15 +160,15 @@ window.JJProduct = (() => {
 
 
 (() => {
-  const VERSION='v77';
+  const VERSION='v79';
   const escapeHtml=value=>String(value??'').replace(/[&<>"']/g,ch=>({
     '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
   }[ch]));
 
   function injectStyles(){
-    if(document.getElementById('jj-selection-groups-v77'))return;
+    if(document.getElementById('jj-selection-groups-v79'))return;
     const style=document.createElement('style');
-    style.id='jj-selection-groups-v77';
+    style.id='jj-selection-groups-v79';
     style.textContent=`
       .jj-selection-top-actions{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 14px}
       .jj-app-group-controls{display:inline-flex;gap:7px;align-items:center;margin-left:8px}
@@ -255,6 +255,7 @@ window.JJProduct = (() => {
       .jj-ho-page-group>summary>div strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
       .jj-ho-page-group>summary>div small{color:#71808e;font-size:12px;font-weight:700;white-space:nowrap}
       .jj-ho-page-group>summary>span{margin-left:auto;color:#71808e;font-size:13px;font-weight:700;white-space:nowrap}
+      .jj-ho-page-group>summary>.jj-group-add-option{margin-left:auto}
       .jj-ho-page-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,360px));gap:16px;padding-top:15px;align-items:start}
       .jj-ho-page-card{display:flex;min-width:0;flex-direction:column;border:1px solid #d7dde3;border-radius:14px;overflow:hidden;background:#fff;box-shadow:0 3px 12px rgba(15,32,49,.06)}
       .jj-ho-page-card.is-selected{border:2px solid #3b805f}
@@ -379,6 +380,16 @@ window.JJProduct = (() => {
 
   function appGroupControl(item,index){
     return `<button type="button" class="jj-group-card-button" onclick="window.JJSelectionGroups.openAssign(${index})">${item.optionGroupId?'Change Group':'Add to Group'}</button>`;
+  }
+
+  function addOptionToGroup(groupId){
+    window.openSelectionEditor?.();
+    setTimeout(()=>{
+      const select=document.getElementById('selectionEditGroup');
+      if(!select)return;
+      select.value=[...select.options].some(option=>String(option.value)===String(groupId))?String(groupId):'';
+      select.dispatchEvent(new Event('change',{bubbles:true}));
+    },60);
   }
 
   function renderAppGroups(filtered,allItems){
@@ -1072,12 +1083,12 @@ window.JJProduct = (() => {
     }catch(error){console.warn('Homeowner selection could not be saved locally:',error);return false}
   }
 
-  function openHomeownerAddDialog(project,page){
+  function openHomeownerAddDialog(project,page,preferredGroupId=''){
     document.getElementById('jjHOAddDialog')?.remove();
     const groups=Array.isArray(project.selectionGroups)?project.selectionGroups:[];
     const backdrop=document.createElement('div');
     backdrop.id='jjHOAddDialog';backdrop.className='jj-ho-add-backdrop';
-    backdrop.innerHTML=`<div class="jj-ho-add-dialog" role="dialog" aria-modal="true" aria-label="Add homeowner selection"><header><div><small>HOMEOWNER SELECTION</small><h3>Add a selection</h3></div><button type="button" data-close aria-label="Close">×</button></header><form><div class="jj-ho-add-grid"><label>Product link (optional)<input name="url" type="url" placeholder="Paste a product link"></label><button type="button" class="jj-ho-lookup" data-lookup>Look up details</button><label>Product name<input name="title" required placeholder="What would you like to add?"></label><label>Room<input name="room" placeholder="Primary bathroom, kitchen…"></label><label>Category<input name="category" placeholder="Tile, plumbing, lighting…"></label><label>Vendor<input name="vendor" placeholder="Store or brand"></label><label>Model / SKU #<input name="model" placeholder="Optional"></label><label>UPC code #<input name="upc" placeholder="Optional"></label><label>Quantity<input name="quantity" type="number" min="1" step="1" value="1"></label><label>Selection group<select name="group"><option value="">Ungrouped selections</option>${groups.map(group=>`<option value="${escapeHtml(group.id)}">${escapeHtml(group.name)}</option>`).join('')}</select></label><label class="jj-ho-add-wide">Description / finish / color<textarea name="description" rows="3" placeholder="Notes or product details"></textarea></label><label class="jj-ho-add-wide">Product photo<input name="imageFile" type="file" accept="image/*"><span class="jj-ho-drop" data-drop>Drag and drop an image here, or choose a file</span><input name="image" type="hidden"></label></div><p class="jj-ho-add-note">Prices are not requested or shown for homeowner-added selections.</p><div class="jj-ho-add-message" data-message></div><footer><button type="button" class="secondary" data-close>Cancel</button><button type="submit" class="primary">Add selection</button></footer></form></div>`;
+    backdrop.innerHTML=`<div class="jj-ho-add-dialog" role="dialog" aria-modal="true" aria-label="Add homeowner selection"><header><div><small>HOMEOWNER SELECTION</small><h3>Add a selection</h3></div><button type="button" data-close aria-label="Close">×</button></header><form><div class="jj-ho-add-grid"><label>Product link (optional)<input name="url" type="url" placeholder="Paste a product link"></label><button type="button" class="jj-ho-lookup" data-lookup>Look up details</button><label>Product name<input name="title" required placeholder="What would you like to add?"></label><label>Room<input name="room" placeholder="Primary bathroom, kitchen…"></label><label>Category<input name="category" placeholder="Tile, plumbing, lighting…"></label><label>Vendor<input name="vendor" placeholder="Store or brand"></label><label>Model / SKU #<input name="model" placeholder="Optional"></label><label>UPC code #<input name="upc" placeholder="Optional"></label><label>Quantity<input name="quantity" type="number" min="1" step="1" value="1"></label><label>Selection group<select name="group"><option value="">Ungrouped selections</option>${groups.map(group=>`<option value="${escapeHtml(group.id)}" ${String(group.id)===String(preferredGroupId)?'selected':''}>${escapeHtml(group.name)}</option>`).join('')}</select></label><label class="jj-ho-add-wide">Description / finish / color<textarea name="description" rows="3" placeholder="Notes or product details"></textarea></label><label class="jj-ho-add-wide">Product photo<input name="imageFile" type="file" accept="image/*"><span class="jj-ho-drop" data-drop>Drag and drop an image here, or choose a file</span><input name="image" type="hidden"></label></div><p class="jj-ho-add-note">Prices are not requested or shown for homeowner-added selections.</p><div class="jj-ho-add-message" data-message></div><footer><button type="button" class="secondary" data-close>Cancel</button><button type="submit" class="primary">Add selection</button></footer></form></div>`;
     document.body.appendChild(backdrop);
     const form=backdrop.querySelector('form');
     const message=backdrop.querySelector('[data-message]');
@@ -1209,12 +1220,12 @@ window.JJProduct = (() => {
 
     const root=page.querySelector('#jjHomeownerItems');
     if(!items.length)root.innerHTML='<div class="jj-ho-empty-state"><strong>No selections yet</strong><span>Use Add Selection to add the first product.</span></div>';
-    else if(homeownerDisplayMode==='groups')root.innerHTML=groups.map(group=>`<details class="jj-ho-page-group"><summary><div><strong>${escapeHtml(group.name)}</strong></div></summary><div class="jj-ho-page-grid ${homeownerDisplayView==='list'?'list':''}">${group.items.map(item=>homeownerCardMarkup(item,group.name)).join('')}</div></details>`).join('');
-    else root.innerHTML=`<div class="jj-ho-page-grid ${homeownerDisplayView==='list'?'list':''}">${items.map(item=>{const group=groups.find(entry=>entry.items.includes(item));return homeownerCardMarkup(item,group?.name||'Ungrouped selections')}).join('')}</div>`;
+    else root.innerHTML=groups.map(group=>`<details class="jj-ho-page-group" ${homeownerDisplayMode==='all'?'open':''}><summary><div><strong>${escapeHtml(group.name)}</strong></div><button type="button" class="jj-group-add-option" data-ho-add-group="${escapeHtml(group.id)}">+ Add Option</button></summary><div class="jj-ho-page-grid ${homeownerDisplayView==='list'?'list':''}">${group.items.map(item=>homeownerCardMarkup(item,group.name)).join('')}</div></details>`).join('');
 
     root.querySelectorAll('.jj-ho-page-photo img').forEach(image=>image.addEventListener('error',()=>{image.parentElement.innerHTML='<div class="jj-ho-photo-empty"><span>▧</span><small>No product photo</small></div>'}));
     root.querySelectorAll('[data-ho-select]').forEach(button=>button.addEventListener('click',()=>markHomeownerSelected(project,button.dataset.hoSelect)));
     root.querySelectorAll('[data-ho-unselect]').forEach(button=>button.addEventListener('click',()=>undoHomeownerSelected(project,button.dataset.hoUnselect)));
+    root.querySelectorAll('[data-ho-add-group]').forEach(button=>button.addEventListener('click',event=>{event.preventDefault();event.stopPropagation();openHomeownerAddDialog(project,page,button.dataset.hoAddGroup)}));
     page.querySelector('[data-ho-add]')?.addEventListener('click',()=>openHomeownerAddDialog(project,page));
     page.querySelector('[data-ho-toggle]')?.addEventListener('click',()=>{homeownerDisplayMode=homeownerDisplayMode==='groups'?'all':'groups';renderHomeownerPageCohesive(project)});
     page.querySelectorAll('[data-ho-view]').forEach(button=>button.addEventListener('click',()=>{homeownerDisplayView=button.dataset.hoView==='list'?'list':'cards';renderHomeownerPageCohesive(project)}));
@@ -1461,6 +1472,7 @@ window.JJProduct = (() => {
     create:()=>openCreateGroup(null),
     manage:manageGroups,
     openAssign,
+    addOption:addOptionToGroup,
     openQR:()=>openHomeownerQR(),
     expandAll:()=>setAllAppGroups(true),
     collapseAll:()=>setAllAppGroups(false)
