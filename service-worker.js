@@ -1,6 +1,6 @@
-const CACHE_NAME = 'jj-operations-v82-8-group-ordering';
+const CACHE_NAME = 'jj-operations-v82-9-homeowner-direct-view';
 const APP_SHELL = [
-  './','./index.html','./homeowner.html','./qrcode.min.js','./selections-metadata.js',
+  './','./index.html','./homeowner.html','./qrcode.min.js','./selections-metadata.js','./homeowner-view-v829.js',
   './jj-original-logo.png','./manifest.webmanifest','./icons/icon-192.png','./icons/icon-512.png',
   ...Array.from({length:17},(_,i)=>`./selections-v82/part-${String(i+1).padStart(2,'0')}.txt`)
 ];
