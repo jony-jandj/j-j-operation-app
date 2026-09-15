@@ -1,0 +1,203 @@
+        background:#fff;color:#202633;font-size:11px;text-transform:none;letter-spacing:0
+      }
+      .jj-v79-meta{margin-top:7px;color:#6B7787;font-size:10px;line-height:1.45}
+      .jj-v79-progress{
+        position:fixed;z-index:99999;left:50%;top:50%;transform:translate(-50%,-50%);
+        width:min(460px,calc(100% - 30px));padding:18px;border-radius:14px;background:#14234A;color:#fff;
+        box-shadow:0 20px 65px rgba(0,0,0,.35);font-size:12px
+      }
+      .jj-v79-progress b{display:block;margin-bottom:6px;font-size:14px}
+      .jj-v79-extra-links{display:flex;gap:7px;flex-wrap:wrap;margin-top:7px}
+      .jj-v79-extra-links a{font-size:10px!important}
+      @media(max-width:760px){
+        .jj-v79-item{grid-template-columns:auto 80px minmax(0,1fr)}
+        .jj-v79-photo,.jj-v79-photo-empty{width:80px;height:76px}
+        .jj-v79-grid{grid-template-columns:1fr 1fr}
+      }
+      @media(max-width:520px){
+        .jj-v79-item{grid-template-columns:auto minmax(0,1fr)}
+        .jj-v79-photo,.jj-v79-photo-empty{grid-column:2;width:100%;height:150px}
+        .jj-v79-main{grid-column:1/-1}
+        .jj-v79-grid{grid-template-columns:1fr}
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  function currentProject(){
+    try{return typeof window.selectedProject==='function'?window.selectedProject():null}catch{return null}
+  }
+
+  function loadPdfJs(){
+    if(window.pdfjsLib){
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc=PDFJS_WORKER;
+      return Promise.resolve(window.pdfjsLib);
+    }
+    if(window.__jjV79PdfPromise)return window.__jjV79PdfPromise;
+    window.__jjV79PdfPromise=new Promise((resolve,reject)=>{
+      const script=document.createElement('script');
+      script.src=PDFJS_SRC;
+      script.async=true;
+      script.onload=()=>{
+        if(!window.pdfjsLib){reject(new Error('PDF reader did not load'));return}
+        window.pdfjsLib.GlobalWorkerOptions.workerSrc=PDFJS_WORKER;
+        resolve(window.pdfjsLib);
+      };
+      script.onerror=()=>reject(new Error('PDF reader could not load. Check your connection.'));
+      document.head.appendChild(script);
+    });
+    return window.__jjV79PdfPromise;
+  }
+
+  function ensureInput(){
+    let input=document.getElementById('jjSmartPdfInputV79');
+    if(input)return input;
+    input=document.createElement('input');
+    input.id='jjSmartPdfInputV79';
+    input.type='file';
+    input.accept='application/pdf,.pdf';
+    input.multiple=true;
+    input.hidden=true;
+    input.addEventListener('change',async()=>{
+      const files=[...input.files||[]];
+      input.value='';
+      if(files.length)await parseFiles(files);
+    });
+    document.body.appendChild(input);
+    return input;
+  }
+
+  function ensureButton(){
+    const root=document.getElementById('selections');
+    if(!root)return;
+    const actions=root.querySelector('.selection-heading-actions') || root.querySelector('.selection-toolbar');
+    if(!actions)return;
+
+    if(!actions.querySelector('#jjSmartPdfUploadV79')){
+      const btn=document.createElement('button');
+      btn.id='jjSmartPdfUploadV79';
+      btn.type='button';
+      btn.className='btn btn-light';
+      btn.textContent='Upload File';
+      btn.title='Upload J&J selections PDF(s), review detected products, then import';
+      btn.addEventListener('click',()=>ensureInput().click());
+      actions.appendChild(btn);
+
+      const help=document.createElement('div');
+      help.className='jj-smart-upload-help';
+      help.textContent='PDF import: Upload → automatic reading → review every product → Import Selected. Existing selections are never replaced.';
+      actions.insertAdjacentElement('afterend',help);
+    }
+  }
+
+  function showProgress(text){
+    let box=document.getElementById('jjV79Progress');
+    if(!box){
+      box=document.createElement('div');
+      box.id='jjV79Progress';
+      box.className='jj-v79-progress';
+      box.innerHTML='<b>Reading selections PDF</b><span></span>';
+      document.body.appendChild(box);
+    }
+    box.querySelector('span').textContent=text;
+  }
+
+  function hideProgress(){
+    document.getElementById('jjV79Progress')?.remove();
+  }
+
+  function textItemRect(item,viewport){
+    const t=item.transform||[1,0,0,1,0,0];
+    const [vx,vy]=viewport.convertToViewportPoint(Number(t[4]||0),Number(t[5]||0));
+    const fontH=Math.max(5,Math.abs(Number(item.height||t[3]||8))*viewport.scale);
+    const width=Math.max(1,Number(item.width||0)*viewport.scale);
+    return {
+      text:clean(item.str),
+      x:vx,
+      y:vy-fontH,
+      w:width,
+      h:fontH,
+      right:vx+width,
+      bottom:vy
+    };
+  }
+
+  function annotationRect(annotation,viewport){
+    if(!Array.isArray(annotation.rect)||annotation.rect.length<4)return null;
+    const r=viewport.convertToViewportRectangle(annotation.rect);
+    const x=Math.min(r[0],r[2]),y=Math.min(r[1],r[3]);
+    return {
+      x,y,w:Math.abs(r[2]-r[0]),h:Math.abs(r[3]-r[1]),
+      right:Math.max(r[0],r[2]),bottom:Math.max(r[1],r[3]),
+      url:clean(annotation.url||annotation.unsafeUrl||'')
+    };
+  }
+
+  function nearbyText(rect,texts,maxDistance=28){
+    let best=null,bestDistance=Infinity;
+    for(const item of texts){
+      const dx=Math.max(0,Math.max(item.x-rect.right,rect.x-item.right));
+      const dy=Math.max(0,Math.max(item.y-rect.bottom,rect.y-item.bottom));
+      const d=Math.hypot(dx,dy);
+      if(d<bestDistance){best=item;bestDistance=d}
+    }
+    return bestDistance<=maxDistance?best:null;
+  }
+
+  function validProductLinks(annotations,texts,viewport){
+    return (annotations||[])
+      .map(a=>annotationRect(a,viewport))
+      .filter(Boolean)
+      .filter(link=>/^https?:\/\//i.test(link.url))
+      .map(link=>{
+        const near=nearbyText(link,texts,34);
+        return {...link,label:clean(near?.text||'VIEW PRODUCT')};
+      })
+      .filter(link=>/VIEW\s+(PRODUCT|TRIM|ROUGH|ROUGH-IN)/i.test(link.label));
+  }
+
+  function pageIsJJSelections(text){
+    const s=norm(text);
+    return /j j home renovations/.test(s) &&
+      /(selection|bathroom|fixture|vanity|shower|toilet|flooring|door|lighting)/.test(s);
+  }
+
+  function clusterByY(links,tolerance=18){
+    const clusters=[];
+    [...links].sort((a,b)=>a.y-b.y).forEach(link=>{
+      let cluster=clusters.find(c=>Math.abs(c.y-link.y)<=tolerance);
+      if(!cluster){
+        cluster={y:link.y,links:[]};
+        clusters.push(cluster);
+      }
+      cluster.links.push(link);
+      cluster.y=cluster.links.reduce((s,l)=>s+l.y,0)/cluster.links.length;
+    });
+    return clusters.sort((a,b)=>a.y-b.y);
+  }
+
+  function isHeadingText(text){
+    const s=clean(text);
+    if(!s||s.length>50)return false;
+    if(/J\s*&\s*J|HOME RENOVATIONS|BATHROOM SELECTIONS|\d+\s+OF\s+\d+/i.test(s))return false;
+    return /^[A-Z0-9 &/+.-]+$/.test(s) &&
+      /(TOILET|SHOWER|VANITY|FAUCET|LIGHT|ENCLOSURE|DOOR|FLOOR|TILE|MIRROR|FAN|HARDWARE|CROWN|BASEBOARD|CASING|RAIN HEAD|ARM|FIXTURE|VALVE)/i.test(s);
+  }
+
+  function headingAbove(texts,y,maxGap=95){
+    const candidates=texts.filter(t=>t.bottom<y && y-t.bottom<=maxGap && isHeadingText(t.text));
+    return candidates.sort((a,b)=>b.bottom-a.bottom)[0]||null;
+  }
+
+  function groupNameFromHeading(value){
+    let s=clean(value)
+      .replace(/\s*-\s*OPTION\s*\d+.*$/i,'')
+      .replace(/\s+OPTION\s*\d+.*$/i,'')
+      .replace(/\s*\(HEAD ONLY\)\s*$/i,'')
+      .trim();
+    return s.replace(/\b\w/g,c=>c.toUpperCase());
+  }
+
+  function linesInRegion(texts,region){
+    const chosen=texts.filter(t=>{
+      const cx=t.x+t.w/2,cy=t.y+t.h/2;
