@@ -6193,6 +6193,33 @@ function mergeCloudValues(base,local,incoming){
   return cloneCloudValue(local);
 }
 
+// Jony and Adair can edit the job, but only Gio owns the single P.O. approval.
+// Preserve the database's approval values when an older phone/iPad sends a
+// stale P.O. status so the rest of that device's changes can still sync.
+function protectPOApprovalFields(nextState,latestState,actorName){
+  if(actorName==='Gio' || !nextState?.projects || !latestState?.projects) return nextState;
+  const latestProjects=new Map(latestState.projects.map(project=>[String(project?.id||''),project]));
+  nextState.projects.forEach(project=>{
+    const latestProject=latestProjects.get(String(project?.id||''));
+    if(!latestProject || !Array.isArray(project.pos)) return;
+    const latestPOs=new Map((latestProject.pos||[]).map(po=>[String(po?.id||''),po]));
+    project.pos.forEach(po=>{
+      const latestPO=latestPOs.get(String(po?.id||''));
+      if(!latestPO) return;
+      if(latestPO.status==='Approved'){
+        po.status='Approved';
+        po.approvedBy=latestPO.approvedBy||'Gio';
+        po.preApprovedBy='';
+      }else if(po.status==='Approved' || po.status==='Pre-Approved'){
+        po.status='Draft';
+        po.approvedBy='';
+        po.preApprovedBy='';
+      }
+    });
+  });
+  return nextState;
+}
+
 function looksLikePasswordRecoveryUrl(url=RECOVERY_URL_AT_LOAD){
   try{
     const parsed=new URL(String(url||''),window.location.origin);
@@ -6733,6 +6760,9 @@ async function pushCloudState(){
         persistStateLocally();
         renderAll();
       }
+      sharedState=protectPOApprovalFields(sharedState,latestShared,localUserName);
+      state=sharedState;
+      state.currentUser=USERS.some(u=>u.name===localUserName)?localUserName:'Jony';
     }
 
     const {error}=await cloudClient
@@ -10475,10 +10505,18 @@ restoreLayoutPreferences();
 
 <script>
 if ('serviceWorker' in navigator) {
+  let jjReloadingForUpdate=false;
+  navigator.serviceWorker.addEventListener('controllerchange',()=>{
+    if(jjReloadingForUpdate) return;
+    jjReloadingForUpdate=true;
+    window.location.reload();
+  });
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./service-worker.js').catch(err => {
-      console.warn('Service worker registration failed:', err);
-    });
+    navigator.serviceWorker.register('./service-worker.js')
+      .then(registration=>registration.update())
+      .catch(err => {
+        console.warn('Service worker registration failed:', err);
+      });
   });
 }
 </script>
