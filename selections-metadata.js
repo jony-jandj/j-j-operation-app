@@ -1,4 +1,4 @@
-/* J&J Selections consolidated build v82.1 — current native integration */
+/* J&J Selections consolidated build v82.2 — current native integration */
 /* J&J Selection Recovery SAFE v74 — preserves current app selections during homeowner sync */
 /* Shared retailer metadata lookup. Never writes selection records or homeowner pricing. */
 window.JJProduct = (() => {
@@ -35,7 +35,7 @@ window.JJProduct = (() => {
 /* Load the clean v82 selection runtime as one concatenated program. The pieces
    are split only so GitHub updates remain small/reliable; they execute together. */
 window.__JJ_SELECTIONS_V82_LOADING__ = Promise.all(
-  Array.from({length:13},(_,i)=>`selections-v82/part-${String(i+1).padStart(2,'0')}.txt`)
+  Array.from({length:14},(_,i)=>`selections-v82/part-${String(i+1).padStart(2,'0')}.txt`)
     .map(path=>fetch(path,{cache:'no-cache'}).then(response=>{
       if(!response.ok) throw new Error(`Could not load ${path}: ${response.status}`);
       return response.text();
