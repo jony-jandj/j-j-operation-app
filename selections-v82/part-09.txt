@@ -34,6 +34,22 @@
     save('Group deleted — selections kept');
   }
 
+  function reorderGroup(id,targetIndex){
+    const project=p();
+    if(!project)return false;
+    const list=groups();
+    const from=list.findIndex(g=>String(g.id)===String(id));
+    if(from<0)return false;
+    targetIndex=Math.max(0,Math.min(list.length-1,Number(targetIndex)));
+    if(from===targetIndex)return false;
+    const [moved]=list.splice(from,1);
+    list.splice(targetIndex,0,moved);
+    project.selectionGroups=list;
+    try{window.saveState?.(false)}catch{}
+    try{window.renderSelections?.()}catch{}
+    return true;
+  }
+
   function manageGroups(){
     const project=p();
     if(!project)return;
@@ -45,19 +61,36 @@
     dialog.innerHTML=`
       <div class="jj-v82-head"><div><small>SELECTIONS</small><h3>Manage Groups</h3></div><button class="btn btn-light" data-close>×</button></div>
       <div class="jj-v82-body">
-        ${list.length?list.map(g=>{
+        ${list.length?`<div class="jj-v82-note" style="margin-bottom:10px">Drag groups into the order you want, or use the ↑ ↓ buttons. This order is used in Selections and Customer View.</div>`:''}
+        <div id="jjGroupOrderList">
+        ${list.length?list.map((g,index)=>{
           const count=(project.selections||[]).filter(i=>String(i.optionGroupId||'')===String(g.id)).length;
-          return `<div class="jj-v82-choice"><span><b>${esc(g.name)}</b><br><small>${count} selection${count===1?'':'s'}</small></span>
-            <span><button class="btn btn-light" data-rename="${esc(g.id)}">Rename</button>
-            <button class="btn btn-danger" data-delete="${esc(g.id)}">Delete</button></span></div>`;
+          return `<div class="jj-v82-choice jj-group-order-row" draggable="true" data-group-row="${esc(g.id)}" style="cursor:grab">
+            <span style="display:flex;align-items:center;gap:10px;min-width:0"><span title="Drag to reorder" style="font-size:18px;color:#8A95A5;cursor:grab">≡</span><span style="min-width:0"><b>${esc(g.name)}</b><br><small>${count} selection${count===1?'':'s'}</small></span></span>
+            <span style="display:flex;gap:5px;align-items:center;flex-wrap:wrap;justify-content:flex-end">
+              <button class="btn btn-light" title="Move up" data-up="${esc(g.id)}" ${index===0?'disabled':''}>↑</button>
+              <button class="btn btn-light" title="Move down" data-down="${esc(g.id)}" ${index===list.length-1?'disabled':''}>↓</button>
+              <button class="btn btn-light" data-rename="${esc(g.id)}">Rename</button>
+              <button class="btn btn-danger" data-delete="${esc(g.id)}">Delete</button>
+            </span></div>`;
         }).join(''):'<div class="jj-v82-note">No groups yet.</div>'}
+        </div>
       </div>
       <div class="jj-v82-foot"><button class="btn btn-light" id="jjV82CreateGroup">+ Create Group</button><button class="btn btn-gold" data-close>Done</button></div>`;
     document.body.appendChild(dialog);
     const close=()=>dialog.close();
+    const reopen=()=>{dialog.close();setTimeout(manageGroups,30)};
     dialog.querySelectorAll('[data-close]').forEach(btn=>btn.addEventListener('click',close));
     dialog.querySelector('#jjV82CreateGroup').addEventListener('click',()=>{dialog.close();setTimeout(()=>openCreateGroup(null),30)});
     dialog.querySelectorAll('[data-delete]').forEach(btn=>btn.addEventListener('click',()=>{const id=btn.dataset.delete;dialog.close();setTimeout(()=>deleteGroup(id),30)}));
+    dialog.querySelectorAll('[data-up]').forEach(btn=>btn.addEventListener('click',()=>{
+      const index=groups().findIndex(g=>String(g.id)===String(btn.dataset.up));
+      if(index>0&&reorderGroup(btn.dataset.up,index-1))reopen();
+    }));
+    dialog.querySelectorAll('[data-down]').forEach(btn=>btn.addEventListener('click',()=>{
+      const current=groups();const index=current.findIndex(g=>String(g.id)===String(btn.dataset.down));
+      if(index>=0&&index<current.length-1&&reorderGroup(btn.dataset.down,index+1))reopen();
+    }));
     dialog.querySelectorAll('[data-rename]').forEach(btn=>btn.addEventListener('click',()=>{
       const g=list.find(x=>String(x.id)===String(btn.dataset.rename));
       if(!g)return;
@@ -68,6 +101,35 @@
       dialog.close();
       save('Group renamed');
     }));
+
+    let draggedId='';
+    dialog.querySelectorAll('[data-group-row]').forEach(row=>{
+      row.addEventListener('dragstart',e=>{
+        draggedId=row.dataset.groupRow||'';
+        row.style.opacity='.45';
+        try{e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',draggedId)}catch{}
+      });
+      row.addEventListener('dragend',()=>{row.style.opacity='';draggedId=''});
+      row.addEventListener('dragover',e=>{
+        e.preventDefault();
+        try{e.dataTransfer.dropEffect='move'}catch{}
+      });
+      row.addEventListener('drop',e=>{
+        e.preventDefault();
+        const source=draggedId||(()=>{try{return e.dataTransfer.getData('text/plain')}catch{return ''}})();
+        const target=row.dataset.groupRow||'';
+        if(!source||!target||source===target)return;
+        const current=groups();
+        const from=current.findIndex(g=>String(g.id)===String(source));
+        let to=current.findIndex(g=>String(g.id)===String(target));
+        if(from<0||to<0)return;
+        const rect=row.getBoundingClientRect();
+        if(e.clientY>rect.top+rect.height/2)to++;
+        if(from<to)to--;
+        if(reorderGroup(source,to))reopen();
+      });
+    });
+
     dialog.addEventListener('close',()=>dialog.remove());
     dialog.showModal();
   }
