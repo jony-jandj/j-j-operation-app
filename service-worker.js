@@ -1,8 +1,8 @@
-const CACHE_NAME = 'jj-operations-v82-9-homeowner-direct-view';
+const CACHE_NAME = 'jj-operations-v83-0-customer-view-instock';
 const APP_SHELL = [
-  './','./index.html','./homeowner.html','./qrcode.min.js','./selections-metadata.js','./homeowner-view-v829.js',
+  './','./index.html','./homeowner.html','./qrcode.min.js','./selections-metadata.js',
   './jj-original-logo.png','./manifest.webmanifest','./icons/icon-192.png','./icons/icon-512.png',
-  ...Array.from({length:17},(_,i)=>`./selections-v82/part-${String(i+1).padStart(2,'0')}.txt`)
+  ...Array.from({length:18},(_,i)=>`./selections-v82/part-${String(i+1).padStart(2,'0')}.txt`)
 ];
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE_NAME).then(cache=>cache.addAll(APP_SHELL)).then(()=>self.skipWaiting()));
