@@ -1,0 +1,204 @@
+        additionalLinks:item.additionalLinks||[],
+        title,
+        vendor,
+        category,
+        room,
+        quality:'Standard',
+        model,
+        identifiers:item.identifiers||{},
+        budget:item.budget,
+        image:item.image||'',
+        unitPrice:Number.isFinite(unitPrice)?unitPrice:null,
+        quantity:1,
+        addTax:false,
+        purchasedBy,
+        optionLabel:group?'PDF Option':undefined,
+        optionGroupId:group?.id,
+        optionGroupTitle:group?.name,
+        status,
+        homeownerSelected:false,
+        homeownerSelectedAt:null,
+        inStock:false,
+        leadTimeValue:1,
+        leadTimeUnit:'Day(s)',
+        description:item.description||'',
+        notes:item.notes||''
+      });
+    });
+
+    if(!added.length){
+      window.toast?.('Choose at least one product to import');
+      return;
+    }
+
+    project.selections.push(...added);
+    project.selectionImports.push({
+      id:'pdf-import-'+Date.now(),
+      importedAt:new Date().toISOString(),
+      files:files.map(f=>f.name),
+      count:added.length,
+      importer:'v79-smart'
+    });
+
+    try{window.JJSelectionRecovery?.snapshot?.()}catch{}
+    try{window.saveState?.(false)}catch{}
+    try{window.renderAll?.()}catch{}
+    try{window.go?.('selections')}catch{}
+    dialog.close();
+    window.toast?.(`${added.length} selection${added.length===1?'':'s'} imported`);
+  }
+
+  function patchCardLinks(){
+    if(typeof window.selectionCard!=='function'||window.selectionCard.__v79)return;
+    const original=window.selectionCard;
+    const wrapped=function(item,index){
+      let html=original(item,index);
+      if(!Array.isArray(item?.additionalLinks)||!item.additionalLinks.length)return html;
+
+      const extra=`<div class="jj-v79-extra-links">${item.additionalLinks
+        .filter(link=>/^https?:\/\//i.test(link.url||''))
+        .map(link=>`<a href="${esc(link.url)}" target="_blank" rel="noopener">${esc(link.label||'View product')} ↗</a>`)
+        .join('')}</div>`;
+
+      // Put additional links near the normal product actions.
+      html=html.replace(/(<div class="selection-card-actions">)/,`$1${extra}`);
+      return html;
+    };
+    wrapped.__v79=true;
+    window.selectionCard=wrapped;
+  }
+
+  function boot(){
+    injectStyles();
+    ensureInput();
+    ensureButton();
+    patchCardLinks();
+
+    const root=document.getElementById('selections');
+    if(root&&!window.__jjV79Observer){
+      const observer=new MutationObserver(()=>setTimeout(()=>{
+        ensureButton();
+        patchCardLinks();
+      },0));
+      observer.observe(root,{childList:true,subtree:true});
+      window.__jjV79Observer=observer;
+    }
+
+    if(!window.__jjV79Timer){
+      window.__jjV79Timer=setInterval(()=>{
+        if(!document.hidden){
+          ensureButton();
+          patchCardLinks();
+        }
+      },900);
+    }
+  }
+
+  window.JJSmartPdfImportV79={
+    open:()=>ensureInput().click(),
+    parse:files=>parseFiles([...files||[]])
+  };
+
+  if(document.readyState==='complete')setTimeout(boot,0);
+  else window.addEventListener('load',()=>setTimeout(boot,0),{once:true});
+})();
+
+
+/* -------------------------------------------------------------------------
+   J&J Selections Native Integration v82
+   CLEAN CONSOLIDATION FOR CURRENT index.html / homeowner.html
+
+   Replaces the old v63-v81 patch stack with one controller built around the
+   CURRENT app structure:
+   - current selectionNamedGroups / selection-room-group markup
+   - current selectionCard (which had no bulk checkbox)
+   - current Edit Selection modal
+   - current standalone homeowner.html
+
+   No project selections are replaced or deleted during installation.
+   ------------------------------------------------------------------------- */
+(() => {
+  if(window.__jjSelectionsNativeV82) return;
+  window.__jjSelectionsNativeV82 = true;
+
+  const STYLE_ID='jj-selections-native-v82';
+  const bulkByProject=new Map();
+  let editContext={index:null,original:null,pendingGroupId:''};
+  let bulkDeleteArmed=false;
+  let appInstalled=false;
+  let hoInstalled=false;
+  let appObserver=null;
+  let hoObserver=null;
+  let enhancingHO=false;
+
+  const esc=v=>String(v??'').replace(/[&<>"']/g,ch=>({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[ch]));
+
+  function p(){
+    try{return typeof window.selectedProject==='function'?window.selectedProject():null}
+    catch{return null}
+  }
+
+  function save(message=''){
+    try{window.saveState?.(false)}catch{}
+    try{window.renderSelections?.()}catch{}
+    if(message)try{window.toast?.(message)}catch{}
+  }
+
+  function injectStyles(){
+    if(document.getElementById(STYLE_ID))return;
+    const style=document.createElement('style');
+    style.id=STYLE_ID;
+    style.textContent=`
+      /* Current app: readable cards */
+      #selections .selection-card-meta{font-size:12px!important;line-height:1.4!important}
+      #selections .selection-card h3{font-size:17px!important;line-height:1.35!important}
+      #selections .selection-vendor{font-size:12px!important;line-height:1.45!important}
+      #selections .selection-card-body{font-size:13px!important;line-height:1.48!important}
+      #selections .selection-price{font-size:18px!important}
+      #selections .selection-price small{font-size:11px!important}
+      #selections .selection-purchased{font-size:11px!important}
+      #selections .selection-card-actions a,
+      #selections .selection-card-actions button{font-size:11px!important}
+
+      /* Group heading: visually clearer */
+      #selections .named-selection-group{
+        border:1px solid #D8DFE7!important;
+        border-radius:13px!important;
+        overflow:hidden!important;
+        background:#fff!important;
+        box-shadow:0 3px 10px rgba(20,35,74,.055)!important;
+        margin-bottom:13px!important;
+      }
+      #selections .named-selection-group .selection-room-heading{
+        min-height:58px!important;
+        padding:12px 14px!important;
+        border-left:5px solid #B59A62!important;
+        background:linear-gradient(90deg,#F8F3E9 0,#FFFFFF 45%)!important;
+        box-shadow:inset 0 -1px 0 #E5E9EE!important;
+      }
+      #selections .named-selection-group .selection-room-toggle b{
+        color:#14234A!important;
+        font-size:14px!important;
+        font-weight:950!important;
+        letter-spacing:.28px!important;
+        text-transform:uppercase!important;
+      }
+
+      /* Bulk checkbox on every card */
+      #selections .jj-bulk-card-select{
+        display:flex!important;align-items:center!important;gap:7px!important;
+        position:absolute!important;left:10px!important;top:10px!important;z-index:8!important;
+        margin:0!important;padding:7px 9px!important;border:1px solid #D5DDE6!important;
+        border-radius:8px!important;background:rgba(255,255,255,.96)!important;color:#14234A!important;
+        box-shadow:0 2px 8px rgba(20,35,74,.10)!important;
+        font-size:10px!important;font-weight:900!important;cursor:pointer!important;
+      }
+      #selections .selection-photo{position:relative!important}
+      #selections .jj-bulk-card-select input{
+        display:block!important;appearance:auto!important;-webkit-appearance:checkbox!important;
+        width:18px!important;height:18px!important;min-width:18px!important;margin:0!important;
+        accent-color:#B59A62!important;opacity:1!important;visibility:visible!important;
+      }
+      #selections .selection-list .jj-bulk-card-select{
