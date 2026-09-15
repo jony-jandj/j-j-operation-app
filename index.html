@@ -9823,9 +9823,9 @@ function selectionNamedGroups(project,items,allItems){
     if(bucket)bucket.items.push(item);else ungrouped.push(item);
   });
   if(ungrouped.length)buckets.push({id:'ungrouped',name:'Ungrouped selections',items:ungrouped});
-  return buckets.filter(bucket=>bucket.items.length).map(bucket=>`<section class="selection-room-group named-selection-group">
-    <button class="selection-room-heading" type="button" onclick="this.parentElement.classList.toggle('collapsed')" aria-expanded="true">
-      <span><b>${esc(bucket.name)}</b><small>${bucket.items.length} selection${bucket.items.length===1?'':'s'}</small></span>
+  return buckets.filter(bucket=>bucket.items.length).map(bucket=>`<section class="selection-room-group named-selection-group collapsed">
+    <button class="selection-room-heading" type="button" onclick="this.parentElement.classList.toggle('collapsed');this.setAttribute('aria-expanded',String(!this.parentElement.classList.contains('collapsed')))" aria-expanded="false">
+      <span><b>${esc(bucket.name)}</b></span>
       <span class="selection-room-chevron" aria-hidden="true">⌄</span>
     </button>
     <div class="selection-room-content"><div class="selection-grid ${selectionViewMode==='list'?'selection-list':''}">
@@ -10484,7 +10484,7 @@ if ('serviceWorker' in navigator) {
 </script>
 
 <!-- Selections / homeowner enhancements. This must load after the app script. -->
-<script src="./selections-metadata.js?v=76"></script>
+<script src="./selections-metadata.js?v=77"></script>
 
 <script>
 document.addEventListener('click',function(e){
