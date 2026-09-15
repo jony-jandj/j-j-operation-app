@@ -1,8 +1,8 @@
-const CACHE_NAME = 'jj-operations-v82-2-project-switch-reliability';
+const CACHE_NAME = 'jj-operations-v82-3-sidebar-routing-fix';
 const APP_SHELL = [
   './','./index.html','./homeowner.html','./qrcode.min.js','./selections-metadata.js',
   './jj-original-logo.png','./manifest.webmanifest','./icons/icon-192.png','./icons/icon-512.png',
-  ...Array.from({length:14},(_,i)=>`./selections-v82/part-${String(i+1).padStart(2,'0')}.txt`)
+  ...Array.from({length:15},(_,i)=>`./selections-v82/part-${String(i+1).padStart(2,'0')}.txt`)
 ];
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE_NAME).then(cache=>cache.addAll(APP_SHELL)).then(()=>self.skipWaiting()));
