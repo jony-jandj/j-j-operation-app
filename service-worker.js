@@ -1,4 +1,4 @@
-const CACHE_NAME = 'jj-operations-v82-7-homeowner-view';
+const CACHE_NAME = 'jj-operations-v82-8-group-ordering';
 const APP_SHELL = [
   './','./index.html','./homeowner.html','./qrcode.min.js','./selections-metadata.js',
   './jj-original-logo.png','./manifest.webmanifest','./icons/icon-192.png','./icons/icon-512.png',
