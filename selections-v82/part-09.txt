@@ -1,0 +1,158 @@
+    return group;
+  }
+
+  function openCreateGroup(assignIndex=null){
+    const name=prompt('Selection group name');
+    if(name===null||!name.trim())return;
+    const group=createGroup(name);
+    const project=p();
+    if(assignIndex!==null && project?.selections?.[assignIndex]){
+      const item=project.selections[assignIndex];
+      item.optionGroupId=group.id;
+      item.optionGroupTitle=group.name;
+      item.optionLabel=item.optionLabel||'Option';
+    }
+    save(assignIndex===null?'Selection group created':`Added to ${group.name}`);
+  }
+
+  function deleteGroup(id){
+    const project=p();
+    if(!project)return;
+    const list=groups();
+    const group=list.find(g=>String(g.id)===String(id));
+    if(!group)return;
+    const count=(project.selections||[]).filter(i=>String(i.optionGroupId||'')===String(id)).length;
+    if(!confirm(`Delete group "${group.name}"? ${count} selection${count===1?'':'s'} will stay and become standalone.`))return;
+    project.selectionGroups=list.filter(g=>String(g.id)!==String(id));
+    (project.selections||[]).forEach(item=>{
+      if(String(item.optionGroupId||'')===String(id)){
+        delete item.optionGroupId;
+        delete item.optionGroupTitle;
+        delete item.optionLabel;
+      }
+    });
+    save('Group deleted — selections kept');
+  }
+
+  function manageGroups(){
+    const project=p();
+    if(!project)return;
+    document.getElementById('jjV82Dialog')?.remove();
+    const list=groups();
+    const dialog=document.createElement('dialog');
+    dialog.id='jjV82Dialog';
+    dialog.className='jj-v82-dialog';
+    dialog.innerHTML=`
+      <div class="jj-v82-head"><div><small>SELECTIONS</small><h3>Manage Groups</h3></div><button class="btn btn-light" data-close>×</button></div>
+      <div class="jj-v82-body">
+        ${list.length?list.map(g=>{
+          const count=(project.selections||[]).filter(i=>String(i.optionGroupId||'')===String(g.id)).length;
+          return `<div class="jj-v82-choice"><span><b>${esc(g.name)}</b><br><small>${count} selection${count===1?'':'s'}</small></span>
+            <span><button class="btn btn-light" data-rename="${esc(g.id)}">Rename</button>
+            <button class="btn btn-danger" data-delete="${esc(g.id)}">Delete</button></span></div>`;
+        }).join(''):'<div class="jj-v82-note">No groups yet.</div>'}
+      </div>
+      <div class="jj-v82-foot"><button class="btn btn-light" id="jjV82CreateGroup">+ Create Group</button><button class="btn btn-gold" data-close>Done</button></div>`;
+    document.body.appendChild(dialog);
+    const close=()=>dialog.close();
+    dialog.querySelectorAll('[data-close]').forEach(btn=>btn.addEventListener('click',close));
+    dialog.querySelector('#jjV82CreateGroup').addEventListener('click',()=>{dialog.close();setTimeout(()=>openCreateGroup(null),30)});
+    dialog.querySelectorAll('[data-delete]').forEach(btn=>btn.addEventListener('click',()=>{const id=btn.dataset.delete;dialog.close();setTimeout(()=>deleteGroup(id),30)}));
+    dialog.querySelectorAll('[data-rename]').forEach(btn=>btn.addEventListener('click',()=>{
+      const g=list.find(x=>String(x.id)===String(btn.dataset.rename));
+      if(!g)return;
+      const name=prompt('Rename selection group',g.name);
+      if(name===null||!name.trim())return;
+      g.name=name.trim();
+      (project.selections||[]).forEach(item=>{if(String(item.optionGroupId||'')===String(g.id))item.optionGroupTitle=g.name});
+      dialog.close();
+      save('Group renamed');
+    }));
+    dialog.addEventListener('close',()=>dialog.remove());
+    dialog.showModal();
+  }
+
+  function addOption(groupIdValue){
+    const project=p();
+    if(!project)return;
+    if(groupIdValue==='ungrouped'){
+      editContext.pendingGroupId='';
+      window.openSelectionEditor?.(null,'');
+      return;
+    }
+    const group=groups().find(g=>String(g.id)===String(groupIdValue));
+    if(!group)return;
+    editContext.pendingGroupId=group.id;
+    window.openSelectionEditor?.(null,'');
+  }
+
+  /* ==================== EDITOR ==================== */
+  function editorGroupHTML(selected){
+    const list=groups();
+    return `<option value="">No group / Standalone</option>${list.map(g=>
+      `<option value="${esc(g.id)}" ${String(g.id)===String(selected||'')?'selected':''}>${esc(g.name)}</option>`
+    ).join('')}`;
+  }
+
+  function enhanceEditor(){
+    const project=p();
+    const lead=document.getElementById('selectionLeadTime');
+    const status=document.getElementById('selectionEditStatus');
+    if(!lead||!status)return;
+
+    // Recommended status, current native save accepts whatever select contains.
+    if(![...status.options].some(o=>o.value==='Recommended')){
+      const option=document.createElement('option');
+      option.value='Recommended'; option.textContent='Recommended';
+      const selected=[...status.options].find(o=>o.value==='Selected');
+      if(selected)selected.insertAdjacentElement('beforebegin',option); else status.appendChild(option);
+    }
+    const desiredStatus=editContext.original?.status;
+    if(desiredStatus && [...status.options].some(o=>o.value===desiredStatus))status.value=desiredStatus;
+
+    // Month(s) option.
+    const unit=document.getElementById('selectionEditLeadUnit');
+    if(unit && ![...unit.options].some(o=>o.value==='Month(s)')){
+      const opt=document.createElement('option');opt.value='Month(s)';opt.textContent='Month(s)';unit.appendChild(opt);
+      if(editContext.original?.leadTimeUnit==='Month(s)')unit.value='Month(s)';
+    }
+
+    // In Stock is real and persistent via save wrapper below.
+    let stock=document.getElementById('selectionEditInStock');
+    if(!stock){
+      stock=document.createElement('button');
+      stock.type='button';stock.id='selectionEditInStock';
+      stock.addEventListener('click',e=>{
+        e.preventDefault();
+        const next=stock.getAttribute('aria-pressed')!=='true';
+        stock.setAttribute('aria-pressed',String(next));
+        stock.textContent=next?'In Stock ✓':'Mark In Stock';
+      });
+    }
+    const stockValue=!!editContext.original?.inStock;
+    stock.setAttribute('aria-pressed',String(stockValue));
+    stock.textContent=stockValue?'In Stock ✓':'Mark In Stock';
+
+    let stockRow=document.querySelector('.jj-v82-instock');
+    if(!stockRow){
+      stockRow=document.createElement('div');
+      stockRow.className='jj-v82-instock';
+      stockRow.innerHTML='<div class="jj-v82-instock-line"><strong>Availability</strong></div><small>Mark this when the product is available now. Cards show In Stock instead of lead time.</small>';
+      lead.insertAdjacentElement('afterend',stockRow);
+    }
+    stockRow.querySelector('.jj-v82-instock-line').appendChild(stock);
+
+    // Group dropdown inside Edit Selection.
+    let field=document.querySelector('.jj-editor-group-field');
+    if(!field){
+      field=document.createElement('div');
+      field.className='selection-field jj-editor-group-field';
+      field.innerHTML=`<label>Selection Group</label><select id="jjEditGroupV82"></select>
+        <div class="jj-editor-group-actions">
+          <button type="button" class="btn btn-light" id="jjEditCreateGroupV82">+ Create Group</button>
+          <button type="button" class="btn btn-danger" id="jjEditDeleteGroupV82">Delete Group</button>
+        </div>`;
+      const statusField=status.closest('.selection-field');
+      statusField?.insertAdjacentElement('afterend',field);
+    }
+    const groupSelect=field.querySelector('#jjEditGroupV82');
