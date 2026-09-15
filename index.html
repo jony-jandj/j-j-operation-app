@@ -1,6 +1,18 @@
 <!doctype html>
 <html lang="en">
 <head>
+<script>
+// Old customer links must never display the staff app shell.
+if (/^#homeowner=/.test(location.hash)) {
+  document.documentElement.style.display='none';
+  const customerHash=new URLSearchParams(location.hash.slice(1));
+  const customerPage=new URL('homeowner.html',location.href);
+  const customerKey=customerHash.get('key');
+  if (/^[a-f0-9]{64}$/.test(customerKey||'')) customerPage.hash='key='+customerKey;
+  location.replace(customerPage.href);
+}
+</script>
+
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>J&J Operations App Prototype</title>
@@ -9948,9 +9960,27 @@ function selectionRoomGroup(project,room,roomItems,allItems){
   </section>`;
 }
 
-function homeownerShareUrl(project=selectedProject()){
-  const base=(location.href||'').split('#')[0];
-  return `${base}#homeowner=${encodeURIComponent(project?.id ?? '')}`;
+const homeownerLinkRequests=new Map();
+async function homeownerShareUrl(project=selectedProject()){
+  if(!project)throw new Error('Choose a project first.');
+  if(!cloudClient)throw new Error('Connect and sign in before opening the customer link.');
+  const job=String(project.id);
+  if(homeownerLinkRequests.has(job))return homeownerLinkRequests.get(job);
+  const request=(async()=>{
+    const result=await cloudClient.rpc('jj_portal_get_link',{p_job:job});
+    if(result.error)throw result.error;
+    let token=result.data?.token;
+    if(!result.data?.exists){
+      token=Array.from(crypto.getRandomValues(new Uint8Array(32)),v=>v.toString(16).padStart(2,'0')).join('');
+      const created=await cloudClient.rpc('jj_portal_link',{p_job:job,p_token:token});
+      if(created.error)throw created.error;
+    }
+    if(!/^[a-f0-9]{64}$/.test(token||''))throw new Error('This project has an older or inactive customer link. Ask J&J to restore its existing private link.');
+    const url=new URL('homeowner.html',location.href);url.hash='key='+token;
+    return url.href;
+  })();
+  homeownerLinkRequests.set(job,request);
+  try{return await request}finally{homeownerLinkRequests.delete(job)}
 }
 
 function closeHomeownerOverlay(){
@@ -9985,22 +10015,35 @@ function openHomeownerView(project=selectedProject()){
   document.body.appendChild(overlay);
 }
 
-function openHomeownerShare(project=window.homeownerActiveProject||selectedProject()){
-  if(!project) return;
-  const url=homeownerShareUrl(project);
+async function openHomeownerShare(project=selectedProject()){
+  if(!project)return;
   document.getElementById('qrBackdrop')?.remove();
   const backdrop=document.createElement('div');
-  backdrop.id='qrBackdrop'; backdrop.className='selection-modal-backdrop open';
-  const qr=`https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(url)}`;
-  backdrop.innerHTML=`<div class="qr-modal" role="dialog" aria-modal="true" aria-labelledby="qrModalTitle"><h3 id="qrModalTitle">Homeowner page QR code</h3><p>Scan this code to open a read-only selections page for ${esc(project.name)}.</p><img src="${qr}" alt="QR code for homeowner selections" onerror="this.alt='QR code unavailable';this.style.opacity='.35'"><span class="qr-link">${esc(url)}</span><div class="qr-modal-actions"><button class="btn btn-light" onclick="copyHomeownerLink()">Copy link</button><button class="btn btn-light" onclick="document.getElementById('qrBackdrop')?.remove()">Close</button><button class="btn btn-gold" onclick="openHomeownerView();document.getElementById('qrBackdrop')?.remove()">Open page</button></div></div>`;
+  backdrop.id='qrBackdrop';backdrop.className='selection-modal-backdrop open';
+  backdrop.innerHTML=`<div class="qr-modal" role="dialog" aria-modal="true" aria-labelledby="qrModalTitle"><h3 id="qrModalTitle">Homeowner page QR code</h3><p data-qr-message role="status">Opening the customer-only link for ${esc(project.name)}…</p><div data-qr-image></div><span class="qr-link"></span><div class="qr-modal-actions"><button class="btn btn-light" data-qr-copy disabled>Copy link</button><button class="btn btn-light" data-qr-close>Close</button><button class="btn btn-gold" data-qr-open disabled>Open page</button></div></div>`;
+  backdrop.querySelector('[data-qr-close]').onclick=()=>backdrop.remove();
   backdrop.addEventListener('click',e=>{if(e.target===backdrop)backdrop.remove()});
   document.body.appendChild(backdrop);
+  try{
+    const url=await homeownerShareUrl(project);
+    if(!backdrop.isConnected)return;
+    backdrop.querySelector('[data-qr-message]').textContent=`Scan this code to open only the customer selections page for ${project.name}.`;
+    backdrop.querySelector('.qr-link').textContent=url;
+    // Generate locally so private customer tokens are not sent to a QR service.
+    new QRCode(backdrop.querySelector('[data-qr-image]'),{text:url,width:220,height:220,correctLevel:QRCode.CorrectLevel.M});
+    const copy=backdrop.querySelector('[data-qr-copy]'),open=backdrop.querySelector('[data-qr-open]');
+    copy.disabled=false;open.disabled=false;
+    copy.onclick=()=>copyHomeownerLink(url);
+    open.onclick=()=>{location.assign(url)};
+  }catch(error){if(backdrop.isConnected)backdrop.querySelector('[data-qr-message]').textContent=error.message||'Could not open the customer link. Please reconnect and try again.';}
 }
 
-async function copyHomeownerLink(){
-  const url=homeownerShareUrl(window.homeownerActiveProject||selectedProject());
-  try{await navigator.clipboard.writeText(url);toast('Homeowner link copied');}
-  catch(e){window.prompt('Copy this homeowner link:',url)}
+async function copyHomeownerLink(url){
+  try{
+    if(!url)url=await homeownerShareUrl(selectedProject());
+    try{await navigator.clipboard.writeText(url);toast('Homeowner link copied');}
+    catch{window.prompt('Copy this homeowner link:',url)}
+  }catch(error){toast(error.message||'Could not open the customer link.');}
 }
 
 function exportSelectionsPdf(){
@@ -10587,6 +10630,7 @@ if ('serviceWorker' in navigator) {
 <script src="./selections-metadata.js?v=83.1"></script>
 <script src="./customer-view.js?v=83.1"></script>
 <script src="./customer-overlay.js?v=83.1"></script>
+<script src="./qrcode.min.js"></script>
 
 <script>
 document.addEventListener('click',function(e){

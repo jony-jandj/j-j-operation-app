@@ -1,4 +1,4 @@
-const CACHE_NAME = 'jj-operations-v83-1-customer-view-isolated';
+const CACHE_NAME = 'jj-operations-v83-2-customer-only-links';
 const APP_SHELL = [
   './','./index.html','./homeowner.html','./customer-view.js','./customer-overlay.js','./qrcode.min.js','./selections-metadata.js',
   './jj-original-logo.png','./manifest.webmanifest','./icons/icon-192.png','./icons/icon-512.png',
