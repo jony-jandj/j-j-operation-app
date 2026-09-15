@@ -1,404 +1,522 @@
-/* J&J shared product lookup + selections group UI v79 */
+/* J&J Selection Recovery SAFE v74 — preserves current app selections during homeowner sync */
+/* Shared retailer metadata lookup. Never writes selection records or homeowner pricing. */
 window.JJProduct = (() => {
-  const text=v=>typeof v==='string'?v.trim():typeof v==='number'?String(v):'';
-  const safe=u=>/^https?:\/\//i.test(text(u))?text(u):'';
-
-  function title(v){
-    return text(v).replace(/\s+/g,' ')
-      .replace(/\s+[|–—-]\s+(?:The Home Depot|Lowe['’]s|Wayfair|Amazon(?:\.com)?|Floor & Decor).*$/i,'')
-      .trim();
-  }
-
-  function goodTitle(v){
-    const s=title(v);
-    return s.length>3 &&
-      !/access denied|captcha|robot check|just a moment|page not found|request blocked|verify you are|^error\b/i.test(s) &&
-      !/^(the home depot|lowe['’]s|amazon|wayfair|product|dp|p)$/i.test(s) ? s : '';
-  }
-
-  function category(v){
-    return [
-      [/tile|mosaic|porcelain|ceramic/i,'Tile'],
-      [/shower door|hinge|door|lockset/i,'Doors / Hardware'],
-      [/vanity|cabinet/i,'Vanity'],
-      [/mirror/i,'Mirror'],
-      [/faucet|shower|tub|valve|drain|toilet/i,'Plumbing'],
-      [/sconce|light|chandelier|pendant/i,'Electrical'],
-      [/flooring|hardwood|laminate|vinyl/i,'Flooring']
-    ].find(([p])=>p.test(v))?.[1]||'';
-  }
-
-  function guess(value){
-    try{
-      const u=new URL(value);
-      const host=u.hostname.replace(/^www\./,'');
-      const vendor=({
-        'homedepot.com':'The Home Depot',
-        'lowes.com':"Lowe’s",
-        'flooranddecor.com':'Floor & Decor',
-        'wayfair.com':'Wayfair',
-        'build.com':'Build.com',
-        'ferguson.com':'Ferguson',
-        'amazon.com':'Amazon'
-      })[host]||host;
-
-      const parts=u.pathname.split('/').filter(Boolean).map(v=>{
-        try{return decodeURIComponent(v)}catch{return v}
-      });
-      const candidates=parts.filter(p=>
-        !/^(p|pd|dp|gp|product|products|item|detail|html?)$/i.test(p) &&
-        !/^[0-9]+$/.test(p) &&
-        !/^[a-z0-9]{10}$/i.test(p)
-      );
-      let slug=candidates.sort((a,b)=>b.length-a.length)[0]||'';
-      slug=slug.replace(/\.(html?|aspx?)$/i,'')
-        .replace(/[-_]\d{6,}$/,'')
-        .replace(/[-_]+/g,' ')
-        .replace(/\s+/g,' ')
-        .trim();
-      const name=goodTitle(slug.replace(/\b\w/g,c=>c.toUpperCase()));
-      return {
-        title:name,
-        vendor,
-        model:u.searchParams.get('sku')||u.searchParams.get('model')||'',
-        category:category(name)
-      };
-    }catch{
-      return {title:'',vendor:'',model:'',category:''};
-    }
-  }
-
-  function price(v){
-    if(typeof v==='number')return Number.isFinite(v)&&v>=0?v:null;
-    const s=text(v).replace(/,/g,'').replace(/^(?:USD\s*|\$)/i,'').trim();
-    return /^\d+(?:\.\d{1,2})?$/.test(s)?Number(s):null;
-  }
-
-  function image(v){
-    const u=safe(typeof v==='object'?v?.url:v);
-    return /placeholder|no[-_]?image|image[-_]?not[-_]?available|missing[-_]?image|\/logo[./_-]|favicon/i.test(u)?'':u;
-  }
-
-  function parse(data){
-    const products=[];
-    const walk=(obj,depth=0)=>{
-      if(depth>12||!obj||typeof obj!=='object')return;
-      if(Array.isArray(obj)){obj.forEach(x=>walk(x,depth+1));return;}
-      if([].concat(obj['@type']||[]).some(x=>/^(Product|ProductGroup)$/i.test(x)))products.push(obj);
-      if(obj['@graph'])walk(obj['@graph'],depth+1);
-      if(obj.mainEntity)walk(obj.mainEntity,depth+1);
-    };
-
-    for(const raw of [].concat(data.productJson||[])){
-      try{walk(typeof raw==='string'?JSON.parse(raw):raw)}catch{}
-    }
-
-    const product=products.find(p=>p['@type']==='Product')||products[0]||{};
-    const offers=[].concat(product.offers||[]);
-    const exact=offers.filter(o=>!o['@type']||o['@type']==='Offer');
-    let unitPrice=null;
-    const amounts=exact.filter(o=>!o.priceCurrency||o.priceCurrency==='USD')
-      .map(o=>price(o.price??o.priceSpecification?.price))
-      .filter(p=>p!==null);
-    if(amounts.length&&new Set(amounts).size===1)unitPrice=amounts[0];
-    if(unitPrice===null&&(!data.currency||text(data.currency).toUpperCase()==='USD'))unitPrice=price(data.price);
-
-    const img=[].concat(product.image||[]).map(image).find(Boolean)||image(data.productImage)||image(data.image);
-    return {
-      title:goodTitle(product.name)||goodTitle(data.productName)||goodTitle(data.title),
-      description:text(product.description)||text(data.description),
-      model:text(product.sku)||text(product.mpn)||text(data.sku),
-      upc:text(product.gtin)||text(product.gtin12)||text(product.gtin13)||text(product.gtin14)||text(data.upc)||text(data.gtin),
-      image:img,
-      unitPrice,
-      category:category(text(product.name)||text(data.title))
-    };
-  }
-
-  function lookupUrl(url){
-    const q=new URLSearchParams({
-      url,
-      'data.productJson.selectorAll':'script[type="application/ld+json"]',
-      'data.productJson.attr':'text',
-      'data.productName.selector':'h1',
-      'data.productName.attr':'text',
-      'data.price.selector':'meta[itemprop="price"],meta[property="product:price:amount"],meta[property="og:price:amount"],meta[name="twitter:data1"]',
-      'data.price.attr':'content',
-      'data.currency.selector':'meta[property="product:price:currency"],meta[itemprop="priceCurrency"]',
-      'data.currency.attr':'content',
-      'data.sku.selector':'meta[itemprop="sku"],meta[property="product:retailer_item_id"],meta[name="sku"],meta[name="model"],meta[itemprop="mpn"]',
-      'data.sku.attr':'content',
-      'data.upc.selector':'meta[itemprop="gtin"],meta[itemprop="gtin12"],meta[itemprop="gtin13"],meta[itemprop="gtin14"],meta[itemprop="upc"],meta[property="product:upc"],meta[name="upc"],meta[name="gtin"]',
-      'data.upc.attr':'content',
-      'data.productImage.selector':'meta[property="og:image"]',
-      'data.productImage.attr':'content'
-    });
-    return 'https://api.microlink.io?'+q;
-  }
-
-  async function lookup(url){
-    if(!safe(url))return null;
-    const controller=new AbortController();
-    const timer=setTimeout(()=>controller.abort(),15000);
-    try{
-      const r=await fetch(lookupUrl(url),{signal:controller.signal});
-      if(!r.ok)return null;
-      const p=await r.json();
-      if(p.status==='fail'||p.status==='error'||Number(p.statusCode)>=400)return null;
-      const data=p.data||{};
-      if(data.title&&!goodTitle(data.title))return null;
-      return parse(data);
-    }catch{
-      return null;
-    }finally{
-      clearTimeout(timer);
-    }
-  }
-
-  return {guess,lookup,parse,price,image,title:goodTitle,lookupUrl};
+ const text=v=>typeof v==='string'?v.trim():typeof v==='number'?String(v):'';
+ const safe=u=>/^https?:\/\//i.test(text(u))?text(u):'';
+ function title(v){return text(v).replace(/\s+/g,' ').replace(/\s+[|–—-]\s+(?:The Home Depot|Lowe['’]s|Wayfair|Amazon(?:\.com)?|Floor & Decor).*$/i,'').trim();}
+ function goodTitle(v){const s=title(v);return s.length>3&&!/access denied|captcha|robot check|just a moment|page not found|request blocked|verify you are|^error\b/i.test(s)&&! /^(the home depot|lowe['’]s|amazon|wayfair|product|dp|p)$/i.test(s)?s:'';}
+ function category(v){return [[/tile|mosaic|porcelain|ceramic/i,'Tile'],[/shower door|hinge|door|lockset/i,'Doors / Hardware'],[/vanity|cabinet/i,'Vanity'],[/mirror/i,'Mirror'],[/faucet|shower|tub|valve|drain|toilet/i,'Plumbing'],[/sconce|light|chandelier|pendant/i,'Electrical'],[/flooring|hardwood|laminate|vinyl/i,'Flooring']].find(([p])=>p.test(v))?.[1]||'';}
+ function guess(value){try{const u=new URL(value),host=u.hostname.replace(/^www\./,'');const vendor=({'homedepot.com':'The Home Depot','lowes.com':"Lowe’s",'flooranddecor.com':'Floor & Decor','wayfair.com':'Wayfair','build.com':'Build.com','ferguson.com':'Ferguson','amazon.com':'Amazon'})[host]||host;
+ const parts=u.pathname.split('/').filter(Boolean).map(v=>{try{return decodeURIComponent(v)}catch{return v}});
+ const candidates=parts.filter(p=>! /^(p|pd|dp|gp|product|products|item|detail|html?)$/i.test(p)&&! /^[0-9]+$/.test(p)&&! /^[a-z0-9]{10}$/i.test(p));
+ let slug=candidates.sort((a,b)=>b.length-a.length)[0]||'';slug=slug.replace(/\.(html?|aspx?)$/i,'').replace(/[-_]\d{6,}$/,'').replace(/[-_]+/g,' ').replace(/\s+/g,' ').trim();
+ const name=goodTitle(slug.replace(/\b\w/g,c=>c.toUpperCase()));
+ return {title:name,vendor,model:u.searchParams.get('sku')||u.searchParams.get('model')||'',category:category(name)};
+ }catch{return {title:'',vendor:'',model:'',category:''}}}
+ function price(v){if(typeof v==='number')return Number.isFinite(v)&&v>=0?v:null;const s=text(v).replace(/,/g,'').replace(/^(?:USD\s*|\$)/i,'').trim();return /^\d+(?:\.\d{1,2})?$/.test(s)?Number(s):null;}
+ function image(v){const u=safe(typeof v==='object'?v?.url:v);return /placeholder|no[-_]?image|image[-_]?not[-_]?available|missing[-_]?image|\/logo[./_-]|favicon/i.test(u)?'':u;}
+ function parse(data){
+ const products=[];const walk=(obj,depth=0)=>{if(depth>12||!obj||typeof obj!=='object')return;if(Array.isArray(obj)){obj.forEach(x=>walk(x,depth+1));return;}if([].concat(obj['@type']||[]).some(x=>/^(Product|ProductGroup)$/i.test(x)))products.push(obj);if(obj['@graph'])walk(obj['@graph'],depth+1);if(obj.mainEntity)walk(obj.mainEntity,depth+1);};
+ for(const raw of [].concat(data.productJson||[])){try{walk(typeof raw==='string'?JSON.parse(raw):raw)}catch{}}
+ const product=products.find(p=>p['@type']==='Product')||products[0]||{};
+ const offers=[].concat(product.offers||[]);const exact=offers.filter(o=>!o['@type']||o['@type']==='Offer');let unitPrice=null;
+ const amounts=exact.filter(o=>!o.priceCurrency||o.priceCurrency==='USD').map(o=>price(o.price??o.priceSpecification?.price)).filter(p=>p!==null);
+ if(amounts.length&&new Set(amounts).size===1)unitPrice=amounts[0];
+ if(unitPrice===null&&(!data.currency||text(data.currency).toUpperCase()==='USD'))unitPrice=price(data.price);
+ const img=[].concat(product.image||[]).map(image).find(Boolean)||image(data.productImage)||image(data.image);
+ return {title:goodTitle(product.name)||goodTitle(data.productName)||goodTitle(data.title),description:text(product.description)||text(data.description),model:text(product.sku)||text(product.mpn)||text(data.sku),image:img,unitPrice,category:category(text(product.name)||text(data.title))};
+ }
+ function lookupUrl(url){const q=new URLSearchParams({url,'data.productJson.selectorAll':'script[type="application/ld+json"]','data.productJson.attr':'text','data.productName.selector':'h1','data.productName.attr':'text','data.price.selector':'meta[itemprop="price"],meta[property="product:price:amount"],meta[property="og:price:amount"],meta[name="twitter:data1"]','data.price.attr':'content','data.currency.selector':'meta[property="product:price:currency"],meta[itemprop="priceCurrency"]','data.currency.attr':'content','data.sku.selector':'meta[itemprop="sku"],meta[property="product:retailer_item_id"]','data.sku.attr':'content','data.productImage.selector':'meta[property="og:image"]','data.productImage.attr':'content'});return 'https://api.microlink.io?'+q;}
+ async function lookup(url){if(!safe(url))return null;const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),15000);try{const r=await fetch(lookupUrl(url),{signal:controller.signal});if(!r.ok)return null;const p=await r.json();if(p.status==='fail'||p.status==='error'||Number(p.statusCode)>=400)return null;const data=p.data||{};if(data.title&&!goodTitle(data.title))return null;return parse(data);}catch{return null;}finally{clearTimeout(timer)}}
+ return {guess,lookup,parse,price,image,title:goodTitle,lookupUrl};
 })();
 
-
+/* -------------------------------------------------------------------------
+   J&J Selection Groups UI patch
+   - Replaces direct "link selection to selection" workflow with named groups.
+   - Uses existing optionGroupId / optionGroupTitle fields so the homeowner portal
+     automatically sees the exact same grouping.
+   - Project state remains the source of truth and continues through saveState().
+   ------------------------------------------------------------------------- */
 (() => {
-  const VERSION='v79';
-  const escapeHtml=value=>String(value??'').replace(/[&<>"']/g,ch=>({
-    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
-  }[ch]));
+  const PATCH_ID='jj-selection-groups-v63';
+
+  function escLocal(value){
+    return String(value??'').replace(/[&<>"']/g,ch=>({
+      '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+    }[ch]));
+  }
+
+  function project(){
+    try{return typeof window.selectedProject==='function' ? window.selectedProject() : null;}
+    catch{return null;}
+  }
+
+  function ensureGroups(p=project()){
+    if(!p)return [];
+    if(!Array.isArray(p.selectionGroups))p.selectionGroups=[];
+
+    // Migrate any existing linked-option data into the explicit group registry.
+    const found=new Map();
+    (p.selections||[]).forEach(item=>{
+      if(!item?.optionGroupId)return;
+      const id=String(item.optionGroupId);
+      const name=String(item.optionGroupTitle||item.title||'Selection Group').trim()||'Selection Group';
+      if(!found.has(id))found.set(id,name);
+    });
+    found.forEach((name,id)=>{
+      if(!p.selectionGroups.some(g=>String(g.id)===id)){
+        p.selectionGroups.push({id,name});
+      }
+    });
+
+    // Keep names synchronized from registry -> selection records.
+    p.selectionGroups.forEach(group=>{
+      (p.selections||[]).forEach(item=>{
+        if(String(item.optionGroupId||'')===String(group.id)){
+          item.optionGroupTitle=group.name;
+        }
+      });
+    });
+    return p.selectionGroups;
+  }
+
+  function saveAndRender(message=''){
+    try{window.saveState?.(false);}catch{}
+    try{window.renderSelections?.();}catch{}
+    if(message)try{window.toast?.(message);}catch{}
+  }
+
+  function makeGroupId(){
+    const random=(crypto?.randomUUID?.()||Math.random().toString(36).slice(2));
+    return `group-${Date.now()}-${random}`;
+  }
+
+  function removeDialog(id){
+    const existing=document.getElementById(id);
+    if(existing)existing.remove();
+  }
+
+  function openCreateGroup(assignIndex=null){
+    removeDialog('jjSelectionGroupCreate');
+    const dialog=document.createElement('dialog');
+    dialog.id='jjSelectionGroupCreate';
+    dialog.className='jj-group-dialog';
+    dialog.innerHTML=`
+      <form method="dialog" onsubmit="return false">
+        <div class="jj-group-head">
+          <div>
+            <small>SELECTIONS</small>
+            <h3>Create Group</h3>
+          </div>
+          <button type="button" class="jj-group-icon" data-close aria-label="Close">×</button>
+        </div>
+        <div class="jj-group-body">
+          <label class="jj-group-label">Group name
+            <input id="jjNewSelectionGroupName" class="input" maxlength="120"
+              placeholder="Primary Bathroom, Shower Fixtures, Vanity Package…">
+          </label>
+          <p class="jj-group-help">Create the group first, then add any selection to it. Groups do not delete or change the products inside them.</p>
+        </div>
+        <div class="jj-group-foot">
+          <button type="button" class="btn btn-light" data-close>Cancel</button>
+          <button type="button" class="btn btn-gold" id="jjCreateSelectionGroupSave">Create Group</button>
+        </div>
+      </form>`;
+    document.body.appendChild(dialog);
+    const close=()=>dialog.close();
+    dialog.querySelectorAll('[data-close]').forEach(btn=>btn.addEventListener('click',close));
+    dialog.addEventListener('close',()=>dialog.remove());
+    dialog.querySelector('#jjCreateSelectionGroupSave').addEventListener('click',()=>{
+      const name=dialog.querySelector('#jjNewSelectionGroupName').value.trim();
+      if(!name){dialog.querySelector('#jjNewSelectionGroupName').focus();return;}
+      const p=project(),groups=ensureGroups(p);
+      if(groups.some(g=>g.name.trim().toLowerCase()===name.toLowerCase())){
+        window.toast?.('A group with that name already exists');
+        return;
+      }
+      const group={id:makeGroupId(),name};
+      groups.push(group);
+      if(assignIndex!==null && p?.selections?.[assignIndex]){
+        const item=p.selections[assignIndex];
+        item.optionGroupId=group.id;
+        item.optionGroupTitle=group.name;
+        delete item.optionLabel;
+      }
+      try{window.saveState?.(false);}catch{}
+      dialog.close();
+      try{window.renderSelections?.();}catch{}
+      window.toast?.(assignIndex===null?'Selection group created':`Added to ${name}`);
+    });
+    dialog.showModal();
+    setTimeout(()=>dialog.querySelector('#jjNewSelectionGroupName')?.focus(),40);
+  }
+
+  function assignToGroup(index,groupId){
+    const p=project(),item=p?.selections?.[index];
+    if(!item)return;
+    const group=ensureGroups(p).find(g=>String(g.id)===String(groupId));
+    if(!group)return;
+    item.optionGroupId=group.id;
+    item.optionGroupTitle=group.name;
+    delete item.optionLabel;
+    saveAndRender(`Added to ${group.name}`);
+  }
+
+  function removeFromGroup(index){
+    const p=project(),item=p?.selections?.[index];
+    if(!item)return;
+    delete item.optionGroupId;
+    delete item.optionGroupTitle;
+    delete item.optionLabel;
+    saveAndRender('Selection removed from group');
+  }
+
+  function openAssignDialog(index){
+    const p=project(),item=p?.selections?.[index];
+    if(!item)return;
+    const groups=ensureGroups(p);
+    removeDialog('jjSelectionGroupAssign');
+    const dialog=document.createElement('dialog');
+    dialog.id='jjSelectionGroupAssign';
+    dialog.className='jj-group-dialog';
+    const current=String(item.optionGroupId||'');
+    dialog.innerHTML=`
+      <div class="jj-group-head">
+        <div>
+          <small>ADD TO GROUP</small>
+          <h3>${escLocal(item.title||'Selection')}</h3>
+        </div>
+        <button type="button" class="jj-group-icon" data-close aria-label="Close">×</button>
+      </div>
+      <div class="jj-group-body">
+        ${groups.length?`
+          <div class="jj-group-choice-list">
+            ${groups.map(group=>`
+              <button type="button" class="jj-group-choice ${current===String(group.id)?'active':''}" data-group="${escLocal(group.id)}">
+                <span>${escLocal(group.name)}</span>
+                <small>${(p.selections||[]).filter(i=>String(i.optionGroupId||'')===String(group.id)).length} selection(s)</small>
+              </button>`).join('')}
+          </div>`:`
+          <div class="jj-group-empty">
+            <strong>No groups yet</strong>
+            <span>Create your first group, then this selection can be added to it.</span>
+          </div>`}
+      </div>
+      <div class="jj-group-foot">
+        ${current?'<button type="button" class="btn btn-light" id="jjRemoveSelectionGroup">Remove from Group</button>':''}
+        <button type="button" class="btn btn-light" id="jjCreateAndAssignGroup">+ Create Group</button>
+        <button type="button" class="btn btn-gold" data-close>Done</button>
+      </div>`;
+    document.body.appendChild(dialog);
+    const close=()=>dialog.close();
+    dialog.querySelectorAll('[data-close]').forEach(btn=>btn.addEventListener('click',close));
+    dialog.querySelectorAll('[data-group]').forEach(btn=>btn.addEventListener('click',()=>{
+      assignToGroup(index,btn.dataset.group);
+      dialog.close();
+    }));
+    dialog.querySelector('#jjRemoveSelectionGroup')?.addEventListener('click',()=>{
+      removeFromGroup(index);dialog.close();
+    });
+    dialog.querySelector('#jjCreateAndAssignGroup')?.addEventListener('click',()=>{
+      dialog.close();setTimeout(()=>openCreateGroup(index),60);
+    });
+    dialog.addEventListener('close',()=>dialog.remove());
+    dialog.showModal();
+  }
+
+  function renameGroup(groupId){
+    const p=project(),groups=ensureGroups(p);
+    const group=groups.find(g=>String(g.id)===String(groupId));
+    if(!group)return;
+    const name=prompt('Rename selection group',group.name);
+    if(name===null)return;
+    const clean=name.trim();
+    if(!clean)return;
+    group.name=clean;
+    (p.selections||[]).forEach(item=>{
+      if(String(item.optionGroupId||'')===String(group.id))item.optionGroupTitle=clean;
+    });
+    saveAndRender('Group renamed');
+  }
+
+  function deleteGroup(groupId){
+    const p=project(),groups=ensureGroups(p);
+    const group=groups.find(g=>String(g.id)===String(groupId));
+    if(!group)return;
+    const count=(p.selections||[]).filter(i=>String(i.optionGroupId||'')===String(group.id)).length;
+    if(!confirm(`Delete the group "${group.name}"? ${count} selection${count===1?'':'s'} will stay in the job and become standalone.`))return;
+    p.selectionGroups=groups.filter(g=>String(g.id)!==String(group.id));
+    (p.selections||[]).forEach(item=>{
+      if(String(item.optionGroupId||'')===String(group.id)){
+        delete item.optionGroupId;
+        delete item.optionGroupTitle;
+        delete item.optionLabel;
+      }
+    });
+    saveAndRender('Group deleted — selections were kept');
+  }
+
+  function openGroupManager(){
+    const p=project(),groups=ensureGroups(p);
+    removeDialog('jjSelectionGroupManager');
+    const dialog=document.createElement('dialog');
+    dialog.id='jjSelectionGroupManager';
+    dialog.className='jj-group-dialog jj-group-manager';
+    dialog.innerHTML=`
+      <div class="jj-group-head">
+        <div>
+          <small>SELECTIONS</small>
+          <h3>Manage Groups</h3>
+        </div>
+        <button type="button" class="jj-group-icon" data-close aria-label="Close">×</button>
+      </div>
+      <div class="jj-group-body">
+        ${groups.length?groups.map(group=>{
+          const members=(p.selections||[]).filter(i=>String(i.optionGroupId||'')===String(group.id));
+          return `<section class="jj-group-row">
+            <div class="jj-group-row-head">
+              <div><strong>${escLocal(group.name)}</strong><small>${members.length} selection${members.length===1?'':'s'}</small></div>
+              <div>
+                <button type="button" class="btn btn-light" data-rename="${escLocal(group.id)}">Rename</button>
+                <button type="button" class="btn btn-danger" data-delete="${escLocal(group.id)}">Delete Group</button>
+              </div>
+            </div>
+            <details>
+              <summary>View selections</summary>
+              <div class="jj-group-member-list">
+                ${members.length?members.map(item=>`<div>${escLocal(item.title||'Untitled selection')}</div>`).join(''):'<div class="jj-group-muted">No selections assigned yet.</div>'}
+              </div>
+            </details>
+          </section>`;
+        }).join(''):`<div class="jj-group-empty"><strong>No groups yet</strong><span>Create a group to organize selections by room, package, or fixture type.</span></div>`}
+      </div>
+      <div class="jj-group-foot">
+        <button type="button" class="btn btn-light" id="jjManagerCreateGroup">+ Create Group</button>
+        <button type="button" class="btn btn-gold" data-close>Done</button>
+      </div>`;
+    document.body.appendChild(dialog);
+    const close=()=>dialog.close();
+    dialog.querySelectorAll('[data-close]').forEach(btn=>btn.addEventListener('click',close));
+    dialog.querySelectorAll('[data-rename]').forEach(btn=>btn.addEventListener('click',()=>{
+      const id=btn.dataset.rename;dialog.close();setTimeout(()=>{renameGroup(id);openGroupManager();},80);
+    }));
+    dialog.querySelectorAll('[data-delete]').forEach(btn=>btn.addEventListener('click',()=>{
+      const id=btn.dataset.delete;dialog.close();setTimeout(()=>{deleteGroup(id);openGroupManager();},80);
+    }));
+    dialog.querySelector('#jjManagerCreateGroup').addEventListener('click',()=>{
+      dialog.close();setTimeout(()=>openCreateGroup(null),60);
+    });
+    dialog.addEventListener('close',()=>dialog.remove());
+    dialog.showModal();
+  }
+
+  function groupControlHTML(item,index){
+    const p=project();
+    ensureGroups(p);
+    const group=(p?.selectionGroups||[]).find(g=>String(g.id)===String(item.optionGroupId||''));
+    const label=group?'Change Group':'Add to Group';
+    return `<button type="button" class="jj-selection-group-btn" onclick="window.JJSelectionGroups.openAssign(${index})">${label}</button>`;
+  }
 
   function injectStyles(){
-    if(document.getElementById('jj-selection-groups-v79'))return;
+    if(document.getElementById(PATCH_ID))return;
     const style=document.createElement('style');
-    style.id='jj-selection-groups-v79';
+    style.id=PATCH_ID;
     style.textContent=`
       .jj-selection-top-actions{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 14px}
       .jj-app-group-controls{display:inline-flex;gap:7px;align-items:center;margin-left:8px}
-      .jj-app-group-controls .btn{min-width:118px!important;font-size:11px!important;padding:9px 11px!important}
-      .jj-group-card-button{border:1px solid var(--line,#dfe4ea);background:#fff;color:var(--navy,#14234A);border-radius:8px;padding:8px 10px;font-size:11px;font-weight:800}
-      .jj-host-selection-group{grid-column:1/-1;border:1px solid #d9e0e6;border-radius:14px;background:#f8fafb;overflow:hidden;box-shadow:0 3px 12px rgba(19,35,52,.05)}
-      .jj-host-selection-group>summary{display:flex;align-items:center;gap:12px;min-height:52px;padding:13px 15px;background:#fff;color:#14234a;font-size:12px;font-weight:900;cursor:pointer;list-style:none}
-      .jj-host-selection-group>summary::-webkit-details-marker{display:none}.jj-host-selection-group>summary:before{content:'▸';transition:transform .15s}.jj-host-selection-group[open]>summary:before{transform:rotate(90deg)}
-      .jj-host-selection-group>summary span{margin-left:auto;color:#657083;font-size:11px;font-weight:800}.jj-host-selection-group>.selection-grid{padding:14px}
-      .jj-group-badge{display:inline-flex;margin:7px 0 0;padding:5px 8px;border-radius:999px;background:#eef3f7;color:#40566a;font-size:10px;font-weight:850}
-      .jj-group-summary-actions{display:flex;align-items:center;gap:10px;margin-left:auto}
-      .jj-group-summary-count{color:#657083;font-size:11px;font-weight:800;white-space:nowrap}
-      .jj-group-add-option{border:1px solid #d9dfe7!important;background:#fff!important;color:#14234a!important;border-radius:8px!important;padding:7px 10px!important;font-size:10px!important;font-weight:900!important;white-space:nowrap}
+      .jj-app-group-controls .btn{min-width:94px!important;font-size:11px!important;line-height:1.1!important;padding:9px 11px!important}
+      .jj-selection-group-badge{display:inline-flex;align-items:center;gap:5px;margin:7px 0 0;padding:5px 8px;border-radius:999px;background:#EEF3F7;color:#40566A;font-size:10px;font-weight:850}
+      .jj-selection-group-btn{border:1px solid var(--line,#dfe4ea);background:#fff;color:var(--navy,#14234A);border-radius:8px;padding:8px 10px;font-size:11px;font-weight:800}
+      .jj-group-summary-actions{display:flex;align-items:center;justify-content:flex-end;gap:10px;margin-left:auto}
+      .jj-group-summary-count{color:#657083;font-size:11px;font-weight:850;white-space:nowrap}
+      .jj-group-add-option{border:1px solid #D9DFE7;background:#fff;color:#14234A;border-radius:8px;padding:7px 10px;font-size:10px;font-weight:900;white-space:nowrap}
+      .jj-group-add-option:hover{background:#F7F2E8;border-color:#CDBA8E}
+      .selection-option-group-title{gap:12px}
+      .selection-option-group-title>.jj-group-title-text{min-width:0;overflow:hidden;text-overflow:ellipsis}
+      #selectionEditGroup{display:block!important}
       .jj-editor-group-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:8px}
-
-      .jj-group-dialog{width:min(620px,calc(100% - 24px));max-height:88dvh;padding:0;border:0;border-radius:16px;color:#202633;box-shadow:0 24px 70px rgba(12,28,45,.32)}
-      .jj-group-dialog::backdrop{background:rgba(7,18,31,.55)}
-      .jj-group-head,.jj-group-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 18px;background:#fff;position:sticky;z-index:2}
-      .jj-group-head{top:0;border-bottom:1px solid #e3e7ed}.jj-group-foot{bottom:0;border-top:1px solid #e3e7ed;justify-content:flex-end;flex-wrap:wrap}
-      .jj-group-head h3{margin:0;color:#14234a}.jj-group-head small{display:block;color:#b59a62;font-size:9px;font-weight:900;letter-spacing:.9px}
-      .jj-group-icon{width:36px;height:36px;border:1px solid #dce2e9;border-radius:9px;background:#fff;color:#14234a;font-size:22px}
-      .jj-group-body{padding:18px;background:#f7f8fa;overflow:auto}
-      .jj-group-choice-list{display:grid;gap:8px}
-      .jj-group-choice{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;padding:13px 14px;border:1px solid #dce2e9;border-radius:11px;background:#fff;color:#14234a;text-align:left}
-      .jj-group-choice.active{border-color:#b59a62;background:#f7f2e8}.jj-group-choice span{font-weight:850}.jj-group-choice small{color:#6f7a89}
-      .jj-group-empty{display:grid;gap:5px;padding:18px;border:1px dashed #cdd5de;border-radius:12px;background:#fff;text-align:center}.jj-group-empty span{color:#6f7a89;font-size:12px}
-      .jj-group-row{padding:14px;border:1px solid #dce2e9;border-radius:12px;background:#fff;margin-bottom:10px}
-      .jj-group-row-head{display:flex;justify-content:space-between;gap:12px}.jj-group-row-head strong{display:block;color:#14234a}.jj-group-row-head small{display:block;color:#6f7a89;margin-top:4px}
-      .jj-group-row-actions{display:flex;gap:6px;flex-wrap:wrap}
-      .jj-group-member-list{display:grid;gap:5px;margin-top:8px;padding:9px;border-radius:8px;background:#f6f8fa;color:#405066;font-size:11px}
-
-      /* Homeowner */
-      #jjHOGroupToolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:0 0 16px}
-      #jjHOGroupToggle{min-width:118px;font-weight:850;border:1px solid #cfd6df!important;background:#fff!important;color:#14234a!important}
+      .jj-ho-group-toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:0 0 16px}
+      .jj-ho-group-toolbar button{min-height:42px}
+      #jjHOGroupToggle{min-width:118px;font-weight:800}
       #cardView,#listView{width:44px;min-width:44px;padding:10px!important;font-size:19px;line-height:1}
-      .jj-ho-qr-button{margin-left:auto!important}
-      .jj-qr-backdrop{position:fixed;inset:0;z-index:10090;display:flex;align-items:center;justify-content:center;padding:18px;background:rgba(8,19,31,.72)}
-      .jj-qr-dialog{width:min(430px,100%);border-radius:16px;background:#fff;padding:22px;box-shadow:0 24px 75px rgba(0,0,0,.34);text-align:center;color:#202633}
-      .jj-qr-dialog h3{margin:0;color:#14234a;font-size:19px}.jj-qr-dialog p{margin:7px 0 15px;color:#657382;font-size:12px}
-      .jj-qr-dialog img{width:220px;height:220px;display:block;margin:0 auto 14px;border:8px solid #fff;box-shadow:0 3px 14px rgba(9,25,39,.15)}
-      .jj-qr-link{display:block;padding:9px;border-radius:8px;background:#f3f6f8;color:#4a5b6b;font-size:10px;word-break:break-all}
-      .jj-qr-actions{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin-top:16px}.jj-qr-actions button{border:1px solid #d3dae1;border-radius:8px;background:#fff;color:#14234a;padding:8px 12px;font-size:11px;font-weight:900}.jj-qr-actions .primary{border-color:#14234a;background:#14234a;color:#fff}
-      .jj-ho-add-backdrop{position:fixed;inset:0;z-index:10130;display:flex;align-items:center;justify-content:center;padding:18px;background:rgba(8,19,31,.7)}
-      .jj-ho-add-dialog{width:min(720px,100%);max-height:calc(100dvh - 36px);overflow:auto;border-radius:16px;background:#fff;color:#202633;box-shadow:0 24px 75px rgba(0,0,0,.32)}
-      .jj-ho-add-dialog header{position:sticky;top:0;z-index:2;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:18px 20px;border-bottom:1px solid #e2e7ec;background:#fff}.jj-ho-add-dialog header small{display:block;color:#9b7a37;font-size:12px;font-weight:900;letter-spacing:.8px}.jj-ho-add-dialog h3{margin:3px 0 0;color:#172248;font-size:22px}.jj-ho-add-dialog header button{width:38px;height:38px;border:1px solid #d5dce3;border-radius:9px;background:#fff;color:#172248;font-size:24px}
-      .jj-ho-add-dialog form{padding:20px}.jj-ho-add-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:15px}.jj-ho-add-grid label{display:grid;gap:7px;color:#26344a;font-size:14px;font-weight:750}.jj-ho-add-grid input,.jj-ho-add-grid select,.jj-ho-add-grid textarea{width:100%;box-sizing:border-box;border:1px solid #cfd7df;border-radius:8px;background:#fff;color:#202633;padding:11px 12px;font:inherit;font-weight:400}.jj-ho-add-wide{grid-column:1/-1}.jj-ho-lookup{align-self:end;min-height:44px;border:0;border-radius:8px;background:#172248;color:#fff;padding:10px 14px;font-size:14px;font-weight:800}.jj-ho-drop{display:block;padding:18px;border:1.5px dashed #aeb9c4;border-radius:9px;background:#f7f9fb;color:#536171;text-align:center;font-weight:500}.jj-ho-drop.is-dragging{border-color:#172248;background:#eef2f7}.jj-ho-add-note{margin:16px 0 0;padding:12px 14px;border-radius:8px;background:#fff2c9;font-size:14px}.jj-ho-add-message{min-height:21px;margin-top:9px;color:#315f48;font-size:14px}.jj-ho-add-dialog footer{display:flex;justify-content:flex-end;gap:9px;margin-top:16px}.jj-ho-add-dialog footer button{border:1px solid #ccd5de;border-radius:8px;padding:10px 15px;font-size:14px;font-weight:800}.jj-ho-add-dialog footer .secondary{background:#fff;color:#172248}.jj-ho-add-dialog footer .primary{border-color:#172248;background:#172248;color:#fff}
-      @media(max-width:620px){.jj-ho-add-backdrop{align-items:stretch;padding:0}.jj-ho-add-dialog{width:100%;max-height:100dvh;border-radius:0}.jj-ho-add-grid{grid-template-columns:1fr}.jj-ho-add-wide{grid-column:auto}.jj-ho-add-dialog form{padding:18px}.jj-ho-lookup{width:100%}}
-      .jj-ho-page-backdrop{align-items:stretch;justify-content:stretch;padding:0;background:#f1f3f6}.jj-ho-page-shell{width:100%;min-height:100%;max-height:none;overflow:auto;border-radius:0;background:#f1f3f6;color:#202633}.jj-ho-page-head{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:15px clamp(16px,4vw,48px);background:#172248;color:#fff;position:sticky;top:0;z-index:2;font-size:14px}.jj-ho-page-head>div:last-child{display:flex;gap:8px}.jj-ho-page-brand{display:flex;align-items:center;gap:10px;font-weight:500}.jj-ho-page-brand-mark{display:none}.jj-ho-page-head button{border:1px solid rgba(255,255,255,.35);border-radius:7px;background:#fff;color:#14234a;padding:7px 10px;font-size:11px;font-weight:800}.jj-ho-page-body{width:min(1120px,calc(100% - 48px));margin:0 auto;padding:44px 0 60px}.jj-ho-page-title{display:block;margin-bottom:20px}.jj-ho-page-title h2{margin:0;color:#172248;font-size:29px;line-height:1.18}.jj-ho-page-title p{margin:18px 0 0;color:#202633;font-size:17px;line-height:1.4}.jj-ho-page-toolbar{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin:0 0 22px;padding:0;border:0}.jj-ho-page-toolbar button{border:0;border-radius:8px;background:#172248;color:#fff;padding:11px 15px;font-size:14px;font-weight:700}.jj-ho-page-toolbar button[data-ho-view]{min-width:42px;padding:10px 12px;border:1px solid #d2d8df;background:#fff;color:#172248;font-size:18px;line-height:1}.jj-ho-page-toolbar button[data-ho-view].active,.jj-ho-page-toolbar button.primary{background:#172248;color:#fff;border-color:#172248}.jj-ho-page-toolbar .spacer{flex:1}.jj-ho-page-sync{margin:0 0 22px;padding:18px 20px;background:#fff2c9;color:#202633;font-size:15px}.jj-ho-page-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}.jj-ho-page-grid.list{grid-template-columns:1fr}.jj-ho-page-grid.list article{display:grid;grid-template-columns:180px minmax(0,1fr);align-items:start}.jj-ho-page-grid.list article .jj-ho-page-card-body{grid-column:2}.jj-ho-page-grid.list article>div:first-child:has(.empty){display:none}.jj-ho-page-card{border:1px solid #d3d5d8;border-radius:14px;overflow:hidden;background:#fff;box-shadow:0 1px 4px rgba(19,35,52,.04)}.jj-ho-page-card.is-selected{border:2px solid #39815f}.jj-ho-page-card>div:first-child:empty{display:none}.jj-ho-page-card>div:first-child:has(.empty){display:none}.jj-ho-page-card img{width:100%;height:220px;display:block;object-fit:contain;background:#fff}.jj-ho-page-card .empty{display:none}.jj-ho-page-card-body{padding:18px}.jj-ho-page-card-body .eyebrow{font-size:11px;color:#6b6f76;letter-spacing:0}.jj-ho-page-card-body h4{margin:10px 0 12px;color:#172248;font-size:17px;line-height:1.3}.jj-ho-page-card-body p{margin:7px 0;color:#202633;font-size:14px;line-height:1.4}.jj-ho-page-card-body strong{display:block;margin-top:10px;color:#172248;font-size:16px}.jj-ho-page-card-description{color:#202633!important}.jj-ho-page-card-label{color:#202633!important;font-size:14px!important}.jj-ho-page-status-selected{margin:0 0 12px;color:#317653;font-size:16px;font-weight:800}.jj-ho-page-card .jj-ho-select-button{border:0;border-radius:8px;background:#172248;color:#fff;padding:9px 12px;font-size:14px;font-weight:700}.jj-ho-page-group{margin-top:28px}.jj-ho-page-group>summary{display:flex;align-items:center;justify-content:space-between;gap:10px;cursor:pointer;padding:0 0 12px;color:#172248;font-size:18px;font-weight:900;list-style:none}.jj-ho-page-group>summary::-webkit-details-marker{display:none}.jj-ho-page-group>summary:before{content:'▸';margin-right:7px;transition:transform .15s}.jj-ho-page-group[open]>summary:before{transform:rotate(90deg)}.jj-ho-page-group>summary span{margin-left:auto;color:#657382;font-size:13px;font-weight:700}@media(max-width:900px){.jj-ho-page-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:620px){.jj-ho-page-body{width:calc(100% - 32px);padding:30px 0 42px}.jj-ho-page-head{padding:14px 18px}.jj-ho-page-head>div:last-child button{padding:7px 8px;font-size:10px}.jj-ho-page-title h2{font-size:24px}.jj-ho-page-title p{margin-top:12px;font-size:16px}.jj-ho-page-toolbar{align-items:stretch}.jj-ho-page-toolbar .spacer{display:none}.jj-ho-page-toolbar button[data-ho-view]:first-of-type{margin-left:auto}.jj-ho-page-grid{grid-template-columns:1fr}.jj-ho-page-card img{height:190px}.jj-ho-page-card-body{padding:20px}.jj-ho-page-card-body h4{font-size:18px}.jj-ho-page-card-body p{font-size:15px}.jj-ho-page-grid.list article{display:block}.jj-ho-page-grid.list article>div:first-child:has(.empty){display:none}}
-      @media(max-width:620px){.jj-ho-page-toolbar button[data-ho-view="cards"]{margin-left:auto}}
-      .jj-ho-page-card .jj-ho-undo-button{margin-top:4px;border:1px solid #8bb09a;background:#fff;color:#246344}
-      /* Cohesive homeowner selections */
-      .jj-ho-page-backdrop{padding:0;background:#f4f6f8}
-      .jj-ho-page-shell{width:100%;min-height:100%;max-height:none;overflow:auto;border-radius:0;background:#f4f6f8;color:#202633}
-      .jj-ho-page-head{position:sticky;top:0;z-index:2;display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:66px;padding:0 clamp(18px,4vw,52px);background:#172248;color:#fff;border-bottom:1px solid rgba(255,255,255,.12);box-shadow:0 4px 18px rgba(14,31,54,.12)}
-      .jj-ho-page-brand{display:flex;align-items:center;gap:10px;font-size:15px;font-weight:850}
-      .jj-ho-page-brand small{padding-left:10px;border-left:1px solid rgba(255,255,255,.28);color:#c8d2e0;font-size:13px;font-weight:650}
-      .jj-ho-page-logo{display:grid;place-items:center;width:34px;height:34px;border-radius:9px;background:#f0b742;color:#10223f;font-size:12px;font-weight:950}
-      .jj-ho-page-head>button{min-height:38px;border:1px solid rgba(255,255,255,.32);border-radius:8px;background:#fff;color:#172248;padding:8px 13px;font-size:12px;font-weight:850}
-      .jj-ho-page-body{width:min(1180px,calc(100% - 40px));margin:0 auto;padding:38px 0 64px}
-      .jj-ho-page-title{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;margin-bottom:20px}
-      .jj-ho-page-title>div>small{display:block;margin-bottom:5px;color:#a7833f;font-size:12px;font-weight:900;letter-spacing:1px}
-      .jj-ho-page-title h2{margin:0;color:#172248;font-size:30px;line-height:1.15}
-      .jj-ho-page-title p{margin:7px 0 0;color:#657382;font-size:16px;line-height:1.45}
-      .jj-ho-page-progress{display:grid;flex:none;grid-template-columns:auto auto;align-items:baseline;gap:6px;padding-bottom:3px;color:#172248;white-space:nowrap}
-      .jj-ho-page-progress strong{font-size:25px;line-height:1}
-      .jj-ho-page-progress span{color:#687789;font-size:13px;font-weight:700}
-      .jj-ho-page-sync{margin:0 0 16px;padding:13px 16px;border:1px solid #d9e7df;border-radius:10px;background:#f3faf6;color:#315f48;font-size:14px}
-      .jj-ho-page-sync.is-warning{border-color:#ecd98f;background:#fff5cc;color:#665521}
-      .jj-ho-page-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 24px;padding:0;border:0}
-      .jj-ho-toolbar-left,.jj-ho-view-switch{display:flex;align-items:center;gap:8px}
-      .jj-ho-page-toolbar button{min-height:42px;border:1px solid #172248;border-radius:9px;background:#172248;color:#fff;padding:9px 14px;font-size:14px;font-weight:800}
-      .jj-ho-page-toolbar button:hover{filter:brightness(1.08)}
-      .jj-ho-page-toolbar button:focus-visible{outline:3px solid rgba(240,183,66,.45);outline-offset:2px}
-      .jj-ho-view-switch{margin-left:auto;padding:3px;border:1px solid #d8dee5;border-radius:10px;background:#e9edf1}
-      .jj-ho-page-toolbar .jj-ho-view-switch button{width:40px;min-width:40px;min-height:36px;padding:0;border:0;background:transparent;color:#617080;font-size:18px;line-height:1}
-      .jj-ho-page-toolbar .jj-ho-view-switch button.active{background:#fff;color:#172248;box-shadow:0 1px 4px rgba(15,32,49,.14)}
-      #jjHomeownerItems{display:grid;gap:22px}
-      .jj-ho-page-group{margin:0}
-      .jj-ho-page-group>summary{display:flex;align-items:center;justify-content:space-between;gap:14px;min-height:48px;padding:0 2px 10px;border-bottom:1px solid #dbe1e7;color:#172248;cursor:pointer;font-size:18px;font-weight:900;list-style:none}
-      .jj-ho-page-group>summary::-webkit-details-marker{display:none}
-      .jj-ho-page-group>summary:before{content:'▸';flex:none;margin-right:-5px;transition:transform .15s}
-      .jj-ho-page-group[open]>summary:before{transform:rotate(90deg)}
-      .jj-ho-page-group>summary>div{display:flex;min-width:0;flex:1;align-items:baseline;gap:10px}
-      .jj-ho-page-group>summary>div strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-      .jj-ho-page-group>summary>div small{color:#71808e;font-size:12px;font-weight:700;white-space:nowrap}
-      .jj-ho-page-group>summary>span{margin-left:auto;color:#71808e;font-size:13px;font-weight:700;white-space:nowrap}
-      .jj-ho-page-group>summary>.jj-group-add-option{margin-left:auto}
-      .jj-ho-page-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,360px));gap:16px;padding-top:15px;align-items:start}
-      .jj-ho-page-card{display:flex;min-width:0;flex-direction:column;border:1px solid #d7dde3;border-radius:14px;overflow:hidden;background:#fff;box-shadow:0 3px 12px rgba(15,32,49,.06)}
-      .jj-ho-page-card.is-selected{border:2px solid #3b805f}
-      .jj-ho-page-photo{display:grid;height:210px;place-items:center;overflow:hidden;border-bottom:1px solid #e9edf0;background:#fff}
-      .jj-ho-page-card.no-photo .jj-ho-page-photo{display:none}
-      .jj-ho-page-photo img{display:block;width:100%;height:100%;object-fit:contain;background:#fff}
-      .jj-ho-photo-empty{display:grid;place-items:center;gap:7px;width:100%;height:100%;min-height:150px;background:#f7f9fa;color:#82909d;text-align:center}
-      .jj-ho-photo-empty span{font-size:24px}.jj-ho-photo-empty small{font-size:12px;font-weight:750}
-      .jj-ho-page-card-body{min-width:0;padding:18px}
-      .jj-ho-page-card-body .eyebrow{color:#7b8793;font-size:11px;font-weight:850;letter-spacing:.35px;text-transform:uppercase}
-      .jj-ho-page-card-body h4{margin:7px 0 10px;color:#172248;font-size:18px;line-height:1.3}
-      .jj-ho-page-status-selected{margin:0 0 10px;color:#317653;font-size:14px;font-weight:850}
-      .jj-ho-page-card-description{margin:0 0 14px!important;color:#5c6a78!important;font-size:14px!important;line-height:1.45!important}
-      .jj-ho-card-details{display:grid;gap:0;border-top:1px solid #edf0f3}
-      .jj-ho-card-details p{display:grid;grid-template-columns:105px minmax(0,1fr);gap:10px;margin:0!important;padding:7px 0;border-bottom:1px solid #edf0f3;color:#263443!important;font-size:14px!important;line-height:1.35!important;overflow-wrap:anywhere}
-      .jj-ho-card-details p span{color:#6f7d8b;font-weight:650}
-      .jj-ho-card-actions{display:flex;gap:8px;margin-top:14px}
-      .jj-ho-card-actions button{min-height:38px;border:0;border-radius:8px;background:#172248;color:#fff;padding:8px 12px;font-size:13px;font-weight:800}
-      .jj-ho-card-actions .jj-ho-undo-button{margin:0;border:1px solid #80aa92;background:#f7fbf8;color:#286646}
-      .jj-ho-page-grid.list{display:grid;grid-template-columns:1fr;gap:12px}
-      .jj-ho-page-grid.list .jj-ho-page-card{display:grid;grid-template-columns:190px minmax(0,1fr);max-width:none}
-      .jj-ho-page-grid.list .jj-ho-page-card.no-photo{grid-template-columns:1fr}
-      .jj-ho-page-grid.list .jj-ho-page-photo{height:100%;min-height:220px;border-right:1px solid #e9edf0;border-bottom:0}
-      .jj-ho-page-grid.list .jj-ho-page-card-body{grid-column:auto;padding:18px 20px}
-      .jj-ho-empty-state{display:grid;place-items:center;gap:6px;min-height:220px;border:1px dashed #c8d0d8;border-radius:14px;background:#fff;color:#657382;text-align:center}
-      .jj-ho-empty-state strong{color:#172248;font-size:18px}
-      @media(max-width:760px){
-        .jj-ho-page-head{min-height:60px;padding:0 16px}.jj-ho-page-brand{font-size:14px}.jj-ho-page-brand small{display:none}
-        .jj-ho-page-body{width:calc(100% - 28px);padding:26px 0 44px}
-        .jj-ho-page-title{display:block}.jj-ho-page-title h2{font-size:25px}.jj-ho-page-title p{font-size:15px}.jj-ho-page-progress{margin-top:12px;justify-content:start}
-        .jj-ho-page-toolbar{align-items:flex-start}.jj-ho-toolbar-left{flex:1;flex-wrap:wrap}.jj-ho-view-switch{flex:none;margin-left:auto}
-        .jj-ho-page-toolbar button{min-height:40px;padding:8px 11px;font-size:13px}
-        .jj-ho-page-grid{grid-template-columns:1fr}.jj-ho-page-photo{height:190px}
-        .jj-ho-page-grid.list .jj-ho-page-card{display:flex;flex-direction:column}.jj-ho-page-grid.list .jj-ho-page-card.no-photo{display:flex}.jj-ho-page-grid.list .jj-ho-page-photo{height:190px;min-height:190px;border-right:0;border-bottom:1px solid #e9edf0}
-        .jj-ho-page-group>summary{align-items:flex-start;flex-wrap:wrap}.jj-ho-page-group>summary>div{align-items:flex-start;flex-direction:column;gap:2px}.jj-ho-page-group>summary>span{padding-top:3px}
-      }
-      @media(max-width:460px){
-        .jj-ho-page-toolbar{flex-wrap:wrap}.jj-ho-toolbar-left{width:100%;flex-basis:100%}.jj-ho-view-switch{margin-left:0}
-        .jj-ho-page-toolbar button{flex:1}.jj-ho-page-toolbar .jj-ho-view-switch button{flex:none}
-        .jj-ho-page-title h2{font-size:23px}.jj-ho-page-card-body{padding:16px}.jj-ho-card-details p{grid-template-columns:94px minmax(0,1fr)}
-      }
+
+      /* Homeowner cards mirror the contractor Selections card layout */
       #items{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
       #items>.option-group{grid-column:1/-1;margin:0;border:1px solid #d9e0e6;border-radius:14px;background:#f8fafb;overflow:hidden;box-shadow:0 3px 12px rgba(19,35,52,.05)}
-      #items>.option-group>summary.jj-ho-summary{display:flex!important;align-items:center!important;gap:12px!important;min-height:58px;padding:14px 16px!important;background:#fff!important;color:#14234a!important;font-size:12px!important;font-weight:900!important;list-style:none}
-      #items>.option-group>summary.jj-ho-summary::-webkit-details-marker{display:none}
-      #items>.option-group>summary.jj-ho-summary:before{content:"▸";flex:none;transition:transform .15s}
-      #items>.option-group[open]>summary.jj-ho-summary:before{transform:rotate(90deg)}
-      .jj-ho-summary-title{min-width:0;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-      .jj-ho-summary-actions{display:flex;align-items:center;gap:10px;margin-left:auto}
-      .jj-ho-summary-count{color:#657083;font-size:11px;font-weight:800;white-space:nowrap}
-      .jj-ho-group-add-option{min-height:34px!important;padding:7px 10px!important;border:1px solid #d9dfe7!important;border-radius:8px!important;background:#f5f7fa!important;color:#14234a!important;font-size:10px!important;font-weight:900!important;white-space:nowrap}
-      #items>.option-group>.option-group-items{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:14px!important;padding:14px!important}
-      #items article{min-width:0;border-radius:13px!important;box-shadow:0 2px 8px rgba(19,35,52,.04)}
-      #items article .photo{height:220px!important;object-fit:contain!important;background:#fff!important;margin:0!important}
-      #items article .card-body{padding:14px!important}
+      #items>.option-group>summary,
+      #items>.option-group>summary.jj-ho-summary{
+        display:flex!important;
+        align-items:center!important;
+        gap:12px!important;
+        min-height:58px;
+        padding:14px 16px!important;
+        background:#fff!important;
+        color:#14234a!important;
+        font-size:12px!important;
+        font-weight:900!important;
+        letter-spacing:.35px;
+        text-transform:uppercase;
+        list-style:none;
+        overflow:visible!important;
+      }
+      #items>.option-group>summary::-webkit-details-marker{display:none}
+      #items>.option-group>summary:before{content:"▸";flex:none;transition:transform .15s}
+      #items>.option-group[open]>summary:before{transform:rotate(90deg)}
+      #items>.option-group>summary .jj-ho-summary-title{
+        min-width:0;
+        flex:1 1 auto;
+        overflow:hidden;
+        text-overflow:ellipsis;
+        white-space:nowrap;
+      }
+      #items>.option-group>summary .jj-ho-summary-actions{
+        flex:0 0 auto;
+        display:flex!important;
+        align-items:center;
+        gap:10px;
+        margin-left:auto!important;
+        white-space:nowrap;
+      }
+      #items>.option-group>summary .jj-ho-summary-count{
+        color:#657083!important;
+        font-size:11px!important;
+        font-weight:800!important;
+        text-transform:none;
+        letter-spacing:0;
+      }
+      #items>.option-group .jj-ho-group-add-option{
+        flex:none;
+        margin:0!important;
+        min-height:34px!important;
+        padding:7px 10px!important;
+        border:1px solid #d9dfe7!important;
+        border-radius:8px!important;
+        background:#f5f7fa!important;
+        color:#14234a!important;
+        font-size:10px!important;
+        font-weight:900!important;
+        text-transform:none;
+        white-space:nowrap;
+      }
+      #items>.option-group>.option-group-items{
+        display:grid!important;
+        grid-template-columns:repeat(3,minmax(0,1fr))!important;
+        gap:14px!important;
+        padding:14px!important;
+      }
+      #items article{
+        overflow:hidden;
+        min-width:0;
+        background:#fff;
+        border:1px solid #e3e7ed;
+        border-radius:13px;
+        box-shadow:0 2px 8px rgba(19,35,52,.04);
+      }
+      #items article.chosen{border:2px solid #2e7a55}
+      #items article .photo{
+        width:100%;
+        height:220px;
+        object-fit:contain;
+        background:#fff;
+        margin:0!important;
+      }
+      #items article .card-body{padding:14px!important;background:#fff;min-width:0;overflow-wrap:anywhere}
+      #items article .card-body>small:first-child{
+        margin:0 0 6px;
+        color:#7a8290;
+        font-size:10px;
+        font-weight:850;
+        letter-spacing:.45px;
+        text-transform:uppercase;
+      }
+      #items article h2{margin:6px 0 5px;color:#202633;font-size:15px;line-height:1.35}
+      #items article .detail{color:#536171;font-size:12px;line-height:1.45}
+      #items article .price{color:#14234a;font-size:17px;font-weight:900}
+      #items article .actions{gap:10px;margin-top:12px}
+      #items article .actions button{min-height:36px;padding:8px 11px}
       #items.list{grid-template-columns:1fr!important}
       #items.list>.option-group>.option-group-items{grid-template-columns:1fr!important}
       #items.list article{display:grid!important;grid-template-columns:150px minmax(0,1fr)!important;align-items:start}
       #items.list article .photo{height:140px!important}
       #items.list article .card-body{grid-column:2}
       #items.list article:not(:has(.photo)) .card-body{grid-column:1/-1}
-
       @media(max-width:900px){
         #items{grid-template-columns:repeat(2,minmax(0,1fr))}
         #items>.option-group>.option-group-items{grid-template-columns:repeat(2,minmax(0,1fr))!important}
       }
       @media(max-width:620px){
-        .jj-selection-top-actions .btn{flex:1}
-        .jj-app-group-controls{display:flex;width:100%;margin:6px 0 0}
-        .jj-app-group-controls .btn{flex:1!important;min-width:0!important}
-        .jj-editor-group-actions .btn{flex:1}
         #items{grid-template-columns:1fr}
         #items>.option-group>.option-group-items{grid-template-columns:1fr!important}
-        #items>.option-group>summary.jj-ho-summary{align-items:flex-start!important;flex-wrap:wrap!important}
-        .jj-ho-summary-title{white-space:normal}
-        .jj-ho-summary-actions{width:100%;margin-left:22px;justify-content:space-between}
-        .jj-ho-summary-count{white-space:normal}
+        #items>.option-group>summary,
+        #items>.option-group>summary.jj-ho-summary{
+          align-items:flex-start!important;
+          flex-wrap:wrap!important;
+        }
+        #items>.option-group>summary .jj-ho-summary-title{white-space:normal}
+        #items>.option-group>summary .jj-ho-summary-actions{
+          width:100%;
+          margin-left:22px!important;
+          justify-content:space-between;
+        }
+        #items>.option-group>summary .jj-ho-summary-count{
+          white-space:normal;
+          line-height:1.25;
+        }
         #items.list article{grid-template-columns:90px minmax(0,1fr)!important}
         #items.list article .photo{height:90px!important}
+      }
+      #selections [aria-label="Selections view"] button,
+      #selections .toolbar[role="group"][aria-label="Selections view"] button{min-width:44px;padding:9px 12px;font-size:18px;line-height:1}
+      .jj-ho-group-add-option{float:none!important;margin-left:10px;min-height:34px!important;padding:7px 10px!important;border-radius:8px!important;background:#edf0f5!important;color:#14234a!important;font-size:12px!important;font-weight:800!important}
+      .option-group>summary.jj-ho-summary{display:flex!important;align-items:center;gap:10px}
+      .option-group>summary.jj-ho-summary>.jj-ho-summary-title{min-width:0;flex:1}
+      .option-group>summary.jj-ho-summary>.jj-ho-summary-actions{display:flex;align-items:center;gap:8px;margin-left:auto}
+      .jj-ho-summary-count{color:#657080;font-size:12px;font-weight:600;white-space:nowrap}
+      .jj-group-dialog{width:min(620px,calc(100% - 24px));max-height:88dvh;padding:0;border:0;border-radius:16px;color:#202633;box-shadow:0 24px 70px rgba(12,28,45,.32)}
+      .jj-group-dialog::backdrop{background:rgba(7,18,31,.55)}
+      .jj-group-head,.jj-group-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 18px;background:#fff;position:sticky;z-index:2}
+      .jj-group-head{top:0;border-bottom:1px solid #e3e7ed}.jj-group-foot{bottom:0;border-top:1px solid #e3e7ed;justify-content:flex-end;flex-wrap:wrap}
+      .jj-group-head small{display:block;color:#B59A62;font-size:9px;font-weight:900;letter-spacing:.9px}.jj-group-head h3{margin:3px 0 0;color:#14234A}
+      .jj-group-icon{width:36px;height:36px;border:1px solid #dce2e9;border-radius:9px;background:#fff;color:#14234A;font-size:22px}
+      .jj-group-body{padding:18px;background:#f7f8fa;overflow:auto}
+      .jj-group-label{display:block;font-size:12px;font-weight:850;color:#14234A}.jj-group-label input{margin-top:7px}
+      .jj-group-help,.jj-group-muted{color:#6d7887;font-size:11px;line-height:1.45}
+      .jj-group-choice-list{display:grid;gap:8px}
+      .jj-group-choice{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;padding:13px 14px;border:1px solid #dce2e9;border-radius:11px;background:#fff;color:#14234A;text-align:left}
+      .jj-group-choice:hover,.jj-group-choice.active{border-color:#B59A62;background:#F7F2E8}.jj-group-choice span{font-weight:850}.jj-group-choice small{color:#6f7a89}
+      .jj-group-empty{display:grid;gap:5px;padding:18px;border:1px dashed #cdd5de;border-radius:12px;background:#fff;text-align:center}.jj-group-empty span{color:#6f7a89;font-size:12px}
+      .jj-group-row{padding:14px;border:1px solid #dce2e9;border-radius:12px;background:#fff;margin-bottom:10px}.jj-group-row-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}.jj-group-row-head strong{display:block;color:#14234A}.jj-group-row-head small{display:block;margin-top:4px;color:#6f7a89}.jj-group-row-head>div:last-child{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+      .jj-group-row details{margin-top:10px}.jj-group-row summary{cursor:pointer;color:#536171;font-size:11px;font-weight:800}.jj-group-member-list{display:grid;gap:5px;margin-top:8px;padding:9px;border-radius:8px;background:#f6f8fa;color:#405066;font-size:11px}
+      @media(max-width:600px){
+        .jj-group-row-head{display:grid}
+        .jj-group-row-head>div:last-child{justify-content:flex-start}
+        .jj-selection-top-actions .btn{flex:1}
+        .jj-app-group-controls{display:flex;width:100%;margin-left:0;margin-top:6px}
+        .jj-app-group-controls .btn{flex:1!important;min-width:0!important}
+        .jj-group-foot .btn{flex:1}
+        .selection-option-group-title{align-items:flex-start;flex-wrap:wrap}
+        .jj-group-summary-actions{width:100%;justify-content:space-between;margin-left:0}
+        .jj-group-add-option{padding:8px 10px}
+        .jj-editor-group-actions .btn{flex:1}
+        .option-group>summary.jj-ho-summary{flex-wrap:wrap}
+        .option-group>summary.jj-ho-summary>.jj-ho-summary-actions{width:100%;justify-content:space-between;margin-left:0}
+        .jj-ho-group-add-option{margin-left:0}
       }
     `;
     document.head.appendChild(style);
   }
 
-  /* ---------------- Contractor app ---------------- */
-  function appProject(){
-    try{return typeof window.selectedProject==='function'?window.selectedProject():null}catch{return null}
-  }
 
-  function makeGroupId(){
-    return 'group-'+Date.now()+'-'+(crypto?.randomUUID?.()||Math.random().toString(36).slice(2));
-  }
+  function renderExplicitSelectionGroups(filtered,allItems){
+    const p=project();
+    ensureGroups(p);
 
-  function ensureAppGroups(project=appProject()){
-    if(!project)return [];
-    if(!Array.isArray(project.selectionGroups))project.selectionGroups=[];
-
-    (project.selections||[]).forEach(item=>{
-      if(!item?.optionGroupId)return;
-      const id=String(item.optionGroupId);
-      if(!project.selectionGroups.some(g=>String(g.id)===id)){
-        project.selectionGroups.push({
-          id,
-          name:String(item.optionGroupTitle||item.title||'Selection Group').trim()||'Selection Group'
-        });
-      }
-    });
-
-    project.selectionGroups.forEach(group=>{
-      (project.selections||[]).forEach(item=>{
-        if(String(item.optionGroupId||'')===String(group.id))item.optionGroupTitle=group.name;
-      });
-    });
-    return project.selectionGroups;
-  }
-
-  function saveApp(message=''){
-    try{window.saveState?.(false)}catch{}
-    try{window.renderSelections?.()}catch{}
-    if(message)try{window.toast?.(message)}catch{}
-  }
-
-  function appGroupControl(item,index){
-    return `<button type="button" class="jj-group-card-button" onclick="window.JJSelectionGroups.openAssign(${index})">${item.optionGroupId?'Change Group':'Add to Group'}</button>`;
-  }
-
-  function addOptionToGroup(groupId){
-    window.openSelectionEditor?.();
-    setTimeout(()=>{
-      const select=document.getElementById('selectionEditGroup');
-      if(!select)return;
-      select.value=[...select.options].some(option=>String(option.value)===String(groupId))?String(groupId):'';
-      select.dispatchEvent(new Event('change',{bubbles:true}));
-    },60);
-  }
-
-  function renderAppGroups(filtered,allItems){
-    const p=appProject();
-    ensureAppGroups(p);
     const buckets=new Map();
-
     filtered.forEach(item=>{
-      const key=item.optionGroupId?'group:'+item.optionGroupId:'item:'+item.id;
+      const grouped=!!item.optionGroupId;
+      const key=grouped ? `group:${item.optionGroupId}` : `item:${item.id}`;
       if(!buckets.has(key))buckets.set(key,[]);
       buckets.get(key).push(item);
     });
@@ -406,14 +524,30 @@ window.JJProduct = (() => {
     return [...buckets.values()].map(group=>{
       const first=group[0];
       const firstIndex=allItems.indexOf(first);
-      if(!first.optionGroupId)return window.selectionCard(first,firstIndex);
+
+      // Standalone products stay as normal cards.
+      if(!first.optionGroupId){
+        return window.selectionCard(first,firstIndex);
+      }
 
       const registry=(p.selectionGroups||[]).find(g=>String(g.id)===String(first.optionGroupId));
-      const groupTitle=registry?.name||first.optionGroupTitle||first.title||'Selection Group';
+      const title=registry?.name||first.optionGroupTitle||first.title||'Selection Group';
+      const count=group.length;
 
-      return `<details class="selection-option-group" data-selection-group-id="${escapeHtml(first.optionGroupId)}">
-        <summary class="selection-option-group-title">
-          <span>${escapeHtml(groupTitle)}</span>
+      // A named group always gets a group header, even when it currently
+      // contains only one selection. This makes the header the permanent
+      // place to add another option.
+      return `<details class="selection-option-group" data-selection-group-id="${escLocal(first.optionGroupId)}" open>
+        <summary class="selection-option-group-title"
+          onclick="if(event.target.closest('button'))return;event.preventDefault();this.parentElement.open=!this.parentElement.open">
+          <span class="jj-group-title-text">${escLocal(title)}</span>
+          <span class="jj-group-summary-actions">
+            <span class="jj-group-summary-count">${count} option${count===1?'':'s'} · tap to compare</span>
+            <button type="button" class="jj-group-add-option"
+              onclick="event.preventDefault();event.stopPropagation();addSelectionOption(${firstIndex})">
+              + Add Another Option
+            </button>
+          </span>
         </summary>
         <div class="selection-option-grid">
           ${group.map(item=>window.selectionCard(item,allItems.indexOf(item))).join('')}
@@ -422,321 +556,117 @@ window.JJProduct = (() => {
     }).join('');
   }
 
-  function setAllAppGroups(open){
-    document.querySelectorAll('#selections details.selection-option-group').forEach(details=>details.open=!!open);
-    document.querySelectorAll('#selections details.jj-host-selection-group').forEach(details=>details.open=!!open);
-    document.querySelectorAll('#selections .selection-room-group').forEach(group=>group.classList.toggle('collapsed',!open));
-    updateAppGroupToggle();
-  }
-
-  function enhanceHostGroupedCards(project){
-    const root=document.getElementById('selections');
-    root?.querySelectorAll('.selection-room-group .selection-grid:not(.selection-list)').forEach(grid=>{
-      if(grid.querySelector('.jj-host-selection-group'))return;
-      const cards=[...grid.querySelectorAll(':scope > .selection-card')];
-      const groups=new Map();
-      cards.forEach(card=>{
-        const title=card.querySelector('h3')?.textContent?.trim()||'';
-        const item=(project?.selections||[]).find(x=>String(x.title||'').trim()===title);
-        if(item?.optionGroupId){const id=String(item.optionGroupId);if(!groups.has(id))groups.set(id,{item,cards:[]});groups.get(id).cards.push(card)}
-      });
-      groups.forEach(({item,cards:members})=>{
-        const details=document.createElement('details');details.className='jj-host-selection-group';details.open=false;details.dataset.selectionGroupId=String(item.optionGroupId);
-        const group=(project.selectionGroups||[]).find(x=>String(x.id)===String(item.optionGroupId));
-        details.innerHTML=`<summary>${escapeHtml(group?.name||item.optionGroupTitle||'Selection Group')}</summary><div class="selection-grid"></div>`;
-        const inner=details.querySelector('.selection-grid');members.forEach(card=>inner.appendChild(card));
-        grid.appendChild(details);
-      });
+  function setAllSelectionGroups(open){
+    document.querySelectorAll('#selections details.selection-option-group').forEach(details=>{
+      details.open=!!open;
     });
   }
 
-  function appGroupNodes(){
-    return [...document.querySelectorAll('#selections details.selection-option-group,#selections details.jj-host-selection-group,#selections .selection-room-group')];
-  }
+  function configureEditorGroupDropdown(){
+    const select=document.getElementById('selectionEditGroup');
+    if(!select)return;
 
-  function updateAppGroupToggle(){
-    const button=document.getElementById('jjAppGroupToggle');
-    if(!button)return;
-    if(typeof window.isSelectionGroupMode==='function'){
-      const grouped=window.isSelectionGroupMode();
-      button.textContent=grouped?'Show All':'Show Groups';
-      button.title=grouped?'Show all selections':'Show named selection groups';
-      button.setAttribute('aria-label',button.title);
-      return;
-    }
-    const groups=appGroupNodes();
-    const allOpen=groups.length>0&&groups.every(details=>details.matches('.selection-room-group')?!details.classList.contains('collapsed'):details.open);
-    button.textContent=allOpen?'Show Groups':'View All';
-    button.title=allOpen?'Collapse all selection groups':'Expand all selection groups';
-    button.setAttribute('aria-label',button.title);
-  }
-
-  function toggleAppGroups(){
-    if(typeof window.setSelectionGroupMode==='function'&&typeof window.isSelectionGroupMode==='function'){
-      window.setSelectionGroupMode(!window.isSelectionGroupMode());
-      return;
-    }
-    const groups=appGroupNodes();
-    setAllAppGroups(!(groups.length>0&&groups.every(details=>details.matches('.selection-room-group')?!details.classList.contains('collapsed'):details.open)));
-  }
-
-  function openCreateGroup(assignIndex=null){
-    document.getElementById('jjSelectionGroupDialog')?.remove();
-    const dialog=document.createElement('dialog');
-    dialog.id='jjSelectionGroupDialog';
-    dialog.className='jj-group-dialog';
-    dialog.innerHTML=`
-      <div class="jj-group-head">
-        <div><small>SELECTIONS</small><h3>Create Group</h3></div>
-        <button class="jj-group-icon" type="button" data-close>×</button>
-      </div>
-      <div class="jj-group-body">
-        <label>Group name<input id="jjGroupName" class="input" placeholder="Primary Bathroom, Shower Fixtures…"></label>
-      </div>
-      <div class="jj-group-foot">
-        <button class="btn btn-light" type="button" data-close>Cancel</button>
-        <button class="btn btn-gold" type="button" id="jjSaveGroup">Create Group</button>
-      </div>`;
-    document.body.appendChild(dialog);
-
-    const close=()=>dialog.close();
-    dialog.querySelectorAll('[data-close]').forEach(btn=>btn.addEventListener('click',close));
-    dialog.addEventListener('close',()=>dialog.remove());
-    dialog.querySelector('#jjSaveGroup').addEventListener('click',()=>{
-      const name=dialog.querySelector('#jjGroupName').value.trim();
-      if(!name)return;
-      const p=appProject(),groups=ensureAppGroups(p);
-      const existing=groups.find(g=>g.name.trim().toLowerCase()===name.toLowerCase());
-      const group=existing||{id:makeGroupId(),name};
-      if(!existing)groups.push(group);
-
-      if(assignIndex!==null&&p.selections?.[assignIndex]){
-        const item=p.selections[assignIndex];
-        item.optionGroupId=group.id;
-        item.optionGroupTitle=group.name;
-        delete item.optionLabel;
-      }
-      try{window.saveState?.(false)}catch{}
-      dialog.close();
-      try{window.renderSelections?.()}catch{}
-      window.toast?.(assignIndex===null?'Selection group created':`Added to ${group.name}`);
-    });
-    dialog.showModal();
-    setTimeout(()=>dialog.querySelector('#jjGroupName')?.focus(),30);
-  }
-
-  function openAssign(index){
-    const p=appProject(),item=p?.selections?.[index];
-    if(!item)return;
-    const groups=ensureAppGroups(p);
-
-    document.getElementById('jjSelectionGroupDialog')?.remove();
-    const dialog=document.createElement('dialog');
-    dialog.id='jjSelectionGroupDialog';
-    dialog.className='jj-group-dialog';
-    dialog.innerHTML=`
-      <div class="jj-group-head">
-        <div><small>ADD TO GROUP</small><h3>${escapeHtml(item.title||'Selection')}</h3></div>
-        <button class="jj-group-icon" type="button" data-close>×</button>
-      </div>
-      <div class="jj-group-body">
-        ${groups.length?`<div class="jj-group-choice-list">${groups.map(group=>`
-          <button type="button" class="jj-group-choice ${String(group.id)===String(item.optionGroupId||'')?'active':''}" data-group="${escapeHtml(group.id)}">
-            <span>${escapeHtml(group.name)}</span>
-            <small>${(p.selections||[]).filter(i=>String(i.optionGroupId||'')===String(group.id)).length} selection(s)</small>
-          </button>`).join('')}</div>`:
-          '<div class="jj-group-empty"><strong>No groups yet</strong><span>Create a group first.</span></div>'}
-      </div>
-      <div class="jj-group-foot">
-        ${item.optionGroupId?'<button class="btn btn-light" type="button" id="jjRemoveFromGroup">Remove from Group</button>':''}
-        <button class="btn btn-light" type="button" id="jjCreateAssignGroup">+ Create Group</button>
-        <button class="btn btn-gold" type="button" data-close>Done</button>
-      </div>`;
-    document.body.appendChild(dialog);
-
-    const close=()=>dialog.close();
-    dialog.querySelectorAll('[data-close]').forEach(btn=>btn.addEventListener('click',close));
-    dialog.querySelectorAll('[data-group]').forEach(btn=>btn.addEventListener('click',()=>{
-      const group=groups.find(g=>String(g.id)===String(btn.dataset.group));
-      if(!group)return;
-      item.optionGroupId=group.id;
-      item.optionGroupTitle=group.name;
-      delete item.optionLabel;
-      try{window.saveState?.(false)}catch{}
-      dialog.close();
-      try{window.renderSelections?.()}catch{}
-      window.toast?.(`Added to ${group.name}`);
-    }));
-    dialog.querySelector('#jjRemoveFromGroup')?.addEventListener('click',()=>{
-      delete item.optionGroupId;
-      delete item.optionGroupTitle;
-      delete item.optionLabel;
-      try{window.saveState?.(false)}catch{}
-      dialog.close();
-      try{window.renderSelections?.()}catch{}
-      window.toast?.('Selection removed from group');
-    });
-    dialog.querySelector('#jjCreateAssignGroup')?.addEventListener('click',()=>{
-      dialog.close();
-      setTimeout(()=>openCreateGroup(index),40);
-    });
-    dialog.addEventListener('close',()=>dialog.remove());
-    dialog.showModal();
-  }
-
-  function deleteGroup(id){
-    const p=appProject(),groups=ensureAppGroups(p);
-    const group=groups.find(g=>String(g.id)===String(id));
-    if(!group)return;
-    const members=(p.selections||[]).filter(item=>String(item.optionGroupId||'')===String(group.id));
-    if(!confirm(`Delete group "${group.name}"? The ${members.length} selection${members.length===1?'':'s'} will stay and become standalone.`))return;
-
-    p.selectionGroups=groups.filter(g=>String(g.id)!==String(group.id));
-    members.forEach(item=>{
-      delete item.optionGroupId;
-      delete item.optionGroupTitle;
-      delete item.optionLabel;
-    });
-    saveApp('Group deleted — selections kept');
-  }
-
-  function manageGroups(){
-    const p=appProject(),groups=ensureAppGroups(p);
-    document.getElementById('jjSelectionGroupDialog')?.remove();
-    const dialog=document.createElement('dialog');
-    dialog.id='jjSelectionGroupDialog';
-    dialog.className='jj-group-dialog';
-    dialog.innerHTML=`
-      <div class="jj-group-head">
-        <div><small>SELECTIONS</small><h3>Manage Groups</h3></div>
-        <button class="jj-group-icon" type="button" data-close>×</button>
-      </div>
-      <div class="jj-group-body">
-        ${groups.length?groups.map(group=>{
-          const members=(p.selections||[]).filter(item=>String(item.optionGroupId||'')===String(group.id));
-          return `<section class="jj-group-row">
-            <div class="jj-group-row-head">
-              <div><strong>${escapeHtml(group.name)}</strong><small>${members.length} selection${members.length===1?'':'s'}</small></div>
-              <div class="jj-group-row-actions">
-                <button class="btn btn-light" type="button" data-rename="${escapeHtml(group.id)}">Rename</button>
-                <button class="btn btn-danger" type="button" data-delete="${escapeHtml(group.id)}">Delete</button>
-              </div>
-            </div>
-            <details><summary>View selections</summary>
-              <div class="jj-group-member-list">${members.length?members.map(item=>`<div>${escapeHtml(item.title||'Untitled')}</div>`).join(''):'<div>No selections yet.</div>'}</div>
-            </details>
-          </section>`;
-        }).join(''):'<div class="jj-group-empty"><strong>No groups yet</strong><span>Create your first group.</span></div>'}
-      </div>
-      <div class="jj-group-foot">
-        <button class="btn btn-light" type="button" id="jjManageCreate">+ Create Group</button>
-        <button class="btn btn-gold" type="button" data-close>Done</button>
-      </div>`;
-    document.body.appendChild(dialog);
-
-    const close=()=>dialog.close();
-    dialog.querySelectorAll('[data-close]').forEach(btn=>btn.addEventListener('click',close));
-    dialog.querySelector('#jjManageCreate').addEventListener('click',()=>{dialog.close();setTimeout(()=>openCreateGroup(),40)});
-    dialog.querySelectorAll('[data-delete]').forEach(btn=>btn.addEventListener('click',()=>{
-      const id=btn.dataset.delete;
-      dialog.close();
-      setTimeout(()=>deleteGroup(id),40);
-    }));
-    dialog.querySelectorAll('[data-rename]').forEach(btn=>btn.addEventListener('click',()=>{
-      const group=groups.find(g=>String(g.id)===String(btn.dataset.rename));
-      if(!group)return;
-      const name=prompt('Rename selection group',group.name);
-      if(name===null||!name.trim())return;
-      group.name=name.trim();
-      (p.selections||[]).forEach(item=>{
-        if(String(item.optionGroupId||'')===String(group.id))item.optionGroupTitle=group.name;
-      });
-      try{window.saveState?.(false)}catch{}
-      dialog.close();
-      try{window.renderSelections?.()}catch{}
-      window.toast?.('Group renamed');
-    }));
-    dialog.addEventListener('close',()=>dialog.remove());
-    dialog.showModal();
-  }
-
-  function enhanceEditorGroupField(){
-    let select=document.getElementById('selectionEditGroup');
-    if(!select){
-      const room=document.getElementById('selectionEditRoom');
-      const roomField=room?.closest('.selection-field');
-      if(!roomField)return;
-      const field=document.createElement('div');field.className='selection-field';
-      field.innerHTML='<label>Selection group</label><select id="selectionEditGroup"><option value="">No group / Standalone</option></select>';
-      roomField.insertAdjacentElement('afterend',field);
-      select=field.querySelector('#selectionEditGroup');
-    }
-    const p=appProject(),groups=ensureAppGroups(p);
+    const p=project();
+    const groups=ensureGroups(p);
     const current=String(select.value||'');
     const field=select.closest('.selection-field')||select.parentElement;
+    const label=field?.querySelector('label');
 
-    select.innerHTML='<option value="">No group / Standalone</option>'+
-      groups.map(group=>{
-        const count=(p.selections||[]).filter(item=>String(item.optionGroupId||'')===String(group.id)).length;
-        return `<option value="${escapeHtml(group.id)}">${escapeHtml(group.name)} · ${count} selection${count===1?'':'s'}</option>`;
-      }).join('');
-    if(groups.some(g=>String(g.id)===current))select.value=current;
+    if(field)field.style.display='';
+    if(label)label.textContent='Selection Group';
 
-    const hidden=document.getElementById('selectionEditGroupName');
-    if(hidden){hidden.type='hidden';hidden.style.display='none';}
-    const sync=()=>{
-      const group=groups.find(g=>String(g.id)===String(select.value));
-      if(hidden)hidden.value=group?.name||'';
+    const rebuild=(preferred=current)=>{
+      const liveGroups=ensureGroups(p);
+      select.innerHTML=
+        `<option value="">No group / Standalone</option>`+
+        liveGroups.map(group=>{
+          const count=(p.selections||[]).filter(item=>String(item.optionGroupId||'')===String(group.id)).length;
+          return `<option value="${escLocal(group.id)}">${escLocal(group.name)} · ${count} selection${count===1?'':'s'}</option>`;
+        }).join('');
+      if(liveGroups.some(group=>String(group.id)===String(preferred)))select.value=String(preferred);
+      else select.value='';
+    };
+    rebuild(current);
+
+    // The original app saves optionGroupTitle from this input. Keep it as a
+    // hidden backing field and automatically sync it to the selected group.
+    const nameInput=document.getElementById('selectionEditGroupName');
+    if(nameInput){
+      nameInput.type='hidden';
+      nameInput.style.display='none';
+    }
+
+    const syncGroupName=()=>{
+      const group=ensureGroups(p).find(g=>String(g.id)===String(select.value));
+      if(nameInput)nameInput.value=group?.name||'';
       const del=document.getElementById('jjEditorDeleteGroup');
       if(del)del.disabled=!group;
     };
-    select.onchange=sync;
-    sync();
+    syncGroupName();
+    select.addEventListener('change',syncGroupName);
 
-    if(field&&!field.querySelector('.jj-editor-group-actions')){
+    if(field && !field.querySelector('.jj-editor-group-actions')){
       const actions=document.createElement('div');
       actions.className='jj-editor-group-actions';
       actions.innerHTML=`
-        <button class="btn btn-light" type="button" id="jjEditorCreateGroup">+ Create Group</button>
-        <button class="btn btn-danger" type="button" id="jjEditorDeleteGroup">Delete Group</button>`;
+        <button type="button" class="btn btn-light" id="jjEditorCreateGroup">+ Create Group</button>
+        <button type="button" class="btn btn-danger" id="jjEditorDeleteGroup">Delete Group</button>`;
       field.appendChild(actions);
 
       actions.querySelector('#jjEditorCreateGroup').addEventListener('click',()=>{
         const name=prompt('New selection group name');
-        if(name===null||!name.trim())return;
+        if(name===null)return;
         const clean=name.trim();
-        let group=groups.find(g=>g.name.trim().toLowerCase()===clean.toLowerCase());
-        if(!group){
-          group={id:makeGroupId(),name:clean};
-          groups.push(group);
+        if(!clean)return;
+        const liveGroups=ensureGroups(p);
+        const existing=liveGroups.find(g=>g.name.trim().toLowerCase()===clean.toLowerCase());
+        if(existing){
+          rebuild(existing.id);
+          syncGroupName();
+          window.toast?.('That group already exists');
+          return;
         }
-        const opt=document.createElement('option');
-        opt.value=group.id;
-        opt.textContent=group.name;
-        select.appendChild(opt);
-        select.value=group.id;
-        sync();
+        const group={id:makeGroupId(),name:clean};
+        liveGroups.push(group);
+        rebuild(group.id);
+        syncGroupName();
+        window.toast?.(`Group "${clean}" added`);
       });
 
       actions.querySelector('#jjEditorDeleteGroup').addEventListener('click',()=>{
-        const group=groups.find(g=>String(g.id)===String(select.value));
+        const group=ensureGroups(p).find(g=>String(g.id)===String(select.value));
         if(!group)return;
-        deleteGroup(group.id);
-        select.value='';
-        sync();
+        const members=(p.selections||[]).filter(item=>String(item.optionGroupId||'')===String(group.id));
+        if(!confirm(`Delete the group "${group.name}"? ${members.length} selection${members.length===1?'':'s'} will stay in the job and become standalone.`))return;
+
+        p.selectionGroups=ensureGroups(p).filter(g=>String(g.id)!==String(group.id));
+        members.forEach(item=>{
+          delete item.optionGroupId;
+          delete item.optionGroupTitle;
+          delete item.optionLabel;
+        });
+
+        rebuild('');
+        syncGroupName();
+        try{window.saveState?.(false);}catch{}
+        window.toast?.('Group deleted — selections were kept');
       });
     }
+
+    syncGroupName();
   }
 
-  function enhanceAppSelections(){
+  function enhanceRenderedSelections(){
     const root=document.getElementById('selections');
     if(!root)return;
-    const p=appProject();
-    ensureAppGroups(p);
-    pullHomeownerPortal(p);
+    const p=project();
+    ensureGroups(p);
 
     const heading=root.querySelector('.selection-heading');
-    if(heading&&!root.querySelector('.jj-selection-top-actions')){
+
+    // Remove stale selection-group controls from older builds.
+    root.querySelectorAll('#jjAppViewAll,#jjAppShowGroups').forEach(btn=>btn.remove());
+    if(heading && !root.querySelector('.jj-selection-top-actions')){
       const actions=document.createElement('div');
       actions.className='jj-selection-top-actions';
       actions.innerHTML=`
@@ -746,758 +676,1713 @@ window.JJProduct = (() => {
       heading.insertAdjacentElement('afterend',actions);
     }
 
+    // Hide the duplicate old "Add manually" button now that Add Selection
+    // is prominent near the top.
     root.querySelectorAll('.selection-toolbar button').forEach(btn=>{
       if(/add manually/i.test(btn.textContent||''))btn.style.display='none';
     });
-    root.querySelectorAll('.selection-group-action').forEach(btn=>btn.remove());
 
+    // "Add Another Option" belongs in the group header now, not on each card.
     root.querySelectorAll('.selection-card-actions button').forEach(btn=>{
       if(/another option/i.test(btn.textContent||''))btn.remove();
     });
 
-    const viewHost=root.querySelector('.toolbar[role="group"][aria-label="Selections view"],[role="group"][aria-label="Selections view"],.selection-view-controls[aria-label="Selections view"]');
-    if(viewHost&&!root.querySelector('#jjAppGroupToggle')){
+    // Group badge on every assigned card.
+    root.querySelectorAll('.selection-card').forEach(card=>{
+      const titleNode=card.querySelector('h3');
+      if(!titleNode)return;
+      const title=(titleNode.textContent||'').trim();
+      const item=(p?.selections||[]).find(x=>String(x.title||'').trim()===title);
+      if(!item?.optionGroupId || card.querySelector('.jj-selection-group-badge'))return;
+      const group=(p.selectionGroups||[]).find(g=>String(g.id)===String(item.optionGroupId));
+      const name=group?.name||item.optionGroupTitle;
+      if(!name)return;
+      const badge=document.createElement('div');
+      badge.className='jj-selection-group-badge';
+      badge.textContent=`Group: ${name}`;
+      titleNode.insertAdjacentElement('afterend',badge);
+    });
+
+    // Use compact symbols for Card / List view on the contractor app.
+    const viewHost=root.querySelector('.toolbar[role="group"][aria-label="Selections view"], [role="group"][aria-label="Selections view"]');
+    if(viewHost && !root.querySelector('.jj-app-group-controls')){
       const controls=document.createElement('span');
       controls.className='jj-app-group-controls';
       controls.innerHTML=`
-        <button class="btn btn-light" type="button" id="jjAppGroupToggle">View All</button>`;
+        <button type="button" class="btn btn-light" data-jj-app-expand>Expand All</button>
+        <button type="button" class="btn btn-light" data-jj-app-collapse>Collapse All</button>`;
       viewHost.appendChild(controls);
-      controls.querySelector('#jjAppGroupToggle').addEventListener('click',toggleAppGroups);
-    }
-    updateAppGroupToggle();
 
-    const viewButtons=[...root.querySelectorAll('[aria-label="Selections view"]>button,.toolbar[role="group"][aria-label="Selections view"]>button,.selection-view-controls[aria-label="Selections view"]>button')];
+      controls.querySelector('[data-jj-app-expand]').addEventListener('click',()=>{
+        setAllSelectionGroups(true);
+      });
+      controls.querySelector('[data-jj-app-collapse]').addEventListener('click',()=>{
+        setAllSelectionGroups(false);
+      });
+    }
+
+    const viewButtons=[...root.querySelectorAll('[aria-label="Selections view"] button, .toolbar[role="group"][aria-label="Selections view"] button')];
     viewButtons.forEach((btn,idx)=>{
-      const label=(btn.getAttribute('aria-label')||btn.textContent||'').toLowerCase();
-      if(label.includes('card')||idx===0){
-        btn.textContent='▦';btn.title='Card view';btn.setAttribute('aria-label','Card view');
-      }else if(label.includes('list')||idx===1){
-        btn.textContent='☰';btn.title='List view';btn.setAttribute('aria-label','List view');
+      const txt=(btn.textContent||'').trim().toLowerCase();
+      const label=(btn.getAttribute('aria-label')||'').toLowerCase();
+      const isCard=txt.includes('card')||label.includes('card')||idx===0;
+      const isList=txt.includes('list')||label.includes('list')||idx===1;
+      if(isCard){
+        btn.textContent='▦';
+        btn.title='Card view';
+        btn.setAttribute('aria-label','Card view');
+      }else if(isList){
+        btn.textContent='☰';
+        btn.title='List view';
+        btn.setAttribute('aria-label','List view');
       }
     });
 
-    root.querySelectorAll('.selection-card').forEach(card=>{
-      const h3=card.querySelector('h3');
-      if(!h3||card.querySelector('.jj-group-badge'))return;
-      const item=(p.selections||[]).find(x=>String(x.title||'').trim()===(h3.textContent||'').trim());
-      if(!item?.optionGroupId)return;
-      const group=(p.selectionGroups||[]).find(g=>String(g.id)===String(item.optionGroupId));
-      const badge=document.createElement('div');
-      badge.className='jj-group-badge';
-      badge.textContent='Group: '+(group?.name||item.optionGroupTitle||'Selection Group');
-      h3.insertAdjacentElement('afterend',badge);
-    });
-
-    // Keep group assignment available even when the host renderer uses the
-    // older room-card layout instead of the option-group renderer.
-    root.querySelectorAll('.selection-card').forEach(card=>{
-      const h3=card.querySelector('h3');
-      const actions=card.querySelector('.selection-card-actions');
-      if(!h3||!actions||actions.querySelector('.jj-group-card-button'))return;
-      const index=(p.selections||[]).findIndex(x=>String(x.title||'').trim()===(h3.textContent||'').trim());
-      if(index<0)return;
-      const button=document.createElement('button');
-      button.type='button';button.className='jj-group-card-button';
-      button.textContent=p.selections[index].optionGroupId?'Change Group':'Add to Group';
-      button.addEventListener('click',()=>openAssign(index));
-      actions.appendChild(button);
-    });
-    // The app renderer owns the named-group layout. Do not wrap its cards in
-    // room/category containers, which would reintroduce the old grouping.
   }
 
-  function installApp(){
-    if(typeof window.renderSelections!=='function'||typeof window.selectedProject!=='function')return false;
-
-    // The app's legacy Customer View buttons should open the same H.O. page
-    // as a shared homeowner link, so the preview and QR destination never
-    // drift into two different designs.
-    window.openHomeownerView=async(project=appProject())=>{if(project){window.JJGuestMode=false;await syncHomeownerPortal(project);renderHomeownerPage(project)}};
-    window.openHomeownerShare=(project=window.JJHomeownerProject||appProject())=>{if(project)openHomeownerQR(project)};
-
-    window.selectionGroupSelect=(item,index)=>appGroupControl(item,index);
-    window.renderSelectionOptionGroups=renderAppGroups;
-
-    const originalRender=window.renderSelections;
-    window.renderSelections=function(...args){
-      ensureAppGroups();
-      const result=originalRender.apply(this,args);
-      setTimeout(enhanceAppSelections,0);
-      return result;
-    };
-
-    const originalOpen=window.openSelectionEditor;
-    if(typeof originalOpen==='function'){
-      window.openSelectionEditor=function(...args){
-        const result=originalOpen.apply(this,args);
-        setTimeout(enhanceEditorGroupField,0);
-        return result;
-      };
-    }
-
-    const originalFromLink=window.openSelectionEditorFromLink;
-    if(typeof originalFromLink==='function'){
-      window.openSelectionEditorFromLink=function(...args){
-        const result=originalFromLink.apply(this,args);
-        setTimeout(enhanceEditorGroupField,0);
-        return result;
-      };
-    }
-
-    const originalSave=window.saveSelectionEditor;
-    if(typeof originalSave==='function'){
-      window.saveSelectionEditor=function(...args){
-        const groupId=document.getElementById('selectionEditGroup')?.value||'';
-        const title=document.getElementById('selectionEditTitle')?.value?.trim()||'';
-        const result=originalSave.apply(this,args);
-        if(title){
-          const p=appProject(),item=(p?.selections||[]).find(x=>String(x.title||'').trim()===title);
-          if(item){
-            if(groupId){const group=ensureAppGroups(p).find(x=>String(x.id)===String(groupId));if(group){item.optionGroupId=group.id;item.optionGroupTitle=group.name;}}
-            else{delete item.optionGroupId;delete item.optionGroupTitle;}
-            try{window.saveState?.(false);window.renderSelections?.()}catch{}
-          }
-        }
-        return result;
-      };
-    }
-
-    ensureAppGroups();
-    try{window.renderSelections()}catch{}
-    return true;
+  function configureEditorAfterOpen(){
+    setTimeout(configureEditorGroupDropdown,0);
   }
 
-  /* ---------------- Homeowner link + QR ---------------- */
-  function makePortalToken(){
-    if(globalThis.crypto?.randomUUID)return globalThis.crypto.randomUUID();
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,char=>{const value=Math.random()*16|0;return (char==='x'?value:(value&3|8)).toString(16)});
+
+  function homeownerItemsSafe(){
+    try{return Array.isArray(items)?items:[];}catch{return [];}
   }
 
-  function ensurePortalToken(project){
-    if(!project.homeownerPortalToken)project.homeownerPortalToken=makePortalToken();
-    return String(project.homeownerPortalToken);
+  const homeownerGroupOpenState=new Map();
+  let homeownerMassToggle=false;
+  let homeownerEnhancing=false;
+
+  function homeownerItemsSafe(){
+    try{return Array.isArray(items)?items:[];}catch{return [];}
   }
 
-  function homeownerSnapshot(project){
-    const allowed=['id','title','vendor','model','sku','upc','gtin','description','url','image','quantity','status','purchasedBy','category','room','optionGroupId','optionGroupTitle','selectedAt','leadTimeValue','leadTimeUnit'];
-    return {id:project.id,name:project.name||'Homeowner selections',jobNo:project.jobNo||'',type:project.type||'',selectionGroups:(project.selectionGroups||[]).map(group=>({id:group.id,name:group.name})),selections:(project.selections||[]).map(item=>Object.fromEntries(allowed.filter(key=>item[key]!==undefined).map(key=>[key,item[key]])))};
-  }
+  function homeownerGroupKey(details){
+    if(!details)return '';
+    if(details.dataset.jjGroup)return String(details.dataset.jjGroup);
 
-  function mergeHomeownerPortal(project,portal){
-    if(!project||!portal)return false;
-    let changed=false;
-    if(!Array.isArray(project.selections))project.selections=[];
-    const byId=new Map(project.selections.map(item=>[String(item.id),item]));
-    (portal.selections||[]).forEach(incoming=>{
-      const current=byId.get(String(incoming.id));
-      if(current){
-        ['status','selectedAt'].forEach(key=>{if(incoming[key]!==undefined&&current[key]!==incoming[key]){current[key]=incoming[key];changed=true}});
-      }else{
-        project.selections.push({...incoming,unitPrice:0,addTax:false,purchasedBy:incoming.purchasedBy||'Homeowner'});
-        changed=true;
-      }
-    });
-    if(!Array.isArray(project.selectionGroups))project.selectionGroups=[];
-    (portal.selectionGroups||[]).forEach(group=>{if(group?.id&&!project.selectionGroups.some(current=>String(current.id)===String(group.id))){project.selectionGroups.push({id:group.id,name:group.name||'Selection Group'});changed=true}});
-    return changed;
-  }
-
-  async function syncHomeownerPortal(project){
-    if(!project)return false;
-    const token=ensurePortalToken(project);
-    window.JJHomeownerToken=token;
-    try{window.saveState?.(false)}catch{}
-    const client=window.homeownerPortalClient?.(token);
-    if(!client)return false;
-    const current=await client.from('homeowner_portals').select('data').eq('token',token).maybeSingle();
-    if(current?.data?.data&&mergeHomeownerPortal(project,current.data.data))try{window.saveState?.(false)}catch{}
-    const result=await client.from('homeowner_portals').upsert({token,project_id:String(project.id),project_name:project.name||'Homeowner selections',data:homeownerSnapshot(project),updated_at:new Date().toISOString()},{onConflict:'token'});
-    if(result?.error){console.warn('Homeowner portal could not sync:',result.error);return false}
-    return true;
-  }
-
-  let portalPulling=false;
-  let portalPulledAt=0;
-  async function pullHomeownerPortal(project,force=false){
-    const token=project?.homeownerPortalToken;
-    if(!token||portalPulling||(!force&&Date.now()-portalPulledAt<15000))return false;
-    const client=window.homeownerPortalClient?.(token);
-    if(!client)return false;
-    portalPulling=true;portalPulledAt=Date.now();
-    try{
-      const result=await client.from('homeowner_portals').select('data').eq('token',String(token)).maybeSingle();
-      if(result?.error||!result?.data?.data)return false;
-      if(!mergeHomeownerPortal(project,result.data.data))return false;
-      try{window.saveState?.(false)}catch{}
-      try{window.renderSelections?.()}catch{}
-      return true;
-    }finally{portalPulling=false}
-  }
-
-  async function updateHomeownerPortal(project){
-    const token=window.JJHomeownerToken||project?.homeownerPortalToken;
-    const client=window.homeownerPortalClient?.(token);
-    if(!client||!token)return false;
-    const result=await client.from('homeowner_portals').update({project_name:project.name||'Homeowner selections',data:homeownerSnapshot(project),updated_at:new Date().toISOString()}).eq('token',String(token));
-    if(result?.error){console.warn('Homeowner change could not sync:',result.error);return false}
-    return true;
-  }
-
-  function homeownerRoute(){
-    const params=new URLSearchParams((location.hash||'').replace(/^#/,''));
-    return {id:params.get('homeowner')||'',token:params.get('token')||''};
-  }
-
-  function homeownerUrl(project=appProject()){
-    const base=(location.href||'').split('#')[0];
-    const token=ensurePortalToken(project);
-    return `${base}#homeowner=${encodeURIComponent(project?.id??'')}&token=${encodeURIComponent(token)}`;
-  }
-
-  function closeQR(){document.getElementById('jjQRBackdrop')?.remove();}
-
-  async function copyHomeownerUrl(){
-    const project=window.JJHomeownerProject||appProject();
-    const synced=await syncHomeownerPortal(project);
-    if(!synced)window.toast?.('Guest portal setup is not complete');
-    const url=homeownerUrl(project);
-    try{await navigator.clipboard.writeText(url);window.toast?.('Homeowner link copied');}
-    catch{window.prompt('Copy this homeowner link:',url)}
-  }
-
-  async function createNewHomeownerQR(project){
-    if(!project)return;
-    const approved=window.confirm('Create a new QR code for this job? Only do this when you want to replace the current printed QR code.');
-    if(!approved)return;
-    const oldToken=String(project.homeownerPortalToken||'');
-    if(oldToken){
-      try{await window.homeownerPortalClient?.(oldToken)?.from('homeowner_portals').delete().eq('token',oldToken)}catch(error){console.warn('Old homeowner QR could not be retired:',error)}
-    }
-    project.homeownerPortalToken=makePortalToken();
-    window.JJHomeownerToken=project.homeownerPortalToken;
-    try{window.saveState?.(false)}catch{}
-    closeQR();
-    await openHomeownerQR(project);
-    window.toast?.('New homeowner QR code created');
-  }
-
-  async function openHomeownerQR(project=appProject()){
-    if(!project)return;
-    window.JJHomeownerProject=project;
-    const synced=await syncHomeownerPortal(project);
-    closeQR();
-    const url=homeownerUrl(project);
-    const backdrop=document.createElement('div');
-    backdrop.id='jjQRBackdrop';backdrop.className='jj-qr-backdrop';
-    const qr=`https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(url)}`;
-    backdrop.innerHTML=`<div class="jj-qr-dialog" role="dialog" aria-modal="true" aria-label="Homeowner selections QR code"><h3>Homeowner selections</h3><p>${synced?`Scan this code to view and add selections for ${escapeHtml(project.name||'this job')}. This QR stays the same unless you choose Create New QR Code.`:'Guest access is not connected yet. Run the homeowner guest SQL setup before sharing this code.'}</p><img src="${qr}" alt="Homeowner selections QR code"><span class="jj-qr-link">${escapeHtml(url)}</span><div class="jj-qr-actions"><button type="button" data-new>Create New QR Code</button><button type="button" data-copy>Copy link</button><button type="button" data-close>Close</button><button type="button" class="primary" data-open>Open page</button></div></div>`;
-    backdrop.addEventListener('click',event=>{if(event.target===backdrop)closeQR()});
-    backdrop.querySelector('[data-copy]').addEventListener('click',copyHomeownerUrl);
-    backdrop.querySelector('[data-new]').addEventListener('click',()=>createNewHomeownerQR(project));
-    backdrop.querySelector('[data-close]').addEventListener('click',closeQR);
-    backdrop.querySelector('[data-open]').addEventListener('click',()=>{closeQR();renderHomeownerPage(project)});
-    document.body.appendChild(backdrop);
-  }
-
-  function selectionMoneySafe(item){
-    const subtotal=Number(item?.unitPrice||0)*Math.max(1,Number(item?.quantity||1));
-    const total=subtotal+(item?.addTax?subtotal*.0825:0);
-    return total.toLocaleString('en-US',{style:'currency',currency:'USD'});
-  }
-
-  function homeownerGroupBuckets(project,items){
-    const buckets=[];
-    const byId=new Map();
-    (Array.isArray(project?.selectionGroups)?project.selectionGroups:[]).forEach(group=>{
-      const id=String(group?.id||'');
-      if(!id)return;
-      const bucket={id,name:String(group.name||'Selection Group'),items:[]};
-      buckets.push(bucket);byId.set(id,bucket);
-    });
-    const ungrouped=[];
-    items.forEach(item=>{
-      const id=String(item?.optionGroupId||'');
-      const bucket=id&&byId.get(id);
-      if(bucket)bucket.items.push(item);
-      else if(id&&item?.optionGroupTitle){
-        let legacy=buckets.find(group=>group.id===`legacy:${item.optionGroupTitle}`);
-        if(!legacy){legacy={id:`legacy:${item.optionGroupTitle}`,name:String(item.optionGroupTitle),items:[]};buckets.push(legacy)}
-        legacy.items.push(item);
-      }else ungrouped.push(item);
-    });
-    buckets.filter(group=>group.items.length===0).forEach(group=>{group.empty=true});
-    if(ungrouped.length)buckets.push({id:'ungrouped',name:'Ungrouped selections',items:ungrouped});
-    return buckets.filter(group=>group.items.length||group.id==='ungrouped');
-  }
-
-  function homeownerImage(value){
-    const raw=String(value||'').trim();
-    return /^https?:\/\//i.test(raw)||/^data:image\/(?:jpeg|jpg|png|webp|gif);base64,/i.test(raw)?raw:'';
-  }
-
-  function closeHomeownerPage(page){
-    page?.remove();
-    if(/^#homeowner=/.test(location.hash||'')){
-      history.replaceState(null,'',location.pathname+location.search);
-      installApp();
-    }
-  }
-
-  async function markHomeownerSelected(project,id){
-    const item=(project?.selections||[]).find(entry=>String(entry.id||'')===String(id));
-    if(!item)return;
-    item.status='Selected';
-    item.selectedAt=new Date().toISOString();
-    try{window.saveState?.(false)}catch{}
-    try{
-      const saved=JSON.parse(localStorage.getItem('jj_full_proto')||'null');
-      const savedProject=saved?.projects?.find(entry=>String(entry.id)===String(project.id));
-      const savedItem=savedProject?.selections?.find(entry=>String(entry.id||'')===String(id));
-      if(savedItem)Object.assign(savedItem,item);
-      if(saved) localStorage.setItem('jj_full_proto',JSON.stringify(saved));
-    }catch{}
-    await updateHomeownerPortal(project);
-    renderHomeownerPage(project);
-  }
-
-  async function undoHomeownerSelected(project,id){
-    const item=(project?.selections||[]).find(entry=>String(entry.id||'')===String(id));
-    if(!item||item.status!=='Selected')return;
-    item.status='Pending';
-    delete item.selectedAt;
-    try{window.saveState?.(false)}catch{}
-    saveHomeownerGuestProject(project);
-    await updateHomeownerPortal(project);
-    renderHomeownerPage(project);
-  }
-
-  function saveHomeownerGuestProject(project){
-    try{
-      const saved=JSON.parse(localStorage.getItem('jj_full_proto')||'null')||{projects:[],selectedProjectId:project.id,currentUser:''};
-      if(!Array.isArray(saved.projects))saved.projects=[];
-      const index=saved.projects.findIndex(entry=>String(entry.id)===String(project.id));
-      if(index>=0)saved.projects[index]=project;else saved.projects.push(project);
-      saved.selectedProjectId=project.id;
-      localStorage.setItem('jj_full_proto',JSON.stringify(saved));
-      return true;
-    }catch(error){console.warn('Homeowner selection could not be saved locally:',error);return false}
-  }
-
-  function openHomeownerAddDialog(project,page,preferredGroupId=''){
-    document.getElementById('jjHOAddDialog')?.remove();
-    const groups=Array.isArray(project.selectionGroups)?project.selectionGroups:[];
-    const backdrop=document.createElement('div');
-    backdrop.id='jjHOAddDialog';backdrop.className='jj-ho-add-backdrop';
-    backdrop.innerHTML=`<div class="jj-ho-add-dialog" role="dialog" aria-modal="true" aria-label="Add homeowner selection"><header><div><small>HOMEOWNER SELECTION</small><h3>Add a selection</h3></div><button type="button" data-close aria-label="Close">×</button></header><form><div class="jj-ho-add-grid"><label>Product link (optional)<input name="url" type="url" placeholder="Paste a product link"></label><button type="button" class="jj-ho-lookup" data-lookup>Look up details</button><label>Product name<input name="title" required placeholder="What would you like to add?"></label><label>Room<input name="room" placeholder="Primary bathroom, kitchen…"></label><label>Category<input name="category" placeholder="Tile, plumbing, lighting…"></label><label>Vendor<input name="vendor" placeholder="Store or brand"></label><label>Model / SKU #<input name="model" placeholder="Optional"></label><label>UPC code #<input name="upc" placeholder="Optional"></label><label>Quantity<input name="quantity" type="number" min="1" step="1" value="1"></label><label>Selection group<select name="group"><option value="">Ungrouped selections</option>${groups.map(group=>`<option value="${escapeHtml(group.id)}" ${String(group.id)===String(preferredGroupId)?'selected':''}>${escapeHtml(group.name)}</option>`).join('')}</select></label><label class="jj-ho-add-wide">Description / finish / color<textarea name="description" rows="3" placeholder="Notes or product details"></textarea></label><label class="jj-ho-add-wide">Product photo<input name="imageFile" type="file" accept="image/*"><span class="jj-ho-drop" data-drop>Drag and drop an image here, or choose a file</span><input name="image" type="hidden"></label></div><p class="jj-ho-add-note">Prices are not requested or shown for homeowner-added selections.</p><div class="jj-ho-add-message" data-message></div><footer><button type="button" class="secondary" data-close>Cancel</button><button type="submit" class="primary">Add selection</button></footer></form></div>`;
-    document.body.appendChild(backdrop);
-    const form=backdrop.querySelector('form');
-    const message=backdrop.querySelector('[data-message]');
-    const close=()=>backdrop.remove();
-    backdrop.querySelectorAll('[data-close]').forEach(button=>button.addEventListener('click',close));
-    backdrop.addEventListener('click',event=>{if(event.target===backdrop)close()});
-    const setMessage=text=>{if(message)message.textContent=text||''};
-    const imageInput=form.elements.imageFile;
-    const imageHidden=form.elements.image;
-    const readImage=file=>{if(!file||!file.type.startsWith('image/'))return;const reader=new FileReader();reader.onload=()=>{const image=new Image();image.onload=()=>{const max=1200,scale=Math.min(1,max/Math.max(image.width,image.height));const canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(image.width*scale));canvas.height=Math.max(1,Math.round(image.height*scale));canvas.getContext('2d').drawImage(image,0,0,canvas.width,canvas.height);imageHidden.value=canvas.toDataURL('image/jpeg',.82);backdrop.querySelector('[data-drop]').textContent='Image ready';};image.src=String(reader.result||'');};reader.readAsDataURL(file)};
-    imageInput.addEventListener('change',()=>readImage(imageInput.files?.[0]));
-    const drop=backdrop.querySelector('[data-drop]');
-    ['dragenter','dragover'].forEach(type=>drop.addEventListener(type,event=>{event.preventDefault();drop.classList.add('is-dragging')}));
-    ['dragleave','drop'].forEach(type=>drop.addEventListener(type,event=>{event.preventDefault();drop.classList.remove('is-dragging')}));
-    drop.addEventListener('drop',event=>readImage(event.dataTransfer?.files?.[0]));
-    backdrop.querySelector('[data-lookup]')?.addEventListener('click',async()=>{
-      const url=form.elements.url.value.trim();
-      if(!url){setMessage('Paste a product link first.');return;}
-      if(!window.JJProduct?.lookup){setMessage('Product lookup is unavailable right now.');return;}
-      setMessage('Looking up product details…');
-      const result=await window.JJProduct.lookup(url);
-      if(!result){setMessage('I could not read that page. You can still enter the details manually.');return;}
-      ['title','vendor','model','upc','description','category'].forEach(key=>{if(result[key]&&form.elements[key])form.elements[key].value=result[key]});
-      if(result.image&&!imageHidden.value){imageHidden.value=result.image;drop.textContent='Product image found';}
-      setMessage('Product details added. Review them, then select Add selection.');
-    });
-    form.addEventListener('submit',async event=>{
-      event.preventDefault();
-      const data=new FormData(form);
-      const title=String(data.get('title')||'').trim();
-      if(!title){setMessage('Enter a product name.');return}
-      const groupId=String(data.get('group')||'');
-      const group=groups.find(entry=>String(entry.id)===groupId);
-      const item={id:'sel-'+Date.now()+'-'+Math.random().toString(36).slice(2,8),title,vendor:String(data.get('vendor')||'').trim(),model:String(data.get('model')||'').trim(),upc:String(data.get('upc')||'').trim(),description:String(data.get('description')||'').trim(),url:String(data.get('url')||'').trim(),image:String(data.get('image')||'').trim(),quantity:Math.max(1,Number(data.get('quantity')||1)),status:'Pending',purchasedBy:'Homeowner',unitPrice:0,addTax:false,category:String(data.get('category')||'').trim(),room:String(data.get('room')||'').trim()||'Unassigned'};
-      if(group){item.optionGroupId=group.id;item.optionGroupTitle=group.name;}
-      if(!Array.isArray(project.selections))project.selections=[];
-      project.selections.push(item);
-      const saved=saveHomeownerGuestProject(project);
-      const synced=await updateHomeownerPortal(project);
-      setMessage(synced?'Selection added.':(saved?'Selection added on this device.':'Selection added for this session.'));
-      setTimeout(()=>{close();renderHomeownerPage(project)},250);
-    });
-    setTimeout(()=>form.elements.title?.focus(),30);
-  }
-
-  function renderHomeownerPage(project){
-    document.getElementById('jjHomeownerPage')?.remove();
-    const items=Array.isArray(project.selections)?project.selections:[];
-    const groups=homeownerGroupBuckets(project,items);
-    const page=document.createElement('div');page.id='jjHomeownerPage';page.className='jj-qr-backdrop jj-ho-page-backdrop';
-    page.innerHTML=`<div class="jj-ho-page-shell" role="dialog" aria-modal="true" aria-label="Homeowner selections"><header class="jj-ho-page-head"><div class="jj-ho-page-brand">J&J Home Renovations · Homeowner Selections</div><div>${window.JJGuestMode?'':'<button type="button" data-close>Back to app</button>'}</div></header><main class="jj-ho-page-body"><div class="jj-ho-page-title"><h2>${escapeHtml(project.name||'Selections')} · Selections</h2><p>Add product details or mark a Pending product as Selected.</p></div><div class="jj-ho-page-sync">${project.portalUnavailable?'This homeowner link is not connected yet. Please ask J&J to refresh the QR code.':'Your selections are up to date.'}</div><div class="jj-ho-page-toolbar"><button type="button" data-refresh>Refresh selections</button><button type="button" data-ho-toggle>View All</button><button type="button" data-ho-add class="primary">+ Add Selection</button><span class="spacer"></span><button type="button" data-ho-view="cards" class="active" aria-label="Card view" title="Card view">▦</button><button type="button" data-ho-view="list" aria-label="List view" title="List view">☰</button></div><div id="jjHomeownerItems"></div></main></div>`;
-    const root=page.querySelector('#jjHomeownerItems');
-    if(!items.length){root.innerHTML='<p style="color:#657382">No selections have been added yet.</p>'}
-    else root.innerHTML=groups.map(group=>{const complete=group.items.filter(item=>['Selected','Ordered','Received'].includes(item.status)).length;return `<details class="jj-ho-page-group" open><summary><strong>${escapeHtml(group.name)}</strong><span>${complete} of ${group.items.length} selections complete</span></summary><div class="jj-ho-page-grid">${group.items.map(item=>{const img=homeownerImage(item.image);const model=String(item.model||item.sku||'').trim();const upc=String(item.upc||item.gtin||'').trim();const selected=['Selected','Ordered','Received'].includes(item.status);return `<article class="jj-ho-page-card ${selected?'is-selected':''}"><div>${img?`<img src="${escapeHtml(img)}" alt="${escapeHtml(item.title||'Selected product')}" loading="lazy" onerror="this.outerHTML='<div class=\\"empty\\">No product photo</div>'">`:'<div class="empty">No product photo</div>'}</div><div class="jj-ho-page-card-body"><div class="eyebrow">${escapeHtml(group.name)}${item.category?` · ${escapeHtml(item.category)}`:''}</div><h4>${escapeHtml(item.title||'Untitled selection')}</h4>${selected?'<div class="jj-ho-page-status-selected">H.O. has selected</div>':''}${item.description?`<p class="jj-ho-page-card-description">${escapeHtml(item.description)}</p>`:''}${item.vendor?`<p>Vendor - ${escapeHtml(item.vendor)}</p>`:''}${model?`<p>Model / SKU # ${escapeHtml(model)}</p>`:''}${upc?`<p>UPC Code # ${escapeHtml(upc)}</p>`:''}<p>Quantity: ${Math.max(1,Number(item.quantity||1))}</p><p><b>Purchased by:</b> ${escapeHtml(item.purchasedBy||'Not assigned')}</p><p>Status: ${escapeHtml(item.status||'Pending')}</p>${!selected?`<button type="button" class="jj-ho-select-button" data-ho-select="${escapeHtml(item.id||'')}">Mark Selected</button>`:''}</div></article>`}).join('')}</div></details>`}).join('');
-    let homeownerCardIndex=0;
-    const homeownerCards=[...root.querySelectorAll('.jj-ho-page-card')];
-    groups.forEach(group=>group.items.forEach(item=>{
-      const card=homeownerCards[homeownerCardIndex++];
-      if(item.status!=='Selected'||!card)return;
-      const button=document.createElement('button');
-      button.type='button';button.className='jj-ho-select-button jj-ho-undo-button';button.dataset.hoUnselect=String(item.id||'');button.textContent='Undo Selection';
-      card.querySelector('.jj-ho-page-card-body')?.appendChild(button);
-    }));
-    const pageGroups=[...page.querySelectorAll('.jj-ho-page-group')];
-    const toggle=page.querySelector('[data-ho-toggle]');
-    const updateToggle=()=>{const allOpen=pageGroups.length>0&&pageGroups.every(group=>group.open);if(toggle){toggle.textContent=allOpen?'Show Groups':'View All';toggle.title=allOpen?'Collapse all selection groups':'Expand all selection groups'}};
-    toggle?.addEventListener('click',()=>{const open=!(pageGroups.length>0&&pageGroups.every(group=>group.open));pageGroups.forEach(group=>group.open=open);updateToggle()});
-    pageGroups.forEach(group=>group.addEventListener('toggle',updateToggle));
-    page.querySelectorAll('[data-ho-view]').forEach(button=>button.addEventListener('click',()=>{page.querySelectorAll('[data-ho-view]').forEach(other=>other.classList.toggle('active',other===button));page.querySelectorAll('.jj-ho-page-grid').forEach(grid=>grid.classList.toggle('list',button.dataset.hoView==='list'))}));
-    page.querySelector('[data-ho-add]')?.addEventListener('click',()=>openHomeownerAddDialog(project,page));
-    page.querySelector('[data-refresh]')?.addEventListener('click',async()=>{
-      const route=homeownerRoute();
-      const fresh=route.token&&window.loadHomeownerProject?await window.loadHomeownerProject(project.id,route.token):null;
-      renderHomeownerPage(fresh||project);
-    });
-    page.querySelectorAll('[data-ho-select]').forEach(button=>button.addEventListener('click',()=>markHomeownerSelected(project,button.dataset.hoSelect)));
-    page.querySelectorAll('[data-ho-unselect]').forEach(button=>button.addEventListener('click',()=>undoHomeownerSelected(project,button.dataset.hoUnselect)));
-    updateToggle();
-    page.addEventListener('click',event=>{if(event.target===page||event.target.closest('[data-close]'))closeHomeownerPage(page)});
-    document.body.appendChild(page);
-  }
-  let homeownerDisplayMode='groups';
-  let homeownerDisplayView='cards';
-
-  function homeownerCardMarkup(item,groupName){
-    const img=homeownerImage(item.image);
-    const model=String(item.model||item.sku||'').trim();
-    const upc=String(item.upc||item.gtin||'').trim();
-    const selected=['Selected','Ordered','Received'].includes(item.status);
-    const canUndo=item.status==='Selected';
-    return `<article class="jj-ho-page-card ${selected?'is-selected':''} ${img?'has-photo':'no-photo'}" data-ho-card-id="${escapeHtml(item.id||'')}">
-      <div class="jj-ho-page-photo">${img?`<img src="${escapeHtml(img)}" alt="${escapeHtml(item.title||'Selected product')}" loading="lazy">`:'<div class="jj-ho-photo-empty"><span>▧</span><small>No product photo</small></div>'}</div>
-      <div class="jj-ho-page-card-body">
-        <div class="eyebrow">${escapeHtml(groupName||'Ungrouped selections')}${item.category?` · ${escapeHtml(item.category)}`:''}</div>
-        <h4>${escapeHtml(item.title||'Untitled selection')}</h4>
-        ${selected?'<div class="jj-ho-page-status-selected">H.O. has selected</div>':''}
-        ${item.description?`<p class="jj-ho-page-card-description">${escapeHtml(item.description)}</p>`:''}
-        <div class="jj-ho-card-details">
-          ${item.vendor?`<p><span>Vendor</span>${escapeHtml(item.vendor)}</p>`:''}
-          ${model?`<p><span>Model / SKU</span>${escapeHtml(model)}</p>`:''}
-          ${upc?`<p><span>UPC code</span>${escapeHtml(upc)}</p>`:''}
-          <p><span>Quantity</span>${Math.max(1,Number(item.quantity||1))}</p>
-          <p><span>Purchased by</span>${escapeHtml(item.purchasedBy||'Not assigned')}</p>
-          <p><span>Status</span>${escapeHtml(item.status||'Pending')}</p>
-        </div>
-        <div class="jj-ho-card-actions">${canUndo?`<button type="button" class="jj-ho-undo-button" data-ho-unselect="${escapeHtml(item.id||'')}">Undo Selection</button>`:(!selected?`<button type="button" class="jj-ho-select-button" data-ho-select="${escapeHtml(item.id||'')}">Mark Selected</button>`:'')}</div>
-      </div>
-    </article>`;
-  }
-
-  function renderHomeownerPageCohesive(project){
-    document.getElementById('jjHomeownerPage')?.remove();
-    const items=Array.isArray(project.selections)?project.selections:[];
-    const groups=homeownerGroupBuckets(project,items);
-    const page=document.createElement('div');
-    page.id='jjHomeownerPage';page.className='jj-qr-backdrop jj-ho-page-backdrop';
-    page.innerHTML=`<div class="jj-ho-page-shell" role="dialog" aria-modal="true" aria-label="Homeowner selections">
-      <header class="jj-ho-page-head"><div class="jj-ho-page-brand"><span class="jj-ho-page-logo">J&J</span><span>J&J Home Renovations</span><small>Homeowner Selections</small></div>${window.JJGuestMode?'':'<button type="button" data-close>Back to app</button>'}</header>
-      <main class="jj-ho-page-body">
-        <div class="jj-ho-page-title"><div><small>${escapeHtml(project.jobNo||'YOUR PROJECT')}</small><h2>${escapeHtml(project.name||'Selections')}</h2><p>Review your project selections, add a product, or mark a pending item as selected.</p></div><div class="jj-ho-page-progress"><strong>${items.filter(item=>['Selected','Ordered','Received'].includes(item.status)).length}</strong><span>of ${items.length} complete</span></div></div>
-        <div class="jj-ho-page-sync ${project.portalUnavailable?'is-warning':''}">${project.portalUnavailable?'This homeowner link is not connected yet. Please ask J&J to refresh the QR code.':'Your selections are up to date.'}</div>
-        <div class="jj-ho-page-toolbar">
-          <div class="jj-ho-toolbar-left"><button type="button" data-refresh>Refresh</button><button type="button" data-ho-toggle>${homeownerDisplayMode==='groups'?'View All':'Show Groups'}</button><button type="button" data-ho-add class="primary">+ Add Selection</button></div>
-          <div class="jj-ho-view-switch" aria-label="Selections view"><button type="button" data-ho-view="cards" class="${homeownerDisplayView==='cards'?'active':''}" aria-label="Card view" title="Card view">▦</button><button type="button" data-ho-view="list" class="${homeownerDisplayView==='list'?'active':''}" aria-label="List view" title="List view">☰</button></div>
-        </div>
-        <div id="jjHomeownerItems"></div>
-      </main>
-    </div>`;
-
-    const root=page.querySelector('#jjHomeownerItems');
-    if(!items.length)root.innerHTML='<div class="jj-ho-empty-state"><strong>No selections yet</strong><span>Use Add Selection to add the first product.</span></div>';
-    else root.innerHTML=groups.map(group=>`<details class="jj-ho-page-group" ${homeownerDisplayMode==='all'?'open':''}><summary><div><strong>${escapeHtml(group.name)}</strong></div><button type="button" class="jj-group-add-option" data-ho-add-group="${escapeHtml(group.id)}">+ Add Option</button></summary><div class="jj-ho-page-grid ${homeownerDisplayView==='list'?'list':''}">${group.items.map(item=>homeownerCardMarkup(item,group.name)).join('')}</div></details>`).join('');
-
-    root.querySelectorAll('.jj-ho-page-photo img').forEach(image=>image.addEventListener('error',()=>{image.parentElement.innerHTML='<div class="jj-ho-photo-empty"><span>▧</span><small>No product photo</small></div>'}));
-    root.querySelectorAll('[data-ho-select]').forEach(button=>button.addEventListener('click',()=>markHomeownerSelected(project,button.dataset.hoSelect)));
-    root.querySelectorAll('[data-ho-unselect]').forEach(button=>button.addEventListener('click',()=>undoHomeownerSelected(project,button.dataset.hoUnselect)));
-    root.querySelectorAll('[data-ho-add-group]').forEach(button=>button.addEventListener('click',event=>{event.preventDefault();event.stopPropagation();openHomeownerAddDialog(project,page,button.dataset.hoAddGroup)}));
-    page.querySelector('[data-ho-add]')?.addEventListener('click',()=>openHomeownerAddDialog(project,page));
-    page.querySelector('[data-ho-toggle]')?.addEventListener('click',()=>{homeownerDisplayMode=homeownerDisplayMode==='groups'?'all':'groups';renderHomeownerPageCohesive(project)});
-    page.querySelectorAll('[data-ho-view]').forEach(button=>button.addEventListener('click',()=>{homeownerDisplayView=button.dataset.hoView==='list'?'list':'cards';renderHomeownerPageCohesive(project)}));
-    page.querySelector('[data-refresh]')?.addEventListener('click',async()=>{const route=homeownerRoute();const fresh=route.token&&window.loadHomeownerProject?await window.loadHomeownerProject(project.id,route.token):null;renderHomeownerPageCohesive(fresh||project)});
-    page.addEventListener('click',event=>{if(event.target===page||event.target.closest('[data-close]'))closeHomeownerPage(page)});
-    document.body.appendChild(page);
-  }
-
-  renderHomeownerPage=renderHomeownerPageCohesive;
-
-  /* ---------------- Homeowner portal ---------------- */
-  const hoState=new Map();
-  let hoEnhancing=false;
-  let hoMass=false;
-
-  function hoItems(){
-    try{
-      if(typeof items!=='undefined'&&Array.isArray(items))return items;
-    }catch{}
-    return [];
-  }
-
-  function hoGroupKey(details){
-    if(details.dataset.jjGroup)return details.dataset.jjGroup;
-    const optionId=details.querySelector('[data-option]')?.dataset.option;
+    const optionNode=details.querySelector('[data-option]');
+    const optionId=optionNode?.dataset?.option;
     if(optionId){
-      const item=hoItems().find(x=>String(x.id)===String(optionId));
-      if(item?.optionGroupId){
-        details.dataset.jjGroup=String(item.optionGroupId);
-        return details.dataset.jjGroup;
+      const row=homeownerItemsSafe().find(item=>String(item.id)===String(optionId));
+      if(row?.optionGroupId){
+        details.dataset.jjGroup=String(row.optionGroupId);
+        return String(row.optionGroupId);
       }
     }
-    const title=(details.querySelector('summary')?.textContent||'').replace(/\b\d+\s+options?.*$/i,'').replace(/\s+/g,' ').trim().toLowerCase();
-    if(title){details.dataset.jjGroup='title:'+title;return details.dataset.jjGroup;}
-    return '';
+
+    const title=(details.querySelector('.jj-ho-summary-title')?.textContent
+      || details.querySelector('summary')?.textContent || '').replace(/\s+/g,' ').trim();
+    return title;
   }
 
-  function hoGroups(){
-    return [...document.querySelectorAll('#items details.option-group')];
+  function homeownerGroupsExpanded(){
+    const groups=[...document.querySelectorAll('#items details.option-group')];
+    return !!groups.length && groups.every(details=>details.open);
   }
 
-  function updateHOToggle(){
-    const btn=document.getElementById('jjHOGroupToggle');
-    if(!btn)return;
-    const groups=hoGroups();
-    if(!groups.length){
-      btn.textContent='View All';
-      btn.disabled=true;
-      return;
-    }
-    btn.disabled=false;
-    const allOpen=groups.every(d=>d.open);
-    btn.textContent=allOpen?'Show Groups':'View All';
-    btn.title=allOpen?'Collapse all selection groups':'Expand all selection groups';
+  function updateHomeownerGroupToggle(){
+    const button=document.getElementById('jjHOGroupToggle');
+    if(!button)return;
+    const expanded=homeownerGroupsExpanded();
+    button.textContent=expanded?'Show Groups':'View All';
+    button.setAttribute('aria-pressed',String(expanded));
+    button.title=expanded?'Collapse all selection groups':'Expand all selection groups';
   }
 
-  function setHOGroups(open){
-    hoMass=true;
-    hoGroups().forEach(details=>{
-      const key=hoGroupKey(details);
+  function homeownerGroupMode(open){
+    const groups=[...document.querySelectorAll('#items details.option-group')];
+    homeownerMassToggle=true;
+    groups.forEach(details=>{
+      const key=homeownerGroupKey(details);
       details.open=!!open;
-      if(key)hoState.set(key,!!open);
+      if(key)homeownerGroupOpenState.set(key,!!open);
     });
-    hoMass=false;
-    updateHOToggle();
+    homeownerMassToggle=false;
+    updateHomeownerGroupToggle();
   }
 
-  function ensureHOToolbar(){
-    const view=document.querySelector('.actions[aria-label="Selections view"],[role="group"][aria-label="Selections view"],#items')?.parentElement;
-    if(!view)return;
-    document.querySelectorAll('#jjHOViewAll,#jjHOShowGroups').forEach(n=>n.remove());
-
-    let bar=document.getElementById('jjHOGroupToolbar');
-    if(!bar){
-      bar=document.createElement('div');
-      bar.id='jjHOGroupToolbar';
-      bar.innerHTML='<button type="button" id="jjHOGroupToggle" class="secondary">View All</button><button type="button" id="jjHOAddSelection" class="secondary">+ Add Selection</button><button type="button" id="jjHOCardView" class="secondary" aria-label="Card view" title="Card view">▦</button><button type="button" id="jjHOListView" class="secondary" aria-label="List view" title="List view">☰</button>';
-      view.insertAdjacentElement('afterend',bar);
-    }
-
-    const btn=document.getElementById('jjHOGroupToggle');
-    if(btn&&btn.dataset.bound!=='1'){
-      btn.dataset.bound='1';
-      btn.addEventListener('click',e=>{
-        e.preventDefault();
-        const groups=hoGroups();
-        if(!groups.length)return;
-        setHOGroups(!groups.every(d=>d.open));
-      });
-    }
-    const add=document.getElementById('jjHOAddSelection');
-    if(add&&add.dataset.bound!=='1'){
-      add.dataset.bound='1';
-      add.addEventListener('click',()=>{if(typeof window.openSelectionEditor==='function')window.openSelectionEditor(null,'');else window.toast?.('Open the app to add a selection')});
-    }
-    const card=document.getElementById('jjHOCardView');
-    const list=document.getElementById('jjHOListView');
-    card?.addEventListener('click',()=>{document.getElementById('items')?.classList.remove('list');card.classList.add('active');list?.classList.remove('active')});
-    list?.addEventListener('click',()=>{document.getElementById('items')?.classList.add('list');list.classList.add('active');card?.classList.remove('active')});
+  function toggleHomeownerGroups(){
+    homeownerGroupMode(!homeownerGroupsExpanded());
   }
 
-  function wrapHOSingleGroups(root){
-    const data=hoItems();
-    if(!data.length)return;
+  function restoreHomeownerGroupState(){
+    document.querySelectorAll('#items details.option-group').forEach(details=>{
+      const key=homeownerGroupKey(details);
+      if(!key)return;
 
-    const counts=new Map();
-    data.forEach(item=>{
-      if(item.optionGroupId){
-        const id=String(item.optionGroupId);
-        counts.set(id,(counts.get(id)||0)+1);
+      // If this group has a remembered state, restore only THAT group.
+      // Otherwise leave the original renderer's default state alone.
+      if(homeownerGroupOpenState.has(key)){
+        details.open=homeownerGroupOpenState.get(key);
       }
     });
-
-    [...root.querySelectorAll(':scope > article')].forEach(article=>{
-      const optionId=article.querySelector('[data-option]')?.dataset.option;
-      if(!optionId)return;
-      const item=data.find(x=>String(x.id)===String(optionId));
-      if(!item?.optionGroupId)return;
-
-      const id=String(item.optionGroupId);
-      const details=document.createElement('details');
-      details.className='option-group';
-      details.dataset.jjGroup=id;
-      if(hoState.has(id))details.open=hoState.get(id);
-
-      details.innerHTML=`
-        <summary>${escapeHtml(item.optionGroupTitle||item.title||'Selection Group')}
-          <span>${counts.get(id)||1} option${(counts.get(id)||1)===1?'':'s'} · tap to compare</span>
-        </summary>
-        <div class="option-group-items"></div>`;
-      article.replaceWith(details);
-      details.querySelector('.option-group-items').appendChild(article);
-    });
   }
 
-  function moveHOAddOption(root){
-    hoGroups().forEach(details=>{
-      hoGroupKey(details);
-      const summary=details.querySelector(':scope > summary');
-      const optionButton=details.querySelector('.option-group-items [data-option]');
-      if(!summary||!optionButton)return;
+  function bindHomeownerIndividualGroupToggles(){
+    document.querySelectorAll('#items details.option-group').forEach(details=>{
+      if(details.dataset.jjToggleBound==='1')return;
+      details.dataset.jjToggleBound='1';
 
-      const optionId=optionButton.dataset.option;
-      details.querySelectorAll('.option-group-items [data-option]').forEach(btn=>btn.remove());
+      // Give every native multi-option group a stable group id before the
+      // card-level option button is removed.
+      homeownerGroupKey(details);
 
-      if(summary.querySelector('.jj-ho-group-add-option'))return;
-
-      const countSpan=summary.querySelector('span');
-      const countText=countSpan?.textContent?.trim()||'';
-      if(countSpan)countSpan.remove();
-      const titleText=(summary.textContent||'Selection Group').replace(/\s+/g,' ').trim();
-      summary.textContent='';
-      summary.classList.add('jj-ho-summary');
-
-      const title=document.createElement('span');
-      title.className='jj-ho-summary-title';
-      title.textContent=titleText;
-
-      const actions=document.createElement('span');
-      actions.className='jj-ho-summary-actions';
-
-      const count=document.createElement('span');
-      count.className='jj-ho-summary-count';
-      count.textContent=countText;
-
-      const add=document.createElement('button');
-      add.type='button';
-      add.className='jj-ho-group-add-option secondary';
-      add.dataset.option=optionId;
-      add.textContent='+ Add Option';
-
-      actions.append(count,add);
-      summary.append(title,actions);
-    });
-
-    root.querySelectorAll(':scope > article [data-option]').forEach(btn=>btn.remove());
-  }
-
-  function bindHOToggles(){
-    hoGroups().forEach(details=>{
-      if(details.dataset.jjBound==='1')return;
-      details.dataset.jjBound='1';
-      hoGroupKey(details);
       details.addEventListener('toggle',()=>{
-        if(hoMass||hoEnhancing)return;
-        const key=hoGroupKey(details);
-        if(key)hoState.set(key,!!details.open);
-        updateHOToggle();
+        if(homeownerMassToggle||homeownerEnhancing)return;
+        const key=homeownerGroupKey(details);
+        if(key)homeownerGroupOpenState.set(key,!!details.open);
+        updateHomeownerGroupToggle();
       });
     });
   }
 
-  function restoreHOState(){
-    hoGroups().forEach(details=>{
-      const key=hoGroupKey(details);
-      if(key&&hoState.has(key))details.open=hoState.get(key);
-    });
-  }
+  function enhanceHomeownerGroups(){
+    const itemsRoot=document.getElementById('items');
+    if(!itemsRoot || homeownerEnhancing)return;
+    homeownerEnhancing=true;
 
-  function enhanceHO(){
-    const root=document.getElementById('items');
-    if(!root||hoEnhancing)return;
-    hoEnhancing=true;
     try{
-      ensureHOToolbar();
-      wrapHOSingleGroups(root);
-      moveHOAddOption(root);
-      restoreHOState();
-      bindHOToggles();
+      const viewActions=document.querySelector('.actions[aria-label="Selections view"]');
 
+      // Remove any old two-button versions.
+      document.querySelectorAll('#jjHOViewAll,#jjHOShowGroups').forEach(node=>node.remove());
+
+      if(viewActions && !document.getElementById('jjHOGroupToolbar')){
+        const toolbar=document.createElement('div');
+        toolbar.id='jjHOGroupToolbar';
+        toolbar.className='jj-ho-group-toolbar';
+        toolbar.setAttribute('aria-label','Selection groups');
+        toolbar.innerHTML=`
+          <button type="button" id="jjHOGroupToggle" class="secondary" aria-pressed="true">Show Groups</button>`;
+        viewActions.insertAdjacentElement('afterend',toolbar);
+        toolbar.querySelector('#jjHOGroupToggle').addEventListener('click',toggleHomeownerGroups);
+      }
+
+      const hoItems=homeownerItemsSafe();
+
+      // Count products by explicit group.
+      const counts=new Map();
+      hoItems.forEach(item=>{
+        if(item?.optionGroupId){
+          const id=String(item.optionGroupId);
+          counts.set(id,(counts.get(id)||0)+1);
+        }
+      });
+
+      // The original homeowner renderer makes a 1-item group look standalone.
+      // Wrap it so it still has a group header and independent open state.
+      [...itemsRoot.querySelectorAll(':scope > article')].forEach(article=>{
+        const opt=article.querySelector('[data-option]');
+        if(!opt)return;
+        const item=hoItems.find(row=>String(row.id)===String(opt.dataset.option));
+        if(!item?.optionGroupId)return;
+
+        const id=String(item.optionGroupId);
+        const details=document.createElement('details');
+        details.className='option-group';
+        details.dataset.jjGroup=id;
+        details.innerHTML=`
+          <summary>
+            ${escLocal(item.optionGroupTitle||item.title||'Selection Group')}
+            <span>${counts.get(id)||1} option${(counts.get(id)||1)===1?'':'s'} · tap to compare</span>
+          </summary>
+          <div class="option-group-items"></div>`;
+        article.replaceWith(details);
+        details.querySelector('.option-group-items').appendChild(article);
+      });
+
+      // Stabilize native multi-item groups before removing their card button.
+      itemsRoot.querySelectorAll('details.option-group').forEach(details=>{
+        homeownerGroupKey(details);
+      });
+
+      // Put Add Option in the group header, never on an individual card.
+      itemsRoot.querySelectorAll('details.option-group').forEach(details=>{
+        const summary=details.querySelector(':scope > summary');
+        const optionButton=details.querySelector('.option-group-items [data-option]');
+        if(!summary || !optionButton)return;
+
+        const optionId=optionButton.dataset.option;
+        details.querySelectorAll('.option-group-items [data-option]').forEach(btn=>btn.remove());
+
+        if(!summary.querySelector('.jj-ho-group-add-option')){
+          const existingSpan=summary.querySelector('span');
+          const oldCount=existingSpan?.textContent?.trim()||'';
+          if(existingSpan)existingSpan.remove();
+          const oldText=(summary.textContent||'Selection Group').replace(/\s+/g,' ').trim();
+          summary.textContent='';
+          summary.classList.add('jj-ho-summary');
+
+          const title=document.createElement('span');
+          title.className='jj-ho-summary-title';
+          title.textContent=oldText;
+
+          const actions=document.createElement('span');
+          actions.className='jj-ho-summary-actions';
+
+          const count=document.createElement('span');
+          count.className='jj-ho-summary-count';
+          count.textContent=oldCount;
+
+          const add=document.createElement('button');
+          add.type='button';
+          add.className='jj-ho-group-add-option secondary';
+          add.dataset.option=optionId;
+          add.textContent='+ Add Option';
+
+          actions.append(count,add);
+          summary.append(title,actions);
+        }
+      });
+
+      itemsRoot.querySelectorAll(':scope > article [data-option]').forEach(btn=>btn.remove());
+
+      // Symbols for Card / List view.
       const card=document.getElementById('cardView');
       const list=document.getElementById('listView');
-      if(card){card.textContent='▦';card.title='Card view';card.setAttribute('aria-label','Card view');}
-      if(list){list.textContent='☰';list.title='List view';list.setAttribute('aria-label','List view');}
+      if(card){
+        card.textContent='▦';
+        card.title='Card view';
+        card.setAttribute('aria-label','Card view');
+        card.style.fontSize='19px';
+        card.style.width='44px';
+        card.style.padding='10px';
+      }
+      if(list){
+        list.textContent='☰';
+        list.title='List view';
+        list.setAttribute('aria-label','List view');
+        list.style.fontSize='19px';
+        list.style.width='44px';
+        list.style.padding='10px';
+      }
 
-      updateHOToggle();
-    }finally{
-      hoEnhancing=false;
+      // Restore each group individually. This is the key fix: the map is NOT
+      // overwritten by freshly rendered groups that start closed.
+      restoreHomeownerGroupState();
+      bindHomeownerIndividualGroupToggles();
+      updateHomeownerGroupToggle();
+    } finally {
+      homeownerEnhancing=false;
     }
   }
 
-  function installHO(){
-    const root=document.getElementById('items');
-    if(!root)return false;
+  function installHomeownerEnhancements(){
+    homeownerEnhancing=false;
+    const itemsRoot=document.getElementById('items');
+    if(!itemsRoot || document.body.dataset.jjHoGroupsInstalled==='1')return false;
+    document.body.dataset.jjHoGroupsInstalled='1';
 
-    ensureHOToolbar();
-    enhanceHO();
+    // Hook the homeowner's real render() function instead of watching every
+    // DOM mutation. Native <details> open/close actions no longer trigger a
+    // re-enhancement, so closing one group cannot collapse the others.
+    if(typeof window.render==='function'){
+      const originalRender=window.render;
+      window.render=function(...args){
+        const result=originalRender.apply(this,args);
+        setTimeout(enhanceHomeownerGroups,0);
+        return result;
+      };
+    }
 
-    const observer=new MutationObserver(()=>{
-      if(hoEnhancing)return;
-      setTimeout(enhanceHO,25);
-    });
-    observer.observe(root,{childList:true,subtree:false});
-
-    setInterval(()=>{
-      if(!document.hidden)enhanceHO();
-    },1000);
-
-    document.body.dataset.jjHomeownerGroups=VERSION;
+    setTimeout(enhanceHomeownerGroups,0);
     return true;
+  }
+
+  function install(){
+    if(window.__jjSelectionGroupsInstalled)return;
+    window.__jjSelectionGroupsInstalled=true;
+    injectStyles();
+
+    // Homeowner portal: enhance its existing cards/groups without changing
+    // authentication or the portal database contract.
+    if(installHomeownerEnhancements())return;
+
+    if(typeof window.renderSelections!=='function' || typeof window.selectedProject!=='function')return;
+
+    const oldRender=window.renderSelections;
+    const oldOpenEditor=window.openSelectionEditor;
+    const oldOpenFromLink=window.openSelectionEditorFromLink;
+
+    // Keep one clear "Add to Group / Change Group" action on each card.
+    window.selectionGroupSelect=(item,index)=>groupControlHTML(item,index);
+
+    // Named groups now always render with a header, even with only one item.
+    window.renderSelectionOptionGroups=renderExplicitSelectionGroups;
+
+    window.renderSelections=function(){
+      ensureGroups(project());
+      oldRender();
+      enhanceRenderedSelections();
+    };
+
+    if(typeof oldOpenEditor==='function'){
+      window.openSelectionEditor=function(...args){
+        const result=oldOpenEditor.apply(this,args);
+        configureEditorAfterOpen();
+        return result;
+      };
+    }
+
+    if(typeof oldOpenFromLink==='function'){
+      window.openSelectionEditorFromLink=function(...args){
+        const result=oldOpenFromLink.apply(this,args);
+        configureEditorAfterOpen();
+        return result;
+      };
+    }
+
+    // Migrate existing linked selections into the explicit registry and redraw.
+    ensureGroups(project());
+    try{window.saveState?.(false);}catch{}
+    try{window.renderSelections();}catch{}
   }
 
   window.JJSelectionGroups={
+    install,
     create:()=>openCreateGroup(null),
-    manage:manageGroups,
-    openAssign,
-    addOption:addOptionToGroup,
-    openQR:()=>openHomeownerQR(),
-    expandAll:()=>setAllAppGroups(true),
-    collapseAll:()=>setAllAppGroups(false)
+    manage:openGroupManager,
+    openAssign:openAssignDialog,
+    assign:assignToGroup,
+    remove:removeFromGroup,
+    ensure:ensureGroups,
+    expandAll:()=>setAllSelectionGroups(true),
+    collapseAll:()=>setAllSelectionGroups(false)
+  };
+  window.expandAllSelectionGroups=()=>setAllSelectionGroups(true);
+  window.collapseAllSelectionGroups=()=>setAllSelectionGroups(false);
+
+  if(document.readyState==='complete')setTimeout(install,0);
+  else window.addEventListener('load',install,{once:true});
+})();
+
+
+/* -------------------------------------------------------------------------
+   J&J Selection Data Safety v73
+   Emergency protection against homeowner portal sync replacing the whole app
+   state with an older/incomplete snapshot.
+
+   Key rule:
+   - Homeowner sync may ADD missing selections.
+   - It may fill blank fields.
+   - It NEVER deletes an app selection.
+   - It NEVER replaces the entire app state.
+   ------------------------------------------------------------------------- */
+(() => {
+  if (window.__jjSelectionDataSafetyV73) return;
+  window.__jjSelectionDataSafetyV73 = true;
+
+  let safeRpc = null;
+  let safeSyncBusy = false;
+  let rpcPatched = false;
+
+  const clone = value => {
+    try { return JSON.parse(JSON.stringify(value)); }
+    catch { return value; }
   };
 
-  async function boot(){
-    injectStyles();
-    const route=homeownerRoute();
-    if(route.id){
-      const id=route.id;
-      window.JJHomeownerToken=route.token;
-      let project=null;
-      try{const saved=JSON.parse(localStorage.getItem('jj_full_proto')||'null');project=saved?.projects?.find(item=>String(item.id)===String(id))||null}catch{}
-      if(route.token && typeof window.loadHomeownerProject==='function')project=await window.loadHomeownerProject(id,route.token)||project;
-      if(!project){const current=appProject();if(current&&String(current.id)===String(id))project=current;}
-      if(project){window.JJHomeownerProject=project;window.JJGuestMode=true;setTimeout(()=>renderHomeownerPage(project),0);return;}
-      document.getElementById('cloudLoginOverlay')?.classList.add('hidden');
-      document.getElementById('loginOverlay')?.classList.add('hidden');
-      setTimeout(()=>renderHomeownerPage({id,name:'Homeowner selections',selections:[],selectionGroups:[],portalUnavailable:true}),0);
-      return;
-    }
-    if(installHO())return;
-    installApp();
+  function currentState(){
+    try { return state; } catch { return null; }
   }
 
-  if(document.readyState==='complete')setTimeout(boot,0);
+  function saveRecoverySnapshot(reason='before-sync'){
+    const s=currentState();
+    if(!s?.projects) return;
+
+    try{
+      // Keep a lightweight recovery copy so product names/links/groups survive
+      // even when photos are large base64 strings.
+      const snapshot={
+        at:new Date().toISOString(),
+        reason,
+        selectedProjectId:s.selectedProjectId,
+        projects:s.projects.map(p=>({
+          id:p.id,
+          name:p.name,
+          jobNo:p.jobNo,
+          selectionRooms:clone(p.selectionRooms||[]),
+          selectionGroups:clone(p.selectionGroups||[]),
+          selections:(p.selections||[]).map(item=>({
+            ...clone(item),
+            image:typeof item.image==='string' && item.image.startsWith('data:image/')
+              ? ''
+              : item.image
+          }))
+        }))
+      };
+
+      const key='jj_selection_recovery_history_v73';
+      let history=[];
+      try{ history=JSON.parse(localStorage.getItem(key)||'[]'); }catch{}
+      history.unshift(snapshot);
+      history=history.slice(0,3);
+      localStorage.setItem(key,JSON.stringify(history));
+    }catch(err){
+      console.warn('Selection recovery snapshot could not be saved:',err);
+    }
+  }
+
+  function projectMatch(localProjects,remoteProject){
+    return localProjects.find(p=>String(p.id)===String(remoteProject.id))
+      || localProjects.find(p=>remoteProject.jobNo && p.jobNo===remoteProject.jobNo)
+      || localProjects.find(p=>remoteProject.name && p.name===remoteProject.name);
+  }
+
+  function meaningful(value){
+    return value !== undefined && value !== null && value !== '';
+  }
+
+  function mergeOneSelection(localItem,remoteItem){
+    // Local/app record wins by default. Only fill information that is missing
+    // locally. This prevents older homeowner snapshots from rolling products
+    // backward while still allowing recovery of incomplete records.
+    const merged={...localItem};
+
+    const fillIfBlank=[
+      'url','title','vendor','category','room','quality','model','image',
+      'unitPrice','quantity','purchasedBy','optionGroupId','optionGroupTitle',
+      'optionLabel','description','notes','leadTimeValue','leadTimeUnit'
+    ];
+
+    fillIfBlank.forEach(key=>{
+      if(!meaningful(merged[key]) && meaningful(remoteItem[key])){
+        merged[key]=clone(remoteItem[key]);
+      }
+    });
+
+    // Homeowner may positively select something. Accept that positive action,
+    // but never downgrade Ordered/Received/Approved or delete the local record.
+    if(remoteItem.homeownerSelected===true){
+      merged.homeownerSelected=true;
+      if(remoteItem.homeownerSelectedAt) merged.homeownerSelectedAt=remoteItem.homeownerSelectedAt;
+      if((merged.status||'Pending')==='Pending') merged.status='Selected';
+    }
+
+    if(remoteItem.inStock===true && !merged.inStock) merged.inStock=true;
+
+    return merged;
+  }
+
+  function safeMergeRemoteState(remoteState,source='homeowner'){
+    const s=currentState();
+    if(!s?.projects || !remoteState?.projects) return {added:0,filled:0};
+
+    saveRecoverySnapshot('before-'+source);
+
+    let added=0;
+    let filled=0;
+
+    remoteState.projects.forEach(remoteProject=>{
+      const localProject=projectMatch(s.projects,remoteProject);
+      if(!localProject) return;
+
+      if(!Array.isArray(localProject.selections)) localProject.selections=[];
+      if(!Array.isArray(localProject.selectionRooms)) localProject.selectionRooms=[];
+      if(!Array.isArray(localProject.selectionGroups)) localProject.selectionGroups=[];
+
+      // Never remove rooms/groups from the app. Union only.
+      for(const room of remoteProject.selectionRooms||[]){
+        if(room && !localProject.selectionRooms.includes(room)){
+          localProject.selectionRooms.push(room);
+        }
+      }
+
+      const localGroups=new Map(localProject.selectionGroups.map(g=>[String(g.id),g]));
+      for(const group of remoteProject.selectionGroups||[]){
+        if(!group?.id) continue;
+        if(!localGroups.has(String(group.id))){
+          localProject.selectionGroups.push(clone(group));
+          localGroups.set(String(group.id),group);
+        }
+      }
+
+      const byId=new Map(
+        localProject.selections
+          .filter(item=>item?.id!==undefined && item?.id!==null)
+          .map(item=>[String(item.id),item])
+      );
+
+      for(const remoteItem of remoteProject.selections||[]){
+        if(!remoteItem) continue;
+        const key=remoteItem.id!==undefined && remoteItem.id!==null
+          ? String(remoteItem.id)
+          : '';
+
+        if(key && byId.has(key)){
+          const localItem=byId.get(key);
+          const before=JSON.stringify(localItem);
+          const merged=mergeOneSelection(localItem,remoteItem);
+          Object.assign(localItem,merged);
+          if(JSON.stringify(localItem)!==before) filled++;
+          continue;
+        }
+
+        // If an older portal record lacks a stable id, avoid duplicate recovery
+        // by checking a product fingerprint first.
+        const fingerprint = x => [
+          String(x.title||'').trim().toLowerCase(),
+          String(x.url||'').trim().toLowerCase(),
+          String(x.model||'').trim().toLowerCase(),
+          String(x.room||'').trim().toLowerCase()
+        ].join('|');
+
+        const fp=fingerprint(remoteItem);
+        const existing=localProject.selections.find(item=>fingerprint(item)===fp && fp!=='|||');
+        if(existing){
+          const before=JSON.stringify(existing);
+          Object.assign(existing,mergeOneSelection(existing,remoteItem));
+          if(JSON.stringify(existing)!==before) filled++;
+        }else{
+          localProject.selections.push(clone(remoteItem));
+          added++;
+        }
+      }
+    });
+
+    // Persist the merged/union state. This intentionally pushes the union back
+    // to cloud so an incomplete portal copy cannot remain authoritative.
+    try{
+      localStorage.setItem('jj_full_proto',JSON.stringify(s));
+      if(typeof saveState==='function') saveState(false);
+      if(typeof renderAll==='function') renderAll();
+    }catch(err){
+      console.error('Safe selection merge save failed:',err);
+    }
+
+    return {added,filled};
+  }
+
+  async function safeManualSync(){
+    if(safeSyncBusy) return;
+    if(!safeRpc){
+      try{ toast('Cloud is still connecting'); }catch{}
+      return;
+    }
+
+    let project=null;
+    try{ project=selectedProject(); }catch{}
+    if(!project) return;
+
+    safeSyncBusy=true;
+    try{
+      const {data,error}=await safeRpc('jj_portal_sync',{p_job:String(project.id)});
+      if(error) throw error;
+      if(!data){
+        try{ toast('No new homeowner updates'); }catch{}
+        return;
+      }
+
+      const result=safeMergeRemoteState(data,'manual-homeowner-sync');
+      try{
+        toast(result.added
+          ? `Recovered ${result.added} missing selection${result.added===1?'':'s'}`
+          : 'Homeowner updates merged safely');
+      }catch{}
+    }catch(err){
+      console.error('Safe homeowner sync error:',err);
+      try{ toast('Homeowner sync unavailable'); }catch{}
+    }finally{
+      safeSyncBusy=false;
+    }
+  }
+
+  async function safeAutoSync(){
+    if(safeSyncBusy || document.hidden || !safeRpc) return;
+
+    // Avoid changing state while the user is editing.
+    if(document.querySelector('.selection-modal-backdrop.open')
+      || document.querySelector('dialog[open]')
+      || ['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName)){
+      return;
+    }
+
+    safeSyncBusy=true;
+    try{
+      const {data,error}=await safeRpc('jj_portal_sync_pending');
+      if(!error && data){
+        safeMergeRemoteState(data,'auto-homeowner-sync');
+      }
+    }catch(err){
+      console.warn('Safe auto homeowner sync:',err);
+    }finally{
+      safeSyncBusy=false;
+    }
+  }
+
+  function installRpcGuard(){
+    let client=null;
+    try{ client=cloudClient; }catch{}
+    if(!client?.rpc || rpcPatched) return false;
+
+    rpcPatched=true;
+    safeRpc=client.rpc.bind(client);
+
+    // The original app created an 8-second interval using the old destructive
+    // autoSyncHomeownerSelections function. We cannot recover that interval id,
+    // so guard the RPC it uses. Returning null prevents that old callback from
+    // replacing the entire app state.
+    client.rpc=function(functionName,args,options){
+      if(functionName==='jj_portal_sync_pending' && !window.__jjSafePortalRpcPass){
+        return Promise.resolve({data:null,error:null});
+      }
+      return safeRpc(functionName,args,options);
+    };
+
+    // Replace the manual Refresh Homeowner Updates action with safe union merge.
+    window.syncHomeownerSelections=safeManualSync;
+
+    // Our safe interval performs union-only recovery.
+    setInterval(safeAutoSync,8000);
+
+    console.info('J&J selection data safety v73 active');
+    return true;
+  }
+
+  // cloudClient is initialized asynchronously after this shared file loads.
+  const installer=setInterval(()=>{
+    if(installRpcGuard()){
+      clearInterval(installer);
+      // Run a safe recovery pass once after cloud is connected.
+      setTimeout(safeAutoSync,1200);
+    }
+  },500);
+
+  // Public emergency helper for console/debug use.
+  window.JJSelectionRecovery={
+    syncNow:safeManualSync,
+    merge:safeMergeRemoteState,
+    snapshot:()=>saveRecoverySnapshot('manual')
+  };
+})();
+
+
+/* -------------------------------------------------------------------------
+   J&J Selection Disclosure Controls v75
+   Interaction-only fix.
+   - Does NOT add/delete/change selection records.
+   - Does NOT change homeowner sync or recovery logic.
+   - Uses capture-phase click handling so older button listeners cannot
+     double-toggle the disclosure groups.
+   ------------------------------------------------------------------------- */
+(() => {
+  if(window.__jjDisclosureControlsV75) return;
+  window.__jjDisclosureControlsV75 = true;
+
+  function appGroupDetails(){
+    const root=document.getElementById('selections');
+    if(!root) return [];
+    let groups=[...root.querySelectorAll('.selection-grid details.selection-option-group')];
+    if(!groups.length){
+      groups=[...root.querySelectorAll('.selection-grid details.option-group')];
+    }
+    return groups;
+  }
+
+  function setAppGroups(open){
+    appGroupDetails().forEach(details=>{
+      details.open=!!open;
+      if(open) details.setAttribute('open','');
+      else details.removeAttribute('open');
+    });
+  }
+
+  function ensureAppControls(){
+    const root=document.getElementById('selections');
+    if(!root) return;
+
+    // Remove the older injected control strip. Its button listeners were the
+    // unreliable part; the v75 strip lives outside the Card/List role group.
+    root.querySelectorAll('.jj-app-group-controls').forEach(node=>node.remove());
+
+    const view=root.querySelector('.toolbar[role="group"][aria-label="Selections view"]');
+    if(!view) return;
+
+    let controls=root.querySelector('#jjAppDisclosureControlsV75');
+    if(!controls){
+      controls=document.createElement('div');
+      controls.id='jjAppDisclosureControlsV75';
+      controls.className='toolbar';
+      controls.setAttribute('aria-label','Selection group controls');
+      controls.style.margin='-6px 0 14px';
+      controls.innerHTML=`
+        <button type="button" class="btn btn-light" id="jjAppExpandAllV75">Expand All</button>
+        <button type="button" class="btn btn-light" id="jjAppCollapseAllV75">Collapse All</button>`;
+      view.insertAdjacentElement('afterend',controls);
+    }
+
+    const hasGroups=appGroupDetails().length>0;
+    controls.querySelectorAll('button').forEach(btn=>btn.disabled=!hasGroups);
+  }
+
+  function hoGroupDetails(){
+    return [...document.querySelectorAll('#items details.option-group')];
+  }
+
+  function hoAllOpen(){
+    const groups=hoGroupDetails();
+    return groups.length>0 && groups.every(details=>details.open);
+  }
+
+  function updateHOControl(){
+    const button=document.getElementById('jjHOGroupToggle');
+    if(!button) return;
+    const groups=hoGroupDetails();
+
+    button.disabled=!groups.length;
+    button.textContent=hoAllOpen()?'Show Groups':'View All';
+    button.title=hoAllOpen()?'Collapse all selection groups':'Expand all selection groups';
+    button.setAttribute('aria-pressed',String(hoAllOpen()));
+  }
+
+  function setHOGroups(open){
+    hoGroupDetails().forEach(details=>{
+      details.open=!!open;
+      if(open) details.setAttribute('open','');
+      else details.removeAttribute('open');
+    });
+    updateHOControl();
+  }
+
+  function bindHOToggleLabels(){
+    hoGroupDetails().forEach(details=>{
+      if(details.dataset.jjV75ToggleBound==='1') return;
+      details.dataset.jjV75ToggleBound='1';
+
+      // This only updates the View All / Show Groups wording.
+      // It never opens or closes any other group.
+      details.addEventListener('toggle',()=>{
+        setTimeout(updateHOControl,0);
+      });
+    });
+  }
+
+  function ensureHOControls(){
+    const items=document.getElementById('items');
+    const view=document.querySelector('.actions[role="group"][aria-label="Selections view"], .actions[aria-label="Selections view"]');
+    if(!items || !view) return;
+
+    // Reuse the existing toolbar when present so the layout remains familiar.
+    let toolbar=document.getElementById('jjHOGroupToolbar');
+    if(!toolbar){
+      toolbar=document.createElement('div');
+      toolbar.id='jjHOGroupToolbar';
+      toolbar.className='jj-ho-group-toolbar';
+      toolbar.setAttribute('aria-label','Selection groups');
+      view.insertAdjacentElement('afterend',toolbar);
+    }
+
+    let button=document.getElementById('jjHOGroupToggle');
+    if(!button){
+      button=document.createElement('button');
+      button.type='button';
+      button.id='jjHOGroupToggle';
+      button.className='secondary';
+      toolbar.replaceChildren(button);
+    }else if(button.parentElement!==toolbar){
+      toolbar.replaceChildren(button);
+    }
+
+    bindHOToggleLabels();
+    updateHOControl();
+  }
+
+  // Capture phase is intentional. It prevents old injected listeners from
+  // firing after this handler and reversing the requested action.
+  document.addEventListener('click',event=>{
+    const target=event.target?.closest?.('button');
+    if(!target) return;
+
+    if(target.id==='jjAppExpandAllV75'){
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      setAppGroups(true);
+      return;
+    }
+
+    if(target.id==='jjAppCollapseAllV75'){
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      setAppGroups(false);
+      return;
+    }
+
+    if(target.id==='jjHOGroupToggle'){
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      const groups=hoGroupDetails();
+      if(!groups.length) return;
+      setHOGroups(!groups.every(details=>details.open));
+    }
+  },true);
+
+  function refreshControls(){
+    ensureAppControls();
+    ensureHOControls();
+  }
+
+  function boot(){
+    refreshControls();
+
+    const appRoot=document.getElementById('selections');
+    if(appRoot && !window.__jjV75AppObserver){
+      const observer=new MutationObserver(()=>setTimeout(ensureAppControls,0));
+      observer.observe(appRoot,{childList:true,subtree:true});
+      window.__jjV75AppObserver=observer;
+    }
+
+    const hoRoot=document.getElementById('items');
+    if(hoRoot && !window.__jjV75HOObserver){
+      // Only watch content changes. Native <details> open/close does not
+      // replace children, so an individual group remains independent.
+      const observer=new MutationObserver(()=>setTimeout(ensureHOControls,0));
+      observer.observe(hoRoot,{childList:true,subtree:false});
+      window.__jjV75HOObserver=observer;
+    }
+
+    // Fallback for pages whose selection content arrives after window load.
+    if(!window.__jjV75DisclosureTimer){
+      window.__jjV75DisclosureTimer=setInterval(()=>{
+        if(!document.hidden) refreshControls();
+      },1000);
+    }
+  }
+
+  if(document.readyState==='complete') setTimeout(boot,0);
   else window.addEventListener('load',()=>setTimeout(boot,0),{once:true});
 })();
+
+
+/* -------------------------------------------------------------------------
+   J&J Selections PDF Import + clearer group headers v76
+   - Reads prior J&J selection PDFs locally in the browser.
+   - Creates NEW selection records only after review.
+   - Never deletes or replaces existing selections.
+   - Keeps raw PDF bytes out of shared app_state to avoid sync/storage bloat.
+   ------------------------------------------------------------------------- */
+(() => {
+  if(window.__jjSelectionPdfImportV76) return;
+  window.__jjSelectionPdfImportV76 = true;
+
+  const STYLE_ID='jj-selection-pdf-import-v76';
+  const PDFJS_SRC='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+  const PDFJS_WORKER='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+  const esc=v=>String(v??'').replace(/[&<>"']/g,ch=>({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[ch]));
+
+  const clean=v=>String(v??'').replace(/\s+/g,' ').trim();
+  const norm=v=>clean(v).toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+
+  function injectV76Styles(){
+    if(document.getElementById(STYLE_ID))return;
+    const style=document.createElement('style');
+    style.id=STYLE_ID;
+    style.textContent=`
+      /* Make group title lines easier to scan */
+      #selections details.selection-option-group{
+        border:1px solid #D9E0E8!important;
+        border-radius:13px!important;
+        overflow:hidden!important;
+        background:#fff!important;
+        box-shadow:0 3px 10px rgba(20,35,74,.055)!important;
+        margin-bottom:13px!important;
+      }
+      #selections .selection-option-group-title{
+        min-height:58px!important;
+        padding:13px 15px!important;
+        border-left:5px solid #B59A62!important;
+        background:linear-gradient(90deg,#F8F3E9 0,#FFFFFF 42%)!important;
+        color:#14234A!important;
+        box-shadow:inset 0 -1px 0 #E5E9EE!important;
+      }
+      #selections .selection-option-group-title>.jj-group-title-text,
+      #selections .selection-option-group-title>span:first-child{
+        font-size:14px!important;
+        font-weight:950!important;
+        letter-spacing:.32px!important;
+        text-transform:uppercase!important;
+        color:#14234A!important;
+      }
+      #selections .jj-group-summary-count{
+        color:#536174!important;
+        font-size:11px!important;
+        font-weight:800!important;
+      }
+
+      #items>.option-group{
+        border-color:#D9E0E8!important;
+        box-shadow:0 3px 10px rgba(20,35,74,.055)!important;
+      }
+      #items>.option-group>summary,
+      #items>.option-group>summary.jj-ho-summary{
+        border-left:5px solid #B59A62!important;
+        background:linear-gradient(90deg,#F8F3E9 0,#FFFFFF 42%)!important;
+        box-shadow:inset 0 -1px 0 #E5E9EE!important;
+      }
+      #items>.option-group>summary .jj-ho-summary-title{
+        font-size:13px!important;
+        font-weight:950!important;
+        letter-spacing:.35px!important;
+        color:#14234A!important;
+      }
+
+      .jj-pdf-import-dialog{
+        width:min(980px,calc(100% - 24px));
+        max-height:90dvh;
+        border:0;
+        border-radius:16px;
+        padding:0;
+        color:#202633;
+        box-shadow:0 24px 70px rgba(12,28,45,.34);
+      }
+      .jj-pdf-import-dialog::backdrop{background:rgba(7,18,31,.58)}
+      .jj-pdf-import-head,.jj-pdf-import-foot{
+        position:sticky;z-index:3;display:flex;align-items:center;justify-content:space-between;
+        gap:12px;padding:16px 18px;background:#fff;
+      }
+      .jj-pdf-import-head{top:0;border-bottom:1px solid #E2E6EC}
+      .jj-pdf-import-foot{bottom:0;border-top:1px solid #E2E6EC;justify-content:flex-end;flex-wrap:wrap}
+      .jj-pdf-import-head h3{margin:2px 0 0;color:#14234A}
+      .jj-pdf-import-head small{color:#B59A62;font-size:9px;font-weight:950;letter-spacing:.9px}
+      .jj-pdf-import-body{padding:16px;background:#F6F8FA;overflow:auto}
+      .jj-pdf-import-summary{
+        display:flex;gap:10px;flex-wrap:wrap;align-items:center;
+        margin-bottom:12px;padding:11px 13px;border:1px solid #DCE2E9;border-radius:11px;background:#fff;
+        color:#526174;font-size:12px;
+      }
+      .jj-pdf-import-summary b{color:#14234A}
+      .jj-pdf-import-list{display:grid;gap:10px}
+      .jj-pdf-row{
+        display:grid;grid-template-columns:auto minmax(0,1fr);gap:12px;
+        padding:13px;border:1px solid #DCE2E9;border-radius:12px;background:#fff;
+      }
+      .jj-pdf-row.duplicate{opacity:.64;background:#FAFAFA}
+      .jj-pdf-row-check{padding-top:4px}
+      .jj-pdf-row-check input{width:18px;height:18px}
+      .jj-pdf-row-main{min-width:0}
+      .jj-pdf-row-title{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:7px}
+      .jj-pdf-row-title strong{color:#14234A;font-size:13px}
+      .jj-pdf-chip{
+        display:inline-flex;padding:4px 7px;border-radius:999px;background:#EEF3F7;
+        color:#536174;font-size:9px;font-weight:850;
+      }
+      .jj-pdf-chip.warn{background:#FFF1D9;color:#865E0A}
+      .jj-pdf-row-grid{
+        display:grid;grid-template-columns:1.35fr .8fr .9fr .85fr;gap:8px;
+      }
+      .jj-pdf-row-grid label{font-size:9px;font-weight:850;color:#667386;text-transform:uppercase;letter-spacing:.4px}
+      .jj-pdf-row-grid input,.jj-pdf-row-grid select{
+        width:100%;margin:4px 0 0;padding:8px 9px;border:1px solid #C9D1DB;border-radius:7px;
+        background:#fff;color:#202633;font-size:11px;text-transform:none;letter-spacing:0;
+      }
+      .jj-pdf-row-meta{margin-top:7px;color:#6B7787;font-size:10px;line-height:1.45}
+      .jj-pdf-import-empty{
+        padding:28px 18px;border:1px dashed #C9D1DB;border-radius:12px;background:#fff;text-align:center;
+      }
+      .jj-pdf-import-empty strong{display:block;color:#14234A;margin-bottom:6px}
+      .jj-pdf-import-progress{
+        display:none;margin:0 0 12px;padding:11px 13px;border-radius:10px;background:#14234A;color:#fff;font-size:12px;
+      }
+      .jj-pdf-import-progress.show{display:block}
+      @media(max-width:760px){
+        .jj-pdf-row-grid{grid-template-columns:1fr 1fr}
+      }
+      @media(max-width:520px){
+        .jj-pdf-row{grid-template-columns:1fr}
+        .jj-pdf-row-check{padding:0}
+        .jj-pdf-row-grid{grid-template-columns:1fr}
+        .jj-pdf-import-foot .btn{flex:1}
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  function currentProject(){
+    try{return typeof window.selectedProject==='function'?window.selectedProject():null}
+    catch{return null}
+  }
+
+  function toastV76(message){
+    try{window.toast?.(message)}catch{}
+  }
+
+  function ensurePdfInput(){
+    let input=document.getElementById('jjSelectionPdfInputV76');
+    if(input)return input;
+    input=document.createElement('input');
+    input.id='jjSelectionPdfInputV76';
+    input.type='file';
+    input.accept='application/pdf,.pdf';
+    input.multiple=true;
+    input.hidden=true;
+    input.addEventListener('change',async()=>{
+      const files=[...input.files||[]];
+      input.value='';
+      if(files.length) await readSelectionPdfs(files);
+    });
+    document.body.appendChild(input);
+    return input;
+  }
+
+  function ensureUploadButton(){
+    const root=document.getElementById('selections');
+    if(!root)return;
+
+    const top=root.querySelector('.jj-selection-top-actions');
+    if(!top)return;
+
+    if(!top.querySelector('#jjUploadSelectionPdfV76')){
+      const button=document.createElement('button');
+      button.id='jjUploadSelectionPdfV76';
+      button.type='button';
+      button.className='btn btn-light';
+      button.textContent='Upload File';
+      button.title='Import selections from a J&J PDF';
+      button.addEventListener('click',()=>ensurePdfInput().click());
+      top.appendChild(button);
+    }
+  }
+
+  function loadPdfJs(){
+    if(window.pdfjsLib){
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc=PDFJS_WORKER;
+      return Promise.resolve(window.pdfjsLib);
+    }
+    if(window.__jjPdfJsPromise)return window.__jjPdfJsPromise;
+
+    window.__jjPdfJsPromise=new Promise((resolve,reject)=>{
+      const script=document.createElement('script');
+      script.src=PDFJS_SRC;
+      script.async=true;
+      script.onload=()=>{
+        if(!window.pdfjsLib){
+          reject(new Error('PDF reader did not load.'));
+          return;
+        }
+        window.pdfjsLib.GlobalWorkerOptions.workerSrc=PDFJS_WORKER;
+        resolve(window.pdfjsLib);
+      };
+      script.onerror=()=>reject(new Error('PDF reader could not load. Check your internet connection.'));
+      document.head.appendChild(script);
+    });
+    return window.__jjPdfJsPromise;
+  }
+
+  function groupTextItems(textContent){
+    const raw=(textContent?.items||[])
+      .filter(item=>clean(item.str))
+      .map(item=>({
+        text:clean(item.str),
+        x:Number(item.transform?.[4]||0),
+        y:Number(item.transform?.[5]||0),
+        h:Number(item.height||Math.abs(item.transform?.[3]||0)||0)
+      }))
+      .sort((a,b)=>Math.abs(b.y-a.y)>2?b.y-a.y:a.x-b.x);
+
+    const lines=[];
+    for(const item of raw){
+      let line=lines.find(existing=>Math.abs(existing.y-item.y)<=2.3);
+      if(!line){
+        line={y:item.y,h:item.h,items:[]};
+        lines.push(line);
+      }
+      line.items.push(item);
+      line.h=Math.max(line.h,item.h);
+    }
+
+    return lines
+      .sort((a,b)=>b.y-a.y)
+      .map(line=>({
+        y:line.y,
+        h:line.h,
+        text:clean(line.items.sort((a,b)=>a.x-b.x).map(item=>item.text).join(' '))
+      }))
+      .filter(line=>line.text);
+  }
+
+  function annotationLinks(annotations){
+    return (annotations||[]).map(a=>{
+      const url=clean(a.url||a.unsafeUrl||a.action||'');
+      const rect=Array.isArray(a.rect)?a.rect:[];
+      return {
+        url:/^https?:\/\//i.test(url)?url:'',
+        y:rect.length>=4?(Number(rect[1])+Number(rect[3]))/2:NaN
+      };
+    }).filter(a=>a.url);
+  }
+
+  const exactProductLabels=[
+    'TOILET','SHOWER FAUCET','TUB FAUCET','VANITY','VANITY FAUCET','VANIRTY FAUCET',
+    'VANITY LIGHT','LIGHT FIXTURE','SCONCE','EXHAUST FAN','MIRROR','SHOWER DOOR',
+    'SHOWER BASE','SHOWER PAN','SHOWER BENCH','BENCH TOP','THRESHOLD','FLOOR VENT',
+    'INTERIOR DOOR','BI-FOLD DOOR','BIFOLD DOOR','DOOR HARDWARE','DOOR CASING',
+    'BASEBOARD','FLOORING','FLOOR TILE','SHOWER TILE','WALL TILE','SHOWER FLOOR TILE',
+    'BATHROOM FLOOR TILE','HARDWARE','TOWEL BAR','TOILET PAPER HOLDER','ROBE HOOK'
+  ];
+
+  function isProductLabel(text){
+    const upper=clean(text).toUpperCase();
+    if(exactProductLabels.includes(upper))return true;
+    if(upper==='EXISTING MATERIALS')return true;
+
+    if(
+      upper.length<=34 &&
+      /^[A-Z0-9 &/+-]+$/.test(upper) &&
+      /(FAUCET|VANITY|TOILET|TILE|MIRROR|LIGHT|FAN|DOOR|FLOOR|BASEBOARD|CASING|HARDWARE|VENT|BENCH|THRESHOLD|FIXTURE)/.test(upper) &&
+      !/(SELECTIONS|ALLOWANCE|OPTION ONLY|FINAL SELECTION|J ?& ?J|HOME RENOVATIONS)/.test(upper)
+    )return true;
+
+    return false;
+  }
+
+  function isOptionMarker(text){
+    return /^OPTION ONLY\s*-\s*NOT SELECTED$/i.test(clean(text));
+  }
+
+  function isNoise(text){
+    const s=clean(text);
+    return !s ||
+      /^J\s*&\s*J\s+HOME\s+RENOVATIONS/i.test(s) ||
+      /^J\s*&\s*J\s+H\s*O\s*M\s*E/i.test(s) ||
+      /\|\s*\d+\s+OF\s+\d+$/i.test(s) ||
+      /^PAGE\s+\d+$/i.test(s) ||
+      /^VIEW PRODUCT$/i.test(s) ||
+      /^ALLOWANCE$/i.test(s) ||
+      /^FINAL SELECTION NEEDED$/i.test(s) ||
+      /^Selections shown are for project coordination/i.test(s) ||
+      /^Pricing and availability may change/i.test(s) ||
+      /^The products below are included for comparison only/i.test(s);
+  }
+
+  function isMetaLine(text){
+    return /(Vendor\s*:|Store SKU|Internet\s*#|Internet\s+\d|UPC(?: Code)?\s*#?|Product ID\s*:|Model\s*#?)/i.test(text);
+  }
+
+  function detectRoom(lines,project){
+    const joined=lines.map(l=>l.text).join(' | ');
+    const roomPatterns=[
+      /Primary Bathroom/i,/First Floor Bathroom/i,/Guest Bathroom/i,/Hall Bathroom/i,
+      /Powder Room/i,/Master Bathroom/i,/Basement Bathroom/i,/Basement/i,/Kitchen/i,
+      /Laundry Room/i,/Garage/i
+    ];
+    for(const pattern of roomPatterns){
+      const found=joined.match(pattern);
+      if(found)return found[0].replace(/\b\w/g,c=>c.toUpperCase());
+    }
+    return project?.selectionActiveRoom||project?.selectionRooms?.[0]||'Primary Bathroom';
+  }
+
+  function looksLikeOptionHeading(text){
+    const s=clean(text);
+    return s.length<80 &&
+      /(Options?|Alternates?|Choices?)$/i.test(s) &&
+      !/^Option\s+\d+/i.test(s) &&
+      !/^OPTION ONLY/i.test(s);
+  }
+
+  function pageSectionHeading(lines){
+    const candidates=lines.slice(0,12).filter(line=>{
+      const s=line.text;
+      if(isNoise(s)||isProductLabel(s)||isOptionMarker(s)||isMetaLine(s))return false;
+      if(/^ALYSSA|^MARY|^RAYMOND|^\w+\s*&\s*\w+\s*\|/i.test(s))return false;
+      return /(Bathroom|Lighting|Ventilation|Doors|Hardware|Trim|Flooring|Fixtures|Vanity|Accessories|Tile|Plumbing|Electrical|Mirrors|Selections|Options)/i.test(s);
+    });
+    return clean(candidates[0]?.text||'');
+  }
+
+  function categoryFor(label,title){
+    const s=(clean(label)+' '+clean(title)).toLowerCase();
+    if(/toilet|faucet|shower|tub|valve|drain/.test(s))return 'Plumbing';
+    if(/vanity/.test(s) && !/light|faucet/.test(s))return 'Vanity';
+    if(/light|sconce|fan|electrical/.test(s))return 'Electrical';
+    if(/mirror/.test(s))return 'Mirror';
+    if(/tile|flooring|lvp|floor/.test(s))return 'Flooring / Tile';
+    if(/door|hardware|casing|baseboard/.test(s))return 'Doors / Trim';
+    if(/existing/.test(s))return 'Existing Materials';
+    return clean(label).replace(/\b\w/g,c=>c.toUpperCase())||'Selection';
+  }
+
+  function inferStatus(blockText,pageText){
+    const s=blockText+' '+pageText;
+    if(/OPTION ONLY\s*-\s*NOT SELECTED|NOT YET SELECTED|FINAL SELECTION NEEDED|OPTIONAL/i.test(s))return 'Pending';
+    if(/\bSELECTED\b/i.test(blockText) && !/\bNOT SELECTED\b/i.test(blockText))return 'Selected';
+    return 'Pending';
+  }
+
+  function inferPurchasedBy(blockText){
+    if(/Purchased by\s*(?:H\.?O\.?|Homeowner)/i.test(blockText))return 'Homeowner';
+    if(/Purchased by\s*J\s*&\s*J/i.test(blockText))return 'J&J';
+    return '';
+  }
+
+  function metadataFromText(blockText){
+    const vendor=(blockText.match(/Vendor\s*:\s*([^|]+?)(?=\s+(?:Product ID|Store SKU|Internet|UPC|Model)\b|\||$)/i)||[])[1]||'';
+    const model=(blockText.match(/\bModel\s*#?\s*([A-Za-z0-9._/-]+)/i)||[])[1]||
+      (blockText.match(/\b(?:Store SKU|SKU)\s*#?\s*([A-Za-z0-9._/-]+)/i)||[])[1]||
+      (blockText.match(/\bUPC(?: Code)?\s*#?\s*([A-Za-z0-9._/-]+)/i)||[])[1]||
+      (blockText.match(/\bInternet\s*#?\s*([A-Za-z0-9._/-]+)/i)||[])[1]||'';
+    const allowance=(blockText.match(/\bALLOWANCE\b[\s:$]*\$?\s*([0-9,]+(?:\.\d{2})?)/i)||[])[1]||'';
+    return {vendor:clean(vendor),model:clean(model),allowance:clean(allowance)};
+  }
+
+  function nearbyOptionHeading(lines,startIndex){
+    for(let i=startIndex-1;i>=Math.max(0,startIndex-8);i--){
+      const s=lines[i].text;
+      if(looksLikeOptionHeading(s))return clean(s);
+      if(isProductLabel(s))break;
+    }
+    return '';
+  }
+
+  function linkForBlock(blockLines,links,usedLinks){
+    if(!links.length||!blockLines.length)return '';
+    const viewLine=blockLines.find(line=>/^VIEW PRODUCT$/i.test(line.text));
+    const targetY=viewLine?.y ?? blockLines[Math.floor(blockLines.length/2)]?.y ?? 0;
+    let bestIndex=-1,bestDistance=Infinity;
+    links.forEach((link,index)=>{
+      if(usedLinks.has(index)||!Number.isFinite(link.y))return;
+      const distance=Math.abs(link.y-targetY);
+      if(distance<bestDistance){bestDistance=distance;bestIndex=index;}
+    });
+    if(bestIndex>=0 && bestDistance<95){
+      usedLinks.add(bestIndex);
+      return links[bestIndex].url;
+    }
+    return '';
+  }
+
+  function parsePageCandidates(lines,links,fileName,pageNumber,project){
+    const results=[];
+    const usedLinks=new Set();
+    const pageText=lines.map(l=>l.text).join(' ');
+    const room=detectRoom(lines,project);
+    const section=pageSectionHeading(lines);
+
+    const starts=[];
+    lines.forEach((line,index)=>{
+      if(isProductLabel(line.text)){
+        starts.push({index,type:'label'});
+      }else if(isOptionMarker(line.text)){
+        starts.push({index,type:'option'});
+      }
+    });
+
+    // Handle simple pages where the PDF uses "Shower Fixture Option" as the
+    // product marker instead of an all-caps product label.
+    lines.forEach((line,index)=>{
+      if(
+        looksLikeOptionHeading(line.text) &&
+        !starts.some(s=>Math.abs(s.index-index)<=1) &&
+        index+1<lines.length &&
+        !isNoise(lines[index+1].text)
+      ){
+        const after=lines[index+1].text;
+        if(isOptionMarker(after) || (!isMetaLine(after) && !isProductLabel(after))){
+          starts.push({index,type:'optionHeading'});
+        }
+      }
+    });
+
+    starts.sort((a,b)=>a.index-b.index);
+
+    starts.forEach((start,startPos)=>{
+      const nextIndex=starts[startPos+1]?.index ?? lines.length;
+      const block=lines.slice(start.index,nextIndex);
+      const marker=block[0]?.text||'';
+      const isExisting=/^EXISTING MATERIALS$/i.test(marker);
+      const isOption=start.type!=='label' || isOptionMarker(marker);
+
+      let cursor=1;
+      if(start.type==='optionHeading' && isOptionMarker(block[1]?.text||''))cursor=2;
+      if(start.type==='option')cursor=1;
+
+      const useful=block.slice(cursor).filter(line=>!isNoise(line.text) && !isOptionMarker(line.text));
+      const titleLine=useful.find(line=>!isMetaLine(line.text) && !/^\$[\d,.]+$/.test(line.text));
+
+      let title='';
+      if(isExisting){
+        title='Existing Materials';
+      }else if(start.type==='optionHeading' && titleLine){
+        title=titleLine.text;
+      }else if(start.type==='option' && titleLine){
+        title=titleLine.text;
+      }else{
+        title=titleLine?.text||'';
+      }
+      title=clean(title);
+      if(!title)return;
+
+      const titleIndex=block.findIndex(line=>line.text===title);
+      const descriptionLines=block
+        .slice(Math.max(1,titleIndex+1))
+        .map(line=>line.text)
+        .filter(text=>
+          !isNoise(text) &&
+          !isMetaLine(text) &&
+          !/^OPTION ONLY/i.test(text) &&
+          !/^\$[\d,.]+$/.test(text) &&
+          !/^SELECTED$/i.test(text) &&
+          !/^PRE-SELECTED$/i.test(text) &&
+          !/^PARTIAL$/i.test(text)
+        );
+
+      const blockText=block.map(line=>line.text).join(' ');
+      const meta=metadataFromText(blockText);
+      const optionGroup= isOption
+        ? (nearbyOptionHeading(lines,start.index) || (start.type==='optionHeading'?clean(marker):'') || section || clean(marker))
+        : '';
+
+      const pdfLink=linkForBlock(block,links,usedLinks);
+
+      results.push({
+        id:`pdf-${Date.now()}-${pageNumber}-${results.length}-${Math.random().toString(36).slice(2,7)}`,
+        sourceFile:fileName,
+        sourcePage:pageNumber,
+        label:clean(marker),
+        title,
+        room,
+        category:categoryFor(marker,title),
+        group:optionGroup,
+        vendor:meta.vendor,
+        model:meta.model,
+        description:clean(descriptionLines.join(' | ')),
+        notes:[
+          `Imported from PDF: ${fileName} · page ${pageNumber}`,
+          meta.allowance?`PDF allowance: $${meta.allowance}`:''
+        ].filter(Boolean).join('\n'),
+        status:inferStatus(blockText,pageText),
+        purchasedBy:inferPurchasedBy(blockText),
+        url:pdfLink,
+        duplicate:false
+      });
+    });
+
+    // Avoid accidental duplicate blocks caused by both an option heading and
+    // the status marker immediately below it describing the same product.
+    const seen=new Set();
+    return results.filter(item=>{
+      const key=[norm(item.title),norm(item.model),norm(item.group),item.sourcePage].join('|');
+      if(seen.has(key))return false;
+      seen.add(key);
+      return true;
+    });
+  }
+
+  function selectionFingerprint(item){
+    return [
+      norm(item.title),
+      norm(item.model),
+      clean(item.url||'').toLowerCase(),
+      norm(item.room)
+    ].join('|');
+  }
+
+  async function readSelectionPdfs(files){
+    const project=currentProject();
+    if(!project){
+      toastV76('Open a project first');
+      return;
+    }
+
+    openImportProgress(files.length);
+    try{
+      const pdfjs=await loadPdfJs();
+      const imported=[];
+
+      for(let fileIndex=0;fileIndex<files.length;fileIndex++){
+        const file=files[fileIndex];
+        updateImportProgress(`Reading ${file.name} · ${fileIndex+1} of ${files.length}`);
+
+        const bytes=new Uint8Array(await file.arrayBuffer());
+        const pdf=await pdfjs.getDocument({data:bytes}).promise;
+
+        for(let pageNumber=1;pageNumber<=pdf.numPages;pageNumber++){
+          updateImportProgress(`Reading ${file.name} · page ${pageNumber} of ${pdf.numPages}`);
+          const page=await pdf.getPage(pageNumber);
+          const [textContent,annotations]=await Promise.all([
+            page.getTextContent(),
+            page.getAnnotations({intent:'display'}).catch(()=>[])
+          ]);
+          const lines=groupTextItems(textContent);
+          const links=annotationLinks(annotations);
+          imported.push(...parsePageCandidates(lines,links,file.name,pageNumber,project));
+        }
+      }
+
+      const existing=new Set((project.selections||[]).map(selectionFingerprint));
+      imported.forEach(item=>{
+        item.duplicate=existing.has(selectionFingerprint(item));
+      });
+
+      closeImportProgress();
+      openImportReview(imported,files);
+    }catch(err){
+      console.error('PDF selection import failed',err);
+      closeImportProgress();
+      alert(`Could not read the PDF selection file.\n\n${err?.message||'Please try a J&J selection PDF with selectable text.'}`);
+    }
+  }
+
+  function progressDialog(){
+    let dialog=document.getElementById('jjPdfProgressV76');
+    if(dialog)return dialog;
+    dialog=document.createElement('dialog');
+    dialog.id='jjPdfProgressV76';
+    dialog.className='jj-pdf-import-dialog';
+    dialog.innerHTML=`
+      <div class="jj-pdf-import-head">
+        <div><small>SELECTIONS</small><h3>Reading PDF</h3></div>
+      </div>
+      <div class="jj-pdf-import-body">
+        <div class="jj-pdf-import-progress show" id="jjPdfProgressTextV76">Preparing PDF reader…</div>
+        <div style="color:#647184;font-size:12px">The PDF is read on this device. The file itself is not added to shared project state.</div>
+      </div>`;
+    document.body.appendChild(dialog);
+    return dialog;
+  }
+
+  function openImportProgress(count){
+    const dialog=progressDialog();
+    document.getElementById('jjPdfProgressTextV76').textContent=`Preparing ${count} PDF${count===1?'':'s'}…`;
+    if(!dialog.open)dialog.showModal();
+  }
+
+  function updateImportProgress(text){
+    const node=document.getElementById('jjPdfProgressTextV76');
+    if(node)node.textContent=text;
+  }
+
+  function closeImportProgress(){
+    const dialog=document.getElementById('jjPdfProgressV76');
+    if(dialog?.open)dialog.close();
+    dialog?.remove();
+  }
+
+  function roomOptions(project,current){
+    const rooms=[...(project.selectionRooms||[])];
+    if(current && !rooms.includes(current))rooms.push(current);
+    return rooms.map(room=>`<option ${room===current?'selected':''}>${esc(room)}</option>`).join('');
+  }
+
+  function purchaseOptions(current){
+    const values=['','J&J','Homeowner'];
+    return values.map(value=>`<option value="${esc(value)}" ${value===current?'selected':''}>${value||'Not assigned'}</option>`).join('');
+  }
+
+  function statusOptions(current){
+    return ['Pending','Selected'].map(value=>`<option ${value===current?'selected':''}>${value}</option>`).join('');
+  }
+
+  function openImportReview(candidates,files){
+    document.getElementById('jjPdfImportReviewV76')?.remove();
+    const project=currentProject();
+
+    const dialog=document.createElement('dialog');
+    dialog.id='jjPdfImportReviewV76';
+    dialog.className='jj-pdf-import-dialog';
+
+    const uniqueCount=candidates.filter(item=>!item.duplicate).length;
+    dialog.innerHTML=`
+      <div class="jj-pdf-import-head">
+        <div>
+          <small>PDF IMPORT</small>
+          <h3>Review Selections</h3>
+        </div>
+        <button type="button" class="jj-group-icon" data-close aria-label="Close">×</button>
+      </div>
+      <div class="jj-pdf-import-body">
+        <div class="jj-pdf-import-summary">
+          <span><b>${candidates.length}</b> found</span>
+          <span><b>${uniqueCount}</b> ready to import</span>
+          <span><b>${files.length}</b> PDF${files.length===1?'':'s'}</span>
+          ${candidates.some(item=>item.duplicate)?'<span>Duplicates are unchecked automatically.</span>':''}
+        </div>
+        ${candidates.length?`
+          <div class="jj-pdf-import-list">
+            ${candidates.map((item,index)=>`
+              <section class="jj-pdf-row ${item.duplicate?'duplicate':''}" data-import-row="${index}">
+                <div class="jj-pdf-row-check">
+                  <input type="checkbox" data-import-check="${index}" ${item.duplicate?'':'checked'} aria-label="Import ${esc(item.title)}">
+                </div>
+                <div class="jj-pdf-row-main">
+                  <div class="jj-pdf-row-title">
+                    <strong>${esc(item.title)}</strong>
+                    <span class="jj-pdf-chip">${esc(item.sourceFile)} · p.${item.sourcePage}</span>
+                    ${item.group?`<span class="jj-pdf-chip">Option group: ${esc(item.group)}</span>`:''}
+                    ${item.duplicate?'<span class="jj-pdf-chip warn">Possible duplicate</span>':''}
+                  </div>
+                  <div class="jj-pdf-row-grid">
+                    <label>Product name
+                      <input data-import-title="${index}" value="${esc(item.title)}">
+                    </label>
+                    <label>Room
+                      <select data-import-room="${index}">${roomOptions(project,item.room)}</select>
+                    </label>
+                    <label>Category
+                      <input data-import-category="${index}" value="${esc(item.category)}">
+                    </label>
+                    <label>Status
+                      <select data-import-status="${index}">${statusOptions(item.status)}</select>
+                    </label>
+                    <label>Option group
+                      <input data-import-group="${index}" value="${esc(item.group)}" placeholder="Standalone">
+                    </label>
+                    <label>Purchased by
+                      <select data-import-purchased="${index}">${purchaseOptions(item.purchasedBy)}</select>
+                    </label>
+                    <label>Vendor
+                      <input data-import-vendor="${index}" value="${esc(item.vendor)}">
+                    </label>
+                    <label>Model / SKU / UPC
+                      <input data-import-model="${index}" value="${esc(item.model)}">
+                    </label>
+                  </div>
+                  <div class="jj-pdf-row-meta">
+                    ${item.url?`Product link detected · `:''}${esc(item.description||'No description detected')}
+                  </div>
+                </div>
+              </section>`).join('')}
+          </div>`:
+          `<div class="jj-pdf-import-empty">
+            <strong>No selection products were detected.</strong>
+            <span>This importer is designed for the J&J selection PDFs we have used before. PDFs that are only scanned images may need to be recreated or converted to searchable text first.</span>
+          </div>`}
+      </div>
+      <div class="jj-pdf-import-foot">
+        <button type="button" class="btn btn-light" data-close>Cancel</button>
+        ${candidates.length?`<button type="button" class="btn btn-gold" id="jjPdfImportSaveV76">Import Selected</button>`:''}
+      </div>`;
+
+    document.body.appendChild(dialog);
+    const close=()=>dialog.close();
+    dialog.querySelectorAll('[data-close]').forEach(btn=>btn.addEventListener('click',close));
+    dialog.addEventListener('close',()=>dialog.remove());
+    dialog.querySelector('#jjPdfImportSaveV76')?.addEventListener('click',()=>{
+      importReviewedCandidates(dialog,candidates,files);
+    });
+    dialog.showModal();
+  }
+
+  function ensureGroupByName(project,name){
+    const cleanName=clean(name);
+    if(!cleanName)return null;
+    if(!Array.isArray(project.selectionGroups))project.selectionGroups=[];
+    let group=project.selectionGroups.find(g=>norm(g.name)===norm(cleanName));
+    if(!group){
+      group={
+        id:'group-'+Date.now()+'-'+Math.random().toString(36).slice(2,9),
+        name:cleanName
+      };
+      project.selectionGroups.push(group);
+    }
+    return group;
+  }
+
+  function importReviewedCandidates(dialog,candidates,files){
+    const project=currentProject();
+    if(!project)return;
+    if(!Array.isArray(project.selections))project.selections=[];
+    if(!Array.isArray(project.selectionRooms))project.selectionRooms=[];
+    if(!Array.isArray(project.selectionImports))project.selectionImports=[];
+
+    const chosen=[];
+    candidates.forEach((item,index)=>{
+      if(!dialog.querySelector(`[data-import-check="${index}"]`)?.checked)return;
+
+      const title=clean(dialog.querySelector(`[data-import-title="${index}"]`)?.value);
+      if(!title)return;
+
+      const room=clean(dialog.querySelector(`[data-import-room="${index}"]`)?.value)||project.selectionRooms[0]||'Primary Bathroom';
+      const category=clean(dialog.querySelector(`[data-import-category="${index}"]`)?.value)||'Selection';
+      const groupName=clean(dialog.querySelector(`[data-import-group="${index}"]`)?.value);
+      const status=clean(dialog.querySelector(`[data-import-status="${index}"]`)?.value)||'Pending';
+      const purchasedBy=clean(dialog.querySelector(`[data-import-purchased="${index}"]`)?.value);
+      const vendor=clean(dialog.querySelector(`[data-import-vendor="${index}"]`)?.value);
+      const model=clean(dialog.querySelector(`[data-import-model="${index}"]`)?.value);
+
+      if(!project.selectionRooms.includes(room))project.selectionRooms.push(room);
+
+      const group=ensureGroupByName(project,groupName);
+      chosen.push({
+        id:Date.now()+chosen.length+Math.floor(Math.random()*1000),
+        url:item.url||'',
+        title,
+        vendor,
+        category,
+        room,
+        quality:'Standard',
+        model,
+        image:'',
+        unitPrice:null,
+        quantity:1,
+        addTax:false,
+        purchasedBy:purchasedBy||'',
+        optionLabel:group?'PDF option':undefined,
+        optionGroupId:group?.id,
+        optionGroupTitle:group?.name,
+        status,
+        homeownerSelected:false,
+        homeownerSelectedAt:null,
+        inStock:false,
+        leadTimeValue:1,
+        leadTimeUnit:'Day(s)',
+        description:item.description||'',
+        notes:item.notes||''
+      });
+    });
+
+    if(!chosen.length){
+      toastV76('Choose at least one selection to import');
+      return;
+    }
+
+    // Add only. Never replace/remove existing selections.
+    project.selections.push(...chosen);
+    project.selectionImports.push({
+      id:'pdf-import-'+Date.now(),
+      importedAt:new Date().toISOString(),
+      files:files.map(file=>file.name),
+      count:chosen.length
+    });
+
+    try{window.JJSelectionRecovery?.snapshot?.()}catch{}
+    try{window.saveState?.(false)}catch{}
+    try{window.renderAll?.()}catch{}
+    try{window.go?.('selections')}catch{}
+    dialog.close();
+    toastV76(`${chosen.length} selection${chosen.length===1?'':'s'} imported from PDF`);
+  }
+
+  function bootV76(){
+    injectV76Styles();
+    ensurePdfInput();
+    ensureUploadButton();
+
+    const root=document.getElementById('selections');
+    if(root && !window.__jjV76SelectionsObserver){
+      const observer=new MutationObserver(()=>setTimeout(()=>{
+        ensureUploadButton();
+        injectV76Styles();
+      },0));
+      observer.observe(root,{childList:true,subtree:true});
+      window.__jjV76SelectionsObserver=observer;
+    }
+
+    if(!window.__jjV76Timer){
+      window.__jjV76Timer=setInterval(()=>{
+        if(!document.hidden)ensureUploadButton();
+      },1000);
+    }
+  }
+
+  window.JJSelectionPdfImporter={
+    open:()=>ensurePdfInput().click(),
+    read:files=>readSelectionPdfs([...files||[]])
+  };
+
+  if(document.readyState==='complete')setTimeout(bootV76,0);
+  else window.addEventListener('load',()=>setTimeout(bootV76,0),{once:true});
+})();
+
