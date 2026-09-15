@@ -1,0 +1,44 @@
+
+/* -------------------------------------------------------------------------
+   J&J Selections Stable Card Links v82.6
+   One-time wrapper only. No timers, no observers, no repeated wrapping.
+   Keeps PDF-imported secondary links visible without duplicating Select controls.
+   ------------------------------------------------------------------------- */
+(() => {
+  if(window.__jjStableCardLinksV826) return;
+  window.__jjStableCardLinksV826=true;
+
+  const esc=v=>String(v??'').replace(/[&<>"']/g,ch=>({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[ch]));
+
+  function install(){
+    if(typeof window.selectionCard!=='function') return false;
+    if(window.selectionCard.__jjStableLinksV826) return true;
+
+    const original=window.selectionCard;
+    const wrapped=function(item,index){
+      let html=original.apply(this,arguments);
+      const links=Array.isArray(item?.additionalLinks)
+        ? item.additionalLinks.filter(link=>/^https?:\/\//i.test(link?.url||''))
+        : [];
+      if(!links.length) return html;
+
+      const extra=`<div class="jj-v79-extra-links">${links.map(link=>
+        `<a href="${esc(link.url)}" target="_blank" rel="noopener">${esc(link.label||'View product')} ↗</a>`
+      ).join('')}</div>`;
+
+      return html.replace(/(<div class="selection-card-actions">)/,`$1${extra}`);
+    };
+    wrapped.__jjStableLinksV826=true;
+    // Preserve the v82 marker so no other current code thinks this needs wrapping again.
+    wrapped.__v82=true;
+    window.selectionCard=wrapped;
+    return true;
+  }
+
+  if(!install()){
+    window.addEventListener('jj-selections-v82-ready',install,{once:true});
+    window.addEventListener('load',install,{once:true});
+  }
+})();
