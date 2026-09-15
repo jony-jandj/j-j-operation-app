@@ -1,6 +1,6 @@
-const CACHE_NAME = 'jj-operations-v83-0-customer-view-instock';
+const CACHE_NAME = 'jj-operations-v83-1-customer-view-isolated';
 const APP_SHELL = [
-  './','./index.html','./homeowner.html','./qrcode.min.js','./selections-metadata.js',
+  './','./index.html','./homeowner.html','./customer-view.js','./customer-overlay.js','./qrcode.min.js','./selections-metadata.js',
   './jj-original-logo.png','./manifest.webmanifest','./icons/icon-192.png','./icons/icon-512.png',
   ...Array.from({length:18},(_,i)=>`./selections-v82/part-${String(i+1).padStart(2,'0')}.txt`)
 ];
@@ -21,5 +21,5 @@ self.addEventListener('fetch', event => {
       event.waitUntil(caches.open(CACHE_NAME).then(cache=>cache.put(event.request,copy)).catch(()=>{}));
     }
     return response;
-  }).catch(async()=>await caches.match(event.request)||Response.error()));
+  }).catch(async()=>{const cache=await caches.open(CACHE_NAME);return await cache.match(event.request)||await cache.match(event.request,{ignoreSearch:true})||Response.error()}));
 });

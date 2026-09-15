@@ -64,4 +64,4 @@ async function fillLink(){
 }
 $('fillLink').onclick=fillLink;form.elements.url.addEventListener('change',fillLink);
 $('newSelection').onclick=()=>openEditor();$('closeEditor').onclick=closeEditor;$('cancelEditor').onclick=closeEditor;editor.addEventListener('cancel',e=>{if(busy)e.preventDefault();});$('refresh').onclick=()=>refresh();setInterval(()=>{if(!document.hidden&&!editor.open&&!busy)refresh(true)},8000);document.addEventListener('visibilitychange',()=>{if(!document.hidden&&!editor.open&&!busy)refresh(true)});refresh();
-</script></body></html>
+</script><script src="customer-view.js?v=83.1"></script></body></html>

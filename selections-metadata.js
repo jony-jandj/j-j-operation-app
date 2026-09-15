@@ -34,7 +34,7 @@ window.JJProduct = (() => {
 
 /* Load the clean v82 selection runtime as one concatenated program. The pieces
    are split only so GitHub updates remain small/reliable; they execute together. */
-window.__JJ_SELECTIONS_V82_LOADING__ = Promise.all(
+window.__JJ_SELECTIONS_V82_LOADING__ = /homeowner\.html$/i.test(location.pathname) ? Promise.resolve() : Promise.all(
   Array.from({length:18},(_,i)=>`selections-v82/part-${String(i+1).padStart(2,'0')}.txt`)
     .map(path=>fetch(path,{cache:'no-cache'}).then(response=>{
       if(!response.ok) throw new Error(`Could not load ${path}: ${response.status}`);
