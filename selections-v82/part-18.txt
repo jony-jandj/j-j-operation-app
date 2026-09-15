@@ -1,0 +1,28 @@
+/* Selection card In Stock visual only. No other behavior changes. */
+(() => {
+  if(/homeowner\.html$/i.test(location.pathname)) return;
+  if(window.__jjInStockCardV830) return;
+  window.__jjInStockCardV830=true;
+  function install(){
+    if(typeof window.selectionCard!=='function')return false;
+    if(window.selectionCard.__jjInStockCardV830)return true;
+    const original=window.selectionCard;
+    const wrapped=function(item,index){
+      let html=original.apply(this,arguments);
+      if(!item?.inStock)return html;
+      html=html.replace(/(<span class="selection-purchased">Purchased by<br><b>.*?<\/b>)(?:<small>.*?<\/small>)?(<\/span>)/,
+        '$1<small class="jj-card-instock">In Stock</small>$2');
+      return html;
+    };
+    wrapped.__jjInStockCardV830=true;
+    wrapped.__v82=original.__v82;
+    window.selectionCard=wrapped;
+    if(!document.getElementById('jj-card-instock-style')){
+      const s=document.createElement('style');s.id='jj-card-instock-style';
+      s.textContent='.jj-card-instock{display:block!important;margin-top:3px!important;color:#2B7A4B!important;font-size:10px!important;font-weight:950!important;letter-spacing:.2px!important}';
+      document.head.appendChild(s);
+    }
+    return true;
+  }
+  if(!install())window.addEventListener('load',install,{once:true});
+})();
