@@ -1,4 +1,4 @@
-/* J&J shared product lookup + selections group UI v76 */
+/* J&J shared product lookup + selections group UI v77 */
 window.JJProduct = (() => {
   const text=v=>typeof v==='string'?v.trim():typeof v==='number'?String(v):'';
   const safe=u=>/^https?:\/\//i.test(text(u))?text(u):'';
@@ -160,15 +160,15 @@ window.JJProduct = (() => {
 
 
 (() => {
-  const VERSION='v76';
+  const VERSION='v77';
   const escapeHtml=value=>String(value??'').replace(/[&<>"']/g,ch=>({
     '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
   }[ch]));
 
   function injectStyles(){
-    if(document.getElementById('jj-selection-groups-v76'))return;
+    if(document.getElementById('jj-selection-groups-v77'))return;
     const style=document.createElement('style');
-    style.id='jj-selection-groups-v76';
+    style.id='jj-selection-groups-v77';
     style.textContent=`
       .jj-selection-top-actions{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 14px}
       .jj-app-group-controls{display:inline-flex;gap:7px;align-items:center;margin-left:8px}
@@ -400,14 +400,9 @@ window.JJProduct = (() => {
       const registry=(p.selectionGroups||[]).find(g=>String(g.id)===String(first.optionGroupId));
       const groupTitle=registry?.name||first.optionGroupTitle||first.title||'Selection Group';
 
-      return `<details class="selection-option-group" data-selection-group-id="${escapeHtml(first.optionGroupId)}" open>
+      return `<details class="selection-option-group" data-selection-group-id="${escapeHtml(first.optionGroupId)}">
         <summary class="selection-option-group-title">
           <span>${escapeHtml(groupTitle)}</span>
-          <span class="jj-group-summary-actions">
-            <span class="jj-group-summary-count">${group.length} option${group.length===1?'':'s'} · tap to compare</span>
-            <button type="button" class="jj-group-add-option"
-              onclick="event.preventDefault();event.stopPropagation();addSelectionOption(${firstIndex})">+ Add Option</button>
-          </span>
         </summary>
         <div class="selection-option-grid">
           ${group.map(item=>window.selectionCard(item,allItems.indexOf(item))).join('')}
@@ -435,9 +430,9 @@ window.JJProduct = (() => {
         if(item?.optionGroupId){const id=String(item.optionGroupId);if(!groups.has(id))groups.set(id,{item,cards:[]});groups.get(id).cards.push(card)}
       });
       groups.forEach(({item,cards:members})=>{
-        const details=document.createElement('details');details.className='jj-host-selection-group';details.open=true;details.dataset.selectionGroupId=String(item.optionGroupId);
+        const details=document.createElement('details');details.className='jj-host-selection-group';details.open=false;details.dataset.selectionGroupId=String(item.optionGroupId);
         const group=(project.selectionGroups||[]).find(x=>String(x.id)===String(item.optionGroupId));
-        details.innerHTML=`<summary>${escapeHtml(group?.name||item.optionGroupTitle||'Selection Group')}<span>${members.length} option${members.length===1?'':'s'} · tap to compare</span></summary><div class="selection-grid"></div>`;
+        details.innerHTML=`<summary>${escapeHtml(group?.name||item.optionGroupTitle||'Selection Group')}</summary><div class="selection-grid"></div>`;
         const inner=details.querySelector('.selection-grid');members.forEach(card=>inner.appendChild(card));
         grid.appendChild(details);
       });
@@ -1214,7 +1209,7 @@ window.JJProduct = (() => {
 
     const root=page.querySelector('#jjHomeownerItems');
     if(!items.length)root.innerHTML='<div class="jj-ho-empty-state"><strong>No selections yet</strong><span>Use Add Selection to add the first product.</span></div>';
-    else if(homeownerDisplayMode==='groups')root.innerHTML=groups.map(group=>{const complete=group.items.filter(item=>['Selected','Ordered','Received'].includes(item.status)).length;return `<details class="jj-ho-page-group" open><summary><div><strong>${escapeHtml(group.name)}</strong><small>${group.items.length} selection${group.items.length===1?'':'s'}</small></div><span>${complete} of ${group.items.length} complete</span></summary><div class="jj-ho-page-grid ${homeownerDisplayView==='list'?'list':''}">${group.items.map(item=>homeownerCardMarkup(item,group.name)).join('')}</div></details>`}).join('');
+    else if(homeownerDisplayMode==='groups')root.innerHTML=groups.map(group=>`<details class="jj-ho-page-group"><summary><div><strong>${escapeHtml(group.name)}</strong></div></summary><div class="jj-ho-page-grid ${homeownerDisplayView==='list'?'list':''}">${group.items.map(item=>homeownerCardMarkup(item,group.name)).join('')}</div></details>`).join('');
     else root.innerHTML=`<div class="jj-ho-page-grid ${homeownerDisplayView==='list'?'list':''}">${items.map(item=>{const group=groups.find(entry=>entry.items.includes(item));return homeownerCardMarkup(item,group?.name||'Ungrouped selections')}).join('')}</div>`;
 
     root.querySelectorAll('.jj-ho-page-photo img').forEach(image=>image.addEventListener('error',()=>{image.parentElement.innerHTML='<div class="jj-ho-photo-empty"><span>▧</span><small>No product photo</small></div>'}));
