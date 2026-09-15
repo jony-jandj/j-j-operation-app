@@ -1,0 +1,129 @@
+    return rooms.map(v=>`<option ${v===current?'selected':''}>${esc(v)}</option>`).join('');
+  }
+
+  function purchasedOptions(current){
+    return ['','J&J','Homeowner'].map(v=>`<option value="${esc(v)}" ${v===current?'selected':''}>${v||'Not assigned'}</option>`).join('');
+  }
+
+  function openReview(items,files,report){
+    document.getElementById('jjV79Review')?.remove();
+    const project=currentProject();
+    const unique=items.filter(i=>!i.duplicate);
+
+    const dialog=document.createElement('dialog');
+    dialog.id='jjV79Review';
+    dialog.className='jj-v79-review';
+
+    dialog.innerHTML=`
+      <div class="jj-v79-head">
+        <div><small>SMART PDF IMPORT</small><h3>Review Everything Before Import</h3></div>
+        <button type="button" class="jj-group-icon" data-close aria-label="Close">×</button>
+      </div>
+      <div class="jj-v79-body">
+        <div class="jj-v79-file-report">
+          ${report.map(file=>`<div class="jj-v79-file-row ${file.accepted?'good':'skip'}">
+            <strong>${esc(file.name)}</strong><span>${esc(file.status)}</span>
+          </div>`).join('')}
+        </div>
+
+        <div class="jj-v79-summary">
+          <span><b>${items.length}</b> products detected</span>
+          <span><b>${unique.length}</b> ready to review/import</span>
+          <span><b>${items.filter(i=>i.duplicate).length}</b> duplicates skipped</span>
+          <span><b>${items.filter(i=>i.image).length}</b> photos captured</span>
+          <span><b>${items.filter(i=>i.url).length}</b> product links captured</span>
+          <div class="jj-v79-safety">Nothing has been added yet. Only checked rows are appended when you press Import Selected.</div>
+        </div>
+
+        ${items.length?`<div class="jj-v79-list">
+          ${items.map((item,index)=>`
+            <section class="jj-v79-item ${item.duplicate?'duplicate':''}" data-v79-row="${index}">
+              <div class="jj-v79-check"><input type="checkbox" data-v79-check="${index}" ${item.duplicate?'':'checked'}></div>
+              <div>${item.image?`<img class="jj-v79-photo" src="${esc(item.image)}" alt="">`:'<div class="jj-v79-photo-empty">No photo detected</div>'}</div>
+              <div class="jj-v79-main">
+                <div class="jj-v79-title">
+                  <strong>${esc(item.title)}</strong>
+                  <span class="jj-v79-chip">${esc(item.sourceFile)} · p.${item.sourcePage}</span>
+                  ${item.group?`<span class="jj-v79-chip">Group: ${esc(item.group)}</span>`:''}
+                  ${item.duplicate?'<span class="jj-v79-chip warn">Duplicate — unchecked</span>':'<span class="jj-v79-chip good">Ready</span>'}
+                </div>
+                <div class="jj-v79-grid">
+                  <label>Product name<input data-v79-title="${index}" value="${esc(item.title)}"></label>
+                  <label>Room<select data-v79-room="${index}">${roomOptions(project,item.room)}</select></label>
+                  <label>Category<input data-v79-category="${index}" value="${esc(item.category)}"></label>
+                  <label>Status<select data-v79-status="${index}">${statusOptions(item.status)}</select></label>
+                  <label>Group<input data-v79-group="${index}" value="${esc(item.group)}" placeholder="Standalone"></label>
+                  <label>Purchased by<select data-v79-purchased="${index}">${purchasedOptions(item.purchasedBy)}</select></label>
+                  <label>Vendor<input data-v79-vendor="${index}" value="${esc(item.vendor)}"></label>
+                  <label>Model / SKU<input data-v79-model="${index}" value="${esc(item.model)}"></label>
+                  <label>Price<input data-v79-price="${index}" type="number" step=".01" min="0" value="${item.unitPrice===null?'':item.unitPrice}"></label>
+                </div>
+                <div class="jj-v79-meta">
+                  ${item.identifiers.model?`Model ${esc(item.identifiers.model)} · `:''}
+                  ${item.identifiers.storeSku?`SKU ${esc(item.identifiers.storeSku)} · `:''}
+                  ${item.identifiers.upc?`UPC ${esc(item.identifiers.upc)} · `:''}
+                  ${item.identifiers.internet?`Internet #${esc(item.identifiers.internet)} · `:''}
+                  ${item.identifiers.itemId?`Item #${esc(item.identifiers.itemId)} · `:''}
+                  ${item.url?`${item.additionalLinks.length+1} link${item.additionalLinks.length?'s':''} captured · `:''}
+                  ${item.budget!==null?`Budget $${item.budget.toLocaleString('en-US')} · `:''}
+                  ${esc(item.description||'')}
+                </div>
+              </div>
+            </section>`).join('')}
+        </div>`:`<div class="jj-pdf-import-empty"><strong>No selection products detected.</strong><span>Unrelated PDFs are skipped instead of creating bad selections.</span></div>`}
+      </div>
+      <div class="jj-v79-foot">
+        <button type="button" class="btn btn-light" data-close>Cancel</button>
+        ${items.length?'<button type="button" class="btn btn-gold" id="jjV79ImportSelected">Import Selected</button>':''}
+      </div>`;
+
+    document.body.appendChild(dialog);
+    const close=()=>dialog.close();
+    dialog.querySelectorAll('[data-close]').forEach(btn=>btn.addEventListener('click',close));
+    dialog.addEventListener('close',()=>dialog.remove());
+    dialog.querySelector('#jjV79ImportSelected')?.addEventListener('click',()=>importSelected(dialog,items,files));
+    dialog.showModal();
+  }
+
+  function ensureGroup(project,name){
+    name=clean(name);
+    if(!name)return null;
+    if(!Array.isArray(project.selectionGroups))project.selectionGroups=[];
+    let group=project.selectionGroups.find(g=>norm(g.name)===norm(name));
+    if(!group){
+      group={id:'group-'+Date.now()+'-'+Math.random().toString(36).slice(2,9),name};
+      project.selectionGroups.push(group);
+    }
+    return group;
+  }
+
+  function importSelected(dialog,items,files){
+    const project=currentProject();
+    if(!project)return;
+    if(!Array.isArray(project.selections))project.selections=[];
+    if(!Array.isArray(project.selectionRooms))project.selectionRooms=[];
+    if(!Array.isArray(project.selectionImports))project.selectionImports=[];
+
+    const added=[];
+    items.forEach((item,index)=>{
+      if(!dialog.querySelector(`[data-v79-check="${index}"]`)?.checked)return;
+
+      const title=clean(dialog.querySelector(`[data-v79-title="${index}"]`)?.value);
+      if(!title)return;
+
+      const room=clean(dialog.querySelector(`[data-v79-room="${index}"]`)?.value)||project.selectionRooms[0]||'Primary Bathroom';
+      const category=clean(dialog.querySelector(`[data-v79-category="${index}"]`)?.value)||'Selection';
+      const status=clean(dialog.querySelector(`[data-v79-status="${index}"]`)?.value)||'Recommended';
+      const groupName=clean(dialog.querySelector(`[data-v79-group="${index}"]`)?.value);
+      const purchasedBy=clean(dialog.querySelector(`[data-v79-purchased="${index}"]`)?.value);
+      const vendor=clean(dialog.querySelector(`[data-v79-vendor="${index}"]`)?.value);
+      const model=clean(dialog.querySelector(`[data-v79-model="${index}"]`)?.value);
+      const rawPrice=dialog.querySelector(`[data-v79-price="${index}"]`)?.value;
+      const unitPrice=rawPrice===''?null:Number(rawPrice);
+
+      if(!project.selectionRooms.includes(room))project.selectionRooms.push(room);
+      const group=ensureGroup(project,groupName);
+
+      added.push({
+        id:Date.now()+added.length+Math.floor(Math.random()*1000),
+        url:item.url||'',
