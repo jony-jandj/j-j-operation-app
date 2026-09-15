@@ -73,17 +73,16 @@
       renderBulkBar();
     });
 
-    // Current page re-renders selection DOM often; one observer is enough.
-    const root=document.getElementById('selections');
-    if(root){
-      appObserver=new MutationObserver(()=>setTimeout(()=>{
-        installCardWrapper();
-        installEditorWrappers();
-        renderBulkBar();
-        renderGroupActions();
-        enhanceEditor();
-      },0));
-      appObserver.observe(root,{childList:true,subtree:true});
+    // IMPORTANT PERFORMANCE FIX:
+    // Do NOT observe the entire Selections subtree. renderBulkBar() changes the
+    // subtree itself, which previously retriggered the observer and created a
+    // render -> mutation -> render loop. That loop is what caused Chrome's
+    // "Page Unresponsive" warning and delayed clicks.
+    // renderSelections() is already wrapped by installRenderWrapper(), so every
+    // legitimate Selections render receives its bulk bar/group controls there.
+    if(appObserver?.disconnect){
+      try{appObserver.disconnect()}catch{}
+      appObserver=null;
     }
 
     // Re-render once so the wrapped selectionCard produces real checkboxes.
