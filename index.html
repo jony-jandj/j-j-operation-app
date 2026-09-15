@@ -4377,6 +4377,8 @@ body.topbar-collapsed .operations-app > .sidebar{top:0;min-height:100vh}
 .selection-room-heading{width:100%;display:flex;align-items:center;justify-content:space-between;gap:12px;border:0;background:transparent;color:var(--navy);padding:0 0 10px;text-align:left}
 .selection-room-heading b{display:block;font-size:14px}
 .selection-room-heading small{display:block;margin-top:2px;color:var(--muted);font-size:10px;font-weight:650}
+.selection-room-toggle{min-width:0;flex:1;display:flex;align-items:center;justify-content:space-between;gap:12px;border:0;background:transparent;color:var(--navy);padding:0;text-align:left}
+.selection-group-add-option{flex:none;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--navy);padding:7px 10px;font-size:10px;font-weight:850}
 .selection-room-chevron{font-size:17px;transition:transform .15s ease}
 .selection-room-group.collapsed .selection-room-chevron{transform:rotate(-90deg)}
 .selection-room-group.collapsed .selection-room-content{display:none}
@@ -6135,6 +6137,8 @@ let cloudBaseState=null;
 let cloudSaveInFlight=false;
 let cloudSaveQueued=false;
 let cloudRetryCount=0;
+let cloudPollTimer=null;
+let cloudPollInFlight=false;
 
 function cloneCloudValue(value){
   return value==null ? value : JSON.parse(JSON.stringify(value));
@@ -6282,6 +6286,8 @@ async function cloudSignOut(){
   }
 
   cloudChannel=null;
+  clearInterval(cloudPollTimer);
+  cloudPollTimer=null;
   sessionStorage.removeItem('jj_session_user');
   document.getElementById('passwordResetOverlay')?.classList.add('hidden');
   document.getElementById('cloudLoginOverlay')?.classList.remove('hidden');
@@ -6651,6 +6657,49 @@ async function loadCloudState(){
   }
 }
 
+async function pollCloudState(){
+  if(!cloudClient || cloudPollInFlight || cloudApplying || cloudSaveInFlight || cloudSaveQueued || document.hidden) return;
+  cloudPollInFlight=true;
+  try{
+    const {data:incoming,error}=await cloudClient
+      .from('app_state')
+      .select('state,updated_at')
+      .eq('org_id',CLOUD_ORG_ID)
+      .maybeSingle();
+    if(error) throw error;
+    if(!incoming?.state) return;
+    const incomingAt=Date.parse(incoming.updated_at||0)||0;
+    if(incomingAt<=cloudLastRemoteAt){
+      setCloudStatus('Live','saved');
+      return;
+    }
+
+    cloudLastRemoteAt=incomingAt;
+    cloudApplying=true;
+    const currentLocalUser=state.currentUser;
+    const localShared=sharedCloudState(state);
+    const remoteShared=sharedCloudState(incoming.state);
+    const merged=cloudBaseState?mergeCloudValues(cloudBaseState,localShared,remoteShared):remoteShared;
+    state=merged;
+    if(USERS.some(user=>user.name===currentLocalUser)) state.currentUser=currentLocalUser;
+    ensureUserData();
+    ensurePreconData();
+    persistStateLocally();
+    cloudBaseState=remoteShared;
+    cloudApplying=false;
+    renderAll();
+    buildNav();
+    syncUserSelector();
+    setCloudStatus('Live','saved');
+    if(!cloudValuesEqual(sharedCloudState(state),remoteShared)) queueCloudSave();
+  }catch(error){
+    cloudApplying=false;
+    console.warn('Cloud live check failed',error);
+  }finally{
+    cloudPollInFlight=false;
+  }
+}
+
 function subscribeCloudState(){
   if(!cloudClient) return;
 
@@ -6707,8 +6756,18 @@ function subscribeCloudState(){
     )
     .subscribe(status=>{
       if(status==='SUBSCRIBED') setCloudStatus('Live','saved');
-      if(status==='CHANNEL_ERROR' || status==='TIMED_OUT') setCloudStatus('Offline','offline');
+      if(status==='CHANNEL_ERROR' || status==='TIMED_OUT'){
+        setCloudStatus('Reconnecting','saving');
+        pollCloudState();
+      }
     });
+
+  clearInterval(cloudPollTimer);
+  cloudPollTimer=setInterval(pollCloudState,2500);
+  if(!window.jjCloudVisibilityBound){
+    window.jjCloudVisibilityBound=true;
+    document.addEventListener('visibilitychange',()=>{if(!document.hidden)pollCloudState()});
+  }
 }
 
 function queueCloudSave(){
@@ -9820,7 +9879,7 @@ function renderSelections(){
     </div>
 
     <div class="selection-groups">
-      ${filtered.length ? (selectionGroupMode ? selectionNamedGroups(project,filtered,items) : `<div class="selection-grid ${selectionViewMode==='list'?'selection-list':''}">${filtered.map(item=>selectionCard(item,items.indexOf(item))).join('')}</div>`) : `
+      ${filtered.length ? selectionNamedGroups(project,filtered,items,selectionGroupMode) : `
         <div class="selection-empty">
           <button onclick="openSelectionEditor()">+</button>
           <strong>${items.length?'No selections match this filter':'No selections added yet'}</strong>
@@ -9839,7 +9898,7 @@ function setSelectionGroupMode(enabled){
 window.setSelectionGroupMode=setSelectionGroupMode;
 window.isSelectionGroupMode=()=>selectionGroupMode;
 
-function selectionNamedGroups(project,items,allItems){
+function selectionNamedGroups(project,items,allItems,collapsed=true){
   const registry=Array.isArray(project.selectionGroups)?project.selectionGroups:[];
   const buckets=[];
   const known=new Map();
@@ -9853,11 +9912,14 @@ function selectionNamedGroups(project,items,allItems){
     if(bucket)bucket.items.push(item);else ungrouped.push(item);
   });
   if(ungrouped.length)buckets.push({id:'ungrouped',name:'Ungrouped selections',items:ungrouped});
-  return buckets.filter(bucket=>bucket.items.length).map(bucket=>`<section class="selection-room-group named-selection-group collapsed">
-    <button class="selection-room-heading" type="button" onclick="this.parentElement.classList.toggle('collapsed');this.setAttribute('aria-expanded',String(!this.parentElement.classList.contains('collapsed')))" aria-expanded="false">
-      <span><b>${esc(bucket.name)}</b></span>
-      <span class="selection-room-chevron" aria-hidden="true">⌄</span>
-    </button>
+  return buckets.filter(bucket=>bucket.items.length).map(bucket=>`<section class="selection-room-group named-selection-group ${collapsed?'collapsed':''}">
+    <div class="selection-room-heading">
+      <button class="selection-room-toggle" type="button" onclick="const group=this.closest('.selection-room-group');group.classList.toggle('collapsed');this.setAttribute('aria-expanded',String(!group.classList.contains('collapsed')))" aria-expanded="${!collapsed}">
+        <span><b>${esc(bucket.name)}</b></span>
+        <span class="selection-room-chevron" aria-hidden="true">⌄</span>
+      </button>
+      <button class="selection-group-add-option" type="button" onclick="window.JJSelectionGroups?.addOption('${esc(bucket.id).replace(/'/g,"\\'")}')">+ Add Option</button>
+    </div>
     <div class="selection-room-content"><div class="selection-grid ${selectionViewMode==='list'?'selection-list':''}">
       ${bucket.items.map(item=>selectionCard(item,allItems.indexOf(item))).join('')}
     </div></div>
@@ -10522,7 +10584,7 @@ if ('serviceWorker' in navigator) {
 </script>
 
 <!-- Selections / homeowner enhancements. This must load after the app script. -->
-<script src="./selections-metadata.js?v=77"></script>
+<script src="./selections-metadata.js?v=79"></script>
 
 <script>
 document.addEventListener('click',function(e){
