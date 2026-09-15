@@ -1,0 +1,197 @@
+          const region={x:left,y:top,right,bottom,w:right-left,h:bottom-top,pageWidth:viewport.width,pageHeight:viewport.height};
+
+          const lines=linesInRegion(texts,region);
+          const headingText=heading?.text||'Selection';
+          const title=titleFromLines(lines,headingText,layout);
+          if(!title)continue;
+
+          const titleItem=texts.find(t=>
+            t.x>=region.x&&t.x<=region.right&&t.y>=region.y&&t.y<=region.bottom&&
+            norm(t.text)===norm(title)
+          );
+          region.titleY=titleItem?.y||region.y+region.h*.46;
+
+          const blockText=lines.map(r=>r.text).join(' ');
+          const meta=metadata(blockText);
+          const links=cardLinksForRegion(allLinks,region);
+          const group=groupNameFromHeading(headingText);
+
+          items.push(makeCandidate({
+            fileName,pageNumber,project,headingText,title,lines,blockText,meta,links,group,
+            image:imageDataFromRegion(canvas,region,titleItem?.x,layout)
+          }));
+        }
+      }
+    }else{
+      // Each link row corresponds to one vertical product card. Multiple links
+      // on the same y row remain attached to the same selection.
+      const rowCenters=rows.map(r=>r.y);
+
+      for(let r=0;r<rows.length;r++){
+        const row=rows[r];
+        const y=row.y;
+        const previous=rowCenters[r-1];
+        const next=rowCenters[r+1];
+        const top=r===0?Math.max(95,y-125):(previous+y)/2+6;
+        const bottom=r===rows.length-1?Math.min(viewport.height,y+38):(y+next)/2-6;
+
+        // Use almost full page width; the header above is excluded by vertical bounds.
+        const region={x:38,y:top,right:viewport.width-38,bottom,w:viewport.width-76,h:bottom-top,pageWidth:viewport.width,pageHeight:viewport.height};
+        const lines=linesInRegion(texts,region);
+
+        // Product label is the first all-caps selection heading within this card.
+        const headingRow=lines.find(line=>isHeadingText(line.text));
+        const headingText=headingRow?.text||'Selection';
+        const title=titleFromLines(lines,headingText,layout);
+        if(!title)continue;
+
+        const titleItem=texts.find(t=>
+          t.x>=region.x&&t.x<=region.right&&t.y>=region.y&&t.y<=region.bottom&&
+          norm(t.text)===norm(title)
+        );
+        const blockText=lines.map(r=>r.text).join(' ');
+        const meta=metadata(blockText);
+        const group=/OPTION\s*\d+/i.test(headingText)?groupNameFromHeading(headingText):'';
+        const links=cardLinksForRegion(allLinks,region);
+
+        items.push(makeCandidate({
+          fileName,pageNumber,project,headingText,title,lines,blockText,meta,links,group,
+          image:imageDataFromRegion(canvas,region,titleItem?.x,layout)
+        }));
+      }
+    }
+
+    return {accepted:true,items};
+  }
+
+  function makeCandidate({fileName,pageNumber,project,headingText,title,lines,blockText,meta,links,group,image}){
+    const primary=links[0]?.url||'';
+    const additional=links.slice(1).map((link,index)=>({
+      label:/ROUGH/i.test(link.label)?'View Rough-In':/TRIM/i.test(link.label)?'View Trim':`View Product ${index+2}`,
+      url:link.url
+    }));
+
+    const identifiers=[
+      meta.model?`Model ${meta.model}`:'',
+      meta.storeSku?`Store SKU ${meta.storeSku}`:'',
+      meta.upc?`UPC ${meta.upc}`:'',
+      meta.internet?`Internet #${meta.internet}`:'',
+      meta.itemId?`Item #${meta.itemId}`:''
+    ].filter(Boolean);
+
+    const notes=[
+      identifiers.length?identifiers.join(' · '):'',
+      meta.budget!==null?`PDF Budget: $${meta.budget.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:2})}`:'',
+      `Imported from PDF: ${fileName} · page ${pageNumber}`
+    ].filter(Boolean).join('\n');
+
+    return {
+      sourceFile:fileName,
+      sourcePage:pageNumber,
+      label:headingText,
+      title:clean(title),
+      room:project?.selectionActiveRoom||project?.selectionRooms?.[0]||'Primary Bathroom',
+      category:categoryFromHeading(headingText,title),
+      group,
+      vendor:meta.vendor||'',
+      model:meta.model||meta.storeSku||meta.upc||meta.internet||meta.itemId||'',
+      identifiers:{
+        model:meta.model||'',
+        storeSku:meta.storeSku||'',
+        upc:meta.upc||'',
+        internet:meta.internet||'',
+        itemId:meta.itemId||''
+      },
+      description:cleanDescription(lines,title),
+      notes,
+      status:inferStatus(blockText),
+      purchasedBy:'',
+      unitPrice:meta.price,
+      budget:meta.budget,
+      url:primary,
+      additionalLinks:additional,
+      image:image||''
+    };
+  }
+
+  function fingerprint(item){
+    if(item.identifiers?.model)return 'model|'+norm(item.identifiers.model);
+    if(item.identifiers?.storeSku)return 'sku|'+norm(item.identifiers.storeSku);
+    if(item.identifiers?.upc)return 'upc|'+norm(item.identifiers.upc);
+    if(item.url)return 'url|'+clean(item.url).toLowerCase();
+    return 'title|'+norm(item.title)+'|'+norm(item.vendor)+'|'+norm(item.room);
+  }
+
+  async function parseFiles(files){
+    const project=currentProject();
+    if(!project){window.toast?.('Open a project first');return}
+
+    const pdfjs=await loadPdfJs();
+    const all=[];
+    const report=[];
+
+    try{
+      for(let f=0;f<files.length;f++){
+        const file=files[f];
+        showProgress(`${file.name} · opening ${f+1} of ${files.length}`);
+        const bytes=new Uint8Array(await file.arrayBuffer());
+        const pdf=await pdfjs.getDocument({data:bytes}).promise;
+
+        let acceptedPages=0;
+        let fileItems=[];
+
+        for(let p=1;p<=pdf.numPages;p++){
+          showProgress(`${file.name} · reading page ${p} of ${pdf.numPages}`);
+          const page=await pdf.getPage(p);
+          const result=await parsePage(page,file.name,p,project);
+          if(result.accepted)acceptedPages++;
+          fileItems.push(...result.items);
+        }
+
+        if(!acceptedPages){
+          report.push({name:file.name,status:'Skipped — not recognized as a J&J selections PDF',accepted:false,count:0});
+        }else{
+          all.push(...fileItems);
+          report.push({name:file.name,status:`Read ${fileItems.length} product${fileItems.length===1?'':'s'}`,accepted:true,count:fileItems.length});
+        }
+      }
+    }catch(err){
+      console.error('Smart PDF import failed',err);
+      hideProgress();
+      alert(`PDF import stopped.\n\n${err?.message||'Please try again.'}`);
+      return;
+    }
+
+    hideProgress();
+
+    const existing=new Set((project.selections||[]).map(item=>{
+      const identifiers={
+        model:item.identifiers?.model||item.model||'',
+        storeSku:item.identifiers?.storeSku||'',
+        upc:item.identifiers?.upc||'',
+        internet:item.identifiers?.internet||'',
+        itemId:item.identifiers?.itemId||''
+      };
+      return fingerprint({...item,identifiers});
+    }));
+
+    const seen=new Set();
+    all.forEach(item=>{
+      const key=fingerprint(item);
+      item.duplicateExisting=existing.has(key);
+      item.duplicateUpload=seen.has(key);
+      item.duplicate=item.duplicateExisting||item.duplicateUpload;
+      seen.add(key);
+    });
+
+    openReview(all,files,report);
+  }
+
+  function statusOptions(current){
+    return ['Pending','Recommended','Selected']
+      .map(v=>`<option ${v===current?'selected':''}>${v}</option>`).join('');
+  }
+
+  function roomOptions(project,current){
+    const rooms=[...(project.selectionRooms||[])];
+    if(current&&!rooms.includes(current))rooms.push(current);
