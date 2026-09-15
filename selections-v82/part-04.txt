@@ -1,0 +1,194 @@
+      return cx>=region.x && cx<=region.right && cy>=region.y && cy<=region.bottom;
+    });
+
+    const rows=[];
+    chosen.sort((a,b)=>Math.abs(a.y-b.y)>3?a.y-b.y:a.x-b.x).forEach(item=>{
+      let row=rows.find(r=>Math.abs(r.y-item.y)<=3.5);
+      if(!row){row={y:item.y,items:[]};rows.push(row)}
+      row.items.push(item);
+    });
+
+    return rows.sort((a,b)=>a.y-b.y).map(row=>({
+      y:row.y,
+      text:clean(row.items.sort((a,b)=>a.x-b.x).map(i=>i.text).join(' '))
+    })).filter(r=>r.text);
+  }
+
+  function metadata(blockText){
+    const get=re=>{
+      const m=blockText.match(re);
+      return clean(m?.[1]||'');
+    };
+    const priceRaw=
+      get(/\bPRICE\s*\$?\s*([0-9,]+(?:\.\d{1,2})?)/i) ||
+      get(/\$\s*([0-9,]+(?:\.\d{1,2})?)\s+CURRENT PRICE/i) ||
+      get(/\bCURRENT PRICE\s*\$?\s*([0-9,]+(?:\.\d{1,2})?)/i) ||
+      get(/\bADDITIONAL COST\s*\$?\s*([0-9,]+(?:\.\d{1,2})?)/i);
+
+    const budgetRaw=get(/\bBUDGET\s*\$?\s*([0-9,]+(?:\.\d{1,2})?)/i);
+    const model=get(/\bModels?\s+([A-Za-z0-9._/-]+(?:\s*\+\s*[A-Za-z0-9._/-]+)?)/i);
+    const storeSku=get(/\bStore\s*SKU\s*#?\s*([A-Za-z0-9._/-]+)/i);
+    const upc=get(/\bUPC(?:\s*Code)?\s*#?\s*([A-Za-z0-9._/-]+)/i);
+    const internet=get(/\bInternet\s*#?\s*([A-Za-z0-9._/-]+)/i);
+    const itemId=get(/\bItem\s*#?\s*([A-Za-z0-9._/-]+)/i);
+    const vendor=get(/\bVendor\s*:\s*([A-Za-z0-9 '&.+-]+?)(?=\s+(?:Store|Internet|Item|Model|UPC|BUDGET|PRICE|CURRENT|AT BUDGET|OVER BUDGET|VIEW)|$)/i);
+
+    return {
+      price:priceRaw?Number(priceRaw.replace(/,/g,'')):null,
+      budget:budgetRaw?Number(budgetRaw.replace(/,/g,'')):null,
+      model,storeSku,upc,internet,itemId,vendor
+    };
+  }
+
+  function inferStatus(blockText){
+    if(/CURRENT SELECTION/i.test(blockText))return 'Selected';
+    if(/\bRECOMMENDED\b/i.test(blockText))return 'Recommended';
+    return 'Recommended';
+  }
+
+  function categoryFromHeading(heading,title){
+    const s=(heading+' '+title).toLowerCase();
+    if(/toilet|faucet|shower|valve|rain head|arm|plumbing/.test(s))return 'Plumbing';
+    if(/vanity/.test(s)&&!/light|faucet/.test(s))return 'Vanity';
+    if(/light|fan|electrical/.test(s))return 'Electrical';
+    if(/mirror/.test(s))return 'Mirror';
+    if(/floor|tile/.test(s))return 'Flooring / Tile';
+    if(/door|hardware|casing|baseboard|crown/.test(s))return 'Doors / Trim';
+    return groupNameFromHeading(heading)||'Selection';
+  }
+
+  function cleanDescription(lines,title){
+    return lines
+      .map(r=>r.text)
+      .filter(s=>
+        clean(s)!==clean(title) &&
+        !isHeadingText(s) &&
+        !/^VIEW\s+/i.test(s) &&
+        !/\bVendor\s*:/i.test(s) &&
+        !/\b(?:Store SKU|UPC|Internet|Item|Model)\s*#?/i.test(s) &&
+        !/^(BUDGET|PRICE|CURRENT PRICE|CURRENT SELECTION|AT BUDGET|OVER BUDGET|PRICE PENDING|WILL NOT MATCH)/i.test(s)
+      )
+      .join(' | ')
+      .replace(/\s*\|\s*\|\s*/g,' | ')
+      .trim();
+  }
+
+  function titleFromLines(lines,heading,layout){
+    const filtered=lines.filter(row=>{
+      const s=row.text;
+      if(!s||/^VIEW\s+/i.test(s)||isHeadingText(s))return false;
+      if(/\b(BUDGET|PRICE|CURRENT PRICE|CURRENT SELECTION|AT BUDGET|OVER BUDGET|Vendor:|Store SKU|UPC|Internet|Item #|Model)\b/i.test(s))return false;
+      if(/J\s*&\s*J|HOME RENOVATIONS|BATHROOM SELECTIONS/i.test(s))return false;
+      return true;
+    });
+    if(!filtered.length)return '';
+    // Product titles in both J&J layouts are the first meaningful text line/card block.
+    return clean(filtered[0].text);
+  }
+
+  function cardLinksForRegion(allLinks,region){
+    return allLinks.filter(link=>{
+      const cx=link.x+link.w/2,cy=link.y+link.h/2;
+      return cx>=region.x && cx<=region.right && cy>=region.y && cy<=region.bottom;
+    });
+  }
+
+  function nearestTitleX(texts,region,title){
+    const t=texts.find(item=>{
+      const cx=item.x+item.w/2,cy=item.y+item.h/2;
+      return cx>=region.x&&cx<=region.right&&cy>=region.y&&cy<=region.bottom &&
+        norm(item.text)===norm(title);
+    });
+    return t?.x ?? null;
+  }
+
+  function imageDataFromRegion(pageCanvas,region,titleX,layout){
+    const scaleX=pageCanvas.width/region.pageWidth;
+    const scaleY=pageCanvas.height/region.pageHeight;
+
+    let crop={x:region.x,y:region.y,w:region.w,h:region.h};
+
+    if(layout==='grid'){
+      // Image is above the product title. Find a conservative upper-card crop.
+      const titleY=region.titleY||region.y+region.h*.46;
+      crop={
+        x:region.x+7,
+        y:region.y+5,
+        w:Math.max(30,region.w-14),
+        h:Math.max(30,titleY-region.y-8)
+      };
+    }else{
+      // Horizontal cards place the photo to the left of the text column.
+      const right=Math.max(region.x+50,(titleX||region.x+region.w*.33)-12);
+      crop={
+        x:region.x+8,
+        y:region.y+7,
+        w:Math.max(30,right-region.x-14),
+        h:Math.max(30,region.h-14)
+      };
+    }
+
+    const sx=Math.max(0,Math.floor(crop.x*scaleX));
+    const sy=Math.max(0,Math.floor(crop.y*scaleY));
+    const sw=Math.min(pageCanvas.width-sx,Math.max(1,Math.floor(crop.w*scaleX)));
+    const sh=Math.min(pageCanvas.height-sy,Math.max(1,Math.floor(crop.h*scaleY)));
+
+    if(sw<30||sh<30)return '';
+
+    const maxW=460,maxH=320;
+    const ratio=Math.min(1,maxW/sw,maxH/sh);
+    const canvas=document.createElement('canvas');
+    canvas.width=Math.max(1,Math.round(sw*ratio));
+    canvas.height=Math.max(1,Math.round(sh*ratio));
+    const ctx=canvas.getContext('2d');
+    ctx.fillStyle='#fff';
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.drawImage(pageCanvas,sx,sy,sw,sh,0,0,canvas.width,canvas.height);
+
+    try{return canvas.toDataURL('image/jpeg',.78)}catch{return ''}
+  }
+
+  async function renderPage(page,viewport){
+    const canvas=document.createElement('canvas');
+    canvas.width=Math.ceil(viewport.width);
+    canvas.height=Math.ceil(viewport.height);
+    await page.render({canvasContext:canvas.getContext('2d'),viewport}).promise;
+    return canvas;
+  }
+
+  async function parsePage(page,fileName,pageNumber,project){
+    const viewport=page.getViewport({scale:1.6});
+    const [textContent,annotations]=await Promise.all([
+      page.getTextContent(),
+      page.getAnnotations({intent:'display'}).catch(()=>[])
+    ]);
+
+    const texts=(textContent.items||[])
+      .map(item=>textItemRect(item,viewport))
+      .filter(item=>item.text);
+    const pageText=texts.map(t=>t.text).join(' ');
+
+    if(!pageIsJJSelections(pageText))return {accepted:false,items:[]};
+
+    const allLinks=validProductLinks(annotations,texts,viewport);
+    if(!allLinks.length)return {accepted:true,items:[]};
+
+    const rows=clusterByY(allLinks,22);
+    const denseRows=rows.filter(row=>row.links.length>=2).length;
+    const layout=denseRows>=Math.ceil(rows.length/2)?'grid':'horizontal';
+
+    const canvas=await renderPage(page,viewport);
+    const items=[];
+
+    if(layout==='grid'){
+      for(const row of rows){
+        if(row.links.length<2)continue; // filters stray duplicate hyperlink rows
+        const sorted=[...row.links].sort((a,b)=>a.x-b.x);
+
+        for(let i=0;i<sorted.length;i++){
+          const link=sorted[i];
+          const heading=headingAbove(texts,link.y,130);
+          const left=Math.max(0,link.x-8);
+          const right=i<sorted.length-1?Math.max(left+80,sorted[i+1].x-12):viewport.width-38;
+          const top=heading?heading.bottom+14:Math.max(0,link.y-245);
+          const bottom=Math.min(viewport.height,link.bottom+18);
