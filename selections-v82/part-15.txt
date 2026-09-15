@@ -1,115 +1,109 @@
 
 /* -------------------------------------------------------------------------
-   J&J Sidebar Click Routing Fix v82.3
-
-   Root cause this fixes:
-   - The native sidebar builds inline onclick handlers as:
-       openProjectFromSidebar(${p.id})
-   - If a project id is a string/UUID, that generated inline JavaScript is invalid.
-   - Earlier runtime wrappers only helped AFTER openProjectFromSidebar was called,
-     so they could never fix a click that failed before the function ran.
-
-   This fix intercepts the sidebar click in CAPTURE phase, resolves the clicked
-   project from the rendered sidebar order, applies the exact original project id,
-   then renders the active page directly. It does not rely on the inline id at all.
+   J&J Sidebar Project Switcher v82.5
+   Direct, lightweight project switching with no MutationObserver, no interval,
+   no renderAll(), and no cloud save on every click.
    ------------------------------------------------------------------------- */
 (() => {
-  if(window.__jjSidebarRouteFixV823) return;
-  window.__jjSidebarRouteFixV823=true;
+  if(window.__jjSidebarProjectSwitcherV825) return;
+  window.__jjSidebarProjectSwitcherV825=true;
+
+  const normalize=value=>String(value??'').replace(/\s+/g,' ').trim().toLowerCase();
 
   function projectFromButton(button){
     try{
+      const projects=Array.isArray(state?.projects)?state.projects:[];
+      if(!projects.length)return null;
+
+      // Name is the most reliable identifier in the currently-rendered sidebar.
+      const name=normalize(button.querySelector('b')?.textContent||'');
+      if(name){
+        const exact=projects.find(project=>normalize(project.name)===name);
+        if(exact)return exact;
+      }
+
+      // Fallback to the button's position among project cards.
       const wrap=button.closest('.project-side-wrap');
-      const list=wrap?.parentElement;
-      if(!wrap||!list||!Array.isArray(state?.projects)) return null;
-      const wraps=[...list.children].filter(el=>el.classList?.contains('project-side-wrap'));
+      const wraps=[...document.querySelectorAll('.project-side-wrap')];
       const index=wraps.indexOf(wrap);
-      if(index>=0 && state.projects[index]) return state.projects[index];
-
-      // Fallback by displayed job name if the sidebar DOM changes order.
-      const label=button.querySelector('b')?.textContent?.trim()||'';
-      return state.projects.find(project=>String(project.name||'').trim()===label)||null;
+      return index>=0?projects[index]||null:null;
     }catch{return null}
   }
 
-  function exactSelectedProject(){
+  function persistSelectionLocally(){
+    // The active UI job does not need a full cloud write. Keep switching fast.
     try{
-      return state.projects.find(project=>String(project.id)===String(state.selectedProjectId))||null;
-    }catch{return null}
+      if(typeof persistStateLocally==='function'){
+        persistStateLocally();
+        return;
+      }
+    }catch{}
+    try{localStorage.setItem('jj_full_proto',JSON.stringify(state))}catch{}
   }
 
-  function persistAndRefreshSidebar(){
-    try{saveState(false)}catch{}
-    try{buildProjectSidebar()}catch{}
-    requestAnimationFrame(fixActiveJob);
+  function updateSidebarActive(project){
+    try{
+      document.querySelectorAll('.project-side-wrap').forEach(wrap=>{
+        const button=wrap.querySelector('.project-side-open');
+        const name=normalize(button?.querySelector('b')?.textContent||'');
+        wrap.classList.toggle('active',name===normalize(project?.name));
+      });
+    }catch{}
   }
 
-  function routeToProject(project){
-    if(!project)return;
-    // IMPORTANT: preserve the exact type/value from the real project object.
-    state.selectedProjectId=project.id;
-
-    try{if(typeof closeMobileSidebar==='function')closeMobileSidebar()}catch{}
-    try{if(typeof closeJobsDrawer==='function')closeJobsDrawer()}catch{}
-
+  function renderCurrentPage(project){
     const page=document.querySelector('.page.active')?.id||'';
 
     if(page==='selections'){
-      persistAndRefreshSidebar();
-      // Native selectedProject() uses strict equality. Because we assigned the
-      // exact original project.id above, the native function now resolves correctly.
-      try{renderSelections()}catch(err){console.error('Selection project switch render failed',err)}
-      try{go('selections')}catch{}
+      try{renderSelections()}catch(err){console.error('Selections switch failed',err)}
+      try{buildNav()}catch{}
       return;
     }
 
     if(page==='preconstruction'){
       try{openPreconSection=0;openPreconAccordion=null;preconView='overview'}catch{}
       try{ensurePreconData()}catch{}
-      persistAndRefreshSidebar();
-      try{renderPreconstruction()}catch{}
-      try{go('preconstruction')}catch{}
+      try{renderPreconstruction()}catch(err){console.error('Preconstruction switch failed',err)}
+      try{buildNav()}catch{}
       return;
     }
 
     if(page==='paybyline' || page==='estimates'){
       try{
-        const keepView=poHubView==='estimate'?'estimate':'splits';
-        poHubView=keepView;
-        openPOIds?.clear?.();
-        selectedPOIds?.clear?.();
-        deletePOIndex=null;
-        bulkDeletePending=false;
-        persistAndRefreshSidebar();
-        renderAll?.();
+        const keepView=typeof poHubView!=='undefined'&&poHubView==='estimate'?'estimate':'splits';
+        try{openPOIds?.clear?.()}catch{}
+        try{selectedPOIds?.clear?.()}catch{}
+        try{deletePOIndex=null;bulkDeletePending=false}catch{}
         openPOHub?.(keepView);
-      }catch(err){console.error('PO project switch failed',err)}
+      }catch(err){console.error('P.O. project switch failed',err)}
       return;
     }
 
-    persistAndRefreshSidebar();
-    try{
-      projectTab='overview';
-      renderProject?.();
-      go?.('project');
-    }catch{
-      try{window.openProject?.(project.id)}catch{}
+    if(page==='project'){
+      try{projectTab='overview'}catch{}
+      try{renderProject()}catch(err){console.error('Project switch failed',err)}
+      return;
     }
+
+    // On Dashboard or another page, just change the selected job. The next
+    // section opened from navigation will use this project.
   }
 
-  function fixActiveJob(){
-    try{
-      const list=document.querySelector('.project-side-list');
-      if(!list||!Array.isArray(state?.projects))return;
-      const wraps=[...list.children].filter(el=>el.classList?.contains('project-side-wrap'));
-      wraps.forEach((wrap,index)=>{
-        const project=state.projects[index];
-        wrap.classList.toggle('active',!!project && String(project.id)===String(state.selectedProjectId));
-      });
-    }catch{}
+  function selectProject(project){
+    if(!project)return;
+    state.selectedProjectId=project.id;
+    updateSidebarActive(project);
+    renderCurrentPage(project);
+
+    try{if(typeof closeMobileSidebar==='function')closeMobileSidebar()}catch{}
+    try{if(typeof closeJobsDrawer==='function')closeJobsDrawer()}catch{}
+
+    // Persist after the visible UI changes, so the click feels immediate.
+    setTimeout(persistSelectionLocally,0);
   }
 
-  // Capture phase is intentional: it runs before the native inline onclick.
+  // Capture phase intentionally bypasses the old inline onclick, including old
+  // Number(id) coercion. No observer is needed; this listener survives rerenders.
   document.addEventListener('click',event=>{
     const button=event.target?.closest?.('.project-side-open');
     if(!button)return;
@@ -118,37 +112,14 @@
 
     event.preventDefault();
     event.stopImmediatePropagation();
-    routeToProject(project);
+    selectProject(project);
   },true);
 
-  // Keep the highlighted job correct even though legacy sidebar rendering still
-  // compares some ids with Number(), which is unsafe for UUID/string ids.
-  const installObserver=()=>{
-    const list=document.querySelector('.project-side-list');
-    if(!list)return false;
-    fixActiveJob();
-    if(!window.__jjSidebarObserverV823){
-      const observer=new MutationObserver(()=>requestAnimationFrame(fixActiveJob));
-      observer.observe(list,{childList:true,subtree:false});
-      window.__jjSidebarObserverV823=observer;
-    }
-    return true;
-  };
-
-  if(!installObserver()){
-    let tries=0;
-    const timer=setInterval(()=>{
-      tries++;
-      if(installObserver()||tries>40)clearInterval(timer);
-    },250);
-  }
-
-  // Small diagnostic helper for this build.
-  window.JJProjectSwitchV823={
-    current:()=>exactSelectedProject(),
-    route:projectId=>{
-      const project=state?.projects?.find(p=>String(p.id)===String(projectId));
-      routeToProject(project);
-    }
+  window.JJProjectSwitchV825={
+    select:id=>{
+      const project=state?.projects?.find(p=>String(p.id)===String(id));
+      selectProject(project);
+    },
+    current:()=>window.selectedProject?.()||null
   };
 })();
