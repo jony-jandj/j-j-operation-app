@@ -4307,3 +4307,383 @@ window.JJProduct = (() => {
   else window.addEventListener('load',()=>setTimeout(boot,0),{once:true});
 })();
 
+
+/* -------------------------------------------------------------------------
+   J&J Selection Controls + Homeowner Stability v81
+   - Makes the existing selection multi-select checkboxes obvious in Card/List.
+   - Keeps bulk Status / Group / Lead Time / two-step Delete.
+   - Guarantees an In Stock toggle exists directly under Lead Time in Edit.
+   - Stabilizes the H.O. group toolbar so updates don't keep duplicating/rebuilding it.
+   - Improves contrast for the selected job in the sidebar.
+   ------------------------------------------------------------------------- */
+(() => {
+  if(window.__jjSelectionControlsV81) return;
+  window.__jjSelectionControlsV81 = true;
+
+  const STYLE_ID='jj-selection-controls-v81';
+
+  function injectStyles(){
+    if(document.getElementById(STYLE_ID)) return;
+    const style=document.createElement('style');
+    style.id=STYLE_ID;
+    style.textContent=`
+      /* ---- Multi-select checkbox: Card + List ---- */
+      #selections .selection-card > label:first-child,
+      #selections .selection-card label:has(input[type="checkbox"][aria-label^="Select "]) {
+        display:flex!important;
+        align-items:center!important;
+        gap:8px!important;
+        width:max-content!important;
+        max-width:calc(100% - 20px)!important;
+        margin:9px 10px 0!important;
+        padding:7px 9px!important;
+        border:1px solid #D6DEE8!important;
+        border-radius:8px!important;
+        background:#FFFFFF!important;
+        color:#14234A!important;
+        font-size:11px!important;
+        font-weight:850!important;
+        line-height:1.2!important;
+        cursor:pointer!important;
+        position:relative!important;
+        z-index:2!important;
+      }
+      #selections .selection-card input[type="checkbox"] {
+        display:block!important;
+        appearance:auto!important;
+        -webkit-appearance:checkbox!important;
+        width:18px!important;
+        height:18px!important;
+        min-width:18px!important;
+        margin:0!important;
+        accent-color:#B59A62!important;
+        cursor:pointer!important;
+        opacity:1!important;
+        visibility:visible!important;
+      }
+      #selections .selection-list .selection-card > label:first-child {
+        margin:8px 10px!important;
+      }
+
+      /* ---- In Stock in Edit Selection ---- */
+      .jj-v81-instock-row{
+        margin-top:8px!important;
+        padding:10px 11px!important;
+        border:1px solid #D7DEE7!important;
+        border-radius:9px!important;
+        background:#F8FAFC!important;
+      }
+      .jj-v81-instock-line{
+        display:flex!important;
+        align-items:center!important;
+        justify-content:space-between!important;
+        gap:12px!important;
+      }
+      .jj-v81-instock-line strong{
+        color:#14234A!important;
+        font-size:11px!important;
+      }
+      .jj-v81-instock-row small{
+        display:block!important;
+        margin-top:4px!important;
+        color:#687587!important;
+        font-size:10px!important;
+        line-height:1.35!important;
+      }
+      #selectionEditInStock{
+        display:inline-flex!important;
+        align-items:center!important;
+        justify-content:center!important;
+        min-width:104px!important;
+        min-height:36px!important;
+        padding:8px 11px!important;
+        border:1px solid #C9D1DB!important;
+        border-radius:8px!important;
+        background:#FFFFFF!important;
+        color:#14234A!important;
+        font-size:11px!important;
+        font-weight:900!important;
+        opacity:1!important;
+        visibility:visible!important;
+      }
+      #selectionEditInStock[aria-pressed="true"]{
+        border-color:#9DC8AE!important;
+        background:#EAF5EE!important;
+        color:#246441!important;
+      }
+
+      /* ---- Homeowner toolbar stability ---- */
+      #jjHOGroupToolbar{
+        display:flex!important;
+        align-items:center!important;
+        gap:8px!important;
+        flex-wrap:wrap!important;
+        margin:8px 0 16px!important;
+      }
+      #jjHOGroupToggle{
+        display:inline-flex!important;
+        align-items:center!important;
+        justify-content:center!important;
+        min-width:118px!important;
+        min-height:40px!important;
+        opacity:1!important;
+        visibility:visible!important;
+      }
+
+      /* ---- Selected job sidebar contrast ---- */
+      .job-item.active,
+      .job-item.selected,
+      .job-row.active,
+      .job-row.selected,
+      .project-item.active,
+      .project-item.selected,
+      .project-row.active,
+      .project-row.selected,
+      .project-button.active,
+      .project-button.selected,
+      [data-job].active,
+      [data-project].active,
+      .sidebar .active[data-job],
+      .sidebar .active[data-project]{
+        color:#FFFFFF!important;
+      }
+      .job-item.active *,
+      .job-item.selected *,
+      .job-row.active *,
+      .job-row.selected *,
+      .project-item.active *,
+      .project-item.selected *,
+      .project-row.active *,
+      .project-row.selected *,
+      .project-button.active *,
+      .project-button.selected *,
+      [data-job].active *,
+      [data-project].active *{
+        color:#FFFFFF!important;
+      }
+      .job-item.active small,
+      .job-row.active small,
+      .project-item.active small,
+      .project-row.active small,
+      .project-button.active small{
+        color:rgba(255,255,255,.78)!important;
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  /* ---------------- Multi-select ---------------- */
+  function updateBulkCheckboxLabels(){
+    const root=document.getElementById('selections');
+    if(!root)return;
+
+    root.querySelectorAll('.selection-card input[type="checkbox"]').forEach(box=>{
+      const label=box.closest('label');
+      if(!label)return;
+      const title=(box.getAttribute('aria-label')||'').replace(/^Select\s+/i,'').trim();
+      // Keep it short and consistent.
+      const textNodes=[...label.childNodes].filter(n=>n.nodeType===Node.TEXT_NODE);
+      textNodes.forEach(n=>n.remove());
+      let span=label.querySelector('.jj-v81-select-text');
+      if(!span){
+        span=document.createElement('span');
+        span.className='jj-v81-select-text';
+        label.appendChild(span);
+      }
+      span.textContent=box.checked?'Selected for bulk edit':'Select';
+      label.title=title?`Select ${title} for bulk actions`:'Select for bulk actions';
+    });
+
+    // Refresh the existing v78 toolbar count if available.
+    try{
+      const event=new Event('change',{bubbles:true});
+      // don't dispatch; v78 already observes checkbox changes.
+    }catch{}
+  }
+
+  /* ---------------- In Stock ---------------- */
+  function ensureInStock(){
+    const leadInput=document.getElementById('selectionEditLeadValue');
+    if(!leadInput)return;
+
+    const leadField=leadInput.closest('.selection-field')||leadInput.parentElement;
+    if(!leadField)return;
+
+    let button=document.getElementById('selectionEditInStock');
+    if(!button){
+      button=document.createElement('button');
+      button.type='button';
+      button.id='selectionEditInStock';
+      button.setAttribute('aria-pressed','false');
+      button.textContent='Mark In Stock';
+      button.addEventListener('click',event=>{
+        event.preventDefault();
+        const next=button.getAttribute('aria-pressed')!=='true';
+        button.setAttribute('aria-pressed',String(next));
+        button.textContent=next?'In Stock ✓':'Mark In Stock';
+      });
+    }
+
+    let row=document.querySelector('.jj-v81-instock-row');
+    if(!row){
+      row=document.createElement('div');
+      row.className='jj-v81-instock-row';
+      row.innerHTML=`
+        <div class="jj-v81-instock-line">
+          <strong>Availability</strong>
+        </div>
+        <small>Turn this on when the product is available now. The selection card will show In Stock instead of the lead-time estimate.</small>`;
+      leadField.insertAdjacentElement('afterend',row);
+    }
+
+    const line=row.querySelector('.jj-v81-instock-line');
+    if(button.parentElement!==line)line.appendChild(button);
+
+    const refresh=()=>{
+      button.textContent=button.getAttribute('aria-pressed')==='true'
+        ? 'In Stock ✓'
+        : 'Mark In Stock';
+    };
+    refresh();
+
+    if(button.dataset.jjV81Bound!=='1'){
+      button.dataset.jjV81Bound='1';
+      new MutationObserver(refresh).observe(button,{attributes:true,attributeFilter:['aria-pressed']});
+    }
+  }
+
+  /* ---------------- Homeowner stability ---------------- */
+  function homeownerGroups(){
+    return [...document.querySelectorAll('#items details.option-group')];
+  }
+
+  function updateHOBtn(){
+    const btn=document.getElementById('jjHOGroupToggle');
+    if(!btn)return;
+    const groups=homeownerGroups();
+    if(!groups.length){
+      btn.textContent='View All';
+      btn.disabled=true;
+      return;
+    }
+    btn.disabled=false;
+    const allOpen=groups.every(group=>group.open);
+    btn.textContent=allOpen?'Show Groups':'View All';
+    btn.setAttribute('aria-pressed',String(allOpen));
+  }
+
+  function setHOGroups(open){
+    homeownerGroups().forEach(group=>group.open=!!open);
+    updateHOBtn();
+  }
+
+  function stabilizeHomeowner(){
+    const items=document.getElementById('items');
+    const view=document.querySelector('.actions[aria-label="Selections view"], .actions[role="group"][aria-label="Selections view"]');
+    if(!items||!view)return false;
+
+    // Stop the older fallback timer/observer that could keep re-inserting controls.
+    if(window.__jjV75DisclosureTimer){
+      clearInterval(window.__jjV75DisclosureTimer);
+      window.__jjV75DisclosureTimer=null;
+    }
+    if(window.__jjV75HOObserver?.disconnect){
+      window.__jjV75HOObserver.disconnect();
+      window.__jjV75HOObserver=null;
+    }
+
+    // Keep exactly one homeowner group toolbar.
+    const bars=[...document.querySelectorAll('#jjHOGroupToolbar')];
+    let bar=bars.shift();
+    bars.forEach(node=>node.remove());
+    if(!bar){
+      bar=document.createElement('div');
+      bar.id='jjHOGroupToolbar';
+      bar.className='jj-ho-group-toolbar';
+      bar.setAttribute('aria-label','Selection groups');
+      view.insertAdjacentElement('afterend',bar);
+    }else if(bar.previousElementSibling!==view){
+      view.insertAdjacentElement('afterend',bar);
+    }
+
+    const oldButtons=[...document.querySelectorAll('#jjHOViewAll,#jjHOShowGroups')];
+    oldButtons.forEach(node=>node.remove());
+
+    let btn=document.getElementById('jjHOGroupToggle');
+    if(!btn){
+      btn=document.createElement('button');
+      btn.id='jjHOGroupToggle';
+      btn.type='button';
+      btn.className='secondary';
+      bar.replaceChildren(btn);
+    }else if(btn.parentElement!==bar){
+      bar.replaceChildren(btn);
+    }
+
+    if(btn.dataset.jjV81Bound!=='1'){
+      btn.dataset.jjV81Bound='1';
+      // Capture stops older duplicate listeners from flipping the result back.
+      btn.addEventListener('click',event=>{
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        const groups=homeownerGroups();
+        if(!groups.length)return;
+        setHOGroups(!groups.every(group=>group.open));
+      },true);
+    }
+
+    homeownerGroups().forEach(group=>{
+      if(group.dataset.jjV81Toggle!=='1'){
+        group.dataset.jjV81Toggle='1';
+        group.addEventListener('toggle',()=>setTimeout(updateHOBtn,0));
+      }
+    });
+
+    updateHOBtn();
+
+    if(!window.__jjV81HOObserver){
+      const observer=new MutationObserver(()=>setTimeout(stabilizeHomeowner,0));
+      observer.observe(items,{childList:true,subtree:false});
+      window.__jjV81HOObserver=observer;
+    }
+    return true;
+  }
+
+  function boot(){
+    injectStyles();
+
+    // H.O. page is handled separately and kept simple.
+    if(stabilizeHomeowner())return;
+
+    updateBulkCheckboxLabels();
+    ensureInStock();
+
+    const root=document.getElementById('selections');
+    if(root&&!window.__jjV81AppObserver){
+      const observer=new MutationObserver(()=>setTimeout(()=>{
+        updateBulkCheckboxLabels();
+        ensureInStock();
+      },0));
+      observer.observe(root,{childList:true,subtree:true});
+      window.__jjV81AppObserver=observer;
+    }
+
+    document.addEventListener('change',event=>{
+      if(event.target?.matches?.('#selections .selection-card input[type="checkbox"]')){
+        setTimeout(updateBulkCheckboxLabels,0);
+      }
+    });
+
+    if(!window.__jjV81Timer){
+      window.__jjV81Timer=setInterval(()=>{
+        if(document.hidden)return;
+        updateBulkCheckboxLabels();
+        ensureInStock();
+      },900);
+    }
+  }
+
+  if(document.readyState==='complete')setTimeout(boot,0);
+  else window.addEventListener('load',()=>setTimeout(boot,0),{once:true});
+})();
+
