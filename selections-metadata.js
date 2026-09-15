@@ -1,4 +1,4 @@
-/* J&J shared product lookup + selections group UI v74 */
+/* J&J shared product lookup + selections group UI v76 */
 window.JJProduct = (() => {
   const text=v=>typeof v==='string'?v.trim():typeof v==='number'?String(v):'';
   const safe=u=>/^https?:\/\//i.test(text(u))?text(u):'';
@@ -160,15 +160,15 @@ window.JJProduct = (() => {
 
 
 (() => {
-  const VERSION='v74';
+  const VERSION='v76';
   const escapeHtml=value=>String(value??'').replace(/[&<>"']/g,ch=>({
     '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
   }[ch]));
 
   function injectStyles(){
-    if(document.getElementById('jj-selection-groups-v74'))return;
+    if(document.getElementById('jj-selection-groups-v76'))return;
     const style=document.createElement('style');
-    style.id='jj-selection-groups-v74';
+    style.id='jj-selection-groups-v76';
     style.textContent=`
       .jj-selection-top-actions{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 14px}
       .jj-app-group-controls{display:inline-flex;gap:7px;align-items:center;margin-left:8px}
@@ -210,7 +210,7 @@ window.JJProduct = (() => {
       .jj-qr-dialog h3{margin:0;color:#14234a;font-size:19px}.jj-qr-dialog p{margin:7px 0 15px;color:#657382;font-size:12px}
       .jj-qr-dialog img{width:220px;height:220px;display:block;margin:0 auto 14px;border:8px solid #fff;box-shadow:0 3px 14px rgba(9,25,39,.15)}
       .jj-qr-link{display:block;padding:9px;border-radius:8px;background:#f3f6f8;color:#4a5b6b;font-size:10px;word-break:break-all}
-      .jj-qr-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}.jj-qr-actions button{border:1px solid #d3dae1;border-radius:8px;background:#fff;color:#14234a;padding:8px 12px;font-size:11px;font-weight:900}.jj-qr-actions .primary{border-color:#14234a;background:#14234a;color:#fff}
+      .jj-qr-actions{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin-top:16px}.jj-qr-actions button{border:1px solid #d3dae1;border-radius:8px;background:#fff;color:#14234a;padding:8px 12px;font-size:11px;font-weight:900}.jj-qr-actions .primary{border-color:#14234a;background:#14234a;color:#fff}
       .jj-ho-add-backdrop{position:fixed;inset:0;z-index:10130;display:flex;align-items:center;justify-content:center;padding:18px;background:rgba(8,19,31,.7)}
       .jj-ho-add-dialog{width:min(720px,100%);max-height:calc(100dvh - 36px);overflow:auto;border-radius:16px;background:#fff;color:#202633;box-shadow:0 24px 75px rgba(0,0,0,.32)}
       .jj-ho-add-dialog header{position:sticky;top:0;z-index:2;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:18px 20px;border-bottom:1px solid #e2e7ec;background:#fff}.jj-ho-add-dialog header small{display:block;color:#9b7a37;font-size:12px;font-weight:900;letter-spacing:.8px}.jj-ho-add-dialog h3{margin:3px 0 0;color:#172248;font-size:22px}.jj-ho-add-dialog header button{width:38px;height:38px;border:1px solid #d5dce3;border-radius:9px;background:#fff;color:#172248;font-size:24px}
@@ -218,6 +218,84 @@ window.JJProduct = (() => {
       @media(max-width:620px){.jj-ho-add-backdrop{align-items:stretch;padding:0}.jj-ho-add-dialog{width:100%;max-height:100dvh;border-radius:0}.jj-ho-add-grid{grid-template-columns:1fr}.jj-ho-add-wide{grid-column:auto}.jj-ho-add-dialog form{padding:18px}.jj-ho-lookup{width:100%}}
       .jj-ho-page-backdrop{align-items:stretch;justify-content:stretch;padding:0;background:#f1f3f6}.jj-ho-page-shell{width:100%;min-height:100%;max-height:none;overflow:auto;border-radius:0;background:#f1f3f6;color:#202633}.jj-ho-page-head{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:15px clamp(16px,4vw,48px);background:#172248;color:#fff;position:sticky;top:0;z-index:2;font-size:14px}.jj-ho-page-head>div:last-child{display:flex;gap:8px}.jj-ho-page-brand{display:flex;align-items:center;gap:10px;font-weight:500}.jj-ho-page-brand-mark{display:none}.jj-ho-page-head button{border:1px solid rgba(255,255,255,.35);border-radius:7px;background:#fff;color:#14234a;padding:7px 10px;font-size:11px;font-weight:800}.jj-ho-page-body{width:min(1120px,calc(100% - 48px));margin:0 auto;padding:44px 0 60px}.jj-ho-page-title{display:block;margin-bottom:20px}.jj-ho-page-title h2{margin:0;color:#172248;font-size:29px;line-height:1.18}.jj-ho-page-title p{margin:18px 0 0;color:#202633;font-size:17px;line-height:1.4}.jj-ho-page-toolbar{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin:0 0 22px;padding:0;border:0}.jj-ho-page-toolbar button{border:0;border-radius:8px;background:#172248;color:#fff;padding:11px 15px;font-size:14px;font-weight:700}.jj-ho-page-toolbar button[data-ho-view]{min-width:42px;padding:10px 12px;border:1px solid #d2d8df;background:#fff;color:#172248;font-size:18px;line-height:1}.jj-ho-page-toolbar button[data-ho-view].active,.jj-ho-page-toolbar button.primary{background:#172248;color:#fff;border-color:#172248}.jj-ho-page-toolbar .spacer{flex:1}.jj-ho-page-sync{margin:0 0 22px;padding:18px 20px;background:#fff2c9;color:#202633;font-size:15px}.jj-ho-page-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}.jj-ho-page-grid.list{grid-template-columns:1fr}.jj-ho-page-grid.list article{display:grid;grid-template-columns:180px minmax(0,1fr);align-items:start}.jj-ho-page-grid.list article .jj-ho-page-card-body{grid-column:2}.jj-ho-page-grid.list article>div:first-child:has(.empty){display:none}.jj-ho-page-card{border:1px solid #d3d5d8;border-radius:14px;overflow:hidden;background:#fff;box-shadow:0 1px 4px rgba(19,35,52,.04)}.jj-ho-page-card.is-selected{border:2px solid #39815f}.jj-ho-page-card>div:first-child:empty{display:none}.jj-ho-page-card>div:first-child:has(.empty){display:none}.jj-ho-page-card img{width:100%;height:220px;display:block;object-fit:contain;background:#fff}.jj-ho-page-card .empty{display:none}.jj-ho-page-card-body{padding:18px}.jj-ho-page-card-body .eyebrow{font-size:11px;color:#6b6f76;letter-spacing:0}.jj-ho-page-card-body h4{margin:10px 0 12px;color:#172248;font-size:17px;line-height:1.3}.jj-ho-page-card-body p{margin:7px 0;color:#202633;font-size:14px;line-height:1.4}.jj-ho-page-card-body strong{display:block;margin-top:10px;color:#172248;font-size:16px}.jj-ho-page-card-description{color:#202633!important}.jj-ho-page-card-label{color:#202633!important;font-size:14px!important}.jj-ho-page-status-selected{margin:0 0 12px;color:#317653;font-size:16px;font-weight:800}.jj-ho-page-card .jj-ho-select-button{border:0;border-radius:8px;background:#172248;color:#fff;padding:9px 12px;font-size:14px;font-weight:700}.jj-ho-page-group{margin-top:28px}.jj-ho-page-group>summary{display:flex;align-items:center;justify-content:space-between;gap:10px;cursor:pointer;padding:0 0 12px;color:#172248;font-size:18px;font-weight:900;list-style:none}.jj-ho-page-group>summary::-webkit-details-marker{display:none}.jj-ho-page-group>summary:before{content:'▸';margin-right:7px;transition:transform .15s}.jj-ho-page-group[open]>summary:before{transform:rotate(90deg)}.jj-ho-page-group>summary span{margin-left:auto;color:#657382;font-size:13px;font-weight:700}@media(max-width:900px){.jj-ho-page-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:620px){.jj-ho-page-body{width:calc(100% - 32px);padding:30px 0 42px}.jj-ho-page-head{padding:14px 18px}.jj-ho-page-head>div:last-child button{padding:7px 8px;font-size:10px}.jj-ho-page-title h2{font-size:24px}.jj-ho-page-title p{margin-top:12px;font-size:16px}.jj-ho-page-toolbar{align-items:stretch}.jj-ho-page-toolbar .spacer{display:none}.jj-ho-page-toolbar button[data-ho-view]:first-of-type{margin-left:auto}.jj-ho-page-grid{grid-template-columns:1fr}.jj-ho-page-card img{height:190px}.jj-ho-page-card-body{padding:20px}.jj-ho-page-card-body h4{font-size:18px}.jj-ho-page-card-body p{font-size:15px}.jj-ho-page-grid.list article{display:block}.jj-ho-page-grid.list article>div:first-child:has(.empty){display:none}}
       @media(max-width:620px){.jj-ho-page-toolbar button[data-ho-view="cards"]{margin-left:auto}}
+      .jj-ho-page-card .jj-ho-undo-button{margin-top:4px;border:1px solid #8bb09a;background:#fff;color:#246344}
+      /* Cohesive homeowner selections */
+      .jj-ho-page-backdrop{padding:0;background:#f4f6f8}
+      .jj-ho-page-shell{width:100%;min-height:100%;max-height:none;overflow:auto;border-radius:0;background:#f4f6f8;color:#202633}
+      .jj-ho-page-head{position:sticky;top:0;z-index:2;display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:66px;padding:0 clamp(18px,4vw,52px);background:#172248;color:#fff;border-bottom:1px solid rgba(255,255,255,.12);box-shadow:0 4px 18px rgba(14,31,54,.12)}
+      .jj-ho-page-brand{display:flex;align-items:center;gap:10px;font-size:15px;font-weight:850}
+      .jj-ho-page-brand small{padding-left:10px;border-left:1px solid rgba(255,255,255,.28);color:#c8d2e0;font-size:13px;font-weight:650}
+      .jj-ho-page-logo{display:grid;place-items:center;width:34px;height:34px;border-radius:9px;background:#f0b742;color:#10223f;font-size:12px;font-weight:950}
+      .jj-ho-page-head>button{min-height:38px;border:1px solid rgba(255,255,255,.32);border-radius:8px;background:#fff;color:#172248;padding:8px 13px;font-size:12px;font-weight:850}
+      .jj-ho-page-body{width:min(1180px,calc(100% - 40px));margin:0 auto;padding:38px 0 64px}
+      .jj-ho-page-title{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;margin-bottom:20px}
+      .jj-ho-page-title>div>small{display:block;margin-bottom:5px;color:#a7833f;font-size:12px;font-weight:900;letter-spacing:1px}
+      .jj-ho-page-title h2{margin:0;color:#172248;font-size:30px;line-height:1.15}
+      .jj-ho-page-title p{margin:7px 0 0;color:#657382;font-size:16px;line-height:1.45}
+      .jj-ho-page-progress{display:grid;flex:none;grid-template-columns:auto auto;align-items:baseline;gap:6px;padding-bottom:3px;color:#172248;white-space:nowrap}
+      .jj-ho-page-progress strong{font-size:25px;line-height:1}
+      .jj-ho-page-progress span{color:#687789;font-size:13px;font-weight:700}
+      .jj-ho-page-sync{margin:0 0 16px;padding:13px 16px;border:1px solid #d9e7df;border-radius:10px;background:#f3faf6;color:#315f48;font-size:14px}
+      .jj-ho-page-sync.is-warning{border-color:#ecd98f;background:#fff5cc;color:#665521}
+      .jj-ho-page-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 24px;padding:0;border:0}
+      .jj-ho-toolbar-left,.jj-ho-view-switch{display:flex;align-items:center;gap:8px}
+      .jj-ho-page-toolbar button{min-height:42px;border:1px solid #172248;border-radius:9px;background:#172248;color:#fff;padding:9px 14px;font-size:14px;font-weight:800}
+      .jj-ho-page-toolbar button:hover{filter:brightness(1.08)}
+      .jj-ho-page-toolbar button:focus-visible{outline:3px solid rgba(240,183,66,.45);outline-offset:2px}
+      .jj-ho-view-switch{margin-left:auto;padding:3px;border:1px solid #d8dee5;border-radius:10px;background:#e9edf1}
+      .jj-ho-page-toolbar .jj-ho-view-switch button{width:40px;min-width:40px;min-height:36px;padding:0;border:0;background:transparent;color:#617080;font-size:18px;line-height:1}
+      .jj-ho-page-toolbar .jj-ho-view-switch button.active{background:#fff;color:#172248;box-shadow:0 1px 4px rgba(15,32,49,.14)}
+      #jjHomeownerItems{display:grid;gap:22px}
+      .jj-ho-page-group{margin:0}
+      .jj-ho-page-group>summary{display:flex;align-items:center;justify-content:space-between;gap:14px;min-height:48px;padding:0 2px 10px;border-bottom:1px solid #dbe1e7;color:#172248;cursor:pointer;font-size:18px;font-weight:900;list-style:none}
+      .jj-ho-page-group>summary::-webkit-details-marker{display:none}
+      .jj-ho-page-group>summary:before{content:'▸';flex:none;margin-right:-5px;transition:transform .15s}
+      .jj-ho-page-group[open]>summary:before{transform:rotate(90deg)}
+      .jj-ho-page-group>summary>div{display:flex;min-width:0;flex:1;align-items:baseline;gap:10px}
+      .jj-ho-page-group>summary>div strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+      .jj-ho-page-group>summary>div small{color:#71808e;font-size:12px;font-weight:700;white-space:nowrap}
+      .jj-ho-page-group>summary>span{margin-left:auto;color:#71808e;font-size:13px;font-weight:700;white-space:nowrap}
+      .jj-ho-page-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,360px));gap:16px;padding-top:15px;align-items:start}
+      .jj-ho-page-card{display:flex;min-width:0;flex-direction:column;border:1px solid #d7dde3;border-radius:14px;overflow:hidden;background:#fff;box-shadow:0 3px 12px rgba(15,32,49,.06)}
+      .jj-ho-page-card.is-selected{border:2px solid #3b805f}
+      .jj-ho-page-photo{display:grid;height:210px;place-items:center;overflow:hidden;border-bottom:1px solid #e9edf0;background:#fff}
+      .jj-ho-page-card.no-photo .jj-ho-page-photo{display:none}
+      .jj-ho-page-photo img{display:block;width:100%;height:100%;object-fit:contain;background:#fff}
+      .jj-ho-photo-empty{display:grid;place-items:center;gap:7px;width:100%;height:100%;min-height:150px;background:#f7f9fa;color:#82909d;text-align:center}
+      .jj-ho-photo-empty span{font-size:24px}.jj-ho-photo-empty small{font-size:12px;font-weight:750}
+      .jj-ho-page-card-body{min-width:0;padding:18px}
+      .jj-ho-page-card-body .eyebrow{color:#7b8793;font-size:11px;font-weight:850;letter-spacing:.35px;text-transform:uppercase}
+      .jj-ho-page-card-body h4{margin:7px 0 10px;color:#172248;font-size:18px;line-height:1.3}
+      .jj-ho-page-status-selected{margin:0 0 10px;color:#317653;font-size:14px;font-weight:850}
+      .jj-ho-page-card-description{margin:0 0 14px!important;color:#5c6a78!important;font-size:14px!important;line-height:1.45!important}
+      .jj-ho-card-details{display:grid;gap:0;border-top:1px solid #edf0f3}
+      .jj-ho-card-details p{display:grid;grid-template-columns:105px minmax(0,1fr);gap:10px;margin:0!important;padding:7px 0;border-bottom:1px solid #edf0f3;color:#263443!important;font-size:14px!important;line-height:1.35!important;overflow-wrap:anywhere}
+      .jj-ho-card-details p span{color:#6f7d8b;font-weight:650}
+      .jj-ho-card-actions{display:flex;gap:8px;margin-top:14px}
+      .jj-ho-card-actions button{min-height:38px;border:0;border-radius:8px;background:#172248;color:#fff;padding:8px 12px;font-size:13px;font-weight:800}
+      .jj-ho-card-actions .jj-ho-undo-button{margin:0;border:1px solid #80aa92;background:#f7fbf8;color:#286646}
+      .jj-ho-page-grid.list{display:grid;grid-template-columns:1fr;gap:12px}
+      .jj-ho-page-grid.list .jj-ho-page-card{display:grid;grid-template-columns:190px minmax(0,1fr);max-width:none}
+      .jj-ho-page-grid.list .jj-ho-page-card.no-photo{grid-template-columns:1fr}
+      .jj-ho-page-grid.list .jj-ho-page-photo{height:100%;min-height:220px;border-right:1px solid #e9edf0;border-bottom:0}
+      .jj-ho-page-grid.list .jj-ho-page-card-body{grid-column:auto;padding:18px 20px}
+      .jj-ho-empty-state{display:grid;place-items:center;gap:6px;min-height:220px;border:1px dashed #c8d0d8;border-radius:14px;background:#fff;color:#657382;text-align:center}
+      .jj-ho-empty-state strong{color:#172248;font-size:18px}
+      @media(max-width:760px){
+        .jj-ho-page-head{min-height:60px;padding:0 16px}.jj-ho-page-brand{font-size:14px}.jj-ho-page-brand small{display:none}
+        .jj-ho-page-body{width:calc(100% - 28px);padding:26px 0 44px}
+        .jj-ho-page-title{display:block}.jj-ho-page-title h2{font-size:25px}.jj-ho-page-title p{font-size:15px}.jj-ho-page-progress{margin-top:12px;justify-content:start}
+        .jj-ho-page-toolbar{align-items:flex-start}.jj-ho-toolbar-left{flex:1;flex-wrap:wrap}.jj-ho-view-switch{flex:none;margin-left:auto}
+        .jj-ho-page-toolbar button{min-height:40px;padding:8px 11px;font-size:13px}
+        .jj-ho-page-grid{grid-template-columns:1fr}.jj-ho-page-photo{height:190px}
+        .jj-ho-page-grid.list .jj-ho-page-card{display:flex;flex-direction:column}.jj-ho-page-grid.list .jj-ho-page-card.no-photo{display:flex}.jj-ho-page-grid.list .jj-ho-page-photo{height:190px;min-height:190px;border-right:0;border-bottom:1px solid #e9edf0}
+        .jj-ho-page-group>summary{align-items:flex-start;flex-wrap:wrap}.jj-ho-page-group>summary>div{align-items:flex-start;flex-direction:column;gap:2px}.jj-ho-page-group>summary>span{padding-top:3px}
+      }
+      @media(max-width:460px){
+        .jj-ho-page-toolbar{flex-wrap:wrap}.jj-ho-toolbar-left{width:100%;flex-basis:100%}.jj-ho-view-switch{margin-left:0}
+        .jj-ho-page-toolbar button{flex:1}.jj-ho-page-toolbar .jj-ho-view-switch button{flex:none}
+        .jj-ho-page-title h2{font-size:23px}.jj-ho-page-card-body{padding:16px}.jj-ho-card-details p{grid-template-columns:94px minmax(0,1fr)}
+      }
       #items{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
       #items>.option-group{grid-column:1/-1;margin:0;border:1px solid #d9e0e6;border-radius:14px;background:#f8fafb;overflow:hidden;box-shadow:0 3px 12px rgba(19,35,52,.05)}
       #items>.option-group>summary.jj-ho-summary{display:flex!important;align-items:center!important;gap:12px!important;min-height:58px;padding:14px 16px!important;background:#fff!important;color:#14234a!important;font-size:12px!important;font-weight:900!important;list-style:none}
@@ -881,6 +959,22 @@ window.JJProduct = (() => {
     catch{window.prompt('Copy this homeowner link:',url)}
   }
 
+  async function createNewHomeownerQR(project){
+    if(!project)return;
+    const approved=window.confirm('Create a new QR code for this job? Only do this when you want to replace the current printed QR code.');
+    if(!approved)return;
+    const oldToken=String(project.homeownerPortalToken||'');
+    if(oldToken){
+      try{await window.homeownerPortalClient?.(oldToken)?.from('homeowner_portals').delete().eq('token',oldToken)}catch(error){console.warn('Old homeowner QR could not be retired:',error)}
+    }
+    project.homeownerPortalToken=makePortalToken();
+    window.JJHomeownerToken=project.homeownerPortalToken;
+    try{window.saveState?.(false)}catch{}
+    closeQR();
+    await openHomeownerQR(project);
+    window.toast?.('New homeowner QR code created');
+  }
+
   async function openHomeownerQR(project=appProject()){
     if(!project)return;
     window.JJHomeownerProject=project;
@@ -890,9 +984,10 @@ window.JJProduct = (() => {
     const backdrop=document.createElement('div');
     backdrop.id='jjQRBackdrop';backdrop.className='jj-qr-backdrop';
     const qr=`https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(url)}`;
-    backdrop.innerHTML=`<div class="jj-qr-dialog" role="dialog" aria-modal="true" aria-label="Homeowner selections QR code"><h3>Homeowner selections</h3><p>${synced?`Scan this code to view and add selections for ${escapeHtml(project.name||'this job')}. No login is required.`:'Guest access is not connected yet. Run the homeowner guest SQL setup before sharing this code.'}</p><img src="${qr}" alt="Homeowner selections QR code"><span class="jj-qr-link">${escapeHtml(url)}</span><div class="jj-qr-actions"><button type="button" data-copy>Copy link</button><button type="button" data-close>Close</button><button type="button" class="primary" data-open>Open page</button></div></div>`;
+    backdrop.innerHTML=`<div class="jj-qr-dialog" role="dialog" aria-modal="true" aria-label="Homeowner selections QR code"><h3>Homeowner selections</h3><p>${synced?`Scan this code to view and add selections for ${escapeHtml(project.name||'this job')}. This QR stays the same unless you choose Create New QR Code.`:'Guest access is not connected yet. Run the homeowner guest SQL setup before sharing this code.'}</p><img src="${qr}" alt="Homeowner selections QR code"><span class="jj-qr-link">${escapeHtml(url)}</span><div class="jj-qr-actions"><button type="button" data-new>Create New QR Code</button><button type="button" data-copy>Copy link</button><button type="button" data-close>Close</button><button type="button" class="primary" data-open>Open page</button></div></div>`;
     backdrop.addEventListener('click',event=>{if(event.target===backdrop)closeQR()});
     backdrop.querySelector('[data-copy]').addEventListener('click',copyHomeownerUrl);
+    backdrop.querySelector('[data-new]').addEventListener('click',()=>createNewHomeownerQR(project));
     backdrop.querySelector('[data-close]').addEventListener('click',closeQR);
     backdrop.querySelector('[data-open]').addEventListener('click',()=>{closeQR();renderHomeownerPage(project)});
     document.body.appendChild(backdrop);
@@ -955,6 +1050,17 @@ window.JJProduct = (() => {
       if(savedItem)Object.assign(savedItem,item);
       if(saved) localStorage.setItem('jj_full_proto',JSON.stringify(saved));
     }catch{}
+    await updateHomeownerPortal(project);
+    renderHomeownerPage(project);
+  }
+
+  async function undoHomeownerSelected(project,id){
+    const item=(project?.selections||[]).find(entry=>String(entry.id||'')===String(id));
+    if(!item||item.status!=='Selected')return;
+    item.status='Pending';
+    delete item.selectedAt;
+    try{window.saveState?.(false)}catch{}
+    saveHomeownerGuestProject(project);
     await updateHomeownerPortal(project);
     renderHomeownerPage(project);
   }
@@ -1031,6 +1137,15 @@ window.JJProduct = (() => {
     const root=page.querySelector('#jjHomeownerItems');
     if(!items.length){root.innerHTML='<p style="color:#657382">No selections have been added yet.</p>'}
     else root.innerHTML=groups.map(group=>{const complete=group.items.filter(item=>['Selected','Ordered','Received'].includes(item.status)).length;return `<details class="jj-ho-page-group" open><summary><strong>${escapeHtml(group.name)}</strong><span>${complete} of ${group.items.length} selections complete</span></summary><div class="jj-ho-page-grid">${group.items.map(item=>{const img=homeownerImage(item.image);const model=String(item.model||item.sku||'').trim();const upc=String(item.upc||item.gtin||'').trim();const selected=['Selected','Ordered','Received'].includes(item.status);return `<article class="jj-ho-page-card ${selected?'is-selected':''}"><div>${img?`<img src="${escapeHtml(img)}" alt="${escapeHtml(item.title||'Selected product')}" loading="lazy" onerror="this.outerHTML='<div class=\\"empty\\">No product photo</div>'">`:'<div class="empty">No product photo</div>'}</div><div class="jj-ho-page-card-body"><div class="eyebrow">${escapeHtml(group.name)}${item.category?` · ${escapeHtml(item.category)}`:''}</div><h4>${escapeHtml(item.title||'Untitled selection')}</h4>${selected?'<div class="jj-ho-page-status-selected">H.O. has selected</div>':''}${item.description?`<p class="jj-ho-page-card-description">${escapeHtml(item.description)}</p>`:''}${item.vendor?`<p>Vendor - ${escapeHtml(item.vendor)}</p>`:''}${model?`<p>Model / SKU # ${escapeHtml(model)}</p>`:''}${upc?`<p>UPC Code # ${escapeHtml(upc)}</p>`:''}<p>Quantity: ${Math.max(1,Number(item.quantity||1))}</p><p><b>Purchased by:</b> ${escapeHtml(item.purchasedBy||'Not assigned')}</p><p>Status: ${escapeHtml(item.status||'Pending')}</p>${!selected?`<button type="button" class="jj-ho-select-button" data-ho-select="${escapeHtml(item.id||'')}">Mark Selected</button>`:''}</div></article>`}).join('')}</div></details>`}).join('');
+    let homeownerCardIndex=0;
+    const homeownerCards=[...root.querySelectorAll('.jj-ho-page-card')];
+    groups.forEach(group=>group.items.forEach(item=>{
+      const card=homeownerCards[homeownerCardIndex++];
+      if(item.status!=='Selected'||!card)return;
+      const button=document.createElement('button');
+      button.type='button';button.className='jj-ho-select-button jj-ho-undo-button';button.dataset.hoUnselect=String(item.id||'');button.textContent='Undo Selection';
+      card.querySelector('.jj-ho-page-card-body')?.appendChild(button);
+    }));
     const pageGroups=[...page.querySelectorAll('.jj-ho-page-group')];
     const toggle=page.querySelector('[data-ho-toggle]');
     const updateToggle=()=>{const allOpen=pageGroups.length>0&&pageGroups.every(group=>group.open);if(toggle){toggle.textContent=allOpen?'Show Groups':'View All';toggle.title=allOpen?'Collapse all selection groups':'Expand all selection groups'}};
@@ -1044,11 +1159,76 @@ window.JJProduct = (() => {
       renderHomeownerPage(fresh||project);
     });
     page.querySelectorAll('[data-ho-select]').forEach(button=>button.addEventListener('click',()=>markHomeownerSelected(project,button.dataset.hoSelect)));
+    page.querySelectorAll('[data-ho-unselect]').forEach(button=>button.addEventListener('click',()=>undoHomeownerSelected(project,button.dataset.hoUnselect)));
     updateToggle();
     page.addEventListener('click',event=>{if(event.target===page||event.target.closest('[data-close]'))closeHomeownerPage(page)});
     document.body.appendChild(page);
   }
+  let homeownerDisplayMode='groups';
+  let homeownerDisplayView='cards';
 
+  function homeownerCardMarkup(item,groupName){
+    const img=homeownerImage(item.image);
+    const model=String(item.model||item.sku||'').trim();
+    const upc=String(item.upc||item.gtin||'').trim();
+    const selected=['Selected','Ordered','Received'].includes(item.status);
+    const canUndo=item.status==='Selected';
+    return `<article class="jj-ho-page-card ${selected?'is-selected':''} ${img?'has-photo':'no-photo'}" data-ho-card-id="${escapeHtml(item.id||'')}">
+      <div class="jj-ho-page-photo">${img?`<img src="${escapeHtml(img)}" alt="${escapeHtml(item.title||'Selected product')}" loading="lazy">`:'<div class="jj-ho-photo-empty"><span>▧</span><small>No product photo</small></div>'}</div>
+      <div class="jj-ho-page-card-body">
+        <div class="eyebrow">${escapeHtml(groupName||'Ungrouped selections')}${item.category?` · ${escapeHtml(item.category)}`:''}</div>
+        <h4>${escapeHtml(item.title||'Untitled selection')}</h4>
+        ${selected?'<div class="jj-ho-page-status-selected">H.O. has selected</div>':''}
+        ${item.description?`<p class="jj-ho-page-card-description">${escapeHtml(item.description)}</p>`:''}
+        <div class="jj-ho-card-details">
+          ${item.vendor?`<p><span>Vendor</span>${escapeHtml(item.vendor)}</p>`:''}
+          ${model?`<p><span>Model / SKU</span>${escapeHtml(model)}</p>`:''}
+          ${upc?`<p><span>UPC code</span>${escapeHtml(upc)}</p>`:''}
+          <p><span>Quantity</span>${Math.max(1,Number(item.quantity||1))}</p>
+          <p><span>Purchased by</span>${escapeHtml(item.purchasedBy||'Not assigned')}</p>
+          <p><span>Status</span>${escapeHtml(item.status||'Pending')}</p>
+        </div>
+        <div class="jj-ho-card-actions">${canUndo?`<button type="button" class="jj-ho-undo-button" data-ho-unselect="${escapeHtml(item.id||'')}">Undo Selection</button>`:(!selected?`<button type="button" class="jj-ho-select-button" data-ho-select="${escapeHtml(item.id||'')}">Mark Selected</button>`:'')}</div>
+      </div>
+    </article>`;
+  }
+
+  function renderHomeownerPageCohesive(project){
+    document.getElementById('jjHomeownerPage')?.remove();
+    const items=Array.isArray(project.selections)?project.selections:[];
+    const groups=homeownerGroupBuckets(project,items);
+    const page=document.createElement('div');
+    page.id='jjHomeownerPage';page.className='jj-qr-backdrop jj-ho-page-backdrop';
+    page.innerHTML=`<div class="jj-ho-page-shell" role="dialog" aria-modal="true" aria-label="Homeowner selections">
+      <header class="jj-ho-page-head"><div class="jj-ho-page-brand"><span class="jj-ho-page-logo">J&J</span><span>J&J Home Renovations</span><small>Homeowner Selections</small></div>${window.JJGuestMode?'':'<button type="button" data-close>Back to app</button>'}</header>
+      <main class="jj-ho-page-body">
+        <div class="jj-ho-page-title"><div><small>${escapeHtml(project.jobNo||'YOUR PROJECT')}</small><h2>${escapeHtml(project.name||'Selections')}</h2><p>Review your project selections, add a product, or mark a pending item as selected.</p></div><div class="jj-ho-page-progress"><strong>${items.filter(item=>['Selected','Ordered','Received'].includes(item.status)).length}</strong><span>of ${items.length} complete</span></div></div>
+        <div class="jj-ho-page-sync ${project.portalUnavailable?'is-warning':''}">${project.portalUnavailable?'This homeowner link is not connected yet. Please ask J&J to refresh the QR code.':'Your selections are up to date.'}</div>
+        <div class="jj-ho-page-toolbar">
+          <div class="jj-ho-toolbar-left"><button type="button" data-refresh>Refresh</button><button type="button" data-ho-toggle>${homeownerDisplayMode==='groups'?'View All':'Show Groups'}</button><button type="button" data-ho-add class="primary">+ Add Selection</button></div>
+          <div class="jj-ho-view-switch" aria-label="Selections view"><button type="button" data-ho-view="cards" class="${homeownerDisplayView==='cards'?'active':''}" aria-label="Card view" title="Card view">▦</button><button type="button" data-ho-view="list" class="${homeownerDisplayView==='list'?'active':''}" aria-label="List view" title="List view">☰</button></div>
+        </div>
+        <div id="jjHomeownerItems"></div>
+      </main>
+    </div>`;
+
+    const root=page.querySelector('#jjHomeownerItems');
+    if(!items.length)root.innerHTML='<div class="jj-ho-empty-state"><strong>No selections yet</strong><span>Use Add Selection to add the first product.</span></div>';
+    else if(homeownerDisplayMode==='groups')root.innerHTML=groups.map(group=>{const complete=group.items.filter(item=>['Selected','Ordered','Received'].includes(item.status)).length;return `<details class="jj-ho-page-group" open><summary><div><strong>${escapeHtml(group.name)}</strong><small>${group.items.length} selection${group.items.length===1?'':'s'}</small></div><span>${complete} of ${group.items.length} complete</span></summary><div class="jj-ho-page-grid ${homeownerDisplayView==='list'?'list':''}">${group.items.map(item=>homeownerCardMarkup(item,group.name)).join('')}</div></details>`}).join('');
+    else root.innerHTML=`<div class="jj-ho-page-grid ${homeownerDisplayView==='list'?'list':''}">${items.map(item=>{const group=groups.find(entry=>entry.items.includes(item));return homeownerCardMarkup(item,group?.name||'Ungrouped selections')}).join('')}</div>`;
+
+    root.querySelectorAll('.jj-ho-page-photo img').forEach(image=>image.addEventListener('error',()=>{image.parentElement.innerHTML='<div class="jj-ho-photo-empty"><span>▧</span><small>No product photo</small></div>'}));
+    root.querySelectorAll('[data-ho-select]').forEach(button=>button.addEventListener('click',()=>markHomeownerSelected(project,button.dataset.hoSelect)));
+    root.querySelectorAll('[data-ho-unselect]').forEach(button=>button.addEventListener('click',()=>undoHomeownerSelected(project,button.dataset.hoUnselect)));
+    page.querySelector('[data-ho-add]')?.addEventListener('click',()=>openHomeownerAddDialog(project,page));
+    page.querySelector('[data-ho-toggle]')?.addEventListener('click',()=>{homeownerDisplayMode=homeownerDisplayMode==='groups'?'all':'groups';renderHomeownerPageCohesive(project)});
+    page.querySelectorAll('[data-ho-view]').forEach(button=>button.addEventListener('click',()=>{homeownerDisplayView=button.dataset.hoView==='list'?'list':'cards';renderHomeownerPageCohesive(project)}));
+    page.querySelector('[data-refresh]')?.addEventListener('click',async()=>{const route=homeownerRoute();const fresh=route.token&&window.loadHomeownerProject?await window.loadHomeownerProject(project.id,route.token):null;renderHomeownerPageCohesive(fresh||project)});
+    page.addEventListener('click',event=>{if(event.target===page||event.target.closest('[data-close]'))closeHomeownerPage(page)});
+    document.body.appendChild(page);
+  }
+
+  renderHomeownerPage=renderHomeownerPageCohesive;
 
   /* ---------------- Homeowner portal ---------------- */
   const hoState=new Map();
