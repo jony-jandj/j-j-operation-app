@@ -1,0 +1,114 @@
+
+/* -------------------------------------------------------------------------
+   J&J Project Switching Reliability Fix v82.2
+   Installs AFTER the current page scripts exist, so every job keeps its exact
+   stored id type and Selections switches to the clicked project reliably.
+   ------------------------------------------------------------------------- */
+(() => {
+  if(window.__jjProjectSwitchV822) return;
+  window.__jjProjectSwitchV822=true;
+
+  function projectFor(id){
+    try{return state?.projects?.find(project=>String(project.id)===String(id))||null}catch{return null}
+  }
+
+  function setProject(id){
+    const project=projectFor(id);
+    if(!project)return null;
+    state.selectedProjectId=project.id;
+    return project;
+  }
+
+  function install(){
+    if(typeof window.openProjectFromSidebar!=='function' || typeof window.openProject!=='function') return false;
+    if(window.openProjectFromSidebar.__jjV822) return true;
+
+    window.selectedProject=function(){
+      try{return state.projects.find(project=>String(project.id)===String(state.selectedProjectId)) || state.projects[0] || null}
+      catch{return null}
+    };
+
+    const nativeOpenProject=window.openProject;
+    window.openProject=function(id){
+      const project=setProject(id);
+      return nativeOpenProject.call(this,project?project.id:id);
+    };
+    window.openProject.__jjV822=true;
+
+    window.openProjectFromSidebar=function(id){
+      const project=setProject(id);
+      if(!project)return;
+
+      try{if(typeof closeMobileSidebar==='function')closeMobileSidebar()}catch{}
+      try{if(typeof closeJobsDrawer==='function')closeJobsDrawer()}catch{}
+
+      const page=document.querySelector('.page.active')?.id||'';
+
+      if(page==='selections'){
+        try{saveState(false)}catch{}
+        try{renderSelections()}catch{}
+        try{buildProjectSidebar()}catch{}
+        try{go('selections')}catch{}
+        return;
+      }
+
+      if(page==='preconstruction'){
+        try{openPreconSection=0;openPreconAccordion=null;preconView='overview'}catch{}
+        try{ensurePreconData()}catch{}
+        try{saveState(false)}catch{}
+        try{renderPreconstruction()}catch{}
+        try{buildProjectSidebar()}catch{}
+        try{go('preconstruction')}catch{}
+        return;
+      }
+
+      if(page==='paybyline' || page==='estimates'){
+        try{
+          const keepView=poHubView==='estimate'?'estimate':'splits';
+          poHubView=keepView;
+          openPOIds?.clear?.();
+          selectedPOIds?.clear?.();
+          deletePOIndex=null;
+          bulkDeletePending=false;
+          saveState(false);
+          renderAll();
+          openPOHub(keepView);
+          return;
+        }catch{}
+      }
+
+      try{saveState(false)}catch{}
+      try{return window.openProject(project.id)}catch{}
+    };
+    window.openProjectFromSidebar.__jjV822=true;
+
+    // Also harden direct project-specific helpers that still coerce with Number().
+    if(typeof window.openPreconstructionForProject==='function' && !window.openPreconstructionForProject.__jjV822){
+      const original=window.openPreconstructionForProject;
+      window.openPreconstructionForProject=function(id){const project=setProject(id);return original.call(this,project?project.id:id)};
+      window.openPreconstructionForProject.__jjV822=true;
+    }
+    if(typeof window.setPreconProject==='function' && !window.setPreconProject.__jjV822){
+      const original=window.setPreconProject;
+      window.setPreconProject=function(id){const project=setProject(id);return original.call(this,project?project.id:id)};
+      window.setPreconProject.__jjV822=true;
+    }
+    if(typeof window.openProjectPOHub==='function' && !window.openProjectPOHub.__jjV822){
+      const original=window.openProjectPOHub;
+      window.openProjectPOHub=function(id,view){const project=setProject(id);return original.call(this,project?project.id:id,view)};
+      window.openProjectPOHub.__jjV822=true;
+    }
+
+    try{buildProjectSidebar()}catch{}
+    return true;
+  }
+
+  if(!install()){
+    window.addEventListener('load',install,{once:true});
+    let tries=0;
+    const timer=setInterval(()=>{
+      tries++;
+      if(install()||tries>40)clearInterval(timer);
+    },250);
+  }
+})();
