@@ -1,4 +1,4 @@
-const CACHE_NAME = 'jj-operations-v82-4-performance-fix';
+const CACHE_NAME = 'jj-operations-v82-5-project-switch-fix';
 const APP_SHELL = [
   './','./index.html','./homeowner.html','./qrcode.min.js','./selections-metadata.js',
   './jj-original-logo.png','./manifest.webmanifest','./icons/icon-192.png','./icons/icon-512.png',
