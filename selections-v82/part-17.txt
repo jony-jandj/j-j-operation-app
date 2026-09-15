@@ -1,1 +1,9 @@
-/* v82.7 homeowner runtime patch retired. Customer view now loads from homeowner-view-v829.js directly. */
+/* Homeowner/customer view loader v82.9. Customer page only. */
+(() => {
+  if(!/homeowner\.html$/i.test(location.pathname)) return;
+  if(document.querySelector('script[data-jj-homeowner-v829]')) return;
+  const script=document.createElement('script');
+  script.src='homeowner-view-v829.js?v=829';
+  script.dataset.jjHomeownerV829='1';
+  document.head.appendChild(script);
+})();
