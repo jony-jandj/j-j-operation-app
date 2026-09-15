@@ -48,49 +48,33 @@
     window.toast?.(`${added.length} selection${added.length===1?'':'s'} imported`);
   }
 
-  function patchCardLinks(){
-    if(typeof window.selectionCard!=='function'||window.selectionCard.__v79)return;
-    const original=window.selectionCard;
-    const wrapped=function(item,index){
-      let html=original(item,index);
-      if(!Array.isArray(item?.additionalLinks)||!item.additionalLinks.length)return html;
+  /*
+    IMPORTANT v82.6:
+    Do NOT wrap selectionCard here.
+    The old v79 PDF helper used to wrap selectionCard every time its timer ran so
+    imported additional links could be displayed. v82 also wraps selectionCard to
+    add the bulk checkbox. The two wrappers could alternate forever:
+      v79 -> v82 -> v79 -> v82 ...
+    That is what created the repeated Select checkboxes seen in the screen recording
+    and eventually made the page lag/freeze.
 
-      const extra=`<div class="jj-v79-extra-links">${item.additionalLinks
-        .filter(link=>/^https?:\/\//i.test(link.url||''))
-        .map(link=>`<a href="${esc(link.url)}" target="_blank" rel="noopener">${esc(link.label||'View product')} ↗</a>`)
-        .join('')}</div>`;
-
-      // Put additional links near the normal product actions.
-      html=html.replace(/(<div class="selection-card-actions">)/,`$1${extra}`);
-      return html;
-    };
-    wrapped.__v79=true;
-    window.selectionCard=wrapped;
-  }
+    Additional product links are now rendered by the single v82 card wrapper.
+  */
 
   function boot(){
     injectStyles();
     ensureInput();
     ensureButton();
-    patchCardLinks();
 
+    /* Keep only the lightweight Upload File button recovery. No card wrappers,
+       subtree observers, or repeating timers are needed here. */
     const root=document.getElementById('selections');
-    if(root&&!window.__jjV79Observer){
-      const observer=new MutationObserver(()=>setTimeout(()=>{
-        ensureButton();
-        patchCardLinks();
-      },0));
-      observer.observe(root,{childList:true,subtree:true});
-      window.__jjV79Observer=observer;
-    }
-
-    if(!window.__jjV79Timer){
-      window.__jjV79Timer=setInterval(()=>{
-        if(!document.hidden){
-          ensureButton();
-          patchCardLinks();
-        }
-      },900);
+    if(root&&!window.__jjV79ButtonObserver){
+      const observer=new MutationObserver(()=>{
+        if(!document.getElementById('jjSmartPdfUploadV79')) ensureButton();
+      });
+      observer.observe(root,{childList:true,subtree:false});
+      window.__jjV79ButtonObserver=observer;
     }
   }
 
