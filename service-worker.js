@@ -1,4 +1,4 @@
-const CACHE_NAME = 'jj-operations-v83-3-qr-groups-staff-selection';
+const CACHE_NAME = 'jj-operations-v83-4-customer-status-labels';
 const APP_SHELL = [
   './','./index.html','./homeowner.html','./customer-view.js','./customer-overlay.js','./qrcode.min.js','./selections-metadata.js',
   './jj-original-logo.png','./manifest.webmanifest','./icons/icon-192.png','./icons/icon-512.png',
