@@ -173,7 +173,7 @@
       /* Bulk checkbox on every card */
       #selections .jj-bulk-card-select{
         display:flex!important;align-items:center!important;gap:7px!important;
-        position:absolute!important;left:10px!important;top:10px!important;z-index:8!important;
+        position:absolute!important;left:10px!important;bottom:10px!important;top:auto!important;z-index:8!important;
         margin:0!important;padding:7px 9px!important;border:1px solid #D5DDE6!important;
         border-radius:8px!important;background:rgba(255,255,255,.96)!important;color:#14234A!important;
         box-shadow:0 2px 8px rgba(20,35,74,.10)!important;

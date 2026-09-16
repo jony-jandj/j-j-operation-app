@@ -5147,7 +5147,7 @@ function poNeedsReviewForCurrentUser(po){
   return canApprovePO() && po.status==='Draft';
 }
 function reviewStageLabel(){
-  return canApprovePO() ? 'Awaiting one approval' : 'Approval handled by Gio';
+  return canApprovePO() ? 'Awaiting one approval' : 'Approval handled by Jony, Adair, or Gio';
 }
 
 function ensureUserData(){
@@ -5187,7 +5187,7 @@ function canFinalApprove(){
   return state.currentUser==='Gio';
 }
 function canApprovePO(){
-  return canFinalApprove();
+  return ['Jony','Adair','Gio'].includes(state.currentUser);
 }
 
 function signInAs(name){
@@ -6209,11 +6209,11 @@ function mergeCloudValues(base,local,incoming){
   return cloneCloudValue(local);
 }
 
-// Jony and Adair can edit the job, but only Gio owns the single P.O. approval.
+// Jony, Adair, and Gio can approve P.O. splits.
 // Preserve the database's approval values when an older phone/iPad sends a
 // stale P.O. status so the rest of that device's changes can still sync.
 function protectPOApprovalFields(nextState,latestState,actorName){
-  if(actorName==='Gio' || !nextState?.projects || !latestState?.projects) return nextState;
+  if(['Jony','Adair','Gio'].includes(actorName) || !nextState?.projects || !latestState?.projects) return nextState;
   const latestProjects=new Map(latestState.projects.map(project=>[String(project?.id||''),project]));
   nextState.projects.forEach(project=>{
     const latestProject=latestProjects.get(String(project?.id||''));
@@ -9125,7 +9125,7 @@ function confirmBulkDelete(){
 function bulkApprove(){
   const items=selectedPOs();
   if(!items.length){ toast('Select at least one P.O.'); return; }
-  if(!canApprovePO()){ alert('Only Gio can approve P.O.s.'); return; }
+  if(!canApprovePO()){ alert('Jony, Adair, or Gio can approve P.O. splits.'); return; }
 
   let updated=0, skipped=0;
   items.forEach(po=>{
@@ -9246,7 +9246,7 @@ function renderPO(po,i){
   const approveDisabled=!canApprovePO() || !splitValid || po.status==='Approved';
   const approveHelp = canApprovePO()
     ? (splitValid ? (po.status==='Approved' ? 'This P.O. is already approved.' : 'Approve this P.O. once the crew split is ready.') : 'Enter a crew payout before approval.')
-    : 'Only Gio can approve P.O.s.';
+    : 'Jony, Adair, or Gio can approve P.O. splits.';
   const canUndoApproval=po.status==='Approved' && canApprovePO();
 
   return `<div class="card po ${expanded?'expanded':''} ${isPOSelected(po)?'po-selected':''}">
@@ -9323,7 +9323,7 @@ function renderPO(po,i){
 
       <div class="po-actions">
         ${po.status==='Approved'
-          ? `<button class="btn btn-light" ${canUndoApproval?'':'disabled'} title="${canUndoApproval?'Undo this approval.':'Only Gio can undo approval.'}" onclick="event.stopPropagation();undoPOApproval(${i})">Undo Approval</button>`
+          ? `<button class="btn btn-light" ${canUndoApproval?'':'disabled'} title="${canUndoApproval?'Undo this approval.':'Jony, Adair, or Gio can undo approval.'}" onclick="event.stopPropagation();undoPOApproval(${i})">Undo Approval</button>`
           : ''
         }
         <button class="btn btn-gold" data-approve-po="${i}" ${approveDisabled?'disabled':''} title="${approveHelp}" onclick="event.stopPropagation();setPOStatus(${i},'Approved')">Approve</button>
@@ -9518,7 +9518,7 @@ function refreshSplitCalculations(pi){
   if(approveBtn){
     approveBtn.disabled=!canApprovePO() || !splitValid || po.status==='Approved';
     approveBtn.title=!canApprovePO()
-      ? 'Only Gio can approve P.O.s.'
+      ? 'Jony, Adair, or Gio can approve P.O. splits.'
       : total<=0
         ? 'Enter a crew payout before approval.'
         : total>100
@@ -9584,7 +9584,7 @@ function undoPOApproval(i){
 
   if(po.status==='Approved'){
     if(!canApprovePO()){
-      alert('Only Gio can undo approval.');
+      alert('Jony, Adair, or Gio can undo approval.');
       return;
     }
 
@@ -9617,7 +9617,7 @@ function setPOStatus(i,status){
 
   if(status==='Approved'){
     if(!canApprovePO()){
-      alert('Only Gio can approve P.O.s.');
+      alert('Jony, Adair, or Gio can approve P.O. splits.');
       return;
     }
     if(splitTotal<=0){
@@ -9849,7 +9849,7 @@ function renderSelections(){
         </div>
         <div class="selection-heading-actions">
           <button class="selection-header-button" onclick="openHomeownerView()">Customer View</button>
-          <button class="selection-header-button" onclick="openHomeownerShare()">Create / Show QR Code</button>
+          <button class="selection-header-button" onclick="openHomeownerShare()">Show QR Code</button>
           <button class="selection-header-button primary" onclick="exportSelectionsPdf()">Export PDF</button>
         </div>
       </div>
@@ -9920,7 +9920,9 @@ function selectionNamedGroups(project,items,allItems,collapsed=true){
   });
   const ungrouped=[];
   items.forEach(item=>{
-    const bucket=known.get(String(item.optionGroupId||''));
+    const id=String(item.optionGroupId||'');
+    let bucket=known.get(id);
+    if(!bucket&&id){bucket={id,name:item.optionGroupTitle||item.title||'Selection Group',items:[]};known.set(id,bucket);buckets.push(bucket)}
     if(bucket)bucket.items.push(item);else ungrouped.push(item);
   });
   if(ungrouped.length)buckets.push({id:'ungrouped',name:'Ungrouped selections',items:ungrouped});
@@ -9961,7 +9963,7 @@ function selectionRoomGroup(project,room,roomItems,allItems){
 }
 
 const homeownerLinkRequests=new Map();
-async function homeownerShareUrl(project=selectedProject()){
+async function homeownerShareUrl(project=selectedProject(),regenerate=false){
   if(!project)throw new Error('Choose a project first.');
   if(!cloudClient)throw new Error('Connect and sign in before opening the customer link.');
   const job=String(project.id);
@@ -9970,7 +9972,7 @@ async function homeownerShareUrl(project=selectedProject()){
     const result=await cloudClient.rpc('jj_portal_get_link',{p_job:job});
     if(result.error)throw result.error;
     let token=result.data?.token;
-    if(!result.data?.exists){
+    if(regenerate||!result.data?.exists){
       token=Array.from(crypto.getRandomValues(new Uint8Array(32)),v=>v.toString(16).padStart(2,'0')).join('');
       const created=await cloudClient.rpc('jj_portal_link',{p_job:job,p_token:token});
       if(created.error)throw created.error;
@@ -10015,17 +10017,17 @@ function openHomeownerView(project=selectedProject()){
   document.body.appendChild(overlay);
 }
 
-async function openHomeownerShare(project=selectedProject()){
+async function openHomeownerShare(project=selectedProject(),regenerate=false){
   if(!project)return;
   document.getElementById('qrBackdrop')?.remove();
   const backdrop=document.createElement('div');
   backdrop.id='qrBackdrop';backdrop.className='selection-modal-backdrop open';
-  backdrop.innerHTML=`<div class="qr-modal" role="dialog" aria-modal="true" aria-labelledby="qrModalTitle"><h3 id="qrModalTitle">Homeowner page QR code</h3><p data-qr-message role="status">Opening the customer-only link for ${esc(project.name)}…</p><div data-qr-image></div><span class="qr-link"></span><div class="qr-modal-actions"><button class="btn btn-light" data-qr-copy disabled>Copy link</button><button class="btn btn-light" data-qr-close>Close</button><button class="btn btn-gold" data-qr-open disabled>Open page</button></div></div>`;
+  backdrop.innerHTML=`<div class="qr-modal" role="dialog" aria-modal="true" aria-labelledby="qrModalTitle"><h3 id="qrModalTitle">Homeowner page QR code</h3><p data-qr-message role="status">Opening the customer-only link for ${esc(project.name)}…</p><div data-qr-image></div><span class="qr-link"></span><div class="qr-modal-actions"><button class="btn btn-light" data-qr-regenerate disabled>Regenerate QR Code</button><button class="btn btn-light" data-qr-copy disabled>Copy link</button><button class="btn btn-light" data-qr-close>Close</button><button class="btn btn-gold" data-qr-open disabled>Open page</button></div></div>`;
   backdrop.querySelector('[data-qr-close]').onclick=()=>backdrop.remove();
   backdrop.addEventListener('click',e=>{if(e.target===backdrop)backdrop.remove()});
   document.body.appendChild(backdrop);
   try{
-    const url=await homeownerShareUrl(project);
+    const url=await homeownerShareUrl(project,regenerate);
     if(!backdrop.isConnected)return;
     backdrop.querySelector('[data-qr-message]').textContent=`Scan this code to open only the customer selections page for ${project.name}.`;
     backdrop.querySelector('.qr-link').textContent=url;
@@ -10033,6 +10035,11 @@ async function openHomeownerShare(project=selectedProject()){
     new QRCode(backdrop.querySelector('[data-qr-image]'),{text:url,width:220,height:220,correctLevel:QRCode.CorrectLevel.M});
     const copy=backdrop.querySelector('[data-qr-copy]'),open=backdrop.querySelector('[data-qr-open]');
     copy.disabled=false;open.disabled=false;
+    const regenerateButton=backdrop.querySelector('[data-qr-regenerate]');
+    regenerateButton.disabled=false;
+    regenerateButton.onclick=()=>{
+      if(confirm('Regenerate this customer QR code? The previous QR code and link will stop working.'))openHomeownerShare(project,true);
+    };
     copy.onclick=()=>copyHomeownerLink(url);
     open.onclick=()=>{location.assign(url)};
   }catch(error){if(backdrop.isConnected)backdrop.querySelector('[data-qr-message]').textContent=error.message||'Could not open the customer link. Please reconnect and try again.';}

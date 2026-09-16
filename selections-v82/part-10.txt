@@ -111,7 +111,7 @@
       let html=original.apply(this,arguments);
       const checked=bulkSet().has(String(item.id));
       const select=`<label class="jj-bulk-card-select" title="Select for bulk edit">
-        <input type="checkbox" data-jj-bulk-id="${esc(item.id)}" ${checked?'checked':''}>
+        <input type="checkbox" aria-label="Select ${esc(item.title||'selection')} for bulk edit" data-jj-bulk-id="${esc(item.id)}" ${checked?'checked':''}>
         <span>${checked?'Selected':'Select'}</span>
       </label>`;
       html=html.replace('<div class="selection-photo">',`<div class="selection-photo">${select}`);

@@ -32,7 +32,7 @@
     };
     wrapped.__jjStableLinksV826=true;
     // Preserve the v82 marker so no other current code thinks this needs wrapping again.
-    wrapped.__v82=true;
+    wrapped.__v82=original.__v82;
     window.selectionCard=wrapped;
     return true;
   }
