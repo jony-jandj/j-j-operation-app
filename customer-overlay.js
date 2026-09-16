@@ -11,6 +11,7 @@
   document.body.appendChild(overlay);
   const header=overlay.querySelector('header');header.style.cssText='position:static;height:auto;min-height:58px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;padding:16px 24px;background:#14234a;color:white';header.querySelector('.homeowner-brand').style.color='white';
 
+
   overlay.querySelector('[data-close-customer]').onclick=()=>window.closeHomeownerOverlay();
   const host=overlay.querySelector('main'),message=host.querySelector('[data-customer-message]');
   // Resolve by the captured project ID, never by whichever job is selected later.
@@ -19,7 +20,7 @@
   const view=window.JJCustomerView.mount(host,{getItems,
    onSelect(id,update){
     const all=getItems(),item=all.find(i=>String(i.id)===id);
-    if(!item||!['Pending','Selected'].includes(item.status||'Pending'))return;
+    if(!item||!['Pending','Recommended','Selected'].includes(item.status||'Pending'))return;
     if(item.status!=='Selected'&&all.some(i=>String(i.id)!==id&&String(i.optionGroupId||i.id)===String(item.optionGroupId||item.id)&&i.status==='Selected'))return;
     item.status=item.status==='Selected'?'Pending':'Selected';item.homeownerSelected=item.status==='Selected';item.homeownerSelectedAt=item.homeownerSelected?new Date().toISOString():null;
     window.saveState(false);window.renderSelections();update();
@@ -45,3 +46,4 @@
   overlay.querySelector('[data-close-customer]').focus();
  };
 })();
+
