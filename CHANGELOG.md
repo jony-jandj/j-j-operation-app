@@ -8,3 +8,8 @@
 - Imported all original estimate columns and pricing; widened scrollable descriptions; hid the four unwanted group/option columns.
 - Reused the current live index as baseline. No homeowner, selection, auth, or QR implementation files changed. Manager pay remains excluded.
 - Database setup and live deployment remain required; install instructions included.
+
+## Eligibility and layout correction
+- Any non-material cost type can create P.O. splits, including Subcontractor, Sub, Bid and Other.
+- All 01 - PRELIMINARY WORKS lines are excluded, including Select All and creation-time checks. Existing P.O.s are not removed.
+- Fixed overlapping imported columns with explicit table/column widths and horizontal scrolling; descriptions retain 84px scrollable height.

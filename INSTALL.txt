@@ -1,3 +1,5 @@
+HOTFIX: If the prior Work & Pay update and database setup are already installed, replace index.html, work-pay.js and service-worker.js only. No new SQL is required. Refresh after GitHub Pages finishes.
+
 J&J WORK & PAY UPDATE — INSTALL ORDER
 
 This is an update to the existing jony-jandj/j-j-operation-app repository, not a replacement repository. Keep all other existing files, including homeowner/customer scripts, icons, selection data assets and authentication configuration.
