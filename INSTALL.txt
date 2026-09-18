@@ -1,4 +1,3 @@
-1. Run the included WORK_PAY_SETUP.sql in your existing Supabase project. It updates payment protections; it does not delete job or payment records.
-2. Replace work-pay.js and service-worker.js in the GitHub repository.
-3. Refresh all app windows after GitHub Pages deploys.
-Includes incomplete/recomplete workflow, sub single/batch payment records and readable P.O. links.
+Run WORK_PAY_SETUP.sql in the existing Supabase project first. Then replace work-pay.js and service-worker.js in GitHub and refresh all open app windows after deployment.
+
+Approved P.O.s display locked amounts and assignments. Undo Approval returns the P.O. to Draft, removes its active summary earnings/payment allocations and retains the previous records in audit history. Other P.O. allocations in combined payments remain intact. This does not reverse actual bank payments.

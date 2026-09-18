@@ -27,11 +27,19 @@ begin
  select document into old_document from public.jj_work_pay where org_id='jj-home-renovations' and revision=expected_revision for update;
  if old_document is null then raise exception 'Ledger changed on another device. Refresh and try again.'; end if;
  for item in select * from jsonb_each(old_document->'work') loop
-  if new_document->'work'->item.key is distinct from item.value then raise exception 'Completed work cannot be changed or removed'; end if;
+  if new_document->'work'->item.key is distinct from item.value then
+   if new_document->'work'->item.key is not null or not exists(select 1 from jsonb_each(coalesce(new_document->'workArchive','{}'::jsonb)) a where a.value->>'sourceKey'=item.key and a.value->'work'=item.value and a.value->'lifecycle'=coalesce(old_document->'lifecycle'->item.key,'{}'::jsonb)) then raise exception 'Completed work cannot be changed or removed without an exact archive'; end if;
+  end if;
+ end loop;
+ for item in select * from jsonb_each(coalesce(old_document->'workArchive','{}'::jsonb)) loop
+  if new_document->'workArchive'->item.key is distinct from item.value then raise exception 'Archived payout history cannot be changed'; end if;
  end loop;
  -- Completion state is separate from immutable payout snapshots.
  for item in select * from jsonb_each(coalesce(old_document->'lifecycle','{}'::jsonb)) loop
-  if new_document->'lifecycle'->item.key is null then raise exception 'Completion history cannot be removed'; end if;
+  if new_document->'lifecycle'->item.key is null then
+   if exists(select 1 from jsonb_each(coalesce(new_document->'workArchive','{}'::jsonb)) a where a.value->>'sourceKey'=item.key and a.value->'lifecycle'=item.value) then continue; end if;
+   raise exception 'Completion history cannot be removed';
+  end if;
   if not ((new_document->'lifecycle'->item.key->'history') @> (item.value->'history')) then raise exception 'Completion history must be retained'; end if;
  end loop;
  for item in select * from jsonb_each(coalesce(new_document->'lifecycle','{}'::jsonb)) loop
@@ -49,7 +57,7 @@ begin
   for line in select value from jsonb_array_elements(payment->'lines') loop
    if (line->>'amount')::numeric<=0 or mod((line->>'amount')::numeric,1)<>0 then raise exception 'Invalid payment amount'; end if;
    if not coalesce((payment->>'voided')::boolean,false) and coalesce((new_document->'lifecycle'->(line->>'workId')->>'incomplete')::boolean,false) then raise exception 'Void recorded payments before reopening work; incomplete work cannot be paid'; end if;
-   if not exists(select 1 from jsonb_array_elements(new_document->'work'->(line->>'workId')->'allocations') a where a->>'person'=line->>'person') then raise exception 'Unknown work allocation'; end if;
+   if not exists(select 1 from jsonb_array_elements(new_document->'work'->(line->>'workId')->'allocations') a where a->>'person'=line->>'person') and not (coalesce((payment->>'voided')::boolean,false) and exists(select 1 from jsonb_each(coalesce(new_document->'workArchive','{}'::jsonb)) a cross join lateral jsonb_array_elements(a.value->'work'->'allocations') archived_allocation where a.value->>'sourceKey'=line->>'workId' and archived_allocation->>'person'=line->>'person')) then raise exception 'Unknown work allocation'; end if;
   end loop;
  end loop;
  for item in select * from jsonb_each(new_document->'work') loop
