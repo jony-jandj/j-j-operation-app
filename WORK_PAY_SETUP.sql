@@ -29,6 +29,16 @@ begin
  for item in select * from jsonb_each(old_document->'work') loop
   if new_document->'work'->item.key is distinct from item.value then raise exception 'Completed work cannot be changed or removed'; end if;
  end loop;
+ -- Completion state is separate from immutable payout snapshots.
+ for item in select * from jsonb_each(coalesce(old_document->'lifecycle','{}'::jsonb)) loop
+  if new_document->'lifecycle'->item.key is null then raise exception 'Completion history cannot be removed'; end if;
+  if not ((new_document->'lifecycle'->item.key->'history') @> (item.value->'history')) then raise exception 'Completion history must be retained'; end if;
+ end loop;
+ for item in select * from jsonb_each(coalesce(new_document->'lifecycle','{}'::jsonb)) loop
+  if new_document->'work'->item.key is null then raise exception 'Unknown work record'; end if;
+  if jsonb_typeof(item.value->'history') is distinct from 'array' then raise exception 'Completion history required'; end if;
+  if item.value ? 'completedDate' then perform (item.value->>'completedDate')::date; end if;
+ end loop;
  for item in select * from jsonb_each(old_document->'payments') loop
   payment:=new_document->'payments'->item.key;
   if payment is null or (payment - array['voided','voidReason','voidedAt','voidedBy']) is distinct from (item.value - array['voided','voidReason','voidedAt','voidedBy']) or ((item.value->>'voided')::boolean and payment is distinct from item.value) then raise exception 'Original payments cannot be edited or removed'; end if;
@@ -38,6 +48,7 @@ begin
   if (payment->>'voided')::boolean and coalesce(length(trim(payment->>'voidReason')),0)=0 then raise exception 'Void reason required'; end if;
   for line in select value from jsonb_array_elements(payment->'lines') loop
    if (line->>'amount')::numeric<=0 or mod((line->>'amount')::numeric,1)<>0 then raise exception 'Invalid payment amount'; end if;
+   if not coalesce((payment->>'voided')::boolean,false) and coalesce((new_document->'lifecycle'->(line->>'workId')->>'incomplete')::boolean,false) then raise exception 'Void recorded payments before reopening work; incomplete work cannot be paid'; end if;
    if not exists(select 1 from jsonb_array_elements(new_document->'work'->(line->>'workId')->'allocations') a where a->>'person'=line->>'person') then raise exception 'Unknown work allocation'; end if;
   end loop;
  end loop;

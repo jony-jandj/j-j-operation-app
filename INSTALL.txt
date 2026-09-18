@@ -1,42 +1,4 @@
-HOTFIX: If the prior Work & Pay update and database setup are already installed, replace index.html, work-pay.js and service-worker.js only. No new SQL is required. Refresh after GitHub Pages finishes.
-
-J&J WORK & PAY UPDATE — INSTALL ORDER
-
-This is an update to the existing jony-jandj/j-j-operation-app repository, not a replacement repository. Keep all other existing files, including homeowner/customer scripts, icons, selection data assets and authentication configuration.
-
-1. Export the current app backup and retain a copy of the repository's current index.html and service-worker.js.
-2. In your existing Supabase project, paste WORK_PAY_SETUP.sql into the SQL editor and run it. This creates separate staff-only payment storage. It does not update existing job, selection or estimate records. It expects your existing public.profiles table with admin/pre_approver/final_approver roles.
-3. In the GitHub repository root, upload/replace ONLY these four files together:
-   index.html
-   work-pay.js
-   estimate-full-parser.js
-   service-worker.js
-4. Wait for GitHub Pages to finish, then refresh the app. Sign in as staff and click Payments. A successful connection shows your actual approved P.O.s under Work awaiting completion.
-5. Verify one real P.O.'s amounts and description before recording real completion or payment data. Older approved P.O.s are not automatically treated as completed or paid. Enter their actual completion dates. Record only payments actually made.
-
-Normal use:
-- P.O. Splits: Connect Work & Pay, then edit a draft P.O. Use Sub for contractor percentage of builder cost (75% default), or choose crew members. Undo approval before changing an approved unpaid split.
-- Existing splits and amounts are retained on installation. New P.O.s start with one unnamed 100% crew allocation. Add member redistributes the crew allocation evenly, maximum four. Crew base remains 60% of builder cost.
-- Payments: Work complete records a fixed payout/description snapshot. Ready to pay records partial/full payments and permits multiple outstanding P.O. lines for the same payee.
-- Payday is selected explicitly, biweekly Fridays anchored to September 11, 2026. Completion-date reporting periods are separate from payroll assignment. Weekly and biweekly report start dates are Sundays; monthly/yearly reports use calendar boundaries.
-- Subs Summary shows assigned scope per company/job/P.O.; draft scope is not a recorded payment. In-house Summary uses actual recorded completion dates.
-- Both summaries offer P.O. description popups and printable descriptions. Payment history can filter payee, job, status, method, date and reference.
-- Use Export payment backup in Payments for the separate ledger. The old app backup exports job data; it does not include this separate ledger.
-
-Important operating details:
-- New payment writes require a cloud connection. Conflicting saves are rejected; refresh and review before trying again.
-- Completed payout snapshots cannot be changed. Original payment records are retained; void a mistaken payment with a reason, then enter the correct record. Voiding a record does not reverse a bank transaction.
-- No actual money is sent. This release does not upload receipt files, process payroll taxes, or include manager salary.
-- No sample jobs, sample payments, or uploaded personal estimate contents are shipped.
-- Imported report fields are retained, including pricing, margin and tax fields. Display hides Parent Group Description, Subgroup Description, Subgroup and Option Type. Missing values remain blank. Existing P.O. costs do not change when an estimate is imported or edited.
-
-Rollback:
-Restore the previous index.html and service-worker.js and refresh. Leave jj_work_pay and its functions intact to retain records. Old app screens do not know about the new separate ledger; do not use old screens to revise P.O.s with completed earnings. Export the payment backup before rollback.
-
-Verification completed locally:
-- SQL setup twice; staff-only access; reload; conflicting revision rejection; overpayment rejection; immutable completion/payment history; void/replacement balance.
-- Module checks: original state unchanged on load; existing 50/50 split; 75% sub payout; estimate description lookup; payment persistence and balances.
-- Browser sample workflow: work completion, description/amount review, September 25 payday, recorded payment in history.
-- Your supplied estimate: 54 lines and 27 original columns preserved.
-
-Live Supabase installation and live GitHub deployment have NOT been performed by this package build. Confirm those steps before relying on it for payment records.
+1. Run the included WORK_PAY_SETUP.sql in your existing Supabase project. It updates payment protections; it does not delete job or payment records.
+2. Replace work-pay.js and service-worker.js in the GitHub repository.
+3. Refresh all app windows after GitHub Pages deploys.
+Includes incomplete/recomplete workflow, sub single/batch payment records and readable P.O. links.
