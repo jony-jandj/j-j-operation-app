@@ -8145,16 +8145,12 @@ function createPOsFromSelectedEstimateRows(){
       line:title,
       parentGroup,
       sourceEstimateKey,
+      description:row.description||'',
       builderCost:Number(row.builderCost||0),
       status:'Draft',
       preApprovedBy:'',
       approvedBy:'',
-      splits:[
-        {name:'Brandon B',pct:50},
-        {name:'Alex M',pct:50},
-        {name:'Jony M',pct:0},
-        {name:'',pct:0}
-      ]
+      splits:[{name:'',pct:100}]
     });
 
     created++;
@@ -8181,6 +8177,7 @@ function estimateTableHTML(p,mode='hub'){
   const toggleFn=isProject?'toggleEstimateSelectionProject':'toggleEstimateSelection';
   const updateFn=isProject?'updateEstimate':'updateEstimateFromPOHub';
 
+  const extraHeaders=[...new Set((p.estimate||[]).flatMap(r=>(r.importedColumns||[]).map(c=>c.header)))].filter(h=>!['title','parent group','description','quantity','unit','unit cost','cost type','builder cost','parent group description','parent description','subgroup description','sub group description','subgroup','sub group','option type'].includes(pricingHeader(h)));
   return `
     <div class="estimate-table-hint">
       <span>Imported estimate layout: Parent Group + Title · Description · Quantity · Unit · Unit cost · Cost type · Builder Cost</span>
@@ -8199,7 +8196,7 @@ function estimateTableHTML(p,mode='hub'){
             <th class="col-unit">Unit</th>
             <th class="col-unit-cost">Unit cost</th>
             <th class="col-cost-type">Cost type</th>
-            <th class="col-builder-cost">Builder Cost</th>
+            <th class="col-builder-cost">Builder Cost</th>${extraHeaders.map(h=>`<th>${esc(h)}</th>`).join('')}
           </tr>
         </thead>
         <tbody>
@@ -8270,6 +8267,7 @@ function estimateTableHTML(p,mode='hub'){
                     value="${esc(r.builderCost)}"
                     oninput="${updateFn}(${i},'builderCost',this.value)">
                 </td>
+                ${extraHeaders.map(h=>`<td><div style="max-height:84px;overflow:auto;min-width:110px;white-space:pre-wrap">${esc((raw.importedColumns||[]).find(c=>c.header===h)?.value??'')}</div></td>`).join('')}
               </tr>`;
           }).join('')}
         </tbody>
@@ -8764,8 +8762,7 @@ function syncPOsFromLabor(p,rows=laborLines(p)){
     });
 
     if(existing){
-      existing.builderCost=Number(r.builderCost||0);
-      return;
+      return; // Existing P.O. amounts and splits remain unchanged.
     }
 
     p.pos.push({
@@ -8773,16 +8770,12 @@ function syncPOsFromLabor(p,rows=laborLines(p)){
       line,
       parentGroup,
       sourceEstimateKey,
+      description:r.description||'',
       builderCost:Number(r.builderCost||0),
       status:'Draft',
       preApprovedBy:'',
       approvedBy:'',
-      splits:[
-        {name:'Brandon B',pct:50},
-        {name:'Alex M',pct:50},
-        {name:'Jony M',pct:0},
-        {name:'',pct:0}
-      ]
+      splits:[{name:'',pct:100}]
     });
 
     created++;
@@ -8806,17 +8799,18 @@ async function importEstimateFile(input){
     const rows=XLSX.utils.sheet_to_json(sheet,{
       header:1,
       defval:'',
-      raw:true,
+      raw:false,
       blankrows:false
     });
 
-    const parsed=parseEstimateRows(rows);
+    const parsed=parseFullEstimate(rows);
 
     if(!parsed.items.length){
       throw new Error(parsed.warning || 'No usable estimate line items were found.');
     }
 
     const p=selectedProject();
+    if(p.estimate?.length && !confirm('Replace this job’s estimate with the uploaded report? Existing P.O.s and their amounts will stay unchanged.')) return;
     p.estimate=parsed.items;
 
     const laborCount=laborLines(p).length;
@@ -8891,7 +8885,7 @@ function updateEstimateFromPOHub(i,key,val){
       return poTitle.toLowerCase()===rowTitle.toLowerCase();
     });
     if(existing){
-      existing.builderCost=Number(row.builderCost||0);
+      // Existing P.O. costs are preserved; estimate changes do not rewrite payouts.
       saveState(false);
     }
   }
@@ -9440,7 +9434,7 @@ function updateEstimate(i,key,val){
       return poTitle.toLowerCase()===rowTitle.toLowerCase();
     });
     if(existing){
-      existing.builderCost=Number(row.builderCost||0);
+      // Existing P.O. costs are preserved; estimate changes do not rewrite payouts.
     }
   }
 
@@ -9461,12 +9455,7 @@ function generatePOs(){
       id:`${p.jobNo}-L${String(i+1).padStart(2,'0')}`,
       line:r.title ?? r.line,builderCost:Number(r.builderCost),status:'Draft',
       preApprovedBy:'',approvedBy:'',
-      splits:[
-        {name:'Brandon B',pct:50},
-        {name:'Alex M',pct:50},
-        {name:'Jony M',pct:0},
-        {name:'',pct:0}
-      ]
+      splits:[{name:'',pct:100}]
     };
   });
   p.precon[1]=Math.max(p.precon[1],95);
@@ -10659,3 +10648,7 @@ document.querySelector('.brand')?.addEventListener('keydown',e=>{
   }
 });
 </script>
+
+<style>.estimate-buildertrend .col-description{min-width:380px;width:380px}.estimate-buildertrend .col-description textarea{height:84px!important;min-height:84px!important;max-height:84px!important;overflow:auto!important;resize:none!important}.estimate-buildertrend th{position:sticky;top:0;background:#edf1f6}.estimate-buildertrend tbody tr:nth-child(even){background:#f8fafc}</style>
+<script src="estimate-full-parser.js"></script>
+<script src="work-pay.js"></script>

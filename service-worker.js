@@ -1,5 +1,6 @@
-const CACHE_NAME = 'jj-operations-v83-4-customer-status-labels';
+const CACHE_NAME = 'jj-operations-work-pay-20260917-1';
 const APP_SHELL = [
+  './work-pay.js','./estimate-full-parser.js',
   './','./index.html','./homeowner.html','./customer-view.js','./customer-overlay.js','./qrcode.min.js','./selections-metadata.js',
   './jj-original-logo.png','./manifest.webmanifest','./icons/icon-192.png','./icons/icon-512.png',
   ...Array.from({length:18},(_,i)=>`./selections-v82/part-${String(i+1).padStart(2,'0')}.txt`)
