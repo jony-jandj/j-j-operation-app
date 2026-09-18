@@ -1,3 +1,2 @@
-Run WORK_PAY_SETUP.sql in the existing Supabase project first. Then replace work-pay.js and service-worker.js in GitHub and refresh all open app windows after deployment.
-
-Approved P.O.s display locked amounts and assignments. Undo Approval returns the P.O. to Draft, removes its active summary earnings/payment allocations and retains the previous records in audit history. Other P.O. allocations in combined payments remain intact. This does not reverse actual bank payments.
+Replace work-pay.js and service-worker.js in GitHub, then refresh after deployment.
+If you already ran the SQL from the Approval Lock and Payment Unlink patch (v8), no new SQL is needed. Otherwise run the included WORK_PAY_SETUP.sql first.
