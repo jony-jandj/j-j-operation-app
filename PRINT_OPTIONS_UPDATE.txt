@@ -1,0 +1,7 @@
+Replace work-pay.js and service-worker.js in GitHub, then reopen the app. No SQL required.
+
+The existing Print this sub and Print all subs buttons now open a copy selector:
+Full Cost Breakdown: descriptions, builder costs, percentages, payouts, and totals.
+Payout Summary: descriptions, payouts, and payout totals only.
+
+Choose a copy, then click Print copy in the preview. The selected company and job filter apply to both formats.

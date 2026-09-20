@@ -1,8 +1,8 @@
-# Subcontractor print totals
+# Print copy options
 
-- Replaced duplicate job/company payout totals for a single job with Builder cost total and Sub payout total.
-- Multiple jobs show both totals per job and combined for the subcontractor.
-- Retained individual subcontractor printing and job filters.
-- Updated offline cache version.
+- Kept the existing Print this sub and Print all subs buttons.
+- Added a Full Cost Breakdown or Payout Summary choice before preview.
+- Payout Summary copies omit builder costs and percentages.
+- Retained company and job filters, descriptions, and payout totals.
 
-Upload work-pay.js and service-worker.js. No SQL changes.
+Replace work-pay.js and service-worker.js. No SQL needed.
