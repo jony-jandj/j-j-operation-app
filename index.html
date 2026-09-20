@@ -6170,7 +6170,12 @@ function sharedCloudState(source=state){
 }
 
 function cloudValuesEqual(a,b){
-  return JSON.stringify(a)===JSON.stringify(b);
+  const stable=value=>{
+    if(Array.isArray(value)) return value.map(stable);
+    if(value && typeof value==='object') return Object.fromEntries(Object.keys(value).sort().map(key=>[key,stable(value[key])]));
+    return value;
+  };
+  return JSON.stringify(stable(a))===JSON.stringify(stable(b));
 }
 
 // Merge at the field/item level so a remote edit to another P.O. or project is
@@ -6686,7 +6691,7 @@ async function pollCloudState(){
       .eq('org_id',CLOUD_ORG_ID)
       .maybeSingle();
     if(error) throw error;
-    if(!incoming?.state) return;
+    if(!incoming?.state || cloudSaveInFlight || cloudSaveQueued) return;
     const incomingAt=Date.parse(incoming.updated_at||0)||0;
     if(incomingAt<=cloudLastRemoteAt){
       setCloudStatus('Live','saved');
@@ -6738,7 +6743,7 @@ function subscribeCloudState(){
       },
       payload=>{
         const incoming=payload.new;
-        if(!incoming?.state) return;
+        if(!incoming?.state || cloudSaveInFlight || cloudSaveQueued) return;
 
         const incomingAt=Date.parse(incoming.updated_at||0)||Date.now();
         if(incomingAt<=cloudLastRemoteAt) return;
@@ -6813,7 +6818,6 @@ async function pushCloudState(){
       return;
     }
 
-    const now=new Date().toISOString();
     const localUserName=state.currentUser;
 
     // Re-read the row before writing. If another browser saved first, merge
@@ -6843,21 +6847,30 @@ async function pushCloudState(){
       state.currentUser=USERS.some(u=>u.name===localUserName)?localUserName:'Jony';
     }
 
-    const {error}=await cloudClient
-      .from('app_state')
-      .upsert({
-        org_id:CLOUD_ORG_ID,
-        state:sharedState,
-        updated_at:now,
-        updated_by:user.id
-      },{onConflict:'org_id'});
-
+    // Detach the request from mutable UI state. Only this exact snapshot is
+    // acknowledged; approvals made while the request is pending stay dirty.
+    const sentState=sharedCloudState(sharedState);
+    const now=new Date(Math.max(Date.now(),(Date.parse(latest?.updated_at)||0)+1)).toISOString();
+    const row={org_id:CLOUD_ORG_ID,state:sentState,updated_at:now,updated_by:user.id};
+    let write=cloudClient.from('app_state');
+    if(latest){
+      write=write.update(row).eq('org_id',CLOUD_ORG_ID);
+      write=latest.updated_at==null?write.is('updated_at',null):write.eq('updated_at',latest.updated_at);
+    }else{
+      write=write.insert(row);
+    }
+    const {data:saved,error}=await write.select('state,updated_at').maybeSingle();
     if(error) throw error;
-
-    cloudBaseState=sharedCloudState(state);
-    cloudLastRemoteAt=Date.parse(now);
+    if(!saved) throw new Error('Another device saved changes. Retrying your pending changes.');
+    // Database validation must not silently turn an approval back into Draft.
+    if(!cloudValuesEqual(sharedCloudState(saved.state),sentState)){
+      throw new Error('Cloud validation changed the save. Your changes remain on this device; check the P.O. approval database update.');
+    }
+    cloudBaseState=cloneCloudValue(sentState);
+    cloudLastRemoteAt=Date.parse(saved.updated_at)||Date.parse(now);
     cloudRetryCount=0;
-    setCloudStatus('Saved','saved');
+    cloudSaveQueued=!cloudValuesEqual(sharedCloudState(state),sentState);
+    setCloudStatus(cloudSaveQueued?'Saving…':'Saved',cloudSaveQueued?'saving':'saved');
   }catch(err){
     console.error('Cloud save failed',err);
     cloudRetryCount+=1;
@@ -6867,8 +6880,9 @@ async function pushCloudState(){
       setCloudStatus('Syncing changes…','saving');
       cloudSaveTimer=setTimeout(pushCloudState,Math.min(6000,1000*cloudRetryCount));
     }else{
-      cloudRetryCount=0;
-      setCloudStatus('Saved locally — sync paused','offline');
+      cloudSaveQueued=true;
+      setCloudStatus('Not synced — retry Save','offline');
+      toast('Cloud save failed: '+(err.message||'Please retry Save. Your changes are kept on this device.'));
     }
   }finally{
     cloudSaveInFlight=false;
@@ -6879,7 +6893,7 @@ async function pushCloudState(){
 function saveState(show=true){
   const fullLocalSave=persistStateLocally();
   queueCloudSave();
-  if(show) toast(cloudClient?'Saved':(fullLocalSave?'Saved on this device':'Saved locally without embedded photos'));
+  if(show) toast(cloudClient?'Saving to cloud…':(fullLocalSave?'Saved on this device':'Saved locally without embedded photos'));
 }
 
 function stateWithoutEmbeddedPhotos(source=state){
