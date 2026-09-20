@@ -8875,8 +8875,37 @@ function addEstimateLineFromPOHub(){
   renderPayByLine();
   go('paybyline');
 }
+// Capture links before editing: legacy source keys include description and cost.
+function linkedEstimatePOs(project,row){
+  const source=estimateRowSourceKey(row);
+  const norm=value=>String(value||'').trim().toLowerCase();
+  const title=norm(estimateRowTitle(row));
+  const parent=norm(row.parentGroup||row.parent_group);
+  const unique=(project.estimate||[]).filter(other=>
+    norm(estimateRowTitle(other))===title && norm(other.parentGroup||other.parent_group)===parent
+  ).length===1;
+  return (project.pos||[]).filter(po=>{
+    if(po.sourceEstimateKey===source) return true;
+    // Recover old links broken by a prior description edit only if unambiguous.
+    if(!unique) return false;
+    if(po.sourceEstimateKey){
+      const parts=po.sourceEstimateKey.split('||');
+      return parts[0]===parent && parts[1]===title;
+    }
+    return norm(getPOParentGroup(po)||po.parentGroup)===parent &&
+      norm(getPOBaseTitle(po)||po.line||po.title)===title;
+  });
+}
+function syncEstimatePOLinks(row,linked,key){
+  linked.forEach(po=>{
+    po.sourceEstimateKey=estimateRowSourceKey(row);
+    if(key==='description') po.description=String(row.description??'');
+  });
+}
+
 function updateEstimateFromPOHub(i,key,val){
   const p=selectedProject();
+  const linked=linkedEstimatePOs(p,p.estimate[i]);
   const numericFields=['builderCost','unitCost','quantity'];
   p.estimate[i][key]=numericFields.includes(key)
     ? (val===''?'':Number(val))
@@ -8884,6 +8913,7 @@ function updateEstimateFromPOHub(i,key,val){
 
   if(key==='title') p.estimate[i].line=val;
   if(key==='line') p.estimate[i].title=val;
+  syncEstimatePOLinks(p.estimate[i],linked,key);
   if(!estimatePOEligible(p.estimate[i])) selectedEstimatePORows.delete(i);
 
   saveState(false);
@@ -9430,6 +9460,7 @@ function addEstimateLine(){
 }
 function updateEstimate(i,key,val){
   const p=selectedProject();
+  const linked=linkedEstimatePOs(p,p.estimate[i]);
   const numericFields=['builderCost','unitCost','quantity'];
   p.estimate[i][key]=numericFields.includes(key)
     ? (val===''?'':Number(val))
@@ -9437,6 +9468,7 @@ function updateEstimate(i,key,val){
 
   if(key==='title') p.estimate[i].line=val;
   if(key==='line') p.estimate[i].title=val;
+  syncEstimatePOLinks(p.estimate[i],linked,key);
   if(!estimatePOEligible(p.estimate[i])) selectedEstimatePORows.delete(i);
 
   if(key==='builderCost'){

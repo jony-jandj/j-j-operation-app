@@ -1,0 +1,9 @@
+J&J description sync update
+
+Upload index.html, work-pay.js, and service-worker.js to the existing GitHub repository, replacing matching files. You may upload the full extracted folder. Reopen the app on all devices.
+
+Editing an estimate description in either estimate editor now updates every linked P.O. in that project, including approved P.O.s. Work & Pay detail views, completed-work summaries, and printed descriptions use the updated wording. Clearing a description clears it in linked views too. Matching stays within the project and room/group; ambiguous old links are not guessed.
+
+P.O. amounts, approvals, payment allocations, and historical stored payment records are preserved. The prior P.O. save fix is included. No additional SQL is required for description syncing; the separate prior approval SQL instructions still apply if not yet completed.
+
+This update is packaged, not deployed.
