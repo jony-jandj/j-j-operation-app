@@ -1,0 +1,7 @@
+Replace work-pay.js and service-worker.js in GitHub, then reopen the app on every device. No new SQL is required.
+
+Undo Approval in P.O. Split now removes the P.O. from active Work & Pay, Subs Summary, In-house Summary, and their summary printouts and totals. The P.O. stays available as Draft in Purchase Orders. Only approved P.O.s appear in active summaries.
+
+The existing undo process archives completed work and voids linked payment allocations while retaining payment history. A mixed payment keeps the allocations belonging to other P.O.s. This does not reverse a bank payment.
+
+Also fixed an undo timing issue where cloud refresh could replace the P.O. object during the save. The latest P.O. is now updated after the save finishes. Previous print-format options and description synchronization are retained.

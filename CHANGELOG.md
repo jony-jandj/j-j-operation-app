@@ -1,8 +1,9 @@
-# Print copy options
+# Undo Approval and summaries
 
-- Kept the existing Print this sub and Print all subs buttons.
-- Added a Full Cost Breakdown or Payout Summary choice before preview.
-- Payout Summary copies omit builder costs and percentages.
-- Retained company and job filters, descriptions, and payout totals.
+- Active Work & Pay rows require a currently approved P.O.
+- Subs Summary and both print formats include only approved P.O.s.
+- In-house totals and employee prints use the same approval-filtered rows.
+- Undo updates the current P.O. after asynchronous saves, preserving payment-history handling.
+- Draft P.O.s remain in Purchase Orders for editing and reapproval.
 
-Replace work-pay.js and service-worker.js. No SQL needed.
+Replace work-pay.js and service-worker.js; no new SQL.
