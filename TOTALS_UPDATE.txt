@@ -1,0 +1,3 @@
+Replace work-pay.js and service-worker.js in GitHub, then reopen the app. No SQL is needed.
+
+Subcontractor print previews and printouts now show Builder cost total and Sub payout total for each job. When a company has multiple jobs in the printout, combined totals appear below them. Individual subcontractor and job filters remain in effect.

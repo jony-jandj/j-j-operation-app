@@ -1,8 +1,8 @@
-# Individual subcontractor printing
+# Subcontractor print totals
 
-- Added Print this sub beside each company in Subs Summary.
-- Individual printouts include only that company's lines and totals and respect the Job filter.
-- Kept the combined print option, labeled Print all subs.
-- Updated offline cache version for the new files.
+- Replaced duplicate job/company payout totals for a single job with Builder cost total and Sub payout total.
+- Multiple jobs show both totals per job and combined for the subcontractor.
+- Retained individual subcontractor printing and job filters.
+- Updated offline cache version.
 
-Installation: replace work-pay.js and service-worker.js; reopen the app. No database changes required.
+Upload work-pay.js and service-worker.js. No SQL changes.
