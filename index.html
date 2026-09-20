@@ -8067,7 +8067,7 @@ function estimateRowHasPO(p,row){
 function eligibleEstimatePOIndexes(p){
   const indexes=[];
   p.estimate.forEach((row,i)=>{
-    const isLabor=estimatePOEligible(row);
+    const isLabor=estimatePOEligible(row) && estimateNorm(row?.type??row?.costType??'')==='labor';
     const alreadyCreated=estimateRowHasPO(p,row);
     if(isLabor && !alreadyCreated) indexes.push(i);
   });
@@ -8400,7 +8400,7 @@ function renderPayByLine(){
                 eligibleEstimatePOIndexes(p).every(i=>selectedEstimatePORows.has(i))
                   ? 'checked' : ''}
               onchange="toggleAllLaborForPO(this.checked)">
-            Select All Eligible for P.O.
+            Select All Labor for P.O.
           </label>
 
           <button class="btn btn-light" onclick="clearEstimatePOSelection()">Clear P.O. Selection</button>
