@@ -1,11 +1,8 @@
-# Description sync update — September 20, 2026
+# Individual subcontractor printing
 
-- Estimate description edits and clearing update all linked P.O.s in the project.
-- Existing P.O. links are retained across description, title, and cost edits.
-- Work & Pay details, completed-work summaries, and prints display the current linked description.
-- Unique older broken links can reconnect; ambiguous matches remain untouched.
-- Prior P.O. approval save fix retained; amounts, approval status, and payment history preserved.
+- Added Print this sub beside each company in Subs Summary.
+- Individual printouts include only that company's lines and totals and respect the Job filter.
+- Kept the combined print option, labeled Print all subs.
+- Updated offline cache version for the new files.
 
-Validated both estimate editors, repeated edits, clearing descriptions, room isolation, cost-edit continuity, legacy recovery, ambiguity protection, completed-work display, and JavaScript syntax. Not deployed or verified against the live database.
-
-Upload index.html, work-pay.js, and service-worker.js. No new database migration is required for description syncing.
+Installation: replace work-pay.js and service-worker.js; reopen the app. No database changes required.

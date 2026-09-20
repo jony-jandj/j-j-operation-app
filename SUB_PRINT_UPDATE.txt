@@ -1,0 +1,7 @@
+Individual subcontractor printing
+
+Replace work-pay.js and service-worker.js in your existing GitHub repository with these files, then reopen the app. You can also upload all files from this extracted folder. No SQL is needed for this change.
+
+In Subs Summary, each company has a Print this sub button. It opens that subcontractor's print preview with only their P.O.s, descriptions, job totals, and company total. Use Print copy in the preview to print. The selected Job filter applies. Print all subs remains available at the top.
+
+Built from the latest public app. Prior description synchronization and P.O. save fixes are retained. This package is not deployed automatically.
