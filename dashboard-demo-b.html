@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>J&J Dashboard Demo B</title>
+<style>
+:root{--navy:#14234A;--gold:#B59A62;--bg:#F3F5F8;--card:#fff;--line:#DDE3EA;--muted:#6A7687;--green:#2F7A53;--red:#A84A4A;--amber:#8A6A25}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--navy);font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+header{height:64px;background:var(--navy);color:#fff;display:flex;align-items:center;padding:0 22px;gap:12px}
+.logo{width:34px;height:34px;border-radius:9px;background:var(--gold);display:grid;place-items:center;color:var(--navy);font-size:12px;font-weight:900}
+header strong{font-size:14px}
+main{max-width:1180px;margin:auto;padding:24px 22px 46px}
+.hero{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;margin-bottom:20px}
+.eyebrow{font-size:10px;text-transform:uppercase;letter-spacing:1.1px;font-weight:900;color:var(--gold)}
+h1{margin:4px 0 4px;font-size:29px;letter-spacing:-.6px}
+.hero p{margin:0;color:var(--muted);font-size:12px}
+.stats{display:flex;gap:8px;flex-wrap:wrap}
+.stat{min-width:118px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px 12px;text-align:center}
+.stat b{display:block;font-size:19px}.stat span{font-size:9px;color:var(--muted);font-weight:800;text-transform:uppercase;letter-spacing:.5px}
+.layout{display:grid;grid-template-columns:360px minmax(0,1fr);gap:16px}
+.panel{background:#fff;border:1px solid var(--line);border-radius:15px;box-shadow:0 4px 14px rgba(20,35,74,.04);overflow:hidden}
+.panel-head{padding:15px 16px;border-bottom:1px solid #EEF1F4;display:flex;justify-content:space-between;align-items:center}
+.panel-head h2{margin:0;font-size:15px}.panel-head small{color:var(--muted);font-size:10px}
+.attention{padding:8px}
+.task{padding:12px;border-radius:11px;margin:6px;background:#F8FAFC;border:1px solid #E9EDF2}
+.task-top{display:flex;gap:8px;align-items:center;justify-content:space-between}
+.task-name{font-size:12px;font-weight:900}.badge{font-size:9px;font-weight:900;padding:5px 7px;border-radius:999px;background:#FBEFEF;color:#914343}
+.badge.amber{background:#FFF6DE;color:#80641F}.badge.green{background:#EDF7F1;color:#2D6C49}
+.task p{margin:6px 0 0;color:#5D6877;font-size:11px;line-height:1.4}
+.jobs{padding:8px}
+.job{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(160px,.8fr) auto;gap:14px;align-items:center;padding:14px 12px;border-bottom:1px solid #EEF1F4}
+.job:last-child{border-bottom:0}
+.name{display:flex;align-items:flex-start;gap:9px}.dot{width:9px;height:9px;border-radius:50%;margin-top:4px;background:var(--project)}
+.name b{display:block;font-size:13px}.name small{display:block;margin-top:3px;color:var(--muted);font-size:10px}
+.section small{display:block;color:#8A7447;font-size:8px;font-weight:900;text-transform:uppercase;letter-spacing:.6px;margin-bottom:3px}.section b{font-size:11px}
+.meta{display:flex;gap:6px;flex-wrap:wrap;margin-top:7px}.chip{font-size:9px;padding:5px 7px;border-radius:999px;background:#F2F4F7;color:#5D6877;font-weight:800}
+.open{border:1px solid #D5DCE5;background:#fff;color:var(--navy);border-radius:9px;padding:8px 10px;font-size:10px;font-weight:900}
+.note{margin-top:16px;padding:11px 13px;border:1px dashed #C9D1DB;border-radius:10px;background:#fff;color:var(--muted);font-size:10px}
+@media(max-width:900px){.hero{align-items:flex-start;flex-direction:column}.layout{grid-template-columns:1fr}.attention{display:grid;grid-template-columns:1fr 1fr}.job{grid-template-columns:minmax(0,1fr) 210px auto}}
+@media(max-width:680px){main{padding:18px 14px 36px}.attention{grid-template-columns:1fr}.job{grid-template-columns:1fr auto}.section{grid-column:1/-1;padding-left:18px}.stats{width:100%}.stat{flex:1;min-width:90px}}
+</style>
+</head>
+<body>
+<header><div class="logo">J&J</div><strong>J&J Home Renovations · Operations</strong></header>
+<main>
+  <div class="hero">
+    <div><div class="eyebrow">Operations Overview</div><h1>Dashboard</h1><p>Action-first layout — see what needs attention before anything else.</p></div>
+    <div class="stats">
+      <div class="stat"><b>6</b><span>Active Jobs</span></div>
+      <div class="stat"><b>2</b><span>Ready</span></div>
+      <div class="stat"><b>4</b><span>Open Issues</span></div>
+    </div>
+  </div>
+
+  <div class="layout">
+    <section class="panel">
+      <div class="panel-head"><h2>Needs Attention</h2><small>What to handle next</small></div>
+      <div class="attention">
+        <div class="task"><div class="task-top"><span class="task-name">Lori & Mike</span><span class="badge">3 Open</span></div><p>Finalize selections and confirm remaining bathroom materials.</p></div>
+        <div class="task"><div class="task-top"><span class="task-name">Adam & Tracey</span><span class="badge amber">Review</span></div><p>Plumbing fixture review is still open.</p></div>
+        <div class="task"><div class="task-top"><span class="task-name">Ashley & Alyssa</span><span class="badge">2 Open</span></div><p>Proposal and design details still need final answers.</p></div>
+        <div class="task"><div class="task-top"><span class="task-name">Mary Anne & Raymond</span><span class="badge green">Ready</span></div><p>Final scope and selections are complete enough to move forward.</p></div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head"><h2>Current Jobs</h2><small>No preconstruction percentages</small></div>
+      <div class="jobs">
+        <div class="job" style="--project:#6B8E5A">
+          <div class="name"><span class="dot"></span><div><b>Lori & Mike Leahy</b><small>Basement / Bathroom · JJ-1048</small><div class="meta"><span class="chip">3 Open Items</span><span class="chip">Start Sept 28</span></div></div></div>
+          <div class="section"><small>Current Preconstruction Section</small><b>Selections & Materials</b></div>
+          <button class="open">Open</button>
+        </div>
+
+        <div class="job" style="--project:#B59A62">
+          <div class="name"><span class="dot"></span><div><b>Mary Anne & Raymond</b><small>Two Bathroom Remodels · JJ-1047</small><div class="meta"><span class="chip">Ready to Start</span><span class="chip">Start Sept 16</span></div></div></div>
+          <div class="section"><small>Current Preconstruction Section</small><b>Final Scope & Selections</b></div>
+          <button class="open">Open</button>
+        </div>
+
+        <div class="job" style="--project:#6C86A6">
+          <div class="name"><span class="dot"></span><div><b>Adam & Tracey Barr</b><small>Bathroom Remodel · JJ-1046</small><div class="meta"><span class="chip">1 Open Item</span><span class="chip">Start TBD</span></div></div></div>
+          <div class="section"><small>Current Preconstruction Section</small><b>Plumbing & Fixture Review</b></div>
+          <button class="open">Open</button>
+        </div>
+
+        <div class="job" style="--project:#9B6B73">
+          <div class="name"><span class="dot"></span><div><b>Ashley & Alyssa Levy</b><small>Basement Remodel · JJ-1045</small><div class="meta"><span class="chip">2 Open Items</span><span class="chip">Start TBD</span></div></div></div>
+          <div class="section"><small>Current Preconstruction Section</small><b>Proposal & Design Details</b></div>
+          <button class="open">Open</button>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div class="note">Demo only — not connected to Supabase and does not modify the real app or any saved data.</div>
+</main>
+</body>
+</html>
