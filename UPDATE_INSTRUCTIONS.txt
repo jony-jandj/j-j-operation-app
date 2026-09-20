@@ -1,5 +1,3 @@
-Replace index.html, work-pay.js and service-worker.js in GitHub, then reopen the app. No SQL needed.
+Replace work-pay.js and service-worker.js in GitHub, then reopen the app. No SQL needed.
 
-Select All Labor for P.O. selects only eligible Labor-type rows. Material rows remain available individually.
-
-Work & Pay prints use a fresh unscrolled print layout to prevent top clipping. P.O. rows and descriptions stay together when they fit on a page. A description taller than a full page must continue onto another page. Both print formats retain material/labor sections.
+Subcontractor summary printouts now start with J&J Home Renovations. Removed the payment disclaimer and payout wording. The simplified print format is called Scope Summary, with Amount and Total labels. Company, job, descriptions, and separate Labor/Materials sections remain. This wording update does not change approval status or the existing approved-only summary filter.

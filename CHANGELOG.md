@@ -1,8 +1,8 @@
-# Labor selection and print layout
+# Work review print wording
 
-- Bulk P.O. selection is restricted to Labor rows; individual material selection remains available.
-- Printing uses a separate unscrolled layout instead of the preview modal.
-- Added print margins, heading placement, and page-break protection for P.O. rows.
-- Restores the preview after printing or canceling the print dialog.
+- Print heading is J&J Home Renovations.
+- Removed Assigned scope / Not a confirmation of payment text.
+- Renamed Payout Summary to Scope Summary, with Amount and Total labels.
+- Retained full cost option, separate material/labor totals, and pagination fix.
 
-Upload index.html, work-pay.js, service-worker.js. No SQL.
+Upload work-pay.js and service-worker.js. No SQL changes.

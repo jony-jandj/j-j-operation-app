@@ -93,25 +93,25 @@ document.addEventListener('click',async event=>{const b=event.target.closest('[d
  if(a==='print-employee'){printContent('J&J · '+person+' · Work & Earnings',statement(rows().filter(r=>r.person===person&&r.w.kind==='In-house'&&matches(r.w))));return;}
  if(a==='print-subs'||a==='print-sub'){
   const all=a==='print-subs';
-  modal('Choose Print Format',`<p>Choose the information to include on ${all?'all subcontractor summaries':'this subcontractor summary'}.</p><div style="display:flex;gap:12px;flex-wrap:wrap">${action(all?'print-subs-detail':'print-sub-detail',v,'Full Cost Breakdown','btn btn-gold')}${action(all?'print-subs-payout':'print-sub-payout',v,'Payout Summary','btn btn-light')}</div><p><b>Full Cost Breakdown:</b> descriptions, builder costs, percentages, payouts, and totals.</p><p><b>Payout Summary:</b> descriptions, payouts, and payout totals.</p>`);return;
+  modal('Choose Print Format',`<p>Choose the information to include on ${all?'all subcontractor summaries':'this subcontractor summary'}.</p><div style="display:flex;gap:12px;flex-wrap:wrap">${action(all?'print-subs-detail':'print-sub-detail',v,'Full Cost Breakdown','btn btn-gold')}${action(all?'print-subs-payout':'print-sub-payout',v,'Scope Summary','btn btn-light')}</div><p><b>Full Cost Breakdown:</b> work descriptions, builder costs, percentages, amounts, and totals.</p><p><b>Scope Summary:</b> work descriptions, amounts, and totals.</p>`);return;
  }
  if(['print-subs-detail','print-sub-detail','print-subs-payout','print-sub-payout'].includes(a)){
   const payoutOnly=a.endsWith('-payout'),allSubs=a==='print-subs-detail'||a==='print-subs-payout';
   const scopes=approvedEntries().filter(x=>cfg(x).sub&&(!job||String(x.p.id)===job)&&(allSubs||String(cfg(x).company??'')===v));
   if(!scopes.length)return err(Error('No subcontractor lines match the selected job.'));
-  const totals=(lines,prefix='')=>(payoutOnly?'':`<h3>${prefix}Builder cost total: ${M(lines.reduce((s,x)=>s+cents(x.po.builderCost),0))}</h3>`)+`<h3>${prefix}Sub payout total: ${M(lines.reduce((s,x)=>s+alloc(x)[0].amount,0))}</h3>`;
-  let html='<p>Assigned scope · Not a confirmation of payment.</p>';
+  const totals=(lines,prefix='')=>(payoutOnly?'':`<h3>${prefix}Builder cost total: ${M(lines.reduce((s,x)=>s+cents(x.po.builderCost),0))}</h3>`)+`<h3>${prefix}Total: ${M(lines.reduce((s,x)=>s+alloc(x)[0].amount,0))}</h3>`;
+  let html='';
   for(const company of new Set(scopes.map(x=>cfg(x).company))){
    html+=`<h2>${E(doc.companies[company]?.name||'Unassigned supplier / sub')}</h2>`;
    const items=scopes.filter(x=>cfg(x).company===company);
    const jobs=new Set(items.map(x=>String(x.p.id)));
    for(const section of scopeSections(items)){
     const lines=section.lines;
-    html+=`<h3>${E(lines[0].p.name)} · ${section.label}</h3><table><tr><th>P.O. / Description</th>${payoutOnly?'':'<th>Builder cost</th><th>Sub %</th>'}<th>Payout</th></tr>${lines.map(x=>`<tr><td>${E(x.po.id)} · ${E(getPOBaseTitle(x.po))}<div class="jj-description">${E(description(x)||'No description recorded.')}</div></td>${payoutOnly?'':`<td>${money(x.po.builderCost)}</td><td>${cfg(x).subPct}%</td>`}<td>${M(alloc(x)[0].amount)}</td></tr>`).join('')}</table>${totals(lines,section.label+' · ')}`;
+    html+=`<h3>${E(lines[0].p.name)} · ${section.label}</h3><table><tr><th>P.O. / Description</th>${payoutOnly?'':'<th>Builder cost</th><th>Sub %</th>'}<th>Amount</th></tr>${lines.map(x=>`<tr><td>${E(x.po.id)} · ${E(getPOBaseTitle(x.po))}<div class="jj-description">${E(description(x)||'No description recorded.')}</div></td>${payoutOnly?'':`<td>${money(x.po.builderCost)}</td><td>${cfg(x).subPct}%</td>`}<td>${M(alloc(x)[0].amount)}</td></tr>`).join('')}</table>${totals(lines,section.label+' · ')}`;
    }
    if(jobs.size>1){for(const material of [false,true]){const category=items.filter(x=>!!x.po.material===material);if(category.length)html+=totals(category,'All jobs · '+(material?'Materials':'Labor')+' · ');}}
   }
-  printContent('J&J · '+(payoutOnly?'Subcontractor Payout':'Subcontractor Scope & Pay')+(!allSubs?' · '+E(doc.companies[v]?.name||'Unassigned supplier / sub'):''),html);return;
+  printContent('J&J Home Renovations',html);return;
  }
 
  if(a==='crew-add'||a==='crew-remove'){const x=entry(v);if(!x||doc.work[v]||x.po.status==='Approved')return err(Error('Undo approval before editing crew.'));const c=clone(cfg(x)),n=c.splits.length+(a==='crew-add'?1:-1);if(n<1||n>4)return;const pct=Math.floor(10000/n);c.splits=Array.from({length:n},(_,i)=>({name:c.splits[i]?.name||'',pct:(pct+(i===n-1?10000-pct*n:0))/100}));await change(d=>{d.configs[v]=c;});return;}
