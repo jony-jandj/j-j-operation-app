@@ -5486,9 +5486,8 @@ function syncPreconProgress(p){
   p.precon=PRECON_SECTIONS.map((_,i)=>sectionPct(p,i));
 }
 function projectPct(p){ syncPreconProgress(p); return Math.round(avg(p.precon)); }
+function estimateIsMaterial(row){return /\bmaterials?\b/.test(estimateNorm(row?.type??row?.costType??''));}
 function estimatePOEligible(row){
-  const type=estimateNorm(row?.type??row?.costType??'');
-  if(/\bmaterials?\b/.test(type)) return false;
   const sourceCategory=(row?.importedColumns||[]).find(c=>estimateNorm(c.header)==='category')?.value;
   const groups=[row?.parentGroup,row?.parent_group,row?.category,sourceCategory].map(estimateNorm);
   return !groups.some(g=>/^0?1\s+preliminary works(?:\s|$)/.test(g));
@@ -8089,7 +8088,7 @@ function toggleEstimatePOSelection(i,checked){
   if(!row) return;
 
   if(!estimatePOEligible(row)){
-    toast('Material and 01 - PRELIMINARY WORKS lines cannot create P.O. Splits.');
+    toast('01 - PRELIMINARY WORKS lines cannot create P.O. Splits.');
     selectedEstimatePORows.delete(i);
     renderPayByLine();
     return;
@@ -8167,6 +8166,9 @@ function createPOsFromSelectedEstimateRows(){
       parentGroup,
       sourceEstimateKey,
       description:row.description||'',
+      material:estimateIsMaterial(row),
+      subs:estimateIsMaterial(row),
+      subPct:estimateIsMaterial(row)?60:75,
       builderCost:Number(row.builderCost||0),
       status:'Draft',
       preApprovedBy:'',
@@ -8242,7 +8244,7 @@ function estimateTableHTML(p,mode='hub'){
                         type="checkbox"
                         ${poSelected?'checked':''}
                         ${poEligible?'':'disabled'}
-                        title="${poEligible?'Select this line for a P.O. Split':'Material and 01 - PRELIMINARY WORKS are excluded'}"
+                        title="${poEligible?'Select this line for a P.O. Split':'01 - PRELIMINARY WORKS are excluded'}"
                         onchange="toggleEstimatePOSelection(${i},this.checked)">`
                   }
                 </td>
@@ -8382,7 +8384,7 @@ function renderPayByLine(){
       </div>
 
       <div class="estimate-upload-note">
-        Upload an Excel or CSV estimate. The app will pull Parent Group, Title, Description, Quantity, Unit, Unit cost, Cost type, and Builder Cost. After upload, use the P.O. checkbox to choose eligible non-material lines outside 01 - PRELIMINARY WORKS you want turned into P.O. Splits.
+        Upload an Excel or CSV estimate. The app will pull Parent Group, Title, Description, Quantity, Unit, Unit cost, Cost type, and Builder Cost. After upload, use the P.O. checkbox to choose eligible lines, including materials, outside 01 - PRELIMINARY WORKS you want turned into P.O. Splits.
       </div>
 
       <div class="toolbar">
@@ -8792,6 +8794,9 @@ function syncPOsFromLabor(p,rows=laborLines(p)){
       parentGroup,
       sourceEstimateKey,
       description:r.description||'',
+      material:estimateIsMaterial(r),
+      subs:estimateIsMaterial(r),
+      subPct:estimateIsMaterial(r)?60:75,
       builderCost:Number(r.builderCost||0),
       status:'Draft',
       preApprovedBy:'',
@@ -8851,7 +8856,7 @@ async function importEstimateFile(input){
     toast(`Estimate uploaded · ${parsed.items.length} lines · ${laborCount} eligible line${laborCount===1?'':'s'} available for P.O. selection`);
 
     if(!laborCount){
-      alert('The estimate was imported, but no eligible lines were identified. Material and 01 - PRELIMINARY WORKS lines are excluded from P.O. Splits.');
+      alert('The estimate was imported, but no eligible lines were identified. 01 - PRELIMINARY WORKS lines are excluded from P.O. Splits.');
     }
   }catch(err){
     console.error(err);

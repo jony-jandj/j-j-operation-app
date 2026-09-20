@@ -1,9 +1,8 @@
-# Undo Approval and summaries
+# Material subcontractor summary update
 
-- Active Work & Pay rows require a currently approved P.O.
-- Subs Summary and both print formats include only approved P.O.s.
-- In-house totals and employee prints use the same approval-filtered rows.
-- Undo updates the current P.O. after asynchronous saves, preserving payment-history handling.
-- Draft P.O.s remain in Purchase Orders for editing and reapproval.
+- New material P.O.s default to 60% of builder cost.
+- Added explicit Assign to subcontractor dropdown wording for material P.O.s, using the existing company list.
+- Separated Labor and Materials by job within each subcontractor summary and printout, with separate totals.
+- Existing saved payout percentages and approval locks preserved.
 
-Replace work-pay.js and service-worker.js; no new SQL.
+Upload index.html, work-pay.js and service-worker.js. No new SQL.

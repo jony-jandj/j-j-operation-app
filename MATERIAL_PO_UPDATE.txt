@@ -1,0 +1,5 @@
+Upload index.html, work-pay.js and service-worker.js to GitHub, replacing matching files. Reopen the app. No new SQL.
+
+New material P.O.s default to 60% of builder cost. Existing saved percentages remain unchanged. Select a material estimate line to create a P.O., then choose the subcontractor from Assign to subcontractor and adjust the percentage if needed. Approve the P.O. to include it in summaries.
+
+Under the chosen subcontractor, each job now has separate Labor and Materials sections with separate payout totals. Both print formats use the same separation. Materials remain individual P.O.s, not merged into labor. Undo approval before editing an approved P.O.
