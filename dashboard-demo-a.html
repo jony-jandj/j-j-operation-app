@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>J&J Dashboard Demo A</title>
+<style>
+:root{--navy:#14234A;--gold:#B59A62;--bg:#F4F6F9;--card:#fff;--line:#DDE3EA;--muted:#6B7788;--green:#2F7A53;--red:#A84A4A}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--navy);font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+.shell{min-height:100vh}
+.topbar{height:64px;background:var(--navy);color:#fff;display:flex;align-items:center;padding:0 24px;gap:12px}
+.logo{width:34px;height:34px;border-radius:9px;background:var(--gold);display:grid;place-items:center;color:var(--navy);font-size:12px;font-weight:900}
+.brand{font-size:14px;font-weight:850}
+main{max-width:1180px;margin:0 auto;padding:28px 24px 50px}
+.eyebrow{font-size:11px;letter-spacing:1.1px;font-weight:900;color:var(--gold);text-transform:uppercase}
+h1{font-size:30px;line-height:1.05;margin:5px 0 5px;letter-spacing:-.6px}
+.sub{color:var(--muted);font-size:13px;margin:0}
+.summary{margin-top:22px;display:flex;gap:10px;flex-wrap:wrap}
+.pill{background:#fff;border:1px solid var(--line);border-radius:999px;padding:10px 14px;font-size:12px;font-weight:800;color:#526174;box-shadow:0 2px 8px rgba(20,35,74,.04)}
+.pill b{color:var(--navy);font-size:15px;margin-right:4px}
+.section-head{display:flex;align-items:end;justify-content:space-between;margin:26px 0 12px}
+.section-head h2{font-size:17px;margin:0}
+.section-head span{font-size:11px;color:var(--muted)}
+.jobs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.job{position:relative;background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;box-shadow:0 4px 14px rgba(20,35,74,.05)}
+.bar{height:5px;background:var(--project)}
+.job-body{padding:16px}
+.job-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.job-name{font-size:16px;font-weight:900;line-height:1.2}
+.job-meta{font-size:11px;color:var(--muted);margin-top:4px}
+.open-btn{border:1px solid #D5DCE5;background:#fff;color:var(--navy);border-radius:9px;padding:8px 10px;font-size:11px;font-weight:850}
+.current{margin-top:14px;padding:12px;border-radius:10px;background:#F8F3E9;border:1px solid #E8DDC7}
+.current small{display:block;color:#8A7447;font-size:9px;font-weight:900;letter-spacing:.7px;text-transform:uppercase;margin-bottom:3px}
+.current b{font-size:13px}
+.job-bottom{margin-top:13px;display:flex;gap:8px;flex-wrap:wrap}
+.status{font-size:10px;font-weight:800;border-radius:999px;padding:7px 9px;background:#F2F4F7;color:#5F6B7A}
+.status.issue{background:#FBEEEE;color:#934545}
+.status.ready{background:#EDF7F1;color:#2E6F4B}
+.note{margin-top:22px;padding:13px 14px;border:1px dashed #C9D1DB;border-radius:10px;color:var(--muted);font-size:11px;background:#fff}
+@media(max-width:900px){main{padding:22px 18px 40px}.jobs{grid-template-columns:1fr 1fr}}
+@media(max-width:720px){.topbar{padding:0 16px}.jobs{grid-template-columns:1fr}.summary{gap:8px}.pill{padding:9px 12px}.section-head{margin-top:22px}}
+</style>
+</head>
+<body>
+<div class="shell">
+  <div class="topbar"><div class="logo">J&J</div><div class="brand">J&J Home Renovations · Operations</div></div>
+  <main>
+    <div class="eyebrow">Operations Overview</div>
+    <h1>Dashboard</h1>
+    <p class="sub">A cleaner top section focused on where each job is right now — no preconstruction percentages.</p>
+
+    <div class="summary">
+      <div class="pill"><b>6</b> Active Jobs</div>
+      <div class="pill"><b>2</b> Ready to Start</div>
+      <div class="pill"><b>4</b> Open Issues</div>
+    </div>
+
+    <div class="section-head">
+      <h2>Current Jobs</h2>
+      <span>Current preconstruction section shown instead of %</span>
+    </div>
+
+    <div class="jobs">
+      <article class="job" style="--project:#6B8E5A">
+        <div class="bar"></div><div class="job-body">
+          <div class="job-top"><div><div class="job-name">Lori & Mike Leahy</div><div class="job-meta">Basement / Bathroom · JJ-1048</div></div><button class="open-btn">Open Job</button></div>
+          <div class="current"><small>Current Preconstruction Section</small><b>Selections & Materials</b></div>
+          <div class="job-bottom"><span class="status issue">3 Open Items</span><span class="status">Start: Sept 28</span></div>
+        </div>
+      </article>
+
+      <article class="job" style="--project:#B59A62">
+        <div class="bar"></div><div class="job-body">
+          <div class="job-top"><div><div class="job-name">Mary Anne & Raymond</div><div class="job-meta">Two Bathroom Remodels · JJ-1047</div></div><button class="open-btn">Open Job</button></div>
+          <div class="current"><small>Current Preconstruction Section</small><b>Final Scope & Selections</b></div>
+          <div class="job-bottom"><span class="status ready">Ready to Start</span><span class="status">Start: Sept 16</span></div>
+        </div>
+      </article>
+
+      <article class="job" style="--project:#6C86A6">
+        <div class="bar"></div><div class="job-body">
+          <div class="job-top"><div><div class="job-name">Adam & Tracey Barr</div><div class="job-meta">Bathroom Remodel · JJ-1046</div></div><button class="open-btn">Open Job</button></div>
+          <div class="current"><small>Current Preconstruction Section</small><b>Plumbing & Fixture Review</b></div>
+          <div class="job-bottom"><span class="status">1 Open Item</span><span class="status">Start: TBD</span></div>
+        </div>
+      </article>
+
+      <article class="job" style="--project:#9B6B73">
+        <div class="bar"></div><div class="job-body">
+          <div class="job-top"><div><div class="job-name">Ashley & Alyssa Levy</div><div class="job-meta">Basement Remodel · JJ-1045</div></div><button class="open-btn">Open Job</button></div>
+          <div class="current"><small>Current Preconstruction Section</small><b>Proposal & Design Details</b></div>
+          <div class="job-bottom"><span class="status issue">2 Open Items</span><span class="status">Start: TBD</span></div>
+        </div>
+      </article>
+    </div>
+
+    <div class="note">Demo only — this page is not connected to Supabase, does not save anything, and does not touch the real dashboard.</div>
+  </main>
+</div>
+</body>
+</html>
