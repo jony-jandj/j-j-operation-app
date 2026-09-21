@@ -1,15 +1,9 @@
-J&J Operations — Split release, September 21, 2026
+J&J Operations — Simplified split layout
 
-STATUS: TESTED RELEASE CANDIDATE. Not deployed to your live app.
+This replaces the September 21 split release interface. No additional SQL or data migration is needed if you already installed that release's database update.
 
-1. Keep the latest Operations and Work & Pay backups, plus the currently deployed app files.
-2. Resolve/check the Supabase production usage-limit warning.
-3. Run JJ_SPLIT_RELEASE_UPGRADE.sql in the production Supabase SQL editor. If it reports an unexpected version, stop and compare again; do not bypass the check.
-4. Upload ALL application files/folders from this ZIP to the existing GitHub app repository, keeping the folder structure. Do not upload only index.html. Do not upload the ZIP itself as the website.
-5. Wait for the site deployment, refresh/reopen the app, and verify sign-in, the correct project, split editing, Work & Pay totals and print preview.
+Extract this ZIP and upload all its files and folders into your existing GitHub repository, replacing matching files and preserving the folder structure. Do not upload only index.html, and do not upload the ZIP itself as the website.
 
-The HTML uses work-pay.js and other included files; it is not a standalone single-file app. SQL files do not execute merely by uploading to GitHub. Use the release-specific SQL above, not the full setup scripts on an existing production project.
+After GitHub deployment finishes, close and reopen the app. Connect Work & Pay if prompted. Open a draft P.O.: Split line is now inside the P.O. Split section. After splitting, click the top heading to collapse/expand, or Edit on either line. Save keeps it Draft; Save & approve validates and approves the edited line together.
 
-To back out before any new split records are saved, restore the previous complete app files. If split records have been saved, keep this compatible release and investigate; an older app may not display those splits. Do not restore an old data backup over newer work or payments.
-
-See TEST_RESULTS.md for exact scope and remaining deployment conditions.
+No production records were changed by preparation or testing of this package.

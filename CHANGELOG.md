@@ -1,9 +1,10 @@
-# September 21 split release
+# Simplified P.O. split interface
 
-- Inline P.O. split editor with title/description, percentage and dollar inputs.
-- Independent employee/Sub switching, saved employee shares, and inline Add supplier / sub.
-- Save/Cancel controls; approval requires saved title, description and valid assignments.
-- Shared split records in Work & Pay, sub summaries and printing; immutable payment-history protection retained.
-- Updated cache version and production-specific, version-checked database upgrade.
-
-79 named checks plus the legacy undo/payment regression suite passed. See TEST_RESULTS.md. Production deployment remains pending.
+- Moved Split line inside its P.O. Split section.
+- Split P.O. heading toggles collapse/expand; keyboard Enter/Space also works.
+- Distinct Original line and New split line cards with compact Edit and Approve controls.
+- Removed redundant View details button from split cards.
+- Percentage/dollar inputs side by side, employee allocation total and unallocated balance, description below.
+- Save, Save & approve, and Cancel; unsaved edits survive collapse/expand.
+- Same records, payout calculations, employee/Sub switching and payment protections.
+- New cache version; no new SQL changes.
