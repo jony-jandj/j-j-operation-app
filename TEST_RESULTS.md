@@ -1,13 +1,5 @@
-# Simplified split interface tests
+# Payout edit fix verification
 
-78 named checks passed, plus the legacy undo/payment regression suite.
+24 workflow checks passed against the local copied-record test database, including repeated percentage increases/decreases with Save and reopen, direct dollar-budget changes, native browser form validity, fractional percentages derived from dollar entries, employee auto-balancing, split approvals/colors, undo, stale-save protection and synthetic payment history.
 
-- Saved-record and split integration: 51.
-- Full app, responsive layout, button placement and printing: 10.
-- Hosted test project, two sessions, employee/Sub switching and homeowner sync: 12.
-- Cache replacement and offline shell: 3.
-- PDF pagination/margins: 2.
-
-New checks confirm that the Split line button is inside the P.O., heading collapse/expand preserves unfinished edits, and Save & approve commits edited values and approval together.
-
-Tests used local copies of backups and the separate hosted test project with synthetic records. Original backups and live records were not changed. Mobile coverage uses browser viewports; print checks use PDF output. The existing database migration is unchanged. This interface update is packaged but not deployed.
+Three cache checks passed: cache replacement, exact module content, offline shell. The broader full-app/hosted suites from prior releases were not repeated for this input-validation fix. No production data or original backups were changed.

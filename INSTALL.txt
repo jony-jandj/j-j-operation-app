@@ -1,9 +1,9 @@
-J&J Operations — Simplified split layout
+PAYOUT EDIT FIX — September 21
 
-This replaces the September 21 split release interface. No additional SQL or data migration is needed if you already installed that release's database update.
+Fixed employee amount limits retaining the old payout after Share of payout or Line payout budget changes. The limit and employee amounts now follow the current budget. The split card amount also updates immediately. Percentages calculated from dollar entries no longer trigger a decimal-step validation error.
 
-Extract this ZIP and upload all its files and folders into your existing GitHub repository, replacing matching files and preserving the folder structure. Do not upload only index.html, and do not upload the ZIP itself as the website.
+Employee auto-balancing, blue/yellow approval colors, the visible Split line button, and existing payment protections are included.
 
-After GitHub deployment finishes, close and reopen the app. Connect Work & Pay if prompted. Open a draft P.O.: Split line is now inside the P.O. Split section. After splitting, click the top heading to collapse/expand, or Edit on either line. Save keeps it Draft; Save & approve validates and approves the edited line together.
+No SQL update needed. Extract this ZIP and upload all files and folders into your existing GitHub app repository, replacing matching files. Reopen the app after deployment. Only work-pay.js and service-worker.js changed from the previous combined release; the full app is included.
 
-No production records were changed by preparation or testing of this package.
+Already-approved split budgets remain locked until the relevant approvals are undone. This fix corrects stale draft-input limits; it does not alter saved approvals or payment history automatically.
