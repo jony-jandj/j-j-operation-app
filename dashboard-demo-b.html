@@ -21,7 +21,7 @@ h1{margin:4px 0 4px;font-size:29px;letter-spacing:-.6px}
 .stat b{display:block;font-size:19px}.stat span{font-size:9px;color:var(--muted);font-weight:800;text-transform:uppercase;letter-spacing:.5px}
 .layout{display:grid;grid-template-columns:360px minmax(0,1fr);gap:16px}
 .panel{background:#fff;border:1px solid var(--line);border-radius:15px;box-shadow:0 4px 14px rgba(20,35,74,.04);overflow:hidden}
-.panel-head{padding:15px 16px;border-bottom:1px solid #EEF1F4;display:flex;justify-content:space-between;align-items:center}
+.panel-head{padding:15px 16px;border-bottom:1px solid #EEF1F4;display:flex;justify-content:space-between;align-items:center;gap:12px}
 .panel-head h2{margin:0;font-size:15px}.panel-head small{color:var(--muted);font-size:10px}
 .attention{padding:8px}
 .task{padding:12px;border-radius:11px;margin:6px;background:#F8FAFC;border:1px solid #E9EDF2}
@@ -37,16 +37,27 @@ h1{margin:4px 0 4px;font-size:29px;letter-spacing:-.6px}
 .section small{display:block;color:#8A7447;font-size:8px;font-weight:900;text-transform:uppercase;letter-spacing:.6px;margin-bottom:3px}.section b{font-size:11px}
 .meta{display:flex;gap:6px;flex-wrap:wrap;margin-top:7px}.chip{font-size:9px;padding:5px 7px;border-radius:999px;background:#F2F4F7;color:#5D6877;font-weight:800}
 .open{border:1px solid #D5DCE5;background:#fff;color:var(--navy);border-radius:9px;padding:8px 10px;font-size:10px;font-weight:900}
+.po-panel{margin-top:16px}
+.po-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;padding:14px}
+.po-kpi{border:1px solid #E5E9EF;border-radius:11px;padding:12px;background:#FAFBFC}
+.po-kpi span{display:block;color:var(--muted);font-size:8px;text-transform:uppercase;font-weight:900;letter-spacing:.55px}
+.po-kpi b{display:block;margin-top:4px;font-size:18px}
+.po-kpi.reserve{background:#F8F3E9;border-color:#E3D7BE}.po-kpi.reserve span{color:#866F42}.po-kpi.reserve b{color:#6E572A}
+.po-table{padding:0 14px 14px}
+.po-row{display:grid;grid-template-columns:minmax(0,1.4fr) 90px 110px 110px;gap:10px;align-items:center;padding:11px 8px;border-top:1px solid #EEF1F4}
+.po-row.head{color:var(--muted);font-size:8px;font-weight:900;text-transform:uppercase;letter-spacing:.45px;border-top:0;padding-top:4px}
+.po-row b{font-size:11px}.po-row small{display:block;color:var(--muted);font-size:9px;margin-top:2px}
+.money{text-align:right;font-size:11px;font-weight:850}.reserve-money{color:#6E572A}
 .note{margin-top:16px;padding:11px 13px;border:1px dashed #C9D1DB;border-radius:10px;background:#fff;color:var(--muted);font-size:10px}
-@media(max-width:900px){.hero{align-items:flex-start;flex-direction:column}.layout{grid-template-columns:1fr}.attention{display:grid;grid-template-columns:1fr 1fr}.job{grid-template-columns:minmax(0,1fr) 210px auto}}
-@media(max-width:680px){main{padding:18px 14px 36px}.attention{grid-template-columns:1fr}.job{grid-template-columns:1fr auto}.section{grid-column:1/-1;padding-left:18px}.stats{width:100%}.stat{flex:1;min-width:90px}}
+@media(max-width:900px){.hero{align-items:flex-start;flex-direction:column}.layout{grid-template-columns:1fr}.attention{display:grid;grid-template-columns:1fr 1fr}.job{grid-template-columns:minmax(0,1fr) 210px auto}.po-summary{grid-template-columns:repeat(4,1fr)}}
+@media(max-width:680px){main{padding:18px 14px 36px}.attention{grid-template-columns:1fr}.job{grid-template-columns:1fr auto}.section{grid-column:1/-1;padding-left:18px}.stats{width:100%}.stat{flex:1;min-width:90px}.po-summary{grid-template-columns:1fr 1fr}.po-row{grid-template-columns:minmax(0,1fr) 70px 90px}.po-row>div:nth-child(3){display:none}}
 </style>
 </head>
 <body>
 <header><div class="logo">J&J</div><strong>J&J Home Renovations · Operations</strong></header>
 <main>
   <div class="hero">
-    <div><div class="eyebrow">Operations Overview</div><h1>Dashboard</h1><p>Action-first layout — see what needs attention before anything else.</p></div>
+    <div><div class="eyebrow">Operations Overview</div><h1>Dashboard</h1><p>Action-first layout — preconstruction status plus P.O. / reserve visibility.</p></div>
     <div class="stats">
       <div class="stat"><b>6</b><span>Active Jobs</span></div>
       <div class="stat"><b>2</b><span>Ready</span></div>
@@ -69,25 +80,25 @@ h1{margin:4px 0 4px;font-size:29px;letter-spacing:-.6px}
       <div class="panel-head"><h2>Current Jobs</h2><small>No preconstruction percentages</small></div>
       <div class="jobs">
         <div class="job" style="--project:#6B8E5A">
-          <div class="name"><span class="dot"></span><div><b>Lori & Mike Leahy</b><small>Basement / Bathroom · JJ-1048</small><div class="meta"><span class="chip">3 Open Items</span><span class="chip">Start Sept 28</span></div></div></div>
+          <div class="name"><span class="dot"></span><div><b>Lori & Mike Leahy</b><small>Basement / Bathroom · JJ-1048</small><div class="meta"><span class="chip">3 Open Items</span><span class="chip">7 P.O. Splits</span><span class="chip">Start Sept 28</span></div></div></div>
           <div class="section"><small>Current Preconstruction Section</small><b>Selections & Materials</b></div>
           <button class="open">Open</button>
         </div>
 
         <div class="job" style="--project:#B59A62">
-          <div class="name"><span class="dot"></span><div><b>Mary Anne & Raymond</b><small>Two Bathroom Remodels · JJ-1047</small><div class="meta"><span class="chip">Ready to Start</span><span class="chip">Start Sept 16</span></div></div></div>
+          <div class="name"><span class="dot"></span><div><b>Mary Anne & Raymond</b><small>Two Bathroom Remodels · JJ-1047</small><div class="meta"><span class="chip">Ready to Start</span><span class="chip">5 P.O. Splits</span><span class="chip">Start Sept 16</span></div></div></div>
           <div class="section"><small>Current Preconstruction Section</small><b>Final Scope & Selections</b></div>
           <button class="open">Open</button>
         </div>
 
         <div class="job" style="--project:#6C86A6">
-          <div class="name"><span class="dot"></span><div><b>Adam & Tracey Barr</b><small>Bathroom Remodel · JJ-1046</small><div class="meta"><span class="chip">1 Open Item</span><span class="chip">Start TBD</span></div></div></div>
+          <div class="name"><span class="dot"></span><div><b>Adam & Tracey Barr</b><small>Bathroom Remodel · JJ-1046</small><div class="meta"><span class="chip">1 Open Item</span><span class="chip">4 P.O. Splits</span><span class="chip">Start TBD</span></div></div></div>
           <div class="section"><small>Current Preconstruction Section</small><b>Plumbing & Fixture Review</b></div>
           <button class="open">Open</button>
         </div>
 
         <div class="job" style="--project:#9B6B73">
-          <div class="name"><span class="dot"></span><div><b>Ashley & Alyssa Levy</b><small>Basement Remodel · JJ-1045</small><div class="meta"><span class="chip">2 Open Items</span><span class="chip">Start TBD</span></div></div></div>
+          <div class="name"><span class="dot"></span><div><b>Ashley & Alyssa Levy</b><small>Basement Remodel · JJ-1045</small><div class="meta"><span class="chip">2 Open Items</span><span class="chip">8 P.O. Splits</span><span class="chip">Start TBD</span></div></div></div>
           <div class="section"><small>Current Preconstruction Section</small><b>Proposal & Design Details</b></div>
           <button class="open">Open</button>
         </div>
@@ -95,7 +106,24 @@ h1{margin:4px 0 4px;font-size:29px;letter-spacing:-.6px}
     </section>
   </div>
 
-  <div class="note">Demo only — not connected to Supabase and does not modify the real app or any saved data.</div>
+  <section class="panel po-panel">
+    <div class="panel-head"><h2>P.O. Splits & Reserves</h2><small>60% crew · 5% touch-up · 35% reserve</small></div>
+    <div class="po-summary">
+      <div class="po-kpi"><span>P.O. Splits</span><b>24</b></div>
+      <div class="po-kpi"><span>Labor Builder Cost</span><b>$61,300</b></div>
+      <div class="po-kpi"><span>Crew + Touch-Up</span><b>$39,845</b></div>
+      <div class="po-kpi reserve"><span>Total Reserve</span><b>$21,455</b></div>
+    </div>
+    <div class="po-table">
+      <div class="po-row head"><div>Job</div><div>P.O.s</div><div class="money">Labor Cost</div><div class="money">Reserve</div></div>
+      <div class="po-row"><div><b>Lori & Mike Leahy</b><small>Basement / Bathroom</small></div><div>7</div><div class="money">$18,000</div><div class="money reserve-money">$6,300</div></div>
+      <div class="po-row"><div><b>Mary Anne & Raymond</b><small>Two Bathroom Remodels</small></div><div>5</div><div class="money">$12,500</div><div class="money reserve-money">$4,375</div></div>
+      <div class="po-row"><div><b>Adam & Tracey Barr</b><small>Bathroom Remodel</small></div><div>4</div><div class="money">$9,800</div><div class="money reserve-money">$3,430</div></div>
+      <div class="po-row"><div><b>Ashley & Alyssa Levy</b><small>Basement Remodel</small></div><div>8</div><div class="money">$21,000</div><div class="money reserve-money">$7,350</div></div>
+    </div>
+  </section>
+
+  <div class="note">Demo only — the P.O. and reserve amounts above are sample numbers for layout testing. This page is not connected to Supabase and does not modify the real app or any saved data.</div>
 </main>
 </body>
 </html>
