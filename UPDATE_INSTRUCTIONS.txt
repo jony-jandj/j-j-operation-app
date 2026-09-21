@@ -1,3 +1,15 @@
-Replace work-pay.js and service-worker.js in GitHub, then reopen the app. No SQL needed.
+J&J Operations — Split release, September 21, 2026
 
-Subcontractor summary printouts now start with J&J Home Renovations. Removed the payment disclaimer and payout wording. The simplified print format is called Scope Summary, with Amount and Total labels. Company, job, descriptions, and separate Labor/Materials sections remain. This wording update does not change approval status or the existing approved-only summary filter.
+STATUS: TESTED RELEASE CANDIDATE. Not deployed to your live app.
+
+1. Keep the latest Operations and Work & Pay backups, plus the currently deployed app files.
+2. Resolve/check the Supabase production usage-limit warning.
+3. Run JJ_SPLIT_RELEASE_UPGRADE.sql in the production Supabase SQL editor. If it reports an unexpected version, stop and compare again; do not bypass the check.
+4. Upload ALL application files/folders from this ZIP to the existing GitHub app repository, keeping the folder structure. Do not upload only index.html. Do not upload the ZIP itself as the website.
+5. Wait for the site deployment, refresh/reopen the app, and verify sign-in, the correct project, split editing, Work & Pay totals and print preview.
+
+The HTML uses work-pay.js and other included files; it is not a standalone single-file app. SQL files do not execute merely by uploading to GitHub. Use the release-specific SQL above, not the full setup scripts on an existing production project.
+
+To back out before any new split records are saved, restore the previous complete app files. If split records have been saved, keep this compatible release and investigate; an older app may not display those splits. Do not restore an old data backup over newer work or payments.
+
+See TEST_RESULTS.md for exact scope and remaining deployment conditions.

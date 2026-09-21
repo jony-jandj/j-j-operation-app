@@ -1,8 +1,9 @@
-# Work review print wording
+# September 21 split release
 
-- Print heading is J&J Home Renovations.
-- Removed Assigned scope / Not a confirmation of payment text.
-- Renamed Payout Summary to Scope Summary, with Amount and Total labels.
-- Retained full cost option, separate material/labor totals, and pagination fix.
+- Inline P.O. split editor with title/description, percentage and dollar inputs.
+- Independent employee/Sub switching, saved employee shares, and inline Add supplier / sub.
+- Save/Cancel controls; approval requires saved title, description and valid assignments.
+- Shared split records in Work & Pay, sub summaries and printing; immutable payment-history protection retained.
+- Updated cache version and production-specific, version-checked database upgrade.
 
-Upload work-pay.js and service-worker.js. No SQL changes.
+79 named checks plus the legacy undo/payment regression suite passed. See TEST_RESULTS.md. Production deployment remains pending.
