@@ -6684,6 +6684,13 @@ async function pollCloudState(){
   if(!cloudClient || cloudPollInFlight || cloudApplying || cloudSaveInFlight || cloudSaveQueued || document.hidden) return;
   cloudPollInFlight=true;
   try{
+    // Check only the version first: unchanged polls must not download project photos/data.
+    const {data:version,error:versionError}=await cloudClient
+      .from('app_state').select('updated_at').eq('org_id',CLOUD_ORG_ID).maybeSingle();
+    if(versionError) throw versionError;
+    const versionAt=Date.parse(version?.updated_at||0)||0;
+    if(!versionAt || cloudSaveInFlight || cloudSaveQueued) return;
+    if(versionAt<=cloudLastRemoteAt){setCloudStatus('Live','saved');return;}
     const {data:incoming,error}=await cloudClient
       .from('app_state')
       .select('state,updated_at')

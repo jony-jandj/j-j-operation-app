@@ -1,9 +1,9 @@
-PAYOUT EDIT FIX — September 21
+BANDWIDTH FIX
 
-Fixed employee amount limits retaining the old payout after Share of payout or Line payout budget changes. The limit and employee amounts now follow the current budget. The split card amount also updates immediately. Percentages calculated from dollar entries no longer trigger a decimal-step validation error.
+The live-sync fallback was downloading the full project state every 2.5 seconds in each visible app. It now checks only updated_at first and downloads the full state only when that timestamp is newer. Existing realtime updates, local-save guards and merge logic remain in place.
 
-Employee auto-balancing, blue/yellow approval colors, the visible Split line button, and existing payment protections are included.
+This reduces unchanged-poll traffic. It does NOT reset consumed quota or lift the current Supabase service restriction. Production usage breakdown was not available, so the exact share of traffic caused by polling has not been measured.
 
-No SQL update needed. Extract this ZIP and upload all files and folders into your existing GitHub app repository, replacing matching files. Reopen the app after deployment. Only work-pay.js and service-worker.js changed from the previous combined release; the full app is included.
+The project owner must restore service through Supabase billing (upgrade or applicable spend-cap change, with associated charges), or wait for its quota reset. No billing changes were made by this update.
 
-Already-approved split budgets remain locked until the relevant approvals are undone. This fix corrects stale draft-input limits; it does not alter saved approvals or payment history automatically.
+Upload all extracted files/folders to the existing GitHub repository and reopen the app after deployment. No SQL update needed. Previous payout-edit fixes, employee auto-balancing and approval colors are included. Do not delete browser storage while service is restricted; it may contain locally saved work.

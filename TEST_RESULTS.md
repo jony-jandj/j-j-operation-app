@@ -1,5 +1,5 @@
-# Payout edit fix verification
+# Bandwidth fix tests
 
-24 workflow checks passed against the local copied-record test database, including repeated percentage increases/decreases with Save and reopen, direct dollar-budget changes, native browser form validity, fractional percentages derived from dollar entries, employee auto-balancing, split approvals/colors, undo, stale-save protection and synthetic payment history.
+Passed four focused polling checks: unchanged polls fetch timestamps only; changed timestamps fetch/apply full state; pending saves/hidden windows skip polling; provider errors release the lock without changing records.
 
-Three cache checks passed: cache replacement, exact module content, offline shell. The broader full-app/hosted suites from prior releases were not repeated for this input-validation fix. No production data or original backups were changed.
+Passed ten full-app isolated-database checks including mobile/tablet layout and print output, plus three cache replacement/offline-shell checks. Hosted production sign-in could not be verified during the provider restriction. No production data or billing settings were changed.
