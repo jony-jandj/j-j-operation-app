@@ -1,11 +1,7 @@
-P.O. LAYOUT UPDATE — September 22
+CLICK-TO-EDIT SPLIT FIELDS — September 22
 
-- Split line moved into the bottom-right approval action row inside each unsplit P.O.
-- Edit/Approve actions aligned bottom right on split lines; Undo split is at the bottom right of the parent P.O.
-- P.O. title and Description side by side on desktop; stacked on phones.
-- Description shows four lines and scrolls independently, while editing and viewing. Full descriptions remain available in print details.
-- Builder cost, Combined payout, Touch-up and Reserve appear in individual rounded boxes.
-- Stronger parent-P.O. and split-line outlines preserve approved blue/yellow colors.
-- The editor shows Total payout to split, its dollar amount, and its percentage of builder cost immediately above the share fields. For standard in-house P.O.s this is the 60% payout; custom payout percentages are shown accurately.
+Draft split titles, descriptions, payout percentages, employee dropdowns, employee shares and dollar amounts can be clicked directly to edit. Hover/focus outlines show editable fields; touch users can tap. Save or Save & approve still commits the changes. Cancel discards changes. Switching between lines preserves unfinished edits during the session; they are not a saved record until Save succeeds.
 
-No SQL update needed. Extract this ZIP and upload all files/folders to the existing GitHub repository, replacing matching files. Reopen the app after deployment. All prior payout/auto-balance/bandwidth fixes are included. No saved records are migrated by this display update.
+Descriptions have visible borders and their own scrollbar when content exceeds four lines. Employee name, percentage and amount are grouped in alternating soft-blue and white rows. Approved lines remain locked until Undo Approval. Existing payout balancing, approval colors, totals and cloud-traffic fixes are included.
+
+Extract and upload all files/folders to the existing GitHub app repository, replacing matching files. Reopen the app after deployment. No SQL update needed. No production records have been modified.

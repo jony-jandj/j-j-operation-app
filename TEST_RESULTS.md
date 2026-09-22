@@ -1,5 +1,5 @@
-# P.O. layout verification
+# Direct editing verification
 
-Passed split workflow tests for saving/reopening, automatic employee balancing, approvals/colors, undo, and synthetic payment history. Full-app checks cover desktop/tablet/phone widths, Split line in the approval footer, title/description placement, independent four-line scrolling, total parent payout reference, and both print formats. Cache replacement/offline shell checks also passed.
+Passed the local integration/regression suite, full-app phone/tablet/desktop and print checks, and cache replacement checks. Final workflow checks confirm direct entry for every requested field, retained unfinished edits when switching lines, alternating employee-row backgrounds, repeated payout edits, employee/Sub switching, approval locks/colors, save conflict handling and synthetic payment history.
 
-Tests use local copied data; no production writes or billing changes. Hosted tests were not repeated for this layout-only update. Physical-device and physical-printer checks are not included.
+Descriptions were checked for four-line independent scrolling. Tests use isolated copied records. Hosted and physical-device tests were not repeated for this interface update. No production writes or billing changes.
