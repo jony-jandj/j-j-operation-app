@@ -1,5 +1,7 @@
-# Mixed teams fix — September 22, 2026
+# Estimate titles and internal notes — September 22, 2026
 
+- Estimate title changes update matching parent P.O. titles in P.O. Splits while preserving record IDs, links, costs and approvals. Custom split-line task names remain intact.
+- Internal notes are editable in both estimate screens, including imported notes. They remain estimate-only and are not copied to P.O.s or work/payment records.
 - Fixed stale unsaved sibling budgets causing a false approval-budget error when changing the draft line between employees and a subcontractor.
 - Refreshes draft sibling amounts after saving payout changes; approved sibling amounts remain protected.
 - Each split explicitly labels its Sub choice as applying to this line only.

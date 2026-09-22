@@ -8202,12 +8202,14 @@ function createPOsFromSelectedEstimateRows(){
   toast(`${created} P.O. Split${created===1?'':'s'} created`);
 }
 
+function estimateInternalNotes(row){return row.internalNotes??(row.importedColumns||[]).find(c=>['internal notes','internal note'].includes(pricingHeader(c.header)))?.value??'';}
+
 function estimateTableHTML(p,mode='hub'){
   const isProject=mode==='project';
   const toggleFn=isProject?'toggleEstimateSelectionProject':'toggleEstimateSelection';
   const updateFn=isProject?'updateEstimate':'updateEstimateFromPOHub';
 
-  const extraHeaders=[...new Set((p.estimate||[]).flatMap(r=>(r.importedColumns||[]).map(c=>c.header)))].filter(h=>!['title','parent group','description','quantity','unit','unit cost','cost type','builder cost','parent group description','parent description','subgroup description','sub group description','subgroup','sub group','option type'].includes(pricingHeader(h)));
+  const extraHeaders=[...new Set((p.estimate||[]).flatMap(r=>(r.importedColumns||[]).map(c=>c.header)))].filter(h=>!['title','parent group','description','quantity','unit','unit cost','cost type','builder cost','parent group description','parent description','subgroup description','sub group description','subgroup','sub group','option type','internal notes','internal note'].includes(pricingHeader(h)));
   return `
     <div class="estimate-table-hint">
       <span>Imported estimate layout: Parent Group + Title · Description · Quantity · Unit · Unit cost · Cost type · Builder Cost</span>
@@ -8215,13 +8217,13 @@ function estimateTableHTML(p,mode='hub'){
     </div>
 
     <div class="estimate-buildertrend-wrap">
-      <table class="estimate-buildertrend" style="width:${1450+extraHeaders.length*170}px;min-width:${1450+extraHeaders.length*170}px">
+      <table class="estimate-buildertrend" style="width:${1650+extraHeaders.length*170}px;min-width:${1650+extraHeaders.length*170}px">
         <thead>
           <tr>
             <th class="col-delete">Delete</th>
             <th class="col-po">P.O.</th>
             <th class="col-title">Title</th>
-            <th class="col-description">Description</th>
+            <th class="col-description">Description</th><th style="width:200px">Internal notes</th>
             <th class="col-qty">Quantity</th>
             <th class="col-unit">Unit</th>
             <th class="col-unit-cost">Unit cost</th>
@@ -8267,6 +8269,7 @@ function estimateTableHTML(p,mode='hub'){
                     oninput="${updateFn}(${i},'description',this.value)">${esc(r.description)}</textarea>
                 </td>
 
+                <td style="width:200px"><textarea class="estimate-cell-input" rows="2" aria-label="Internal notes" oninput="${updateFn}(${i},'internalNotes',this.value)">${esc(estimateInternalNotes(raw))}</textarea></td>
                 <td class="col-qty">
                   <input class="estimate-cell-input estimate-number" type="number" step="any"
                     value="${esc(r.quantity)}"
@@ -8912,6 +8915,7 @@ function syncEstimatePOLinks(row,linked,key){
   linked.forEach(po=>{
     po.sourceEstimateKey=estimateRowSourceKey(row);
     if(key==='description') po.description=String(row.description??'');
+    if(key==='title'||key==='line'){const parent=getPOParentGroup(po)||po.parentGroup||'';po.title=estimateRowTitle(row);po.line=parent?parent+' · '+po.title:po.title;}
   });
 }
 
@@ -8925,7 +8929,7 @@ function updateEstimateFromPOHub(i,key,val){
 
   if(key==='title') p.estimate[i].line=val;
   if(key==='line') p.estimate[i].title=val;
-  syncEstimatePOLinks(p.estimate[i],linked,key);
+  if(key==='internalNotes'){for(const cell of p.estimate[i].importedColumns||[])if(['internal notes','internal note'].includes(pricingHeader(cell.header)))cell.value=val;}else syncEstimatePOLinks(p.estimate[i],linked,key);
   if(!estimatePOEligible(p.estimate[i])) selectedEstimatePORows.delete(i);
 
   saveState(false);
@@ -9480,7 +9484,7 @@ function updateEstimate(i,key,val){
 
   if(key==='title') p.estimate[i].line=val;
   if(key==='line') p.estimate[i].title=val;
-  syncEstimatePOLinks(p.estimate[i],linked,key);
+  if(key==='internalNotes'){for(const cell of p.estimate[i].importedColumns||[])if(['internal notes','internal note'].includes(pricingHeader(cell.header)))cell.value=val;}else syncEstimatePOLinks(p.estimate[i],linked,key);
   if(!estimatePOEligible(p.estimate[i])) selectedEstimatePORows.delete(i);
 
   if(key==='builderCost'){
