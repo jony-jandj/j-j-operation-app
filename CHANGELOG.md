@@ -1,5 +1,8 @@
-# Clean split layout — September 22, 2026
+# Mixed teams fix — September 22, 2026
 
+- Fixed stale unsaved sibling budgets causing a false approval-budget error when changing the draft line between employees and a subcontractor.
+- Refreshes draft sibling amounts after saving payout changes; approved sibling amounts remain protected.
+- Each split explicitly labels its Sub choice as applying to this line only.
 - Mouse/trackpad wheel cannot change focused number fields. Manual entry, keyboard arrows and number spinners still work.
 - Split percentages display two decimal places. Employee percentage edits balance to 100% in hundredths; exact dollar-derived shares are retained internally to preserve cents.
 - Restored full-width stacked split cards on all screens, with tighter vertical spacing.

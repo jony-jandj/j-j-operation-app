@@ -2,6 +2,8 @@
 
 Local tests used isolated copies of saved records and synthetic payment transactions; no production records were modified.
 
+New regression checks passed for a stale sibling draft, a sub beside approved in-house work, and in-house work beside an approved sub. Approved sibling records remained exactly unchanged.
+
 Passed database and browser regressions covering saved split records, approval/undo, employee/sub changes, two-client save conflicts, interrupted-save retry, exact-cent payouts, synthetic partial payments, and existing record preservation.
 
 Direct editing checks: no Edit buttons, hover outline, every draft field opens directly, Sub checkbox switches directly, and visible Add employee opens the editor with a balanced new assignment.
