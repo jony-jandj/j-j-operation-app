@@ -1,9 +1,11 @@
-BANDWIDTH FIX
+P.O. LAYOUT UPDATE — September 22
 
-The live-sync fallback was downloading the full project state every 2.5 seconds in each visible app. It now checks only updated_at first and downloads the full state only when that timestamp is newer. Existing realtime updates, local-save guards and merge logic remain in place.
+- Split line moved into the bottom-right approval action row inside each unsplit P.O.
+- Edit/Approve actions aligned bottom right on split lines; Undo split is at the bottom right of the parent P.O.
+- P.O. title and Description side by side on desktop; stacked on phones.
+- Description shows four lines and scrolls independently, while editing and viewing. Full descriptions remain available in print details.
+- Builder cost, Combined payout, Touch-up and Reserve appear in individual rounded boxes.
+- Stronger parent-P.O. and split-line outlines preserve approved blue/yellow colors.
+- The editor shows Total payout to split, its dollar amount, and its percentage of builder cost immediately above the share fields. For standard in-house P.O.s this is the 60% payout; custom payout percentages are shown accurately.
 
-This reduces unchanged-poll traffic. It does NOT reset consumed quota or lift the current Supabase service restriction. Production usage breakdown was not available, so the exact share of traffic caused by polling has not been measured.
-
-The project owner must restore service through Supabase billing (upgrade or applicable spend-cap change, with associated charges), or wait for its quota reset. No billing changes were made by this update.
-
-Upload all extracted files/folders to the existing GitHub repository and reopen the app after deployment. No SQL update needed. Previous payout-edit fixes, employee auto-balancing and approval colors are included. Do not delete browser storage while service is restricted; it may contain locally saved work.
+No SQL update needed. Extract this ZIP and upload all files/folders to the existing GitHub repository, replacing matching files. Reopen the app after deployment. All prior payout/auto-balance/bandwidth fixes are included. No saved records are migrated by this display update.

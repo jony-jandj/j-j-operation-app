@@ -1,5 +1,5 @@
-# Bandwidth fix tests
+# P.O. layout verification
 
-Passed four focused polling checks: unchanged polls fetch timestamps only; changed timestamps fetch/apply full state; pending saves/hidden windows skip polling; provider errors release the lock without changing records.
+Passed split workflow tests for saving/reopening, automatic employee balancing, approvals/colors, undo, and synthetic payment history. Full-app checks cover desktop/tablet/phone widths, Split line in the approval footer, title/description placement, independent four-line scrolling, total parent payout reference, and both print formats. Cache replacement/offline shell checks also passed.
 
-Passed ten full-app isolated-database checks including mobile/tablet layout and print output, plus three cache replacement/offline-shell checks. Hosted production sign-in could not be verified during the provider restriction. No production data or billing settings were changed.
+Tests use local copied data; no production writes or billing changes. Hosted tests were not repeated for this layout-only update. Physical-device and physical-printer checks are not included.
