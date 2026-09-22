@@ -1,5 +1,15 @@
-# Direct editing verification
+# Validation
 
-Passed the local integration/regression suite, full-app phone/tablet/desktop and print checks, and cache replacement checks. Final workflow checks confirm direct entry for every requested field, retained unfinished edits when switching lines, alternating employee-row backgrounds, repeated payout edits, employee/Sub switching, approval locks/colors, save conflict handling and synthetic payment history.
+Local tests used isolated copies of saved records and synthetic payment transactions; no production records were modified.
 
-Descriptions were checked for four-line independent scrolling. Tests use isolated copied records. Hosted and physical-device tests were not repeated for this interface update. No production writes or billing changes.
+Passed database and browser regressions covering saved split records, approval/undo, employee/sub changes, two-client save conflicts, interrupted-save retry, exact-cent payouts, synthetic partial payments, and existing record preservation.
+
+New input checks: wheel events are blocked on focused number fields, keyboard up/down still works, percentage display has two decimals, and a one-cent payout survives save/reopen.
+
+Full-app checks: 1440px desktop, 768px tablet and 390px phone, side-by-side cards on wide screens, stacked phone cards, no card horizontal overflow, scrolling descriptions, and print output. These are browser viewport checks, not physical iPad/iPhone tests.
+
+Print pagination: all 27 sample line descriptions stay together with safe page margins in both print formats.
+
+App-cache checks: old cache removed, current Work & Pay cached exactly, offline shell available.
+
+Hosted production writes and physical-device testing were not performed for this display/input update.

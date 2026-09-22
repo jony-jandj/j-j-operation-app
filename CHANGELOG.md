@@ -1,7 +1,9 @@
-CLICK-TO-EDIT SPLIT FIELDS — September 22
+# Compact split lines — September 22, 2026
 
-Draft split titles, descriptions, payout percentages, employee dropdowns, employee shares and dollar amounts can be clicked directly to edit. Hover/focus outlines show editable fields; touch users can tap. Save or Save & approve still commits the changes. Cancel discards changes. Switching between lines preserves unfinished edits during the session; they are not a saved record until Save succeeds.
+- Mouse/trackpad wheel cannot change focused number fields. Manual entry, keyboard arrows and number spinners still work.
+- Split percentages display two decimal places. Employee percentage edits balance to 100% in hundredths; exact dollar-derived shares are retained internally to preserve cents.
+- Two split cards appear beside each other on desktop/tablet and stack compactly on phones.
+- Reduced spacing, clearer amount fields, and approved-card tables that fit their cards.
+- Retains direct field editing, scrolling descriptions, approval colors, save/cancel, employee/sub assignments, payment history protections and existing cloud sync.
 
-Descriptions have visible borders and their own scrollbar when content exceeds four lines. Employee name, percentage and amount are grouped in alternating soft-blue and white rows. Approved lines remain locked until Undo Approval. Existing payout balancing, approval colors, totals and cloud-traffic fixes are included.
-
-Extract and upload all files/folders to the existing GitHub app repository, replacing matching files. Reopen the app after deployment. No SQL update needed. No production records have been modified.
+No new database SQL required. Upload the full package.
