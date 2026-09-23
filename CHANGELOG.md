@@ -1,5 +1,6 @@
-# Unsplit dollar editing — September 22, 2026
+# Summary back button — September 22, 2026
 
+- Added a top-left Back to P.O. Splits button to Subs & Materials Summary and In-house Summary (also available in Work & Pay). Returns to the originating project, even if summary filters change.
 - Unsplit draft P.O.s allow dollar editing for each in-house employee and for subcontractor payout. Dollars and percentages update each other.
 - Percentages display two decimals; dollar-derived percentages retain precision internally to preserve exact cents.
 - In-house employee percentages refer to the 60% in-house budget; sub percentages refer to builder cost. Existing approval locks and payout limits remain.

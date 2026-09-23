@@ -2,6 +2,8 @@
 
 Local tests used isolated copies of saved records and synthetic payment transactions; no production records were modified.
 
+Navigation checks passed for both summary screens: button above the heading and return to the same project in P.O. Splits.
+
 New isolated browser/database tests passed: in-house and sub dollars-to-percent and percent-to-dollars, one-cent payout persistence, invalid amount rejection, and approval locks.
 
 Estimate tests passed for both editors: repeated title edits, subsequent description edits, correct room matching, stable record IDs, approvals, costs and employee assignments, and estimate-only internal notes that save and clear.
