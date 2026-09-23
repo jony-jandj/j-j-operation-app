@@ -1,4 +1,4 @@
-const CACHE_NAME = 'jj-operations-splits-20260922-17';
+const CACHE_NAME = 'jj-operations-closeout-bills-20260923-1';
 const APP_SHELL = [
   './work-pay.js','./estimate-full-parser.js',
   './','./index.html','./homeowner.html','./customer-view.js','./customer-overlay.js','./qrcode.min.js','./selections-metadata.js',
