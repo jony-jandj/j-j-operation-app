@@ -1,5 +1,8 @@
-# Estimate titles and internal notes — September 22, 2026
+# Unsplit dollar editing — September 22, 2026
 
+- Unsplit draft P.O.s allow dollar editing for each in-house employee and for subcontractor payout. Dollars and percentages update each other.
+- Percentages display two decimals; dollar-derived percentages retain precision internally to preserve exact cents.
+- In-house employee percentages refer to the 60% in-house budget; sub percentages refer to builder cost. Existing approval locks and payout limits remain.
 - Estimate title changes update matching parent P.O. titles in P.O. Splits while preserving record IDs, links, costs and approvals. Custom split-line task names remain intact.
 - Internal notes are editable in both estimate screens, including imported notes. They remain estimate-only and are not copied to P.O.s or work/payment records.
 - Fixed stale unsaved sibling budgets causing a false approval-budget error when changing the draft line between employees and a subcontractor.

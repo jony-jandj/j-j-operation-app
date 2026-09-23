@@ -2,6 +2,8 @@
 
 Local tests used isolated copies of saved records and synthetic payment transactions; no production records were modified.
 
+New isolated browser/database tests passed: in-house and sub dollars-to-percent and percent-to-dollars, one-cent payout persistence, invalid amount rejection, and approval locks.
+
 Estimate tests passed for both editors: repeated title edits, subsequent description edits, correct room matching, stable record IDs, approvals, costs and employee assignments, and estimate-only internal notes that save and clear.
 
 New regression checks passed for a stale sibling draft, a sub beside approved in-house work, and in-house work beside an approved sub. Approved sibling records remained exactly unchanged.
