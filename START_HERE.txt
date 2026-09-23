@@ -1,6 +1,6 @@
-J&J Operations — Summary Back Button — September 22, 2026
+J&J Operations — Phone Layout and View All — September 23, 2026
 
-Upload ALL files and folders from this ZIP into the existing GitHub app folder, replacing matching files. Do not upload only index.html. Preserve the included folder structure. Wait for GitHub Pages to publish, then reload the app. This update uses app cache version 20260922-17.
+Upload ALL files and folders from this ZIP into the existing GitHub app folder, replacing matching files. Do not upload only index.html. Preserve the included folder structure. Wait for GitHub Pages to publish, then reload the app. This update uses app cache version 20260923-18.
 
 Each labor split can independently use employees or a subcontractor. Use Sub — this line only to choose. The other approved line stays unchanged. To transfer money between lines, undo approvals first. Old unsaved payout values now refresh after the other line is saved.
 

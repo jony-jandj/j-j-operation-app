@@ -1,5 +1,8 @@
-# Summary back button — September 22, 2026
+# Phone layout and View all — September 23, 2026
 
+- Phone P.O. Splits: full-width employee selectors above percentage/dollar fields, larger touch controls, wrapping headings and totals that fit narrow screens. Unsplit employee controls also reflow with labels.
+- In-house summary: View all option and button show each employee breakdown together while keeping job/date filters; individual employee view remains available.
+- All employee breakdowns can be printed together.
 - Added a top-left Back to P.O. Splits button to Subs & Materials Summary and In-house Summary (also available in Work & Pay). Returns to the originating project, even if summary filters change.
 - Unsplit draft P.O.s allow dollar editing for each in-house employee and for subcontractor payout. Dollars and percentages update each other.
 - Percentages display two decimals; dollar-derived percentages retain precision internally to preserve exact cents.

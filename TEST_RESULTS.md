@@ -2,6 +2,8 @@
 
 Local tests used isolated copies of saved records and synthetic payment transactions; no production records were modified.
 
+New checks passed: 320px and 390px phone layouts without horizontal page overflow, all-employee grouping, switching from individual view, and printing every employee. Checks use browser viewport sizes, not physical phones.
+
 Navigation checks passed for both summary screens: button above the heading and return to the same project in P.O. Splits.
 
 New isolated browser/database tests passed: in-house and sub dollars-to-percent and percent-to-dollars, one-cent payout persistence, invalid amount rejection, and approval locks.
