@@ -1,0 +1,206 @@
+/* Approved preview proportions, applied to the existing application controls. */
+@media screen {
+.rd-workflow-path{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin:20px 0 16px}
+.rd-workflow-path button{display:flex;flex-direction:column;gap:6px;align-items:flex-start;text-align:left;padding:22px;border:1px solid #afc5d8;border-radius:10px;background:white;color:#19394f}
+.rd-workflow-path b{font-size:19px;margin-bottom:4px}.rd-workflow-path span{font-size:14px}.rd-workflow-path strong{font-size:16px}
+html body .rd-workflow-path button.active{background:#19394f!important;color:white!important;border-color:#b59a62!important}
+.rd-workflow-legend{display:flex;gap:12px;flex-wrap:wrap;margin:16px 0 22px;font-size:12px}.rd-workflow-legend span{padding:8px 12px;border-radius:20px;background:#e3effb;color:#295e91}.rd-workflow-legend span+span{background:#b59a6222;color:#78602a}
+html[data-preview-theme=night] body .rd-workflow-path button.active{background:#2c5070!important}
+html[data-preview-theme=night] body .rd-workflow-legend span{background:#244765!important}html[data-preview-theme=night] body .rd-workflow-legend span+span{background:#b59a621c!important}
+@media(max-width:600px){.rd-workflow-path{gap:6px}.rd-workflow-path button{padding:12px 8px}.rd-workflow-path b{font-size:14px}.rd-workflow-path span,.rd-workflow-path strong{font-size:11px}}
+}
+@media screen {
+html body .operations-app{display:block;min-height:100dvh;background:#f5f7fa}
+html body .operations-app>.sidebar{position:fixed;inset:0 auto 0 0;width:238px!important;box-sizing:border-box;height:100dvh;min-height:0;padding:24px 14px 16px;border-right:1px solid #ffffff2e;overflow-y:auto;overflow-x:hidden;gap:18px;z-index:140;background:#193248!important}
+html body .operations-app>.operations-main{margin-left:238px!important;width:auto;min-width:0}
+html body.redesign-sidebar-collapsed .operations-app>.operations-main{margin-left:0!important}
+html body .operations-main>.content{width:100%;max-width:1440px;margin:0 auto;padding:26px 28px 44px;box-sizing:border-box}
+html body .operations-header{height:76px;padding:12px 26px;box-sizing:border-box;background:#193248;color:#e6edf4;position:static}
+html body .operations-header .brand{color:#e6edf4;font-size:19.4px}
+html body .operations-header .brand small{color:#b8c9d9;font-size:13px}
+html body .operations-header .logo{background:#b59a62;color:#0c1c2d}
+html body #redesignChrome{position:sticky;top:0;z-index:125;background:#193248;box-shadow:0 2px 8px #0002}
+html body #redesignNav{display:flex;flex-wrap:wrap;gap:4px;padding:7px 10px;margin:0;overflow:visible}
+html body #redesignNav button{flex:1 1 auto;display:inline-flex;justify-content:center;align-items:center;gap:7px;padding:9px 10px;min-width:0;min-height:38px;border:1px solid #ffffff38;border-radius:7px;background:#203c56;color:#e6edf4;font-size:13px;white-space:nowrap}
+html body #redesignNav button[aria-current=page]{background:#2c5070!important;border-color:#b59a62!important;box-shadow:inset 0 -2px #b59a62!important}
+#redesignNav .rd-nav-icon{width:16px;height:16px;flex:none;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+#redesignNav [aria-current=page] .rd-nav-icon{stroke:#d6b773}
+html body #redesignJobName{padding:10px 26px;background:transparent;font-size:13px;border-bottom:1px solid #b59a6238}
+html body .test-environment-banner{padding:5px 26px;font-size:11px;background:#203c56;color:#dfceaa!important;border-bottom:1px solid #b59a6238}
+html body #redesignSidebarToggle{left:223px;top:22px;width:30px;height:32px;font-size:0;z-index:160;display:grid;place-items:center;padding:0;background:#29465e;border:1px solid #b59a62;border-radius:8px}
+#redesignSidebarToggle::before{content:'';width:7px;height:7px;border-left:2px solid white;border-bottom:2px solid white;transform:rotate(45deg)}
+html body.redesign-sidebar-collapsed #redesignSidebarToggle{left:9px;transform:rotate(180deg)}
+html body.redesign-sidebar-collapsed .operations-header{padding-left:52px}
+html body .sidebar .sidebar-jobs{min-height:0;flex:1;overflow:visible}
+html body .sidebar .project-side-list{overflow:visible;max-height:none}
+html body .sidebar .project-side-wrap{border-radius:8px;margin-bottom:9px;background:#12283b!important;border:1px solid transparent}
+html body .sidebar .project-side-wrap.active{outline:1px solid #b59a62;background:#203c56!important}
+html body .sidebar .project-side-colorbar{width:5px}
+html body .sidebar .project-side-main{padding:12px 10px 12px 13px}
+html body .sidebar .project-side-open b{font-size:13px}
+html body .sidebar .project-side-open small{font-size:11px}
+html body .redesign-themes{margin-top:auto;padding:14px 0 0;border-top:1px solid #ffffff25;gap:6px}
+html body .redesign-themes button{background:#203c56;color:#e6edf4;border:1px solid #ffffff38;border-radius:8px;font-size:13px;padding:9px}
+html body .redesign-themes button[aria-pressed=true]{border-color:#b59a62!important;box-shadow:inset 0 -2px #b59a62}
+html body .sidebar-account-wrap{margin-top:0}
+html body .page-title h2{font-size:28px;letter-spacing:-.5px}
+html body .page-title p{font-size:14px;line-height:1.5}
+html body :is(.rd-panel,.rd-cost-card,.rd-calendar){border:1px solid #a7bfd5;border-radius:14px;padding:24px;margin-bottom:22px;box-shadow:0 3px 12px #16344c06}
+.rd-panel h3,.rd-calendar h3,.rd-cost-card h3{font-size:20px;margin:0 0 8px}
+.rd-section-head{display:flex;gap:14px;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap}
+.rd-section-head p{margin:5px 0 0;font-size:14px;color:var(--muted)}
+.rd-filters{display:flex;gap:5px;flex-wrap:wrap}
+.rd-filters button{font-size:13px;padding:8px 13px;border:1px solid #bacbda;border-radius:8px;background:white;color:#19394f;font-weight:700}
+.rd-filters button[aria-pressed=true]{border-color:#b59a62!important;box-shadow:inset 0 -2px #b59a62}
+.rd-task{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:18px 0;border-top:1px solid #a7bfd54d}
+.rd-task h4{margin:0 0 7px;font-size:16px}.rd-task p{font-size:14px;margin:5px 0;line-height:1.5}.rd-task .btn{flex:none}
+.rd-empty{padding:18px 0;font-size:14px;color:var(--muted)}
+.rd-calendar-grid{border-radius:9px;overflow:hidden;border:1px solid #a7bfd5;background:#a7bfd559;gap:1px}
+.rd-calendar-grid>b{font-size:12px;padding:11px;background:#edf2f7;color:#19394f}
+.rd-calendar-day{min-height:105px;padding:9px;background:#fff}.rd-calendar-day>strong{font-size:12px;font-weight:700}
+.rd-calendar-day.rd-outside{background:#f0f3f7}.rd-calendar-day.rd-today>strong{background:#b59a62!important;color:#0c1c2d!important;border-radius:50%;display:inline-grid;place-items:center;width:24px;height:24px}
+.rd-calendar-event{background:color-mix(in srgb,var(--event-color) 24%,white)!important;color:#132a3d!important;border:1px solid var(--event-color)!important;border-left:5px solid var(--event-color)!important;line-height:1.4;font-weight:700;text-align:left}
+.rd-bars.horizontal{margin:18px 0}.rd-bars.horizontal .rd-bar-column{display:grid;grid-template-columns:110px minmax(0,1fr) 110px;gap:16px;align-items:center;margin:20px 0}
+.rd-bars.horizontal .rd-bar-column>span{grid-column:1;grid-row:1;font-size:14px}.rd-bars.horizontal .rd-bar-column>b{grid-column:3;grid-row:1;text-align:right;font-size:16px;font-variant-numeric:tabular-nums}.rd-bars.horizontal .rd-bar-track{grid-column:2;grid-row:1;background:#e6edf4;border-radius:6px;height:22px;overflow:hidden}.rd-bars.horizontal .rd-bar{height:22px;min-width:0}
+html body .rd-bar[data-cost-bar=Baseline]{background:#a5b6ca!important}html body .rd-bar[data-cost-bar=Committed]{background:#61b69d!important}html body .rd-bar[data-cost-bar="Builder cost"]{background:#78afe0!important}
+.rd-dashboard-costs .rd-cost-card{margin:0;padding:0;border:0!important;box-shadow:none!important}.rd-dashboard-costs .rd-cost-card>h3{display:none}
+.rd-dashboard-costs .help-text{font-size:12px;line-height:1.5}
+.rd-extra-reports{margin:24px 0}.rd-extra-reports>summary{cursor:pointer;font-size:14px;padding:14px;border:1px solid #a7bfd5;border-radius:9px}.rd-extra-reports>div{padding-top:20px}
+html body :is(.precon-accordion,.precon-summary-card){border:1px solid #a7bfd5;border-radius:12px;overflow:hidden}
+html body :is(.precon-overview-row,.precon-inline-top){padding:18px 20px}
+html body .precon-overview-copy h3{font-size:17px}
+html body :is(.precon-accordion-chevron,.po-chevron){display:grid;place-items:center;line-height:1;width:30px;height:30px;border:1px solid #b59a6280;border-radius:7px;font-size:24px;flex:none}
+html body :is(input,textarea,select){font-size:14px}
+html body :is(.po-body,.jj-split-body){padding:18px}
+html body .jj-split-line{padding:18px;border-radius:10px}
+html body :is(.po-head,.jj-split-line>.section-head){padding:16px 18px;border-radius:10px 10px 0 0}
+html body .po{border-radius:12px;overflow:hidden}
+html body .po.jj-po-approved{border:1px solid #79a7d3!important}
+html body .po.jj-po-approved.jj-po-sub{border-color:#b59a62!important}
+html body .po.jj-po-approved>.po-head{background:#e3effb!important}
+html body .po.jj-po-approved.jj-po-sub>.po-head{background:#b59a621c!important}
+html body :is(.jj-work-controls,.jj-inline-title,.jj-description,.jj-split-amounts label){border-radius:8px}
+html body :is([data-wp=stage-approve],[data-wp=complete],[data-wp=pay],.continue-btn){background:#b59a62!important;color:#0c1c2d!important;border-color:#c5ab73!important}
+html body input[type=checkbox]{accent-color:#b59a62!important;width:17px;height:17px;flex:none}
+html body #jj-workpay .table-wrap{border:1px solid #a7bfd5;border-radius:12px;overflow:auto}
+html body #jj-workpay th{font-size:12px;letter-spacing:.6px;text-transform:uppercase;background:#f1f5f8}
+html body #jj-workpay td{font-size:14px;padding:15px 12px}
+@media(hover:hover){html body :is(#rd-hover#rd-priority,button,select,input:not([type=checkbox]):not([type=radio]):not([readonly]),textarea:not([readonly])):not(:disabled):hover{outline:1px solid #b59a62!important;outline-offset:1px;background-color:#e6f0fa!important}}
+html[data-preview-theme=night] body .operations-app{background:#0c1c2d}
+html[data-preview-theme=night] body :is(#rd-night#rd-priority,.rd-panel,.rd-calendar,.rd-cost-card,.precon-accordion,.precon-summary-card,.precon-inline-body,.pc-checklist,.pc-row,.precon-overview-shell,.jj-split-body,.jj-split-line){background:#172f47!important;border-color:#ffffff40!important}
+html[data-preview-theme=night] body :is(#rd-night#rd-priority,.precon-overview-row,.precon-inline-top,.checkpoint-title,.pc-checkpoint-title,.precon-summary-top){background:#203c56!important;color:#e6edf4!important}
+html[data-preview-theme=night] body :is(#rd-night#rd-priority,.rd-calendar-grid>b,#jj-workpay th){background:#203c56!important;color:#dbe7f1!important}
+html[data-preview-theme=night] body .rd-calendar-day{background:#182f44!important}.rd-calendar-day.rd-outside{opacity:.65}
+html[data-preview-theme=night] body .rd-calendar-event{background:color-mix(in srgb,var(--event-color) 38%,#172f47)!important;color:white!important}
+html[data-preview-theme=night] body .rd-bar-track{background:#102336!important}
+html[data-preview-theme=night] body .rd-bar[data-cost-bar=Baseline]{background:#a5b6ca!important}html[data-preview-theme=night] body .rd-bar[data-cost-bar=Committed]{background:#61b69d!important}html[data-preview-theme=night] body .rd-bar[data-cost-bar="Builder cost"]{background:#78afe0!important}
+html[data-preview-theme=night] body :is(#rd-night#rd-priority,.po.jj-po-approved>.po-head,.jj-split-approved-house>.section-head){background:#244765!important}
+html[data-preview-theme=night] body :is(#rd-night#rd-priority,.po.jj-po-approved.jj-po-sub>.po-head,.jj-split-approved-sub>.section-head){background:#b59a621c!important}
+html[data-preview-theme=night] body :is(#rd-night#rd-priority,[data-wp=stage-approve],[data-wp=complete],[data-wp=pay],.continue-btn){background:#b59a62!important;color:#0c1c2d!important}
+@media(hover:hover){html[data-preview-theme=night] body :is(#rd-hover#rd-priority,button,select,input:not([type=checkbox]):not([type=radio]):not([readonly]),textarea:not([readonly])):not(:disabled):hover{background-color:#29475f!important;outline-color:#b59a62!important}}
+@media(max-width:900px){html body .operations-app>.operations-main{margin-left:0!important}html body .operations-app>.sidebar{display:flex!important;transform:translateX(-100%)}html body.redesign-sidebar-open .operations-app>.sidebar{transform:translateX(0)}html body #redesignSidebarToggle{left:9px;transform:rotate(180deg)}html body.redesign-sidebar-open #redesignSidebarToggle{left:223px;transform:none}html body .operations-header{padding-left:52px}html body .operations-main>.content{padding:20px 18px 36px}}
+@media(max-width:600px){html body #redesignNav{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}html body #redesignNav button{white-space:normal;font-size:11.9px;padding:8px 5px;gap:4px}html body :is(.rd-panel,.rd-calendar,.rd-cost-card){padding:16px}.rd-calendar-day{min-height:76px;padding:4px}.rd-calendar-event{font-size:10px;padding:4px}.rd-bars.horizontal .rd-bar-column{grid-template-columns:80px minmax(0,1fr) 85px;gap:8px}.rd-bars.horizontal .rd-bar-column>b{font-size:13px}.rd-task{align-items:flex-start;flex-wrap:wrap}}
+}
+/* Costing: approved reference hierarchy and shared chart scale. */
+@media screen{
+#redesign-costing>.toolbar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+#redesign-costing>.toolbar button{padding:10px 16px;border:1px solid #a7bfd5;border-radius:10px;background:white;color:#19394f;font-size:14px;font-weight:750;cursor:pointer}
+#redesign-costing>.toolbar button[aria-pressed=true]{background:#e7eef5;border-color:#b59a62;box-shadow:inset 0 -2px #b59a62}
+html body .rd-reference-cost{border-radius:22px;padding:28px}
+.rd-cost-head{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap}
+.rd-cost-head .eyebrow{font-size:12px;letter-spacing:.08em;overflow-wrap:anywhere}
+.rd-cost-head h3{font-size:21px;margin:12px 0 10px}
+.rd-reserve-line{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.rd-reserve-line>strong{font-size:40px;letter-spacing:-1.4px;line-height:1.15}
+.rd-cost-status,.rd-cost-team{display:inline-block;padding:7px 11px;border-radius:18px;font-size:12px;font-weight:750;background:#e8eef4;color:#284158}
+.rd-cost-status.positive{background:#e2f2e9;color:#236044}.rd-cost-status.negative{background:#f9e6e7;color:#922f40}
+.rd-cost-plot{display:grid;grid-template-columns:76px minmax(0,1fr);gap:10px;margin:42px 0 22px}
+.rd-cost-axis{height:260px;display:flex;flex-direction:column;justify-content:space-between;font-size:11px;color:#657789;font-variant-numeric:tabular-nums}
+.rd-cost-columns{height:260px;display:flex;align-items:flex-end;justify-content:space-around;gap:18px;background:repeating-linear-gradient(to top,transparent 0,transparent calc(25% - 1px),#a7bfd53d calc(25% - 1px),#a7bfd53d 25%);border-bottom:1px solid #a7bfd5}
+.rd-cost-column{position:relative;width:19%;max-width:85px;border-radius:8px 8px 0 0;flex:none}
+.rd-cost-column>b{position:absolute;top:-25px;left:50%;transform:translateX(-50%);white-space:nowrap;font-size:13px}
+.rd-cost-captions{display:flex;justify-content:space-around;gap:10px;margin-top:14px}
+.rd-cost-captions>div{width:30%;text-align:center;font-size:13px}.rd-cost-captions small{display:block;font-size:11px;color:#657789;margin-top:7px}
+.rd-reference-cost [data-cost-bar=Baseline]{background:#a5b6ca!important}
+.rd-reference-cost [data-cost-bar=Committed]{background:linear-gradient(90deg,#277d60,#59b891)!important}
+.rd-reference-cost [data-cost-bar="Builder cost"]{background:linear-gradient(90deg,#365e80,#78afe0)!important}
+.rd-cost-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;border-top:1px solid #a7bfd54d;padding-top:22px;margin-top:24px}
+.rd-cost-metrics span{display:block;font-size:13px;color:#657789;margin-bottom:8px}.rd-cost-metrics b{font-size:24px;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.rd-cost-explanation{padding:14px;background:#edf5f0;color:#315d4a;border-radius:10px;font-size:14px;margin:24px 0 12px}
+.rd-cost-hrow{margin:22px 0}.rd-cost-hrow>div:first-child{display:flex;justify-content:space-between;gap:10px;font-size:14px;margin-bottom:9px}.rd-cost-hrow small{font-size:12px;color:#657789}.rd-cost-htrack{height:18px;background:#e8eef4;border-radius:6px}.rd-cost-htrack i{display:block;height:100%;border-radius:6px}
+.rd-cost-xticks{display:flex;justify-content:space-between;font-size:11px;color:#657789}
+html[data-preview-theme=night] body :is(#rd-night#rd-priority,.rd-cost-team,.rd-cost-status.neutral){background:#29445d!important;color:#e6edf4!important}
+html[data-preview-theme=night] body :is(#rd-night#rd-priority,.rd-cost-status.positive){background:#285346!important;color:#d4f4e3!important}
+html[data-preview-theme=night] body :is(#rd-night#rd-priority,.rd-cost-status.negative){background:#49313d!important;color:#ffd0d5!important}
+html[data-preview-theme=night] body :is(#rd-night#rd-priority,.rd-cost-explanation){background:#203c56!important;color:#e6edf4!important}
+html[data-preview-theme=night] body :is(#rd-night#rd-priority,.rd-cost-htrack){background:#29445d!important}
+html[data-preview-theme=night] body :is(#rd-night#rd-priority,.rd-cost-axis,.rd-cost-xticks,.rd-cost-metrics span,.rd-cost-hrow small,.rd-cost-captions small){color:#b8c9d9!important}
+@media(max-width:600px){html body .rd-reference-cost{padding:18px}.rd-reserve-line>strong{font-size:32px}.rd-cost-plot{grid-template-columns:58px minmax(0,1fr);gap:6px}.rd-cost-column>b{font-size:10px}.rd-cost-columns{gap:8px}.rd-cost-captions{gap:4px}.rd-cost-captions>div{font-size:11px}.rd-cost-metrics{gap:9px}.rd-cost-metrics b{font-size:18px}.rd-cost-hrow small{display:block}}
+}
+@media screen{
+html body .rd-reference-calendar{padding:28px;border-radius:18px}
+.rd-calendar-heading{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;padding-bottom:22px;border-bottom:1px solid #a7bfd54d}
+.rd-calendar-heading h3{font-size:28px;margin:6px 0 0;letter-spacing:-.7px}
+.rd-calendar-paging,.rd-calendar-views,.rd-calendar-feed{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.rd-calendar-controls{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;padding-top:20px}
+.rd-reference-calendar :is(.rd-calendar-heading button,.rd-calendar-controls button,.rd-calendar-settings summary){padding:11px 16px;font-size:14px;font-weight:750;border:1px solid #a7bfd5;border-radius:9px;background:#fff;color:#19394f;cursor:pointer}
+.rd-calendar-views button[aria-pressed=true]{box-shadow:inset 0 -2px #b59a62;border-color:#b59a62}
+.rd-calendar-status{font-size:12px;color:#657789;padding-bottom:15px;border-bottom:1px solid #a7bfd54d}
+.rd-calendar-legend{display:flex;flex-wrap:wrap;gap:16px;padding:7px 0 17px;font-size:13px}
+.rd-calendar-legend span{display:flex;align-items:center;gap:7px}.rd-calendar-legend i{display:inline-block;width:16px;height:16px;border-radius:4px;border:1px solid #ffffff40}
+.rd-reference-calendar .rd-calendar-grid{border-radius:10px;overflow:hidden;gap:1px}
+.rd-reference-calendar .rd-calendar-grid>b{text-align:left;padding:12px;font-size:13px}
+.rd-reference-calendar .rd-calendar-day{min-height:112px;padding:10px}
+.rd-reference-calendar .rd-week-grid .rd-calendar-day{min-height:260px}
+.rd-calendar-settings{position:relative}.rd-calendar-settings>div{position:absolute;right:0;top:calc(100% + 6px);z-index:30;min-width:220px;padding:12px;display:grid;gap:8px;border:1px solid #a7bfd5;background:white;border-radius:10px;box-shadow:0 8px 28px #0003}
+.rd-calendar-list-title{font:inherit;font-weight:750;padding:6px;border:0;border-radius:6px;text-align:left;cursor:pointer}
+html[data-preview-theme=night] body :is(#rd-night#rd-priority,.rd-calendar-settings summary,.rd-calendar-settings>div){background:#203c56!important;color:#e6edf4!important;border-color:#ffffff40!important}
+html[data-preview-theme=night] body :is(#rd-night#rd-priority,.rd-calendar-status){color:#b8c9d9!important}
+html[data-preview-theme=night] body :is(#rd-night#rd-priority,.rd-calendar-views button[aria-pressed=true]){background:#2c5070!important;border-color:#b59a62!important}
+@media(max-width:600px){html body .rd-reference-calendar{padding:15px}.rd-calendar-heading h3{font-size:23px}.rd-reference-calendar .rd-calendar-day{padding:5px;min-height:86px}.rd-reference-calendar .rd-calendar-grid>b{padding:8px 3px;font-size:11px}.rd-reference-calendar :is(.rd-calendar-heading button,.rd-calendar-controls button,.rd-calendar-settings summary){padding:9px 11px;font-size:12px}}
+}
+/* Reference recording: compact outlined P.O. editors and quieter summaries. */
+@media screen{
+html body #paybyline .jj-split-body{padding:16px}
+html body #paybyline .jj-split-line{padding:14px;border-radius:10px;margin-top:12px}
+html body #paybyline .jj-split-line>.section-head{padding:8px 10px;margin:0 0 12px;border-radius:7px;font-size:13px}
+html body #paybyline .jj-title-description{display:block}
+html body #paybyline .jj-inline-title{display:flex;align-items:center;gap:10px;padding:0;background:transparent!important;margin-bottom:9px}
+html body #paybyline .jj-inline-title>span,html body #paybyline .jj-inline-title>small{font-size:12px;white-space:nowrap}
+html body #paybyline .jj-inline-title>input{flex:1;min-width:0}
+html body #paybyline .jj-inline-title h3{font-size:17px;margin:0}
+html body #paybyline .jj-split-line label{font-size:12px;line-height:1.45}
+html body #paybyline .jj-split-line :is(input:not([type=checkbox]),select){min-height:36px;padding:8px 10px;font-size:14px;border-radius:7px}
+html body #paybyline .jj-split-line textarea{min-height:70px;height:76px;padding:10px;font-size:14px;border-radius:7px}
+html body #paybyline .jj-split-amounts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:13px 0;align-items:end}
+html body #paybyline .jj-split-totals{gap:10px}
+html body #paybyline .jj-split-totals>div{padding:12px;border-radius:9px}
+html body #paybyline .jj-split-footer{display:flex;justify-content:flex-end;align-items:center;gap:9px;margin-top:12px}
+html body #paybyline [data-autosave-status]{margin-right:auto;font-size:12px}
+html body #paybyline .jj-payout-reference{font-size:11px;padding:6px 0;background:transparent!important}
+html body #paybyline .rd-workflow-path button{padding:18px}
+html body #paybyline .po-hub-summary-info .po-hub-info-box{padding:12px}
+@media(max-width:600px){html body #paybyline .jj-split-body{padding:10px}html body #paybyline .jj-split-line{padding:10px}html body #paybyline .jj-split-amounts{gap:8px}}
+}
+
+@media screen {
+.jj-split-parent .jj-split-id{display:block;margin-top:3px;font-size:11px}
+.jj-split-parent .jj-split-open-label{padding:7px 9px;border:1px solid #8da0b266;border-radius:8px;font-size:10px;font-weight:700}
+}
+
+/* One continuous task bar across adjacent scheduled days. */
+html body .rd-span-calendar .rd-calendar-week{grid-column:1 / -1;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));position:relative;min-height:112px;gap:3px 0;isolation:isolate}
+html body .rd-span-calendar .rd-calendar-day{min-height:0;border-right:1px solid #8193a455;padding:7px;z-index:0}
+html body .rd-span-calendar .rd-calendar-span{z-index:1;position:relative;min-width:0;width:auto;margin:0 3px;padding:6px 8px;align-self:stretch;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;border-radius:6px;font-size:12px;line-height:1.4}
+@media(max-width:600px){html body .rd-span-calendar .rd-calendar-span{font-size:10px;padding:5px 3px;margin:0 1px}}
+
+html body .rd-span-calendar .rd-calendar-span{white-space:normal;text-align:left}
+html body .rd-calendar-span .rd-calendar-job-name{display:block;font-weight:800;line-height:1.3;overflow-wrap:anywhere;margin-bottom:3px}
+html body .rd-calendar-span .rd-calendar-task-name{display:block;font-weight:500;line-height:1.3;overflow-wrap:anywhere}
+
+.rd-calendar-expansion{display:flex;gap:6px;flex-wrap:wrap}
+html body .rd-items-collapsed .rd-calendar-span :is(.rd-calendar-job-name,.rd-calendar-task-name){white-space:nowrap;overflow:hidden;text-overflow:ellipsis;overflow-wrap:normal}
+html body .rd-items-collapsed .rd-calendar-list-item>div{min-width:0;width:100%}
+html body .rd-items-collapsed .rd-calendar-list-item :is(button,p){display:block;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+html body .rd-items-expanded .rd-calendar-list-item :is(button,p){white-space:normal;overflow-wrap:anywhere}
+.rd-calendar-expansion button[aria-pressed=true]{box-shadow:inset 0 -3px #b49a60}

@@ -34,17 +34,12 @@ window.JJProduct = (() => {
 
 /* Load the clean v82 selection runtime as one concatenated program. The pieces
    are split only so GitHub updates remain small/reliable; they execute together. */
-window.__JJ_SELECTIONS_V82_LOADING__ = /homeowner\.html$/i.test(location.pathname) ? Promise.resolve() : Promise.all(
-  Array.from({length:18},(_,i)=>`selections-v82/part-${String(i+1).padStart(2,'0')}.txt`)
-    .map(path=>fetch(path,{cache:'no-cache'}).then(response=>{
-      if(!response.ok) throw new Error(`Could not load ${path}: ${response.status}`);
-      return response.text();
-    }))
-).then(parts=>{
-  const source=parts.join('')+'\n//# sourceURL=jj-selections-v82-runtime.js';
-  (0,eval)(source);
-  window.__JJ_SELECTIONS_V82_READY__=true;
-  window.dispatchEvent(new CustomEvent('jj-selections-v82-ready'));
+window.__JJ_SELECTIONS_V82_LOADING__ = /homeowner\.html$/i.test(location.pathname) ? Promise.resolve() : new Promise((resolve,reject)=>{
+  const script=document.createElement('script');
+  script.src=new URL('selections-runtime.js?v=20260924-saveguard',document.currentScript.src).href;
+  script.onload=()=>{window.__JJ_SELECTIONS_V82_READY__=true;window.dispatchEvent(new CustomEvent('jj-selections-v82-ready'));resolve();};
+  script.onerror=()=>reject(new Error('Could not load the Selections runtime. Refresh the test app.'));
+  document.head.append(script);
 }).catch(error=>{
   console.error('J&J selections v82 failed to load',error);
   window.__JJ_SELECTIONS_V82_ERROR__=String(error?.message||error);

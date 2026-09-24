@@ -1,6 +1,7 @@
 <!doctype html>
 <html lang="en">
-<head>
+<head><script src="release-environment.js"></script>
+<script>try{document.documentElement.dataset.previewTheme=localStorage.getItem("jj_test_design_theme")==="night"?"night":"current"}catch{}</script>
 <script>
 // Old customer links must never display the staff app shell.
 if (/^#homeowner=/.test(location.hash)) {
@@ -4564,7 +4565,7 @@ body.topbar-collapsed .operations-app > .sidebar{top:0;min-height:100vh}
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"
   onerror="this.onerror=null;this.src='https://unpkg.com/@supabase/supabase-js@2';"></script>
-</head>
+<link rel="stylesheet" href="redesign.css"><link rel="stylesheet" href="design-alignment.css?v=20260924-calendar-expand"><link rel="stylesheet" href="night-complete.css"></head>
 <body>
 
 <div id="issuesQuickView" class="issues-quick-view hidden">
@@ -4625,8 +4626,8 @@ body.topbar-collapsed .operations-app > .sidebar{top:0;min-height:100vh}
   <div class="login-card">
     <div class="login-logo">J&J</div>
     <div class="eyebrow">J&J Home Renovations</div>
-    <h2>Sign in</h2>
-    <p>Sign in with your J&J account. The app automatically opens as Jony, Adair, or Gio based on the account you use.</p>
+    <h2>J&J sign-in</h2>
+    <p>Sign in with your existing J&J account to load your saved jobs.</p>
 
     <input id="cloudEmail" class="input" type="email" autocomplete="username" placeholder="Email">
     <input id="cloudPassword" class="input" type="password" autocomplete="current-password" placeholder="Password" style="margin-top:8px">
@@ -4865,8 +4866,7 @@ const PRECON_SECTIONS = [
       'Customer contact information is correct',
       'Photos, measurements, estimates and sales notes uploaded',
       'Potential problem areas communicated',
-      'Handoff drawings / sketches to Project Coordinator',
-      'Have 3D renderings ready, or clearly hand off rendering needs to the Project Coordinator',
+      'Handoff permit drawings to Project Coordinator',
       'Project Coordinator notified that job is ready for review'
     ]
   },
@@ -4909,7 +4909,6 @@ const PRECON_SECTIONS = [
       'Verify product compatibility',
       'Verify selections match project scope',
       'Compare selections to allowances',
-      'Identify upgrades / credits',
       'Approve or deny subcontractor bids',
       'Update proposal if needed',
       'Send final proposal',
@@ -4931,7 +4930,9 @@ const PRECON_SECTIONS = [
       'Establish work sequence and assign P.O.s',
       'Determine demo requirements',
       'Determine protection / setup requirements',
-      'Determine crew size',
+      'Plan schedule',
+      'Order shower fixture early when applicable',
+      'Order exhaust fan early when applicable',
       'Identify specialty trades',
       'Identify plumbing needs',
       'Identify electrical needs',
@@ -5113,7 +5114,7 @@ function loadLocalState(){
   }
 }
 
-let state = loadLocalState() || structuredClone(defaultState);
+let state = loadLocalState() || {...structuredClone(defaultState),projects:[],selectedProjectId:null};
 let projectTab='overview';
 let openPreconSection=0;
 let openPreconAccordion=null;
@@ -5452,14 +5453,17 @@ function ensurePreconData(){
       p.preconData.forEach((s,si)=>{
         const definition=PRECON_SECTIONS[si];
         if(!Array.isArray(s.items)) s.items=[];
-        definition.items.forEach((itemText,ii)=>{
-          if(!s.items[ii]) s.items[ii]={text:itemText,done:false,notes:''};
-          s.items[ii].text=itemText;
-          if(typeof s.items[ii].done!=='boolean') s.items[ii].done=false;
-          if(typeof s.items[ii].notes!=='string') s.items[ii].notes='';
-          if(typeof s.items[ii].checkedBy!=='string') s.items[ii].checkedBy='';
+        const aliases={'Handoff permit drawings to Project Coordinator':'Handoff drawings / sketches to Project Coordinator','Plan schedule':'Determine crew size'};
+        const existing=new Map(s.items.map(item=>[item.text,item]));
+        const used=new Set();
+        s.items=definition.items.map(text=>{
+          const old=existing.get(text)||existing.get(aliases[text]);
+          if(old)used.add(old.text);
+          return {...(old||{}),text,done:old?.done===true,notes:String(old?.notes||''),checkedBy:String(old?.checkedBy||'')};
         });
-        s.items=s.items.slice(0,definition.items.length);
+        if(s.status==='Complete'&&s.items.some(item=>!existing.has(item.text)&&!existing.has(aliases[item.text])&&!item.done)){s.previousCheckpoint={status:s.status,date:s.date,initials:s.initials};s.status='Open Issue';s.nextAction=s.nextAction||'Review newly added checklist items';}
+        const removed=[...existing.values()].filter(item=>!used.has(item.text));
+        if(removed.length){s.archivedItems||=[];for(const item of removed)if(!s.archivedItems.some(a=>a.text===item.text))s.archivedItems.push(item);}
         if(typeof s.status!=='string') s.status='';
         if(typeof s.nextAction!=='string') s.nextAction='';
         if(typeof s.followupBy!=='string') s.followupBy='';
@@ -5474,7 +5478,7 @@ function ensurePreconData(){
 }
 ensurePreconData();
 
-function selectedProject(){ return state.projects.find(p=>p.id===state.selectedProjectId) || state.projects[0]; }
+function selectedProject(){ return state.projects.find(p=>String(p.id)===String(state.selectedProjectId)) || state.projects[0]; }
 function avg(arr){ return arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : 0; }
 function money(v){ return '$'+Number(v||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}); }
 function sectionPct(p,i){
@@ -5690,7 +5694,7 @@ function openProjectFromSidebar(id){
   const currentPage=document.querySelector('.page.active')?.id;
 
   if(currentPage==='preconstruction'){
-    state.selectedProjectId=Number(id);
+    state.selectedProjectId=state.projects.find(p=>String(p.id)===String(id))?.id ?? id;
     openPreconSection=0;
     openPreconAccordion=null;
     preconView='overview';
@@ -5702,7 +5706,7 @@ function openProjectFromSidebar(id){
   }
 
   if(currentPage==='selections'){
-    state.selectedProjectId=Number(id);
+    state.selectedProjectId=state.projects.find(p=>String(p.id)===String(id))?.id ?? id;
     saveState(false);
     renderAll();
     openSelections();
@@ -5711,7 +5715,7 @@ function openProjectFromSidebar(id){
 
   if(currentPage==='paybyline' || currentPage==='estimates'){
     const keepView=poHubView==='estimate'?'estimate':'splits';
-    state.selectedProjectId=Number(id);
+    state.selectedProjectId=state.projects.find(p=>String(p.id)===String(id))?.id ?? id;
     poHubView=keepView;
     openPOIds.clear();
     deletePOIndex=null;
@@ -5727,13 +5731,13 @@ function openProjectFromSidebar(id){
     return;
   }
 
-  openProject(Number(id));
+  openProject(state.projects.find(p=>String(p.id)===String(id))?.id ?? id);
 }
 
 
 function requestDeleteProject(id,event){
   if(event) event.stopPropagation();
-  deleteProjectPendingId=Number(id);
+  deleteProjectPendingId=id;
   buildProjectSidebar();
 }
 
@@ -5753,12 +5757,12 @@ function confirmDeleteProject(id,event){
     return;
   }
 
-  const project=state.projects.find(p=>Number(p.id)===Number(id));
+  const project=state.projects.find(p=>String(p.id)===String(id));
   if(!project) return;
 
-  state.projects=state.projects.filter(p=>Number(p.id)!==Number(id));
+  state.projects=state.projects.filter(p=>String(p.id)!==String(id));
 
-  if(Number(state.selectedProjectId)===Number(id)){
+  if(String(state.selectedProjectId)===String(id)){
     state.selectedProjectId=state.projects[0].id;
   }
 
@@ -5807,7 +5811,7 @@ function renderNewProjectColors(selected='navy'){
     <button
       type="button"
       class="new-project-color ${c.key===selected?'selected':''}"
-      style="background:${c.hex}"
+      style="--swatch-color:${c.hex};background:${c.hex}"
       title="${c.label}"
       onclick="selectNewProjectColor('${c.key}')">
     </button>
@@ -5927,12 +5931,12 @@ function projectColorHex(key){
 }
 function toggleProjectColorMenu(id,event){
   if(event) event.stopPropagation();
-  openProjectColorMenu = Number(openProjectColorMenu)===Number(id) ? null : Number(id);
+  openProjectColorMenu = String(openProjectColorMenu)===String(id) ? null : id;
   buildProjectSidebar();
 }
 function setProjectColor(id,colorKey,event){
   if(event) event.stopPropagation();
-  const p=state.projects.find(x=>Number(x.id)===Number(id));
+  const p=state.projects.find(x=>String(x.id)===String(id));
   if(!p) return;
   p.color=colorKey;
   openProjectColorMenu=null;
@@ -5951,24 +5955,24 @@ function buildProjectSidebar(){
 
   list.innerHTML = state.projects.map(p=>{
     const pct=projectPct(p);
-    const isActive=Number(p.id)===Number(state.selectedProjectId);
-    const menuOpen=Number(openProjectColorMenu)===Number(p.id);
+    const isActive=String(p.id)===String(state.selectedProjectId);
+    const menuOpen=String(openProjectColorMenu)===String(p.id);
     const color=projectColorHex(p.color);
 
     return `<div class="project-side-wrap ${isActive?'active':''} ${menuOpen?'menu-open':''}" style="--project-color:${color}">
       <div class="project-side-colorbar" style="background:${color}"></div>
 
       <div class="project-side-main">
-        <button class="project-side-open" onclick="openProjectFromSidebar(${p.id})">
-          <b><span class="project-color-dot" style="background:${color}"></span>${p.name}</b>
-          <small>${p.type}</small>
+        <button class="project-side-open" onclick="openProjectFromSidebar(${esc(JSON.stringify(p.id))})">
+          <b><span class="project-color-dot" style="background:${color}"></span>${esc(p.name)}</b>
+          <small>${esc(p.type)}</small>
           <div class="project-side-status">
             <span>${p.issues} open issue${p.issues===1?'':'s'}</span>
             <strong>${pct}%</strong>
           </div>
         </button>
 
-        <button class="project-side-menu-btn" title="Project color" onclick="toggleProjectColorMenu(${p.id},event)">
+        <button class="project-side-menu-btn" title="Project color" onclick="toggleProjectColorMenu(${esc(JSON.stringify(p.id))},event)">
           ${menuOpen?'▲':'▼'}
         </button>
       </div>
@@ -5979,21 +5983,21 @@ function buildProjectSidebar(){
           ${PROJECT_COLORS.map(c=>`
             <button
               class="project-color-option ${p.color===c.key?'selected':''}"
-              style="background:${c.hex}"
+              style="--swatch-color:${c.hex};background:${c.hex}"
               title="${c.label}"
-              onclick="setProjectColor(${p.id},'${c.key}',event)">
+              onclick="setProjectColor(${esc(JSON.stringify(p.id))},'${c.key}',event)">
             </button>
           `).join('')}
         </div>
         <div class="project-color-label">${PROJECT_COLORS.find(c=>c.key===p.color)?.label || 'Navy'}</div>
 
         <div class="project-delete-area">
-          ${Number(deleteProjectPendingId)===Number(p.id)
+          ${String(deleteProjectPendingId)===String(p.id)
             ? `<div class="project-delete-confirm">
-                 <button class="project-delete-btn" onclick="confirmDeleteProject(${p.id},event)">Confirm Delete</button>
+                 <button class="project-delete-btn" onclick="confirmDeleteProject(${esc(JSON.stringify(p.id))},event)">Confirm Delete</button>
                  <button class="btn btn-light" onclick="cancelDeleteProject(event)">Cancel</button>
                </div>`
-            : `<button class="project-delete-btn" onclick="requestDeleteProject(${p.id},event)">Delete Job</button>`
+            : `<button class="project-delete-btn" onclick="requestDeleteProject(${esc(JSON.stringify(p.id))},event)">Delete Job</button>`
           }
         </div>
       </div>
@@ -6005,8 +6009,8 @@ function go(id){
   document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
   document.getElementById(id).classList.add('active');
   buildNav();
-  window.scrollTo({top:0,behavior:'smooth'});
 }
+
 
 function openProject(id){
   state.selectedProjectId=id;
@@ -6098,7 +6102,7 @@ function importAppBackup(input){
       if(typeof ensurePreconData==='function') ensurePreconData();
       if(typeof ensureSelectionsData==='function') ensureSelectionsData();
 
-      if(!state.projects.some(project=>Number(project.id)===Number(state.selectedProjectId))){
+      if(!state.projects.some(project=>String(project.id)===String(state.selectedProjectId))){
         state.selectedProjectId=state.projects[0]?.id ?? null;
       }
 
@@ -6146,6 +6150,7 @@ const BUILT_IN_CLOUD_CONFIG={
   key:'sb_publishable_n5w6Q2b1nvsnOEcYZL2fsQ_u0gGltVk'
 };
 const CLOUD_ORG_ID='jj-home-renovations';
+let cloudLoadedForUser=null;
 let cloudClient=null;
 let cloudChannel=null;
 let cloudSaveTimer=null;
@@ -6299,6 +6304,7 @@ async function saveCloudSetup(){ return; }
 
 async function cloudSignOut(){
   try{
+    cloudLoadedForUser=null;
     if(cloudClient) await cloudClient.auth.signOut();
   }catch(e){
     console.error('Sign out failed',e);
@@ -6555,14 +6561,17 @@ async function cloudSignIn(){
 
   if(msg) msg.textContent='Signing in…';
 
-  const {data,error}=await cloudClient.auth.signInWithPassword({email,password});
-  if(error){
-    if(msg) msg.textContent=error.message;
-    return;
+  try{
+    const {data,error}=await cloudClient.auth.signInWithPassword({email,password});
+    if(error) throw error;
+    if(!data?.user) throw new Error('Sign-in did not return an account. Please retry.');
+    await finishCloudLogin(data.user);
+    if(msg) msg.textContent='';
+  }catch(error){
+    document.getElementById('cloudLoginOverlay')?.classList.remove('hidden');
+    if(msg) msg.textContent=error.message||'Could not load the test app. Please try again.';
+    setCloudStatus('Sign-in incomplete','offline');
   }
-
-  if(msg) msg.textContent='';
-  await finishCloudLogin(data.user);
 }
 
 
@@ -6625,11 +6634,12 @@ async function finishCloudLogin(user){
     state.currentUser='Jony';
   }
 
+
+
+  await loadCloudState();
   document.getElementById('cloudLoginOverlay')?.classList.add('hidden');
   document.getElementById('loginOverlay')?.classList.add('hidden');
   document.getElementById('passwordResetOverlay')?.classList.add('hidden');
-
-  await loadCloudState();
 
   // loadCloudState may contain an older currentUser saved in shared state.
   // Re-apply the authenticated account AFTER cloud state loads so iPad/desktop
@@ -6644,7 +6654,10 @@ async function finishCloudLogin(user){
   setCloudStatus('Live','saved');
 }
 async function loadCloudState(){
-  if(!cloudClient) return;
+  cloudLoadedForUser=null;
+  if(!cloudClient) throw new Error('Sign in before loading live data.');
+  const {data:{user:loadingUser}}=await cloudClient.auth.getUser();
+  if(!loadingUser) throw new Error('Sign in before loading live data.');
 
   setCloudStatus('Syncing','saving');
 
@@ -6659,8 +6672,9 @@ async function loadCloudState(){
     throw error;
   }
 
-  if(data?.state){
+  if(data?.state && Array.isArray(data.state.projects)){
     cloudApplying=true;
+    try{
 
     const sessionUser=state.currentUser;
     state=data.state;
@@ -6673,10 +6687,11 @@ async function loadCloudState(){
     ensurePreconData();
     persistStateLocally();
     cloudBaseState=sharedCloudState(state);
-    cloudApplying=false;
+    }finally{cloudApplying=false;}
     cloudLastRemoteAt=Date.parse(data.updated_at||0)||Date.now();
+    cloudLoadedForUser=loadingUser.id;
   }else{
-    await pushCloudState();
+    throw new Error('Existing live data could not be found. Saving is blocked. Do not import a backup; check the connection and account first.');
   }
 }
 
@@ -6801,7 +6816,7 @@ function subscribeCloudState(){
 }
 
 function queueCloudSave(){
-  if(cloudApplying || !cloudClient) return;
+  if(cloudApplying || !cloudClient || !cloudLoadedForUser) return;
   cloudSaveQueued=true;
   clearTimeout(cloudSaveTimer);
   setCloudStatus('Saving…','saving');
@@ -6809,7 +6824,7 @@ function queueCloudSave(){
 }
 
 async function pushCloudState(){
-  if(cloudApplying || !cloudClient) return;
+  if(cloudApplying || !cloudClient || !cloudLoadedForUser) return;
   if(cloudSaveInFlight){
     cloudSaveQueued=true;
     return;
@@ -6824,6 +6839,7 @@ async function pushCloudState(){
       return;
     }
 
+    if(user.id!==cloudLoadedForUser) throw new Error('Reload the existing live data before saving with this account.');
     const localUserName=state.currentUser;
 
     // Re-read the row before writing. If another browser saved first, merge
@@ -6834,6 +6850,7 @@ async function pushCloudState(){
       .eq('org_id',CLOUD_ORG_ID)
       .maybeSingle();
     if(latestError) throw latestError;
+    if(!latest?.state || !Array.isArray(latest.state.projects)){cloudLoadedForUser=null;throw new Error('Live data is missing or invalid. Saving is blocked.');}
 
     let sharedState=sharedCloudState(state);
     if(latest?.state){
@@ -6863,7 +6880,7 @@ async function pushCloudState(){
       write=write.update(row).eq('org_id',CLOUD_ORG_ID);
       write=latest.updated_at==null?write.is('updated_at',null):write.eq('updated_at',latest.updated_at);
     }else{
-      write=write.insert(row);
+      throw new Error('Creating replacement live data is disabled.');
     }
     const {data:saved,error}=await write.select('state,updated_at').maybeSingle();
     if(error) throw error;
@@ -6942,7 +6959,7 @@ function projectNextAction(p){
       title:`${reviewPOs.length} P.O.${reviewPOs.length===1?'':'s'} need your review`,
       detail:'One approval is still needed',
       label:'Review P.Os',
-      action:`openProjectPOHub(${p.id},'splits')`
+      action:`openProjectPOHub(${esc(JSON.stringify(p.id))},'splits')`
     };
   }
 
@@ -6953,7 +6970,7 @@ function projectNextAction(p){
       title:'Continue Preconstruction',
       detail:`${pct}% complete · Section ${firstOpen+1} is next`,
       label:'Open Checklist',
-      action:`openPreconstructionForProject(${p.id});openPreconAccordion=${firstOpen};renderPreconstruction()`
+      action:`openPreconstructionForProject(${esc(JSON.stringify(p.id))});openPreconAccordion=${firstOpen};renderPreconstruction()`
     };
   }
 
@@ -6962,7 +6979,7 @@ function projectNextAction(p){
       title:'Estimate needed',
       detail:'Upload the estimate so labor P.O.s can be created.',
       label:'Open Estimate',
-      action:`openProjectPOHub(${p.id},'estimate')`
+      action:`openProjectPOHub(${esc(JSON.stringify(p.id))},'estimate')`
     };
   }
 
@@ -6971,7 +6988,7 @@ function projectNextAction(p){
       title:'Select P.O. Lines',
       detail:`${laborLines(p).length} eligible line${laborLines(p).length===1?'':'s'} available in the Estimate`,
       label:'Open Estimate',
-      action:`openProjectPOHub(${p.id},'estimate')`
+      action:`openProjectPOHub(${esc(JSON.stringify(p.id))},'estimate')`
     };
   }
 
@@ -6979,7 +6996,7 @@ function projectNextAction(p){
     title:ready(p)?'Ready to Start':'Project is up to date',
     detail:ready(p)?'Critical pre-start items are complete.':'No approval items are waiting on you.',
     label:'Open Project',
-    action:`openProject(${p.id})`
+    action:`openProject(${esc(JSON.stringify(p.id))})`
   };
 }
 
@@ -7016,7 +7033,7 @@ function dashboardProjectAction(p){
       title:`${review} P.O.${review===1?'':'s'} need review`,
       detail:reviewStageLabel(),
       label:'Review',
-      action:`openProjectPOHub(${p.id},'splits')`
+      action:`openProjectPOHub(${esc(JSON.stringify(p.id))},'splits')`
     };
   }
 
@@ -7027,7 +7044,7 @@ function dashboardProjectAction(p){
       title:`Continue Section ${si+1}`,
       detail:`Preconstruction ${pct}% complete`,
       label:'Checklist',
-      action:`openPreconstructionForProject(${p.id});openPreconAccordion=${si};renderPreconstruction()`
+      action:`openPreconstructionForProject(${esc(JSON.stringify(p.id))});openPreconAccordion=${si};renderPreconstruction()`
     };
   }
 
@@ -7036,7 +7053,7 @@ function dashboardProjectAction(p){
       title:'Estimate needed',
       detail:'Upload estimate to begin labor P.O.s',
       label:'Estimate',
-      action:`openProjectPOHub(${p.id},'estimate')`
+      action:`openProjectPOHub(${esc(JSON.stringify(p.id))},'estimate')`
     };
   }
 
@@ -7044,7 +7061,7 @@ function dashboardProjectAction(p){
     title:ready(p)?'Ready to Start':'No immediate review',
     detail:ready(p)?'Pre-start checklist is complete':'Project is current',
     label:'Open',
-    action:`openProject(${p.id})`
+    action:`openProject(${esc(JSON.stringify(p.id))})`
   };
 }
 
@@ -7103,7 +7120,7 @@ function openIssuesQuickView(){
               <small>${esc(it.detail)}</small>
             </div>
           `).join('')}
-          <button class="btn btn-light" onclick="closeIssuesQuickView();openPreconstructionForProject(${p.id})">Open Checklist</button>
+          <button class="btn btn-light" onclick="closeIssuesQuickView();openPreconstructionForProject(${esc(JSON.stringify(p.id))})">Open Checklist</button>
         </div>
       </div>
     `).join('')
@@ -7171,7 +7188,7 @@ function renderDashboard(){
           const color=projectColorHex(p.color);
           const completeSections=(p.precon||[]).filter(x=>Number(x)>=100).length;
           const review=p.pos.filter(po=>poNeedsReviewForCurrentUser(po)).length;
-          return `<div class="project-health-row" style="--project-color:${color}" onclick="openProject(${p.id})">
+          return `<div class="project-health-row" style="--project-color:${color}" onclick="openProject(${esc(JSON.stringify(p.id))})">
             <div class="project-health-name">
               <b>${p.name}</b>
               <small>${p.type} · ${p.jobNo}</small>
@@ -7253,7 +7270,7 @@ function renderDashboard(){
           const review=p.pos.filter(po=>poNeedsReviewForCurrentUser(po)).length;
           const labor=laborBuilderCost(p);
           const base=labor*.60;
-          return `<div class="po-job-row" style="--project-color:${color}" onclick="openProjectPOHub(${p.id},'splits')">
+          return `<div class="po-job-row" style="--project-color:${color}" onclick="openProjectPOHub(${esc(JSON.stringify(p.id))},'splits')">
             <div>
               <b>${p.name}</b>
               <small>${p.jobNo} · ${p.pos.length} total P.O.${p.pos.length===1?'':'s'}</small>
@@ -7303,7 +7320,7 @@ function collapseAllPOs(){
 }
 
 function openPreconstructionForProject(id){
-  state.selectedProjectId=Number(id);
+  state.selectedProjectId=state.projects.find(p=>String(p.id)===String(id))?.id ?? id;
   openPreconSection=0;
   openPreconAccordion=null;
   preconView='overview';
@@ -7312,7 +7329,7 @@ function openPreconstructionForProject(id){
   go('preconstruction');
 }
 function setPreconProject(id){
-  state.selectedProjectId=Number(id);
+  state.selectedProjectId=state.projects.find(p=>String(p.id)===String(id))?.id ?? id;
   openPreconSection=0;
   openPreconAccordion=null;
   preconView='overview';
@@ -7714,6 +7731,7 @@ function printFullProjectPacket(){
 }
 
 function renderPreconstruction(){
+  if(!selectedProject()){const empty=document.getElementById('preconstruction');if(empty)empty.innerHTML='<p>Sign in and choose a job to continue.</p>';return;}
   ensurePreconData();
   const p=selectedProject();
   syncLinkedPreconItems(p);
@@ -7749,7 +7767,7 @@ function renderPreconstruction(){
             <small>${p.type} · ${p.jobNo}</small>
           </div>
           <div class="precon-summary-actions">
-            <button class="btn btn-light" onclick="openProject(${p.id})">Open Full Project</button>
+            <button class="btn btn-light" onclick="openProject(${esc(JSON.stringify(p.id))})">Open Full Project</button>
           </div>
         </div>
 
@@ -7818,7 +7836,7 @@ function renderPreconstruction(){
                 <div class="precon-overview-number">${i+1}</div>
                 <div class="precon-overview-copy">
                   <h4>${section.title}</h4>
-                  <p>${section.goal}</p>
+                  <p>${section.goal}</p><small class="rd-owner">${['Gio','Jony','Jony','Adair','Adair','Adair','Adair','Everyone'][i]}</small>
                 </div>
                 <div style="display:flex;align-items:center">
                   <div class="precon-count ${complete?'complete':''}">
@@ -7835,7 +7853,7 @@ function renderPreconstruction(){
                     <span>${data.status}</span>
                   </div>
 
-                  <div class="checklist-head"><div>Main Checklist</div><div>Notes / Details</div></div>
+                  ${window.JJUpgrade?.inspectionPanel(p,i)||''}<div class="checklist-head"><div>Main Checklist</div><div>Notes / Details</div></div>
                   <div class="pc-checklist">
                     ${data.items.map((item,ii)=>{
                       const checkColor=userColor(item.checkedBy);
@@ -7859,7 +7877,7 @@ function renderPreconstruction(){
                             }
                           </span>
                         </label>
-                        <textarea class="input pc-note" placeholder="Notes / details..." oninput="updatePreconNote(${i},${ii},this.value)">${esc(item.notes)}</textarea>
+                        ${window.JJUpgrade?.earlyLink(p,i,ii,item)||''}<textarea class="input pc-note" placeholder="Notes / details..." oninput="updatePreconNote(${i},${ii},this.value)">${esc(item.notes)}</textarea>
                       </div>`;
                     }).join('')}
                   </div>
@@ -7973,7 +7991,7 @@ function renderEstimates(){
             <div><div class="mobile-label">Line Items</div><div class="percent">${p.estimate.length}</div></div>
             <div><div class="mobile-label">Labor</div><div class="money">${money(laborBuilderCost(p))}</div></div>
             <div><div class="mobile-label">Total</div><div class="money">${money(total)}</div></div>
-            <div><button class="btn btn-light" onclick="openProjectPOHub(${p.id},'estimate')">Open Estimate</button></div>
+            <div><button class="btn btn-light" onclick="openProjectPOHub(${esc(JSON.stringify(p.id))},'estimate')">Open Estimate</button></div>
           </div>`;
         }).join('')}
       </div>
@@ -7983,7 +8001,7 @@ function renderEstimates(){
 
 
 function openProjectPOHub(id,view='splits'){
-  state.selectedProjectId=Number(id);
+  state.selectedProjectId=state.projects.find(p=>String(p.id)===String(id))?.id ?? id;
   saveState(false);
   renderAll();
   openPOHub(view);
@@ -8333,6 +8351,7 @@ function estimateTableHTML(p,mode='hub'){
 }
 
 function renderPayByLine(){
+  if(!selectedProject()){const empty=document.getElementById('paybyline');if(empty)empty.innerHTML='<p>Sign in and choose a job to continue.</p>';return;}
   const p=selectedProject();
   const color=projectColorHex(p.color);
   const estimateTotal=p.estimate.reduce((s,r)=>s+Number(r.builderCost||0),0);
@@ -8368,7 +8387,7 @@ function renderPayByLine(){
             <h3><span class="project-color-dot" style="background:${color};margin-right:8px"></span>${p.name}</h3>
             <small>${p.type} · ${p.jobNo}</small>
           </div>
-          <button class="btn btn-light" onclick="openProject(${p.id})">Open Full Project</button>
+          <button class="btn btn-light" onclick="openProject(${esc(JSON.stringify(p.id))})">Open Full Project</button>
         </div>
 
         <div class="po-hub-info">
@@ -8848,6 +8867,7 @@ async function importEstimateFile(input){
   const file=input?.files?.[0];
   if(!file) return;
 
+  const importJob=selectedProject();
   try{
     if(typeof XLSX==='undefined'){
       throw new Error('Spreadsheet reader did not load. Make sure you are connected to the internet and refresh the app.');
@@ -8869,8 +8889,11 @@ async function importEstimateFile(input){
       throw new Error(parsed.warning || 'No usable estimate line items were found.');
     }
 
-    const p=selectedProject();
+    const p=state.projects.find(p=>String(p.id)===String(importJob.id));
+    if(!p)throw Error('The target job no longer exists.');
     if(p.estimate?.length && !confirm('Replace this job’s estimate with the uploaded report? Existing P.O.s and their amounts will stay unchanged.')) return;
+    const originalFile=await JJUpgrade.prepareFile(file,p,'Proposal + Estimate');
+    p.jobFiles||=[];p.jobFiles.push(originalFile);
     p.estimate=parsed.items;
 
     const laborCount=laborLines(p).length;
@@ -9003,6 +9026,7 @@ function generatePOsFromPOHub(){
 }
 
 function renderProject(){
+  if(!selectedProject()){const empty=document.getElementById('project');if(empty)empty.innerHTML='<p>Sign in and choose a job to continue.</p>';return;}
   if(projectTab==='estimate'){
     openPOHub('estimate');
     return;
@@ -9045,10 +9069,11 @@ function setProjectTab(id){
   }
   projectTab=id;
   renderProject();
-  window.scrollTo({top:0,behavior:'smooth'});
+  window.scrollTo({top:0,behavior:'instant'});
 }
 
 function renderProjectPanel(){
+  if(!selectedProject()){const empty=document.getElementById('projectPanel');if(empty)empty.innerHTML='<p>Sign in and choose a job to continue.</p>';return;}
   const p=selectedProject();
   const c=document.getElementById('projectContent');
   if(projectTab==='overview'){
@@ -9083,7 +9108,7 @@ function renderProjectPanel(){
       <div class="card info-card">
         <h4>Preconstruction Main Checklist</h4>
         <div class="sub">The detailed 8-section checklist now has its own main navigation section so it is faster to get to.</div>
-        <div style="margin-top:12px"><button class="btn btn-gold" onclick="openPreconstructionForProject(${p.id})">Open Preconstruction Checklist</button></div>
+        <div style="margin-top:12px"><button class="btn btn-gold" onclick="openPreconstructionForProject(${esc(JSON.stringify(p.id))})">Open Preconstruction Checklist</button></div>
       </div>
     `;
   } else if(projectTab==='estimate'){
@@ -9898,7 +9923,11 @@ function openSelections(){
   if(isTabletLayout()) closeJobsDrawer();
 }
 
+const selectedOnlyProjects=new Set();
+function toggleSelectedSelections(){const id=String(selectedProject().id);selectedOnlyProjects.has(id)?selectedOnlyProjects.delete(id):selectedOnlyProjects.add(id);renderSelections();}
+function selectionIsChosen(item){return ['Selected','Ordered','Received'].includes(item.status);}
 function renderSelections(){
+  if(!selectedProject()){const empty=document.getElementById('selections');if(empty)empty.innerHTML='<p>Sign in and choose a job to continue.</p>';return;}
   const root=document.getElementById('selections');
   if(!root) return;
   ensureSelectionsData();
@@ -9908,9 +9937,8 @@ function renderSelections(){
     ? project.selectionActiveRoom
     : project.selectionRooms[0];
   project.selectionActiveRoom=selectedRoom;
-  const filtered=selectionFilter==='All'
-    ? items
-    : items.filter(item=>String(item.category||'').trim().toLowerCase()===String(selectionFilter).trim().toLowerCase());
+  const selectedOnly=selectedOnlyProjects.has(String(project.id));
+  const filtered=items.filter(item=>(selectionFilter==='All'||String(item.category||'').trim().toLowerCase()===String(selectionFilter).trim().toLowerCase())&&(!selectedOnly||selectionIsChosen(item)));
   const categories=[...new Set(['Tile','Plumbing','Vanities','Lighting','Hardware',...items.map(item=>item.category).filter(Boolean)])];
   const selectedCount=items.filter(item=>item.status==='Selected' || item.status==='Ordered' || item.status==='Received').length;
   const pendingCount=items.filter(item=>item.status==='Pending').length;
@@ -9947,15 +9975,12 @@ function renderSelections(){
         <div class="selection-hint">We’ll pull the picture, name, description, model number, and current price for you.</div>
       </div>
       <div class="selection-room-picker">
-        <label for="selectionActiveRoom">Add to room</label>
-        <select id="selectionActiveRoom" onchange="selectionActiveRoomChanged(this.value)">
-          ${project.selectionRooms.map(room=>`<option ${room===selectedRoom?'selected':''}>${esc(room)}</option>`).join('')}
-          <option value="__add__">＋ Add a room…</option>
+        <label for="selectionActiveGroup">Add to group</label>
+        <select id="selectionActiveGroup" onchange="selectionActiveGroupChanged(this.value)">
+          <option value="">Ungrouped selections</option>
+          ${(project.selectionGroups||[]).map(group=>`<option value="${esc(group.id)}" ${String(group.id)===String(project.selectionActiveGroup||'')?'selected':''}>${esc(group.name)}</option>`).join('')}
+          <option value="__add__">＋ Add a group…</option>
         </select>
-        <div id="selectionRoomCustom" class="selection-room-custom hidden">
-          <input id="selectionNewRoom" placeholder="Room name" onkeydown="if(event.key==='Enter'){event.preventDefault();addSelectionRoom()}">
-          <button onclick="addSelectionRoom()">Add</button>
-        </div>
       </div>
     </div>
 
@@ -9964,7 +9989,9 @@ function renderSelections(){
         <button id="jjAppGroupToggle" class="selection-group-toggle" onclick="setSelectionGroupMode(!selectionGroupMode)">${selectionGroupMode?'Show All':'Show Groups'}</button>
       </div>
       <div class="selection-category-filters" aria-label="Quick filter by category">
-        ${['All selections',...categories].map(category=>{const value=category==='All selections'?'All':category;return `<button class="selection-filter ${selectionFilter===value?'active':''}" onclick="setSelectionFilter('${esc(value).replace(/'/g,"\\'")}')">${esc(category)}</button>`}).join('')}
+        <button class="selection-filter ${selectionFilter==='All'?'active':''}" onclick="setSelectionFilter('All')">All selections</button>
+      <button class="selection-filter ${selectedOnly?'active':''}" aria-pressed="${selectedOnly}" onclick="toggleSelectedSelections()" title="Selected, Ordered, and Received products">${selectedOnly?'Show All Items':'Show Selected'}</button>
+        ${categories.map(category=>{const value=category==='All selections'?'All':category;return `<button class="selection-filter ${selectionFilter===value?'active':''}" onclick="setSelectionFilter('${esc(value).replace(/'/g,"\\'")}')">${esc(category)}</button>`}).join('')}
       </div>
       <div class="selection-view-controls" aria-label="Selections view">
         <button class="selection-view-button ${selectionViewMode==='cards'?'active':''}" aria-label="Card view" title="Card view" aria-pressed="${selectionViewMode==='cards'}" onclick="setSelectionView('cards')">▦</button>
@@ -9973,10 +10000,10 @@ function renderSelections(){
     </div>
 
     <div class="selection-groups">
-      ${filtered.length ? selectionNamedGroups(project,filtered,items,selectionGroupMode) : `
+      ${(filtered.length || (selectionFilter==='All' && !selectedOnly && (project.selectionGroups||[]).some(group=>group?.id))) ? selectionNamedGroups(project,filtered,items,selectionGroupMode) : `
         <div class="selection-empty">
           <button onclick="openSelectionEditor()">+</button>
-          <strong>${items.length?'No selections match this filter':'No selections added yet'}</strong>
+          <strong>${selectedOnly?'No selected items match this view':items.length?'No selections match this filter':'No selections added yet'}</strong>
           <span>${items.length?'Choose another category to see its products.':'Paste a product link above or add one manually.'}</span>
         </div>`}
     </div>
@@ -10008,7 +10035,7 @@ function selectionNamedGroups(project,items,allItems,collapsed=true){
     if(bucket)bucket.items.push(item);else ungrouped.push(item);
   });
   if(ungrouped.length)buckets.push({id:'ungrouped',name:'Ungrouped selections',items:ungrouped});
-  return buckets.filter(bucket=>bucket.items.length).map(bucket=>`<section class="selection-room-group named-selection-group ${collapsed?'collapsed':''}">
+  return buckets.filter(bucket=>bucket.items.length || (selectionFilter==='All'&&!selectedOnlyProjects.has(String(project.id)))).map(bucket=>`<section data-selection-group-id="${esc(bucket.id)}" class="selection-room-group named-selection-group ${collapsed?'collapsed':''}">
     <div class="selection-room-heading">
       <button class="selection-room-toggle" type="button" onclick="const group=this.closest('.selection-room-group');group.classList.toggle('collapsed');this.setAttribute('aria-expanded',String(!group.classList.contains('collapsed')))" aria-expanded="${!collapsed}">
         <span><b>${esc(bucket.name)}</b></span>
@@ -10289,6 +10316,11 @@ function selectionImageFile(file){
   };
   reader.onerror=()=>toast('That image could not be read');
   reader.readAsDataURL(file);
+}
+
+function selectionActiveGroupChanged(value){
+  if(value==='__add__'){document.getElementById('selectionActiveGroup').value=selectedProject().selectionActiveGroup||'';window.JJSelectionGroups?.create();return;}
+  selectedProject().selectionActiveGroup=value;saveState(false);
 }
 
 function selectionActiveRoomChanged(value){
@@ -10730,7 +10762,7 @@ document.addEventListener('click',function(e){
   }
 });
 </script>
-</body>
+<script src="ical.js"></script><script src="calendar-engine.js?v=20260924-event-details"></script><script src="redesign.js?v=20260924-calendar-expand"></script></body>
 </html>
 
 <script>
@@ -10745,3 +10777,8 @@ document.querySelector('.brand')?.addEventListener('keydown',e=>{
 <style>.estimate-buildertrend .col-description{min-width:380px;width:380px}.estimate-buildertrend .col-description textarea{height:84px!important;min-height:84px!important;max-height:84px!important;overflow:auto!important;resize:none!important}.estimate-buildertrend th{position:sticky;top:0;background:#edf1f6}.estimate-buildertrend tbody tr:nth-child(even){background:#f8fafc}</style>
 <script src="estimate-full-parser.js"></script>
 <script src="work-pay.js"></script>
+
+<script src="parity-features.js"></script>
+<link rel="stylesheet" href="parity-features.css">
+
+<script src="selections-navigation.js"></script>
