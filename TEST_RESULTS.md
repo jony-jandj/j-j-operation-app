@@ -1,5 +1,7 @@
 # Validation
 
+Passed finish filter checks: tile/faucets selected; labor, backerboard, rough plumbing and plywood excluded; explicit all-material fallback; checkbox appearance and uncheck clearing.
+
 Passed estimate bulk-card checks: existing-card protection, room matching, Pending status, independent P.O. data, internal-note exclusion, repeated creation, renamed/reloaded row duplicate protection, individual selection and Clear. Full-app controls also exercised.
 
 Passed focused lifecycle checks for both in-house and subcontractor bills: returning incomplete work, correct job/team, rejection when paid, failed-save handling, original snapshot preservation, and duplicate-action handling.

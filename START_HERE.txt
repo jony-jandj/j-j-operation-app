@@ -2,6 +2,6 @@ J&J Operations — Estimate Selection Cards — September 24, 2026
 
 This combined update restores Job Closeout, Subs bills and In-house bills while retaining the phone fixes, View all employees, estimate notes/title syncing, dollar editing and split-line fixes.
 
-Upload ALL extracted files and folders to the existing GitHub app folder, replacing matching files. Do not upload just index.html. After GitHub Pages publishes, reload the app. Expected app cache: jj-operations-splits-20260924-20.
+Upload ALL extracted files and folders to the existing GitHub app folder, replacing matching files. Do not upload just index.html. After GitHub Pages publishes, reload the app. Expected app cache: jj-operations-splits-20260924-21.
 
 No new SQL or backup import is required. The update does not migrate or replace saved projects or payment records.
