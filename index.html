@@ -8202,6 +8202,22 @@ function createPOsFromSelectedEstimateRows(){
   toast(`${created} P.O. Split${created===1?'':'s'} created`);
 }
 
+function finishSelectionCategory(row){
+  const text=[row.title,row.line,row.description].join(' ').toLowerCase();
+  if(/^(labor|subcontractor)$/i.test(row.type||'') || /\b(demolition|demolish|removal|rough.in|drywall|framing|underlayment|thinset|grout labor)\b/.test(text)) return '';
+  const rules=[['Tile',/\b(tile|backsplash)\b/],['Flooring',/\b(flooring|lvp|hardwood|carpet)\b/],['Plumbing',/\b(faucet|sink|toilet|tub|bathtub|showerhead|shower head|shower trim|shower fixtures?|shower faucet|shower system)\b/],['Cabinetry',/\b(cabinet|cabinetry|vanity|vanities)\b/],['Countertops',/\b(countertop|quartz|granite|marble)\b/],['Lighting',/\b(light fixture|pendant|sconce|chandelier)\b/],['Hardware',/\b(hardware|door handle|knob|pulls)\b/],['Paint',/\b(paint|stain color)\b/],['Doors',/\b(door|doors)\b/],['Appliances',/\b(appliance|refrigerator|dishwasher|range hood)\b/]];
+  return rules.find(([,pattern])=>pattern.test(text))?.[0]||'';
+}
+const estimateFinishChoices=new WeakMap();
+function estimateFinishKey(row){return [row.parentGroup||row.parent_group||'Unassigned',row.title||row.line||''].map(v=>String(v).trim().toLowerCase().replace(/\s+/g,' ')).join('|');}
+function estimateFinishExists(p,row){return (p.selections||[]).some(item=>(row.selectionCardId&&String(item.id)===String(row.selectionCardId))||item.estimateSourceKey===estimateFinishKey(row)||estimateFinishKey({title:item.title,parentGroup:item.room})===estimateFinishKey(row));}
+function estimateFinishSet(p){if(!estimateFinishChoices.has(p))estimateFinishChoices.set(p,new Set());const set=estimateFinishChoices.get(p);for(const r of set)if(!(p.estimate||[]).includes(r)||estimateFinishExists(p,r))set.delete(r);return set;}
+function refreshEstimateFinish(){if(document.getElementById('paybyline')?.classList.contains('active'))renderPayByLine();else renderProject();}
+function toggleEstimateFinish(i,checked){const p=selectedProject(),r=p.estimate[i],set=estimateFinishSet(p);if(r&&!estimateFinishExists(p,r)){if(checked)set.add(r);else set.delete(r);}refreshEstimateFinish();}
+function selectAllEstimateFinish(checked){const p=selectedProject(),set=estimateFinishSet(p);set.clear();if(checked)(p.estimate||[]).forEach(r=>{if(!estimateFinishExists(p,r))set.add(r)});refreshEstimateFinish();}
+function createEstimateFinishCards(){const p=selectedProject(),set=estimateFinishSet(p);ensureSelectionsData();p.selections||=[];p.selectionRooms||=[];let count=0,nextId=Math.max(Date.now(),...p.selections.map(x=>Number(x.id)||0))+1;for(const row of set){if(estimateFinishExists(p,row))continue;const room=String(row.parentGroup||row.parent_group||'').trim()||'Unassigned';const item={id:nextId++,title:row.title||row.line||'New selection',description:row.description||'',category:finishSelectionCategory(row)||'Other',room,status:'Pending',homeownerSelected:false,inStock:false,quantity:Math.max(1,Number(row.quantity)||1),unitPrice:Number(row.unitCost)||0,url:'',image:'',vendor:'',model:'',quality:'Standard',purchasedBy:'Not assigned',leadTimeValue:1,leadTimeUnit:'Day(s)',estimateSourceKey:estimateFinishKey(row),notes:''};p.selections.push(item);row.selectionCardId=item.id;if(!p.selectionRooms.includes(room))p.selectionRooms.push(room);count++;}set.clear();if(count){saveState(false);renderAll();}refreshEstimateFinish();toast(count?count+' selection cards created':'No new selection cards to create');}
+function estimateFinishToolbar(p){const count=estimateFinishSet(p).size,available=(p.estimate||[]).filter(r=>!estimateFinishExists(p,r)).length;return `<div class="toolbar" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:12px 0"><b>Finished selections</b><button class="btn" onclick="selectAllEstimateFinish(true)" ${available?'':'disabled'}>Select all</button><button class="btn" onclick="selectAllEstimateFinish(false)">Clear</button><button class="btn btn-gold" onclick="createEstimateFinishCards()" ${count?'':'disabled'}>Create selection cards (${count})</button><button class="btn" onclick="openSelections()">Open Selections</button></div><p class="sub">Choose estimate lines in the Finished selection column. Existing cards are marked Added. New cards start as Pending.</p>`;}
+
 function estimateInternalNotes(row){return row.internalNotes??(row.importedColumns||[]).find(c=>['internal notes','internal note'].includes(pricingHeader(c.header)))?.value??'';}
 
 function estimateTableHTML(p,mode='hub'){
@@ -8211,17 +8227,18 @@ function estimateTableHTML(p,mode='hub'){
 
   const extraHeaders=[...new Set((p.estimate||[]).flatMap(r=>(r.importedColumns||[]).map(c=>c.header)))].filter(h=>!['title','parent group','description','quantity','unit','unit cost','cost type','builder cost','parent group description','parent description','subgroup description','sub group description','subgroup','sub group','option type','internal notes','internal note'].includes(pricingHeader(h)));
   return `
+    ${estimateFinishToolbar(p)}
     <div class="estimate-table-hint">
       <span>Imported estimate layout: Parent Group + Title · Description · Quantity · Unit · Unit cost · Cost type · Builder Cost</span>
       <span>Scroll sideways on phone to see all columns.</span>
     </div>
 
     <div class="estimate-buildertrend-wrap">
-      <table class="estimate-buildertrend" style="width:${1650+extraHeaders.length*170}px;min-width:${1650+extraHeaders.length*170}px">
+      <table class="estimate-buildertrend" style="width:${1810+extraHeaders.length*170}px;min-width:${1810+extraHeaders.length*170}px">
         <thead>
           <tr>
             <th class="col-delete">Delete</th>
-            <th class="col-po">P.O.</th>
+            <th class="col-po">P.O.</th><th style="width:160px">Finished selection</th>
             <th class="col-title">Title</th>
             <th class="col-description">Description</th><th style="width:200px">Internal notes</th>
             <th class="col-qty">Quantity</th>
@@ -8258,6 +8275,7 @@ function estimateTableHTML(p,mode='hub'){
                   }
                 </td>
 
+                <td style="width:160px">${estimateFinishExists(p,raw)?'<span class="estimate-po-created">Added</span>':`<input type="checkbox" aria-label="Create selection for ${esc(r.title)}" ${estimateFinishSet(p).has(raw)?'checked':''} onchange="toggleEstimateFinish(${i},this.checked)">`}</td>
                 <td class="col-title">
                   ${r.parentGroup ? `<div class="estimate-parent-group">${esc(r.parentGroup)}</div>` : ''}
                   <textarea class="estimate-cell-input estimate-item-input" rows="2"
