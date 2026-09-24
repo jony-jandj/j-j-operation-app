@@ -1,0 +1,168 @@
+/* Authentication overlays must remain readable under the global night palette. */
+@media screen{
+html[data-preview-theme=night] body :is(#loginOverlay,#cloudLoginOverlay,#passwordResetOverlay) .login-card{background:#172f47!important;border:1px solid #b59a62!important;box-shadow:0 18px 60px #0006!important}
+html[data-preview-theme=night] body :is(#loginOverlay,#cloudLoginOverlay,#passwordResetOverlay) .login-card *{color:#e6edf4!important}
+html[data-preview-theme=night] body :is(#loginOverlay,#cloudLoginOverlay,#passwordResetOverlay) .login-logo{background:#b59a62!important;color:#0c1c2d!important}
+html[data-preview-theme=night] body :is(#loginOverlay,#cloudLoginOverlay,#passwordResetOverlay) input{background:#203c56!important;color:#fff!important;border-color:#8499ad!important}
+html[data-preview-theme=night] body :is(#loginOverlay,#cloudLoginOverlay,#passwordResetOverlay) input:-webkit-autofill{-webkit-text-fill-color:#fff!important;box-shadow:0 0 0 1000px #203c56 inset!important}
+html[data-preview-theme=night] body :is(#loginOverlay,#cloudLoginOverlay,#passwordResetOverlay) .btn-gold{background:#b59a62!important;color:#0c1c2d!important}
+html[data-preview-theme=night] body :is(#cloudLoginMessage,#passwordResetMessage){color:#ffd6aa!important;font-size:14px!important}
+}
+@media screen{
+html[data-preview-theme=night][data-preview-theme=night] body{background:#0c1c2d!important;color:#fff!important;color-scheme:dark}
+/* Text inherits from its themed surface; do not force white text onto light controls. */
+html[data-preview-theme=night][data-preview-theme=night] :is(header,nav,.panel,.card,.job,.stat,.product,.note,.notice,.empty,.preview-note,.preview-progress,.preview-banner,.precon-summary-card,.precon-accordion,.precon-overview-shell,.new-box,.precon-info,.precon-inline-top,.precon-summary-top,.precon-overview-row,.job-po-toolbar,.job-po-stats>div,.bulk-bill-toolbar,.bill-table-wrap,.inline-host,.split-editor,.po-shell,.po-split-group,.checkpoint,.special-promises,.inspection-grid>div,dialog){background:#172f47!important;border-color:#38546e!important;box-shadow:0 3px 14px #0002!important}
+html[data-preview-theme=night][data-preview-theme=night] :is(input:not([type=checkbox]):not([type=radio]),textarea,select,button,.quick-box,.input,.badge,.preview-controls,.precon-info-grid>div,.stats>div,.selection-filter,.selection-url-import,.selection-add-from-url,.completion-calendar,.pay-calendar){background:#203c56!important;border-color:#48647e!important}
+html[data-preview-theme=night][data-preview-theme=night] :is(th,.split-head,.jj-employee-heading,.checklist-head,.checkpoint-title){background:#203c56!important}
+html[data-preview-theme=night][data-preview-theme=night] :is(td,tr,.pc-row,.po-head,.numbers){border-color:#38546e!important}
+html[data-preview-theme=night][data-preview-theme=night] :is(button:hover,button.active,button[aria-current=page],button[aria-pressed=true],.sidebar-links button.selected){background:#2c5070!important;border-color:#7ba4c8!important}
+html[data-preview-theme=night][data-preview-theme=night] :is(input,textarea)::placeholder{color:#d4e1ec!important;opacity:.85}
+html[data-preview-theme=night][data-preview-theme=night] :is(input,textarea,select,button):focus-visible{outline:2px solid #a0c9ed!important;outline-offset:2px}
+html[data-preview-theme=night][data-preview-theme=night] input:is([type=checkbox],[type=radio]){accent-color:#86b9e1}
+html[data-preview-theme=night][data-preview-theme=night] button:disabled{background:#152b40!important;opacity:.5}
+html[data-preview-theme=night][data-preview-theme=night] :is(.gold-status,.approval-chip.subs){background:#4d483b!important;border-color:#968569!important}
+html[data-preview-theme=night][data-preview-theme=night] :is(.blue,.approval-chip.house){background:#244c71!important}
+html[data-preview-theme=night][data-preview-theme=night] #previewSidebar{background:#0c1c2d!important;border-color:#38546e!important}
+html[data-preview-theme=night][data-preview-theme=night] .sidebar-brand{background:transparent!important}
+html[data-preview-theme=night][data-preview-theme=night] .sidebar-bottom .theme-controls button[aria-pressed=true]{background:#2c5070!important;border:1px solid #92b8da!important}
+html[data-preview-theme=night][data-preview-theme=night] dialog::backdrop{background:#040c16b8}
+}
+
+@media screen{
+html[data-preview-theme=night][data-preview-theme=night] :is(.panel,.card,.job,.stat,.product,.precon-accordion,.precon-summary-card,.job-po-toolbar,.job-po-stats>div,.bulk-bill-toolbar,.bill-table-wrap,.note,.new-box,.notice,.empty,dialog,input,textarea,select,button){border-color:rgba(255,255,255,.35)!important}
+html[data-preview-theme=night][data-preview-theme=night] .month-calendar-grid{background:rgba(255,255,255,.28)!important;border-color:rgba(255,255,255,.4)!important;gap:1px!important}
+html[data-preview-theme=night][data-preview-theme=night] .month-calendar-cell{background:#182f44!important;outline:1px solid rgba(255,255,255,.18);outline-offset:-1px}
+html[data-preview-theme=night][data-preview-theme=night] :is(.completion-days,.sunday-grid) button{border:1px solid rgba(255,255,255,.38)!important}
+html[data-preview-theme=night][data-preview-theme=night] :is(.completion-days,.sunday-grid) button:disabled{border-color:rgba(255,255,255,.13)!important;opacity:.45}
+html[data-preview-theme=night][data-preview-theme=night] body :is(*,#night-text){color:#e6edf4!important}
+html[data-preview-theme=night][data-preview-theme=night] body :is(small,.muted,.eyebrow,.job-po-note,.edit-hint){color:#b8c9d9!important}
+html[data-preview-theme=night][data-preview-theme=night] .cost-bar-track{background:#102336!important;border:1px solid rgba(255,255,255,.18)!important}
+html[data-preview-theme=night][data-preview-theme=night] .cost-bar{border:1px solid rgba(255,255,255,.35)!important;box-sizing:border-box}
+html[data-preview-theme=night][data-preview-theme=night] .cost-bar[data-cost-bar=Baseline]{background:#a5b6ca!important}
+html[data-preview-theme=night][data-preview-theme=night] .cost-bar[data-cost-bar=Committed]{background:#61b69d!important}
+html[data-preview-theme=night][data-preview-theme=night] .cost-bar[data-cost-bar="Builder cost"]{background:#78afe0!important}
+}
+
+@media screen{
+html[data-preview-theme=night]{color-scheme:dark}
+html[data-preview-theme=night] body{--navy:#e6edf4;--text:#e6edf4;--muted:#b8c9d9;--line:#ffffff35;--bg:#0c1c2d;--red:#e0a5aa;background:#0c1c2d;color:#e6edf4}
+html[data-preview-theme=night] :is(.selections-workspace,.selection-groups,.selection-room-content){background:transparent;color:#e6edf4}
+html[data-preview-theme=night] :is(.selection-card,.selection-room-group,.selection-modal,.card.info-card,.selection-empty){background:#172f47;border-color:#ffffff40;color:#e6edf4}
+html[data-preview-theme=night] :is(.selection-linkbox,.selection-room-heading,.selection-modal-head,.selection-modal-foot,.selection-photo,.selection-image-drop,.selection-image-preview,.selection-tax-row){background:#203c56;border-color:#ffffff35;color:#e6edf4}
+html[data-preview-theme=night] :is(button,.btn,a.selection-header-button,input:not([type=checkbox]),select,textarea,.selection-photo-empty span){background:#203c56;color:#e6edf4;border-color:#ffffff45}
+html[data-preview-theme=night] :is(.selection-heading p,.selection-card-meta,.selection-vendor,.selection-purchased,.selection-price small,.selection-image-copy,.selection-image-name,.selection-hint,.selection-field label,.selection-lead-label,.selection-lookup-status,.selection-tax-row span,.help-text){color:#b8c9d9}
+html[data-preview-theme=night] :is(h2,h3,.selection-summary b,.selection-purchased b,.selection-image-copy strong,.selection-price,.selection-empty strong,.selection-room-toggle){color:#e6edf4}
+html[data-preview-theme=night] :is(.selection-filter.active,.selection-view-button.active,.selection-group-toggle){background:#29475f;border-color:#b59a6280;box-shadow:inset 0 -2px #b59a62}
+html[data-preview-theme=night] :is(.selection-card-bottom,.selection-lead-time,.selection-grid.selection-list .selection-photo){border-color:#ffffff30}
+html[data-preview-theme=night] .selection-card-actions :is(a,button){color:#a8ceec;background:transparent}
+html[data-preview-theme=night] :is(.btn-gold,.selection-url-row button,.selection-header-button.primary){background:#b59a62;color:#0c1c2d;border-color:#c5ab73}
+html[data-preview-theme=night] .selection-danger{background:#443b47!important;color:#edb4bb!important;border-color:#9c7881!important}
+html[data-preview-theme=night] .selection-photo-status.pending{background:#51452f;color:#f0d99b}
+html[data-preview-theme=night] .selection-photo-status.selected{background:#285346;color:#c3ecda}
+html[data-preview-theme=night] .selection-photo-status.ordered{background:#294f70;color:#d0e7fa}
+html[data-preview-theme=night] .selection-photo-status.received{background:#285346;color:#c3ecda}
+html[data-preview-theme=night] #previewSelectionNotice{background:#203c56;border-color:#b59a6270;color:#c8d6e2}
+html[data-preview-theme=night] input[type=checkbox]{accent-color:#b59a62}
+html[data-preview-theme=night] ::placeholder{color:#a8bbca;opacity:1}
+html[data-preview-theme=night] .selection-image-drop.dragover{background:#29475f;border-color:#b59a62}
+@media(hover:hover){html[data-preview-theme=night] :is(textarea,input:not([type=checkbox]):not([readonly]),select):not(:disabled):hover{background:#29475f;outline:1px solid #b59a62;outline-offset:1px}}
+}
+
+/* Familiar brand-gold heading bars in both themes. */
+@media screen{
+html[data-preview-theme] body .selection-room-heading,
+html[data-preview-theme] body .selection-modal-head{background:#b59a62;border:1px solid #c5ab73;border-radius:9px;padding:12px 14px;color:#0c1c2d}
+html[data-preview-theme] body .selection-room-heading{margin-bottom:12px}
+html[data-preview-theme] body .selection-modal-head{border-radius:17px 17px 0 0;margin:0}
+html[data-preview-theme] body .selection-room-heading :is(.selection-room-toggle,b,small,.selection-room-chevron),
+html[data-preview-theme] body .selection-modal-head h3{background:transparent;color:#0c1c2d}
+html[data-preview-theme] body .selection-room-heading .selection-group-add-option,
+html[data-preview-theme] body .selection-modal-head>button{background:#ffffff30;color:#0c1c2d;border:1px solid #0c1c2d40}
+html[data-preview-theme] body .selection-heading{padding-bottom:16px;border-bottom:2px solid #b59a62}
+html[data-preview-theme] body .selection-linkbox{border-top:3px solid #b59a62}
+html[data-preview-theme] body .selection-toolbar{border-bottom:1px solid #b59a6270;padding-bottom:12px}
+html[data-preview-theme] body .selection-filter.active,
+html[data-preview-theme] body .selection-view-button.active{border-color:#b59a62;box-shadow:inset 0 -2px #b59a62}
+html[data-preview-theme] body .selection-room-heading button:hover,
+html[data-preview-theme] body .selection-modal-head>button:hover{background:#ffffff45}
+}
+
+/* Gold fades toward the right, with clear labels and a distinct Add Option. */
+@media screen{
+html[data-preview-theme] body .selection-room-heading,
+html[data-preview-theme] body .selection-modal-head{
+ background:linear-gradient(90deg,rgba(181,154,98,.85) 0%,rgba(181,154,98,.35) 58%,rgba(181,154,98,.08) 100%);
+ border:1px solid #b59a6266;border-left:4px solid #b59a62;
+}
+html[data-preview-theme] body .selection-room-heading b{font-size:16px;font-weight:850;color:#0c1c2d}
+html[data-preview-theme] body .selection-room-heading .selection-room-toggle{padding:4px 6px;border-radius:6px}
+html[data-preview-theme=night] body .selection-room-heading,
+html[data-preview-theme=night] body .selection-modal-head{
+ background:linear-gradient(90deg,rgba(181,154,98,.42) 0%,rgba(181,154,98,.19) 58%,rgba(181,154,98,.035) 100%);
+}
+html[data-preview-theme=night] body .selection-room-heading :is(.selection-room-toggle,b,small,.selection-room-chevron),
+html[data-preview-theme=night] body .selection-modal-head h3{color:#f5f7fa}
+html[data-preview-theme] body .selection-room-heading .selection-group-add-option{
+ background:#b59a62;color:#0c1c2d;border:1px solid #d0b780;
+ padding:10px 15px;min-height:38px;font-size:13px;font-weight:850;
+ box-shadow:0 2px 5px #0002;
+}
+html[data-preview-theme=night] body .selection-modal-head>button{background:#203c56;color:#f5f7fa;border:1px solid #b59a62}
+}
+
+@media screen{
+html[data-preview-theme] body :is(button,select,input:not([type=hidden]):not([type=checkbox]):not([type=radio]),textarea,.selection-card-actions a):not(:disabled):not([readonly]):focus-visible{
+ outline:2px solid #b59a62!important;outline-offset:2px!important;
+}
+@media(hover:hover){
+html[data-preview-theme] body :is(button,select,input:not([type=hidden]):not([type=checkbox]):not([type=radio]),textarea,.selection-card-actions a):not(:disabled):not([readonly]):hover{
+ background-color:#e7f1fa!important;color:#14334b!important;
+ outline:1px solid #b59a62!important;outline-offset:2px!important;
+ border-color:#b59a62!important;box-shadow:0 0 0 2px #b59a6214!important;
+}
+html[data-preview-theme=night] body :is(button,select,input:not([type=hidden]):not([type=checkbox]):not([type=radio]),textarea,.selection-card-actions a):not(:disabled):not([readonly]):hover{
+ background-color:#29475f!important;color:#e6edf4!important;
+}
+html[data-preview-theme=night] body .selection-room-toggle:hover :is(b,small,.selection-room-chevron){color:#e6edf4!important}
+}
+}
+
+@media (hover:hover){
+html body :is(#editable-hover#field-priority,:is(textarea,input:not([type]),input[type=text],input[type=number],input[type=date],input[type=email],input[type=url],input[type=search],input[type=tel],input[type=password],[contenteditable=true]):not(:disabled):not([readonly])):hover{background-color:#edf5fc!important;outline:1px solid #B59A62!important;outline-offset:1px;border-color:#B59A62!important;box-shadow:none!important}
+html[data-preview-theme=night] body :is(#editable-hover#field-priority,:is(textarea,input:not([type]),input[type=text],input[type=number],input[type=date],input[type=email],input[type=url],input[type=search],input[type=tel],input[type=password],[contenteditable=true]):not(:disabled):not([readonly])):hover{background-color:#29475f!important}
+html body :is(#editable-hover#field-priority,.quick-box):hover{outline:1px solid #B59A62!important;outline-offset:1px;border-color:#B59A62!important;background-color:#edf5fc!important}
+html[data-preview-theme=night] body :is(#editable-hover#field-priority,.quick-box):hover{background-color:#29475f!important}
+}
+@media (hover:hover){
+html body :is(#dropdown-hover#field-priority,select:not(:disabled)):hover{background-color:#edf5fc!important;outline:1px solid #B59A62!important;outline-offset:1px;border-color:#B59A62!important;box-shadow:none!important}
+html[data-preview-theme=night] body :is(#dropdown-hover#field-priority,select:not(:disabled)):hover{background-color:#29475f!important}
+}
+
+@media screen{
+:root{--rd-gold:#b59a62}
+.operations-app .sidebar{background:#193248!important;width:238px!important}
+.operations-app .sidebar .sidebar-brand,.operations-app .sidebar #topNav{display:none!important}
+.operations-app .operations-main{margin-left:238px!important;min-width:0}
+#redesignNav{display:flex;flex-wrap:wrap;gap:5px;padding:9px 14px;background:#193248!important;border-bottom:1px solid #b59a6260}
+#redesignNav button{flex:1 1 auto;padding:10px 12px;display:flex;align-items:center;justify-content:center;gap:7px;border:1px solid #ffffff30;border-radius:8px;font-size:13px}
+#redesignNav button[aria-current=page]{border-color:#b59a62!important;box-shadow:inset 0 -2px #b59a62!important}
+#redesignJobName{padding:9px 24px;font-size:14px;border-bottom:1px solid #b59a6240}
+.test-environment-banner{padding:7px 16px;background:#b59a62;color:#0c1c2d!important;font-size:12px;font-weight:700}
+.redesign-themes{display:flex;gap:8px;padding:12px}.redesign-themes button{flex:1;padding:9px}
+#redesignSidebarToggle{position:fixed;top:15px;left:222px;z-index:100;width:30px;height:32px;border:1px solid #b59a62;border-radius:7px;background:#29465e;color:white;font-size:24px}
+body.redesign-sidebar-collapsed .sidebar{transform:translateX(-100%)}
+body.redesign-sidebar-collapsed .operations-main{margin-left:0!important}
+body.redesign-sidebar-collapsed #redesignSidebarToggle{left:4px;transform:rotate(180deg)}
+body.redesign-sidebar-collapsed .operations-header{padding-left:42px}
+.project-tabs{display:none}
+input[type=checkbox]{accent-color:#b59a62!important}
+html[data-preview-theme=night] :is(.operations-header,.sidebar,.project-side-wrap){background:#193248!important}
+html[data-preview-theme=night] :is(.pc-row,.pc-checklist,.precon-inline-body,.selection-modal,.selection-card,.selection-room-group,.jj-split-body,.jj-split-line,.estimate-buildertrend td){background:#172f47!important;border-color:#ffffff35!important}
+html[data-preview-theme=night] :is(.selection-field label,.selection-image-copy){color:#b8c9d9!important}
+html :is(#rd-primary#rd-priority,.btn-gold,.rd-primary){background:#b59a62!important;color:#0c1c2d!important;border-color:#c5ab73!important}
+html :is(#rd-primary#rd-priority,.rd-primary):disabled{opacity:.45}
+@media(hover:hover){html :is(#rd-hover#rd-priority,button,input:not([type=checkbox]):not([readonly]),select,textarea):not(:disabled):hover{outline:1px solid #b59a62!important;outline-offset:1px}html[data-preview-theme=night] :is(#rd-hover#rd-priority,input:not([type=checkbox]):not([readonly]),select,textarea):not(:disabled):hover{background-color:#29475f!important}}
+.rd-calendar{padding:20px;margin-bottom:20px}.rd-calendar-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:1px;background:#ffffff35;border:1px solid #8da0b255}.rd-calendar-grid>b{padding:8px;text-align:center;background:#203c56;color:white}.rd-calendar-day{background:#f5f7fa;min-height:110px;padding:7px;min-width:0}.rd-calendar-event{display:block;width:100%;text-align:left;margin-top:7px;white-space:normal;padding:7px;font-size:11px;border:1px solid #8da0b255;border-radius:6px}.rd-cost-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,370px),1fr));gap:18px}.rd-cost-card{padding:22px}.rd-bars{height:260px;display:flex;gap:12px;margin:25px 0}.rd-bar-column{flex:1;display:flex;flex-direction:column;align-items:center;gap:9px;font-size:12px}.rd-bar-track{flex:1;width:100%;display:flex;align-items:flex-end;justify-content:center;min-height:0}.rd-bar{display:block;width:65%;border-radius:6px 6px 0 0}.rd-bar[data-cost-bar=Baseline]{background:#a5b6ca!important}.rd-bar[data-cost-bar=Committed]{background:#61b69d!important}.rd-bar[data-cost-bar="Builder cost"]{background:#78afe0!important}.rd-bars.horizontal{height:auto;display:block}.horizontal .rd-bar-column{align-items:stretch;margin:16px 0}.horizontal .rd-bar-track{height:18px;display:block;flex:none}.horizontal .rd-bar{height:18px;border-radius:5px}
+html[data-preview-theme=night] .rd-calendar-day{background:#182f44}.rd-cost-card .badge{margin:10px 0}
+@media(max-width:900px){.operations-app .operations-main{margin-left:0!important}.operations-app .sidebar{transform:translateX(-100%)}body:not(.redesign-sidebar-collapsed) .operations-app .sidebar{transform:translateX(0)}#redesignNav button{flex:1 1 21%;font-size:12px}.rd-calendar-day{min-height:80px;padding:3px}.rd-calendar-event{font-size:10px}}
+}

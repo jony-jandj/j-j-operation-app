@@ -1,5 +1,7 @@
-const CACHE_NAME = 'jj-operations-splits-20260924-22';
+const CACHE_NAME = 'jj-live-redesign-20260924-calendar';
 const APP_SHELL = [
+ './selections-navigation.js',
+  "./qrcode.min.js","./work-pay.js","./release-environment.js","./customer-view.js","./parity-features.js","./estimate-full-parser.js","./redesign.css","./ical.js","./design-alignment.css","./homeowner-view-v829.js","./selections-runtime.js","./night-complete.css","./parity-features.css","./redesign.js","./customer-overlay.js","./selections-metadata.js","./calendar-engine.js",
   './work-pay.js','./estimate-full-parser.js',
   './','./index.html','./homeowner.html','./customer-view.js','./customer-overlay.js','./qrcode.min.js','./selections-metadata.js',
   './jj-original-logo.png','./manifest.webmanifest','./icons/icon-192.png','./icons/icon-512.png',
@@ -10,7 +12,7 @@ self.addEventListener('install', event => {
 });
 self.addEventListener('activate', event => {
   event.waitUntil(caches.keys().then(keys=>Promise.all(
-    keys.filter(key=>key.startsWith('jj-operations-')&&key!==CACHE_NAME).map(key=>caches.delete(key))
+    keys.filter(key=>key.startsWith('jj-live-redesign-')&&key!==CACHE_NAME).map(key=>caches.delete(key))
   )).then(()=>self.clients.claim()));
 });
 self.addEventListener('fetch', event => {

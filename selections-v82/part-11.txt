@@ -35,7 +35,10 @@
       },'Approve selections');
   }
 
+  let bulkRenderedProjectId=null;
   function renderBulkBar(){
+    const projectId=String(p()?.id??'');
+    if(projectId!==bulkRenderedProjectId){bulkDeleteArmed=false;bulkRenderedProjectId=projectId}
     const root=document.getElementById('selections');
     if(!root)return;
     const toolbar=root.querySelector('.selection-toolbar');
@@ -70,6 +73,7 @@
       if(action==='delete'){bulkDeleteArmed=true;renderBulkBar()}
       if(action==='cancel-delete'){bulkDeleteArmed=false;renderBulkBar()}
       if(action==='confirm-delete'){
+        if(!bulkDeleteArmed||String(p()?.id??'')!==projectId)return;
         const project=p(),ids=new Set(bulkSet()),count=ids.size;
         project.selections=(project.selections||[]).filter(item=>!ids.has(String(item.id)));
         bulkSet().clear();bulkDeleteArmed=false;save(`${count} selection${count===1?'':'s'} deleted`);
