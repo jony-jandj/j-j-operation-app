@@ -1,3 +1,11 @@
+# Bulk Selections
+
+- Added Select All for the current category, including collapsed groups, plus selected count and Clear.
+- Added bulk Approve using existing Selected status; Ordered and Received stay unchanged.
+- Existing Status, Group, Lead Time and confirmed Delete now work with Select All.
+- Filter changes clear hidden checked cards; selections remain project-specific.
+- Preserved all previous estimate, Closeout/Bills, P.O. splits, mobile, and cloud fixes.
+
 # Finish-material selection filter
 
 - Select All for Selections now uses the existing bulk-checkbox styling.

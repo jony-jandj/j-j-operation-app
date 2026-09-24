@@ -1,7 +1,7 @@
-J&J Operations — Estimate Selection Cards — September 24, 2026
+J&J Operations — Bulk Selections — September 24, 2026
 
-This combined update restores Job Closeout, Subs bills and In-house bills while retaining the phone fixes, View all employees, estimate notes/title syncing, dollar editing and split-line fixes.
+Upload ALL extracted files and folders to the existing GitHub app folder, replacing matching files, including the selections-v82 folder. Do not upload just index.html. After GitHub Pages publishes, reload the app. Expected cache: jj-operations-splits-20260924-22.
 
-Upload ALL extracted files and folders to the existing GitHub app folder, replacing matching files. Do not upload just index.html. After GitHub Pages publishes, reload the app. Expected app cache: jj-operations-splits-20260924-21.
+Selections now has Select All, Clear, Approve, Status, Group, Lead Time and confirmed Delete. Select All follows the category filter, including cards in collapsed groups. Changing category removes hidden cards from the checked set. Approve marks cards Selected and preserves Ordered/Received status.
 
-No new SQL or backup import is required. The update does not migrate or replace saved projects or payment records.
+No SQL or backup import is required. This update does not replace saved projects or payment history.

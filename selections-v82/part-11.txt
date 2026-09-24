@@ -25,6 +25,16 @@
       });
   }
 
+  function bulkApprove(){
+    const items=selectedItems();if(!items.length)return;
+    openDialog(`Approve · ${items.length} selected`,
+      '<p>Mark the checked selections as Selected. Ordered and Received items keep their current status.</p>',
+      ()=>{
+        items.forEach(item=>{if(!['Ordered','Received'].includes(item.status))item.status='Selected'});
+        bulkSet().clear();bulkDeleteArmed=false;save(`${items.length} selections approved`);
+      },'Approve selections');
+  }
+
   function renderBulkBar(){
     const root=document.getElementById('selections');
     if(!root)return;
@@ -35,9 +45,14 @@
       bar=document.createElement('div');bar.id='jjBulkBarV82';
       toolbar.insertAdjacentElement('afterend',bar);
     }
+    // Limit bulk actions to this project's current category, including collapsed groups.
+    const visibleIds=new Set([...root.querySelectorAll('[data-jj-bulk-id]')].map(n=>n.dataset.jjBulkId));
+    for(const id of bulkSet())if(!visibleIds.has(id)){bulkSet().delete(id);bulkDeleteArmed=false}
     const count=selectedItems().length;
-    bar.innerHTML=`<span class="count">${count} selected</span>
+    bar.innerHTML=`<span class="count">${count} of ${visibleIds.size} selected</span>
+      <button class="btn btn-light" data-action="all" ${visibleIds.size?'':'disabled'}>Select All</button>
       <button class="btn btn-light" data-action="clear" ${count?'':'disabled'}>Clear</button>
+      <button class="btn btn-light" data-action="approve" ${count?'':'disabled'}>Approve</button>
       <button class="btn btn-light" data-action="status" ${count?'':'disabled'}>Status</button>
       <button class="btn btn-light" data-action="group" ${count?'':'disabled'}>Group</button>
       <button class="btn btn-light" data-action="lead" ${count?'':'disabled'}>Lead Time</button>
@@ -46,6 +61,8 @@
         : `<button class="btn delete" data-action="delete" ${count?'':'disabled'}>Delete</button>`}`;
     bar.onclick=e=>{
       const action=e.target.closest('button')?.dataset.action;if(!action)return;
+      if(action==='all'){bulkSet().clear();visibleIds.forEach(id=>bulkSet().add(id));bulkDeleteArmed=false;window.renderSelections?.()}
+      if(action==='approve')bulkApprove();
       if(action==='clear'){bulkSet().clear();bulkDeleteArmed=false;window.renderSelections?.()}
       if(action==='status')bulkStatus();
       if(action==='group')bulkGroup();
