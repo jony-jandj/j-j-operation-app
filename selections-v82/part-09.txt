@@ -2,17 +2,22 @@
   }
 
   function openCreateGroup(assignIndex=null){
-    const name=prompt('Selection group name');
-    if(name===null||!name.trim())return;
-    const group=createGroup(name);
-    const project=p();
-    if(assignIndex!==null && project?.selections?.[assignIndex]){
-      const item=project.selections[assignIndex];
-      item.optionGroupId=group.id;
-      item.optionGroupTitle=group.name;
-      item.optionLabel=item.optionLabel||'Option';
-    }
-    save(assignIndex===null?'Selection group created':`Added to ${group.name}`);
+    if(!p())return;
+    openDialog('Add Group',
+      '<label>Group name<input id="jjNewGroupName" maxlength="120" placeholder="For example: Shower fixtures" autocomplete="off"></label><p id="jjNewGroupError" role="alert"></p>',
+      dialog=>{
+        const input=dialog.querySelector('#jjNewGroupName'),name=input.value.trim();
+        if(!name){dialog.querySelector('#jjNewGroupError').textContent='Enter a group name.';input.focus();return false;}
+        const group=createGroup(name),project=p();if(!group)return false;
+        project.selectionActiveGroup=group.id;
+        if(assignIndex!==null && project?.selections?.[assignIndex]){
+          const item=project.selections[assignIndex];item.optionGroupId=group.id;item.optionGroupTitle=group.name;item.optionLabel=item.optionLabel||'Option';
+        }
+        save('Selection group created');
+      },'Create Group');
+    const dialog=document.getElementById('jjV82Dialog'),input=dialog?.querySelector('#jjNewGroupName');
+    if(dialog)dialog.querySelector('.jj-v82-head small').textContent='SELECTION GROUP';
+    if(input){input.focus();input.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();dialog.querySelector('#jjV82Apply').click()}}}
   }
 
   function deleteGroup(id){

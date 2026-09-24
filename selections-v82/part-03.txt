@@ -86,7 +86,7 @@
       const help=document.createElement('div');
       help.className='jj-smart-upload-help';
       help.textContent='PDF import: Upload → automatic reading → review every product → Import Selected. Existing selections are never replaced.';
-      actions.insertAdjacentElement('afterend',help);
+      (actions.closest('.selection-heading')||actions).insertAdjacentElement('afterend',help);
     }
   }
 

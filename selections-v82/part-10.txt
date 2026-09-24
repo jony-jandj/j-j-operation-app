@@ -27,6 +27,7 @@
         editContext.index=Number.isInteger(index)?index:null;
         editContext.original=editContext.index===null?null:JSON.parse(JSON.stringify(project?.selections?.[editContext.index]||null));
         if(editContext.index!==null)editContext.pendingGroupId='';
+        else if(prefillUrl)editContext.pendingGroupId=project?.selectionActiveGroup||'';
         const result=original.apply(this,arguments);
         setTimeout(enhanceEditor,0);
         return result;
@@ -52,7 +53,14 @@
           homeownerSelectedAt:before.homeownerSelectedAt
         }:{};
 
+        const previousItems=project?.selections||[];
+        const previousCount=previousItems.length;
+        const previousItem=index!==null?previousItems[index]:null;
         const result=original.apply(this,arguments);
+        const savedItems=project?.selections||[];
+        // A rejected native save must leave the editor and other selections untouched.
+        const saved=index!==null?savedItems[index]!==previousItem:savedItems.length>previousCount;
+        if(!saved)return result;
 
         // Native save replaces the object; restore/attach fields native editor does not know.
         const targetProject=p();
@@ -122,6 +130,7 @@
   }
 
   function openDialog(title,body,onApply,label='Apply'){
+    const sourceProjectId=String(p()?.id??'');
     document.getElementById('jjV82Dialog')?.remove();
     const dialog=document.createElement('dialog');
     dialog.id='jjV82Dialog';dialog.className='jj-v82-dialog';
@@ -130,7 +139,7 @@
       <div class="jj-v82-foot"><button class="btn btn-light" data-close>Cancel</button><button class="btn btn-gold" id="jjV82Apply">${esc(label)}</button></div>`;
     document.body.appendChild(dialog);
     dialog.querySelectorAll('[data-close]').forEach(btn=>btn.onclick=()=>dialog.close());
-    dialog.querySelector('#jjV82Apply').onclick=()=>{if(onApply(dialog)!==false)dialog.close()};
+    dialog.querySelector('#jjV82Apply').onclick=()=>{if(String(p()?.id??'')!==sourceProjectId){dialog.close();return}if(onApply(dialog)!==false)dialog.close()};
     dialog.addEventListener('close',()=>dialog.remove());
     dialog.showModal();
   }
