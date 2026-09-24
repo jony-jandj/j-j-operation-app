@@ -1,9 +1,7 @@
-J&J Operations — Phone Layout and View All — September 23, 2026
+J&J Operations — Restored Closeout and Bills — September 23, 2026
 
-Upload ALL files and folders from this ZIP into the existing GitHub app folder, replacing matching files. Do not upload only index.html. Preserve the included folder structure. Wait for GitHub Pages to publish, then reload the app. This update uses app cache version 20260923-18.
+This combined update restores Job Closeout, Subs bills and In-house bills while retaining the phone fixes, View all employees, estimate notes/title syncing, dollar editing and split-line fixes.
 
-Each labor split can independently use employees or a subcontractor. Use Sub — this line only to choose. The other approved line stays unchanged. To transfer money between lines, undo approvals first. Old unsaved payout values now refresh after the other line is saved.
+Upload ALL extracted files and folders to the existing GitHub app folder, replacing matching files. Do not upload just index.html. After GitHub Pages publishes, reload the app. Expected app cache: jj-operations-splits-20260923-19.
 
-No SQL changes or backup import are required for this update. Existing project records and payment history are not migrated or rewritten by installing it.
-
-Split cards retain the original full-width stacked layout with less vertical spacing. Draft fields outline on hover and open directly on click or tap; there is no Edit button. Approved lines require Undo Approval before changing them. The total payout is small gray text under Share of payout and employee rows are slimmer. Title label and title share a row, followed by a full-width three-row description with its own scrollbar. Add employee stays visible on draft in-house lines. Editable fields have outlines and employee headings use a slim gray background. Editing many employees may still require scrolling.
+No new SQL or backup import is required. The update does not migrate or replace saved projects or payment records.
