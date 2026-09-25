@@ -17,7 +17,7 @@
   // Resolve by the captured project ID, never by whichever job is selected later.
   const current=()=>state.projects.find(p=>String(p.id)===String(project.id));
   const getItems=()=>current()?.selections||[];
-  const view=window.JJCustomerView.mount(host,{getItems,
+  const view=window.JJCustomerView.mount(host,{getItems,getGroups:()=>current()?.selectionGroups||[],
    onSelect(id,update){
     const all=getItems(),item=all.find(i=>String(i.id)===id);
     if(!item||!['Pending','Recommended','Selected'].includes(item.status||'Pending'))return;
