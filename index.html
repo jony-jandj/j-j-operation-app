@@ -5901,7 +5901,9 @@ function createNewProject(){
   if(editingProjectId!==null){
     const project=state.projects.find(p=>String(p.id)===String(editingProjectId));
     if(!project){if(msg)msg.textContent='This job no longer exists. Close and try again.';return;}
+    if(project.name!==name)project.calendarNames=[...new Set([...(project.calendarNames||[]),project.name].filter(Boolean))];
     Object.assign(project,{name,type,jobNo,coordinator,manager,color});
+    if(window.JJCalendar?.reconcile)state.redesignSchedule=JJCalendar.reconcile(state.redesignSchedule||[],state.projects);
     if(startValue!==editingProjectStart)project.start=formatProjectStart(startValue);
     saveState(false);closeNewProject();renderAll();toast('Job details updated');return;
   }

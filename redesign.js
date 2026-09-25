@@ -56,7 +56,7 @@ function calendarGrid(cells,events,m){
 }
 
 function scheduleHTML(all=false){
- const p=selectedProject(),events=(state.redesignSchedule||[]).filter(e=>all||String(e.projectId)===String(p?.id));
+ const p=selectedProject(),events=JJCalendar.reconcile(state.redesignSchedule||[],state.projects).filter(e=>all||String(e.projectId)===String(p?.id));
  const y=month.getFullYear(),m=month.getMonth(),first=new Date(y,m,1).getDay(),days=new Date(y,m+1,0).getDate();
  const weekStart=new Date(month);weekStart.setDate(weekStart.getDate()-weekStart.getDay());
  const cells=scheduleView==='week'?Array.from({length:7},(_,i)=>{const d=new Date(weekStart);d.setDate(d.getDate()+i);return d}):Array.from({length:Math.ceil((first+days)/7)*7},(_,i)=>new Date(y,m,i-first+1));
@@ -71,7 +71,7 @@ function renderSchedule(){document.getElementById('redesign-schedule').innerHTML
 function calendarTools(){return `<div class="rd-calendar-controls"><div class="rd-calendar-views">${['month','week','list'].map(v=>`<button onclick="JJRedesign.scheduleView('${v}')" aria-pressed="${scheduleView===v}">${v[0].toUpperCase()+v.slice(1)}</button>`).join('')}</div><div class="rd-calendar-expansion" role="group" aria-label="Calendar item detail"><button data-calendar-expand="true" aria-pressed="${calendarExpanded}" onclick="JJRedesign.expandCalendar(true)">Expand all</button><button data-calendar-expand="false" aria-pressed="${!calendarExpanded}" onclick="JJRedesign.expandCalendar(false)">Collapse all</button></div><div class="rd-calendar-feed"><button onclick="JJRedesign.refreshCalendar()">Refresh calendar</button><details class="rd-calendar-settings"><summary>Calendar options</summary><div><label class="btn">Import calendar (.ics)<input type="file" accept=".ics,text/calendar" onchange="JJRedesign.importCalendar(this)" hidden></label><button onclick="JJRedesign.subscription()">${state.calendarSubscription?'Edit subscription':'Connect subscription'}</button></div></details></div></div><p class="rd-calendar-status" role="status">${E(calendarConnectionText())} · ${E(calendarMessage||state.calendarUpdatedAt&&'Last updated '+new Date(state.calendarUpdatedAt).toLocaleString()||'Read-only calendar · Import or connect a calendar to show events')}</p>`}
 
 function showCalendar(){active==='dashboard'?renderDashboard():renderSchedule()}
-function applyCalendar(text){const parsed=JJCalendar.parse(text,state.projects);state.redesignSchedule=parsed.events;state.calendarThrough=parsed.through;state.calendarUpdatedAt=new Date().toISOString();saveState(false);calendarMessage='';showCalendar()}
+function applyCalendar(text){const parsed=JJCalendar.parse(text,state.projects);state.redesignSchedule=JJCalendar.reconcile(parsed.events,state.projects,state.redesignSchedule||[]);state.calendarThrough=parsed.through;state.calendarUpdatedAt=new Date().toISOString();saveState(false);calendarMessage='';showCalendar()}
 async function importCalendar(input){const file=input.files[0];if(!file)return;try{const text=await file.text(),parsed=JJCalendar.parse(text,state.projects);if(!confirm(`Replace the test calendar with ${parsed.events.length} dated occurrences?`))return;applyCalendar(text);toast('Calendar imported')}catch(e){alert(e.message)}finally{input.value=''}}
 let calendarBusy=false,lastCalendarAttempt=0;
 function calendarConnectionText(){return state.calendarSubscription?'Subscription saved · Auto-refresh every 5 minutes while open':'No subscription connected'}
@@ -87,7 +87,7 @@ async function refreshCalendar(){
   if(!data?.ics)throw Error(data?.error||'The server did not return a calendar.');
   if(cloudClient!==owner||state.calendarSubscription!==url||(await cloudClient.auth.getSession()).data?.session?.user?.id!==account)return;
   const parsed=JJCalendar.parse(data.ics,state.projects);
-  state.redesignSchedule=parsed.events;state.calendarThrough=parsed.through;state.calendarUpdatedAt=data.fetchedAt||new Date().toISOString();saveState(false);calendarMessage='';
+  state.redesignSchedule=JJCalendar.reconcile(parsed.events,state.projects,state.redesignSchedule||[]);state.calendarThrough=parsed.through;state.calendarUpdatedAt=data.fetchedAt||new Date().toISOString();saveState(false);calendarMessage='';
   if(['dashboard','schedule'].includes(active))showCalendar();else calendarStatus();
  }catch(e){if(cloudClient===owner&&state.calendarSubscription===url){calendarMessage=e.message||'Refresh failed. Your saved schedule is unchanged.';calendarStatus()}}finally{calendarBusy=false;}
 }
