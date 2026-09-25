@@ -5792,16 +5792,15 @@ function suggestedJobNumber(){
   return `JJ-${next}`;
 }
 
-function formatProjectStart(dateValue){
-  if(!dateValue) return 'TBD';
-  const d=new Date(`${dateValue}T12:00:00`);
-  if(Number.isNaN(d.getTime())) return dateValue;
-  return d.toLocaleDateString('en-US',{
-    month:'short',
-    day:'numeric',
-    year:'numeric'
-  });
+function JJDisplayDate(value){
+  const text=String(value||'');
+  const m=/^(\d{4})-(\d{2})-(\d{2})(?:T.*)?$/.exec(text);
+  if(!m)return text||'TBD';
+  const d=new Date(m[1]+'-'+m[2]+'-'+m[3]+'T12:00:00Z');
+  if(!Number.isFinite(+d)||d.toISOString().slice(0,10)!==m[1]+'-'+m[2]+'-'+m[3])return text;
+  return m[2]+'/'+m[3]+'/'+m[1];
 }
+function formatProjectStart(dateValue){return JJDisplayDate(dateValue);}
 
 function renderNewProjectColors(selected='navy'){
   const el=document.getElementById('newProjectColors');
@@ -7237,7 +7236,7 @@ function renderDashboard(){
 
             <div class="project-health-start">
               <span>Start</span>
-              ${esc(p.start || 'TBD')}
+              ${esc(JJDisplayDate(p.start))}
             </div>
 
             <div class="project-health-po">
@@ -7272,7 +7271,7 @@ function renderDashboard(){
                 <span>Progress: ${pct}%</span>
                 <span>Open issues: ${p.issues}</span>
                 <span>P.O.s needing review: ${review}</span>
-                <span>Start: ${esc(p.start || 'TBD')}</span>
+                <span>Start: ${esc(JJDisplayDate(p.start))}</span>
               </div>
             </div>
             <button class="btn btn-light" onclick="${a.action}">${a.label}</button>
@@ -7443,13 +7442,13 @@ function printProjectHeader(p,title){
           <h1>J&J Home Renovations</h1>
           <div class="gold">${printSafe(title)}</div>
         </div>
-        <div class="print-muted">Printed ${new Date().toLocaleString()}</div>
+        <div class="print-muted">Printed ${new Date().toLocaleString('en-US',{month:'2-digit',day:'2-digit',year:'numeric',hour:'numeric',minute:'2-digit'})}</div>
       </div>
       <div class="print-project-meta">
         <div><span>Project</span><b>${printSafe(p.name)}</b></div>
         <div><span>Job #</span><b>${printSafe(p.jobNo)}</b></div>
         <div><span>Project Type</span><b>${printSafe(p.type)}</b></div>
-        <div><span>Projected Start</span><b>${printSafe(p.start)}</b></div>
+        <div><span>Projected Start</span><b>${printSafe(JJDisplayDate(p.start))}</b></div>
         <div><span>Project Coordinator</span><b>${printSafe(p.coordinator)}</b></div>
         <div><span>Project Manager</span><b>${printSafe(p.manager)}</b></div>
         <div><span>Preconstruction</span><b>${projectPct(p)}%</b></div>
@@ -7533,7 +7532,7 @@ function preconSectionPrintHTML(p,i,addPageBreak=false){
         </div>
         <div class="print-meta-box">
           <span>Employee Initials / Date</span>
-          ${printSafe(data.initials || '')}${data.date ? ` · ${printSafe(data.date)}` : ''}
+          ${printSafe(data.initials || '')}${data.date ? ` · ${printSafe(JJDisplayDate(data.date))}` : ''}
         </div>
       </div>
     </section>`;
@@ -7813,7 +7812,7 @@ function renderPreconstruction(){
           </div>
           <div class="precon-info">
             <div class="label">Projected Start</div>
-            <b>${p.start}</b>
+            <b>${esc(JJDisplayDate(p.start))}</b>
           </div>
           <div class="precon-info">
             <div class="label">Sections Complete</div>
@@ -9081,7 +9080,7 @@ function renderProject(){
   const projectColor=projectColorHex(p.color);
   project.innerHTML=`
     <div class="project-banner project-colored" style="--project-color:${projectColor}">
-      <div><div class="eyebrow">Project</div><h3><span class="project-color-dot" style="background:${projectColor}"></span>${p.name}</h3><small>${p.type} · ${p.jobNo} · Projected start ${p.start}</small></div>
+      <div><div class="eyebrow">Project</div><h3><span class="project-color-dot" style="background:${projectColor}"></span>${p.name}</h3><small>${p.type} · ${p.jobNo} · Projected start ${esc(JJDisplayDate(p.start))}</small></div>
       <button class="btn btn-light" onclick="go('dashboard')">← Dashboard</button>
     </div>
     <div class="project-tabs">
@@ -9132,7 +9131,7 @@ function renderProjectPanel(){
           <h4>Project Info</h4>
           <div class="info-line"><span>Project Coordinator</span><b>${p.coordinator}</b></div>
           <div class="info-line"><span>Project Manager</span><b>${p.manager}</b></div>
-          <div class="info-line"><span>Projected Start</span><b>${p.start}</b></div>
+          <div class="info-line"><span>Projected Start</span><b>${esc(JJDisplayDate(p.start))}</b></div>
           <div class="info-line"><span>Job #</span><b>${p.jobNo}</b></div>
         </div>
         <div class="card info-card">
