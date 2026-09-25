@@ -5824,7 +5824,26 @@ function selectNewProjectColor(key){
   renderNewProjectColors(key);
 }
 
+let editingProjectId=null,editingProjectStart='';
+function setProjectFormMode(editing){
+ const modal=document.getElementById('newProjectModal');
+ modal.querySelector('.eyebrow').textContent=editing?'Edit Job':'New Job';
+ modal.querySelector('h3').textContent=editing?'Edit Job':'Create Project';
+ modal.querySelector('[onclick="createNewProject()"]').textContent=editing?'Save Changes':'Create Job';
+}
+function openEditProject(id,event){
+ event?.stopPropagation();
+ const p=state.projects.find(p=>String(p.id)===String(id));if(!p)return;
+ editingProjectId=p.id;setProjectFormMode(true);
+ for(const [field,value] of Object.entries({Name:p.name,Type:p.type,JobNo:p.jobNo,Coordinator:p.coordinator||'Jony',Manager:p.manager||'Adair',Color:p.color||'navy'}))document.getElementById('newProject'+field).value=value||'';
+ const d=new Date(p.start);editingProjectStart=!p.start||p.start==='TBD'||Number.isNaN(d.getTime())?'':/^\d{4}-\d{2}-\d{2}$/.test(p.start)?p.start:[d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');
+ document.getElementById('newProjectStart').value=editingProjectStart;
+ document.getElementById('newProjectMessage').textContent='';renderNewProjectColors(p.color||'navy');
+ document.getElementById('newProjectModal').classList.add('open');
+ setTimeout(()=>document.getElementById('newProjectName')?.focus(),50);
+}
 function openNewProject(){
+  editingProjectId=null;setProjectFormMode(false);
   const modal=document.getElementById('newProjectModal');
   if(!modal) return;
 
@@ -5845,6 +5864,7 @@ function openNewProject(){
 }
 
 function closeNewProject(){
+  editingProjectId=null;
   document.getElementById('newProjectModal')?.classList.remove('open');
 }
 
@@ -5873,9 +5893,17 @@ function createNewProject(){
     return;
   }
 
-  if(state.projects.some(p=>String(p.jobNo||'').toLowerCase()===jobNo.toLowerCase())){
+  if(state.projects.some(p=>String(p.id)!==String(editingProjectId)&&String(p.jobNo||'').toLowerCase()===jobNo.toLowerCase())){
     if(msg) msg.textContent='That job number is already being used.';
     return;
+  }
+
+  if(editingProjectId!==null){
+    const project=state.projects.find(p=>String(p.id)===String(editingProjectId));
+    if(!project){if(msg)msg.textContent='This job no longer exists. Close and try again.';return;}
+    Object.assign(project,{name,type,jobNo,coordinator,manager,color});
+    if(startValue!==editingProjectStart)project.start=formatProjectStart(startValue);
+    saveState(false);closeNewProject();renderAll();toast('Job details updated');return;
   }
 
   const project={
@@ -5992,6 +6020,7 @@ function buildProjectSidebar(){
         <div class="project-color-label">${PROJECT_COLORS.find(c=>c.key===p.color)?.label || 'Navy'}</div>
 
         <div class="project-delete-area">
+          <button class="btn btn-light" onclick="openEditProject(${esc(JSON.stringify(p.id))},event)">Edit Job</button>
           ${String(deleteProjectPendingId)===String(p.id)
             ? `<div class="project-delete-confirm">
                  <button class="project-delete-btn" onclick="confirmDeleteProject(${esc(JSON.stringify(p.id))},event)">Confirm Delete</button>
