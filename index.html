@@ -8923,11 +8923,19 @@ async function importEstimateFile(input){
     const p=state.projects.find(p=>String(p.id)===String(importJob.id));
     if(!p)throw Error('The target job no longer exists.');
     if(p.estimate?.length && !confirm('Replace this job’s estimate with the uploaded report? Existing P.O.s and their amounts will stay unchanged.')) return;
-    const originalFile=await JJUpgrade.prepareFile(file,p,'Proposal + Estimate');
-    p.jobFiles||=[];p.jobFiles.push(originalFile);
-    p.estimate=parsed.items;
+    let originalFile=null;
+    try{
+      originalFile=await JJUpgrade.prepareFile(file,p,'Proposal + Estimate');
+    }catch(attachmentError){
+      if(!confirm('The estimate has '+parsed.items.length+' readable lines, but the original spreadsheet cannot be attached.\n\n'+(attachmentError.message||'Attachment storage is unavailable.')+'\n\nImport the estimate lines without attaching the spreadsheet? Your existing files and P.O.s will be kept. Keep the original file on your computer.'))return;
+    }
+    // Recheck the target after asynchronous file reading; never save to a stale job object.
+    const current=state.projects.find(job=>String(job.id)===String(importJob.id));
+    if(!current)throw Error('The target job no longer exists.');
+    if(originalFile){current.jobFiles||=[];current.jobFiles.push(originalFile);}
+    current.estimate=parsed.items;
 
-    const laborCount=laborLines(p).length;
+    const laborCount=laborLines(current).length;
     selectedEstimateRows.clear();
     selectedEstimatePORows.clear();
     selectedPOIds.clear();
@@ -8942,6 +8950,8 @@ async function importEstimateFile(input){
     go('paybyline');
 
     toast(`Estimate uploaded · ${parsed.items.length} lines · ${laborCount} eligible line${laborCount===1?'':'s'} available for P.O. selection`);
+
+    if(!originalFile)alert('Estimate lines imported. The original spreadsheet was not attached; keep your local copy. Check the cloud save status before closing.');
 
     if(!laborCount){
       alert('The estimate was imported, but no eligible lines were identified. 01 - PRELIMINARY WORKS lines are excluded from P.O. Splits.');
