@@ -390,13 +390,15 @@ document.addEventListener('submit',async event=>{const form=event.target;if(!for
 });
 let workPayPrintRoot=null,workPayPrintWasOpen=false;
 function chooseCloseoutPrint(){
- if(document.getElementById('jj-closeout-print-choice'))return;
+ const previous=document.getElementById('jj-closeout-print-choice');if(previous?.open)return;previous?.remove();
+ if(workPayPrintRoot)finishWorkPayPrint();
  const picker=document.createElement('dialog');picker.id='jj-closeout-print-choice';picker.className='jj-wp-dialog';
  picker.innerHTML='<h2>'+ (mode==='work'?'Print Job Closeout':'Print Bills') +'</h2><p>Choose who this copy is for.</p><div style="display:flex;flex-wrap:wrap;gap:12px"><button type="button" class="btn btn-gold" data-print-audience="crew">Print for Subs / In-house</button><button type="button" class="btn btn-light" data-print-audience="contractor">Print for Contractor</button></div><p><b>Subs / In-house:</b> names, work descriptions, and payout amounts. Builder costs and percentages of builder cost are hidden.</p><p><b>Contractor:</b> the full breakdown, including builder costs and percentages.</p><button type="button" class="btn btn-light" data-print-cancel>Cancel</button>';
  document.body.append(picker);
  picker.addEventListener('close',()=>picker.remove(),{once:true});
- picker.querySelector('[data-print-cancel]').onclick=()=>picker.close();
- picker.querySelectorAll('[data-print-audience]').forEach(button=>button.onclick=()=>{const includeBuilder=button.dataset.printAudience==='contractor';picker.close();prepareWorkPayPrint(includeBuilder);window.print();});
+ const dismissPicker=()=>{picker.close();picker.remove();};
+ picker.querySelector('[data-print-cancel]').onclick=dismissPicker;
+ picker.querySelectorAll('[data-print-audience]').forEach(button=>button.onclick=()=>{const includeBuilder=button.dataset.printAudience==='contractor';dismissPicker();prepareWorkPayPrint(includeBuilder);window.print();});
  picker.showModal();
 }
 function prepareWorkPayPrint(includeBuilder=false){
@@ -414,12 +416,13 @@ function prepareWorkPayPrint(includeBuilder=false){
  document.body.classList.add('jj-print');
 }
 window.addEventListener('beforeprint',prepareWorkPayPrint);
-window.addEventListener('afterprint',()=>{
+function finishWorkPayPrint(){
  document.body.classList.remove('jj-print');
  workPayPrintRoot?.remove();workPayPrintRoot=null;
  if(workPayPrintWasOpen&&!dialog.open)dialog.showModal();
  workPayPrintWasOpen=false;
-});
+}
+window.addEventListener('afterprint',finishWorkPayPrint);
 
 const bulkChosen=new Set();
 const renderWithoutBulk=render;render=function(){renderWithoutBulk();if(!['work','inhouse','subs','bills'].includes(mode)||!doc)return;const visible=new Set();for(const button of page.querySelectorAll('[data-wp="po-detail"],[data-wp="work-detail"]')){const tr=button.closest('tr');if(!tr||tr.querySelector('[data-work-check]'))continue;const id=button.dataset.value;visible.add(id);const input=tr.querySelector('[data-sub-select]')||document.createElement('input');input.removeAttribute('data-sub-select');input.type='checkbox';input.dataset.workCheck=id;input.checked=bulkChosen.has(id);input.disabled=false;input.setAttribute('aria-label','Select '+button.textContent);input.onchange=()=>{input.checked?bulkChosen.add(id):bulkChosen.delete(id);if(mode==='subs'){input.checked?subSelected.add(id):subSelected.delete(id)}for(const peer of page.querySelectorAll('[data-work-check]'))if(peer.dataset.workCheck===id)peer.checked=input.checked;updateBulkCount()};tr.cells[0].prepend(input);}for(const id of bulkChosen)if(!visible.has(id))bulkChosen.delete(id);const bar=document.createElement('div');bar.className='toolbar rd-work-bulk';bar.innerHTML='<label><input type="checkbox" data-work-all> Select all shown</label><span data-work-count></span>'+action('bulk-print','','Print all selected')+(mode==='work'?action('bulk-complete','','Work complete','btn btn-gold'):action('bulk-pay','','Record payment','btn btn-gold')+action('bulk-incomplete','','Mark incomplete'))+action('bulk-unapprove','','Undo approval / Edit P.O.');page.querySelector('.page-title')?.after(bar);bar.querySelector('[data-work-all]').checked=visible.size>0&&[...visible].every(id=>bulkChosen.has(id));bar.querySelector('[data-work-all]').onchange=e=>{bulkChosen.clear();if(e.target.checked)visible.forEach(id=>bulkChosen.add(id));if(mode==='subs'){subSelected.clear();bulkChosen.forEach(id=>subSelected.add(id))}render()};updateBulkCount();};
