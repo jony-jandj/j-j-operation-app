@@ -8540,8 +8540,8 @@ ${estimateTableHTML(p,'hub')}
         Select All
       </label>
 
-      <button class="quick-action" onclick="expandAllPOs()">Expand All P.Os</button>
-      <button class="quick-action" onclick="collapseAllPOs()">Collapse P.O.s</button>
+      <button class="quick-action" data-po-toggle onclick="toggleAllPOCards()">Expand P.O.s</button>
+      <button class="quick-action" data-parent-toggle onclick="toggleAllPOParentGroups()">Collapse Parent Groups</button>
       <button class="quick-action" onclick="applyBulkSplit(1)">Single Split</button>
       <button class="quick-action" onclick="applyBulkSplit(2)">2-Way Pay Split</button>
       <button class="quick-action" onclick="applyBulkSplit(3)">3-Way Pay Split</button>
