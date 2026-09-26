@@ -8567,7 +8567,7 @@ ${estimateTableHTML(p,'hub')}
     </div>
 
     ${p.pos.length
-      ? `<div class="po-list">${p.pos.map((po,i)=>renderPO(po,i)).join('')}</div>`
+      ? `<div class="po-list">${window.renderGroupedPOs?window.renderGroupedPOs(p):p.pos.map((po,i)=>renderPO(po,i)).join('')}</div>`
       : `<div class="empty">
           <strong>No P.O. splits generated yet.</strong>
           Open the Estimate and check the eligible lines you want to turn into P.O. Splits.<br><br>
@@ -9182,7 +9182,7 @@ function renderProjectPanel(){
 ${estimateTableHTML(p,'project')}`:`<div class="empty">No estimate loaded yet.<br><br><button class="btn btn-navy" onclick="openEstimateUpload()">Upload Estimate</button></div>`}
     `;
   } else if(projectTab==='laborpos'){
-    c.innerHTML = p.pos.length ? `<div class="po-list">${p.pos.map((po,i)=>renderPO(po,i)).join('')}</div>` :
+    c.innerHTML = p.pos.length ? `<div class="po-list">${window.renderGroupedPOs?window.renderGroupedPOs(p):p.pos.map((po,i)=>renderPO(po,i)).join('')}</div>` :
       `<div class="empty">No Labor P.O.s yet.<br><br><button class="btn btn-navy" onclick="openPOHub('estimate')">Go to Estimate</button></div>`;
   } else if(projectTab==='schedule'){
     c.innerHTML=`
