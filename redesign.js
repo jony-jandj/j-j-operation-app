@@ -13,7 +13,7 @@ const iconPaths={dashboard:'M3 11 12 3l9 8M5 10v11h14V10M9 21v-7h6v7',preconstru
 const chrome=document.createElement('div');chrome.id='redesignChrome';const header=document.querySelector('.operations-header');header.before(chrome);chrome.append(header,toolbar);
 const menuToggle=document.createElement('button');menuToggle.id='redesignMenuToggle';menuToggle.type='button';menuToggle.setAttribute('aria-controls','redesignNav');chrome.append(menuToggle);
 let menuCollapsed=false;try{menuCollapsed=localStorage.getItem('jj_menu_collapsed')==='true'}catch{}
-function syncMenuToggle(){toolbar.hidden=menuCollapsed;menuToggle.setAttribute('aria-expanded',String(!menuCollapsed));const label=routes.find(r=>r[0]===active)?.[2]||'Menu';menuToggle.textContent=menuCollapsed?'⌄ Show menu · '+label:'⌃ Hide menu';menuToggle.setAttribute('aria-label',menuCollapsed?'Expand top menu':'Collapse top menu');}
+function syncMenuToggle(){toolbar.hidden=menuCollapsed;menuToggle.setAttribute('aria-expanded',String(!menuCollapsed));const label=routes.find(r=>r[0]===active)?.[2]||'Menu';menuToggle.innerHTML='<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="'+(menuCollapsed?'m6 9 6 6 6-6':'m6 15 6-6 6 6')+'" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';menuToggle.title=(menuCollapsed?'Show menu':'Hide menu')+' · '+label;menuToggle.setAttribute('aria-label',menuCollapsed?'Expand top menu':'Collapse top menu');}
 menuToggle.onclick=()=>{menuCollapsed=!menuCollapsed;try{localStorage.setItem('jj_menu_collapsed',String(menuCollapsed))}catch{}syncMenuToggle();};
 syncMenuToggle();
 
