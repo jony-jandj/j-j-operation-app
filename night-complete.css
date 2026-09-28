@@ -275,3 +275,10 @@ html[data-preview-theme=night] body #selections .jj-smart-upload-help{background
 html[data-preview-theme=night] .jj-group-budget,html[data-preview-theme=night] .jj-budget-dialog{background:#203c56!important;color:#e5edf5!important}
 html[data-preview-theme=night] .jj-group-budget.over-budget{background:#533b30!important;color:#ffe0bb!important;border-color:#c99565}
 @media(max-width:600px){.jj-budget-tools{padding:10px}.jj-budget-tools button{min-height:44px}.jj-budget-dialog{padding:16px}}
+
+/* Keep the top-menu control reachable on desktop, tablet and phone. */
+html body #redesignChrome #redesignNav[hidden]{display:none!important}
+html body #redesignChrome #redesignMenuToggle{display:flex;align-items:center;justify-content:center;width:100%;min-height:36px;box-sizing:border-box;padding:6px 12px;margin:0;border:0;border-top:1px solid #ffffff24;border-bottom:1px solid #b59a6260;border-radius:0;background:#203c56!important;color:#e6edf4!important;font:600 13px/1.4 system-ui;cursor:pointer;touch-action:manipulation}
+html body #redesignChrome #redesignMenuToggle:hover,html body #redesignChrome #redesignMenuToggle:focus-visible{background:#2c5070!important;outline:2px solid #b59a62;outline-offset:-2px}
+@media(max-width:900px){html body #redesignChrome #redesignMenuToggle{min-height:44px}}
+@media print{html body #redesignMenuToggle{display:none!important}}
