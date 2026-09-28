@@ -1,5 +1,6 @@
-const CACHE_NAME = 'jj-live-redesign-20260925-group-budgets';
+const CACHE_NAME = 'jj-live-redesign-20260928-request-work-card';
 const APP_SHELL = [
+ './request-work.js','./request-work.css',
   './selection-budgets.js',
  './selections-navigation.js',
   "./qrcode.min.js","./work-pay.js","./release-environment.js","./customer-view.js","./parity-features.js","./estimate-full-parser.js","./redesign.css","./ical.js","./design-alignment.css","./homeowner-view-v829.js","./selections-runtime.js","./night-complete.css","./parity-features.css","./redesign.js","./customer-overlay.js","./selections-metadata.js","./calendar-engine.js",
