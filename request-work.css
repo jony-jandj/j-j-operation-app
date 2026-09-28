@@ -6,3 +6,17 @@ html[data-preview-theme=night] .jj-rw,body[data-theme=night] .jj-rw,body.night .
 :is(#jj-rw#jj-rw#jj-rw,#rw-dialog#rw-dialog#rw-dialog) button.rw-red{background:#fff0ee!important;color:#a03f38!important;border-color:#edc7c2!important}
 
 .jj-rw .rw-item[data-focused=true]{box-shadow:0 0 0 2px #c4a66a66}
+
+#rw-bell#rw-bell#rw-bell{white-space:nowrap}
+#rw-push-settings#rw-push-settings#rw-push-settings{border-top:1px solid #aab3c444;margin-top:12px;padding-top:12px;display:flex;gap:8px;flex-wrap:wrap;font-size:14px}
+#rw-push-settings#rw-push-settings#rw-push-settings strong,#rw-push-settings#rw-push-settings#rw-push-settings p{width:100%;margin:0;line-height:1.45}
+#rw-push-settings#rw-push-settings#rw-push-settings button{font-size:14px;padding:8px 12px}
+
+#rw-inbox#rw-inbox#rw-inbox{max-height:calc(100dvh - 145px);overflow:auto}
+
+/* Keep the phone inbox within the portrait viewport, independent of bell position. */
+@media(max-width:600px){
+#rw-inbox#rw-inbox#rw-inbox{position:fixed;left:12px;right:12px;top:calc(env(safe-area-inset-top, 0px) + 76px);width:auto;max-width:none;max-height:calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 92px);margin:0;overflow:auto;overscroll-behavior:contain;box-sizing:border-box}
+#rw-inbox .rw-notice>span:last-child{min-width:0;overflow-wrap:anywhere}
+#rw-push-settings button{max-width:100%;white-space:normal}
+}

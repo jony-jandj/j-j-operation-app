@@ -1,0 +1,9 @@
+/* Imported by the live service worker. State cache survives app shell updates. */
+const RW_PUSH_STATE='jj-rw-push-device-live';
+self.addEventListener('message',event=>{if(event.data?.type==='JJ_RW_PUSH_OWNER'){event.waitUntil((async()=>{const cache=await caches.open(RW_PUSH_STATE);await cache.put(new URL('./__rw_push_owner',self.registration.scope),new Response(JSON.stringify({userId:event.data.userId||null})));})());}});
+self.addEventListener('push',event=>{event.waitUntil((async()=>{let p;try{p=event.data.json()}catch{return;}const cache=await caches.open(RW_PUSH_STATE);const saved=await cache.match(new URL('./__rw_push_owner',self.registration.scope));const owner=saved?await saved.json():{};
+if(!owner.userId||p.recipient!==owner.userId)return;
+const url=new URL('./',self.registration.scope);if(p.requestId&&/^[0-9a-f-]{36}$/i.test(p.requestId)){url.searchParams.set('rwRequest',p.requestId);url.searchParams.set('rwRecipient',p.recipient);if(p.noticeId)url.searchParams.set('rwNotice',String(p.noticeId));}
+await self.registration.showNotification('J&J Operations',{body:p.requestId?'You have a new R.W. update. Tap to view your request.':'Phone notifications are working for the app.',icon:new URL('./icons/icon-192.png',self.registration.scope).href,badge:new URL('./icons/icon-192.png',self.registration.scope).href,tag:p.tag||'rw-live',data:{url:url.href}});
+})());});
+self.addEventListener('notificationclick',event=>{event.notification.close();event.waitUntil((async()=>{const target=new URL(event.notification.data?.url||'./',self.registration.scope);if(target.origin!==new URL(self.registration.scope).origin)return;const pages=await self.clients.matchAll({type:'window',includeUncontrolled:true});for(const page of pages){if(page.url.startsWith(self.registration.scope)){page.postMessage({type:'JJ_RW_PUSH_OPEN',url:target.href});return page.focus();}}return self.clients.openWindow(target.href);})());});

@@ -1,5 +1,7 @@
-const CACHE_NAME = 'jj-live-redesign-20260928-request-work-card';
+importScripts('./request-work-push-sw.js');
+const CACHE_NAME = 'jj-live-redesign-20260928-request-work-push-live';
 const APP_SHELL = [
+ './request-work-push.js','./request-work-push-sw.js',
  './request-work.js','./request-work.css',
   './selection-budgets.js',
  './selections-navigation.js',
@@ -10,7 +12,7 @@ const APP_SHELL = [
   ...Array.from({length:18},(_,i)=>`./selections-v82/part-${String(i+1).padStart(2,'0')}.txt`)
 ];
 self.addEventListener('install', event => {
-  event.waitUntil(caches.open(CACHE_NAME).then(cache=>cache.addAll(APP_SHELL)).then(()=>self.skipWaiting()));
+  event.waitUntil(caches.open(CACHE_NAME).then(cache=>Promise.allSettled([...new Set(APP_SHELL)].map(path=>cache.add(path)))).then(()=>self.skipWaiting()));
 });
 self.addEventListener('activate', event => {
   event.waitUntil(caches.keys().then(keys=>Promise.all(
