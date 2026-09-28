@@ -1,5 +1,5 @@
 importScripts('./request-work-push-sw.js');
-const CACHE_NAME = 'jj-live-redesign-20260928-request-work-push-live';
+const CACHE_NAME = 'jj-live-redesign-20260928-request-work-notes';
 const APP_SHELL = [
  './request-work-push.js','./request-work-push-sw.js',
  './request-work.js','./request-work.css',
