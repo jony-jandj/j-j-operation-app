@@ -282,3 +282,5 @@ html body #redesignChrome #redesignMenuToggle{display:flex;align-items:center;ju
 html body #redesignChrome #redesignMenuToggle:hover,html body #redesignChrome #redesignMenuToggle:focus-visible{background:#2c5070!important;outline:2px solid #b59a62;outline-offset:-2px}
 @media(max-width:900px){html body #redesignChrome #redesignMenuToggle{width:32px;height:32px;min-height:32px;bottom:-16px;right:10px}}
 @media print{html body #redesignMenuToggle{display:none!important}}
+
+.jj-budget-dialog{max-height:90dvh;overflow:auto}.jj-budget-dialog label{display:block;margin:12px 0}.jj-budget-dialog select{width:100%;padding:12px;margin-top:8px;box-sizing:border-box}.jj-budget-dialog input,.jj-budget-dialog select{font-size:16px;min-height:44px}.jj-budget-dialog [hidden]{display:none!important}
