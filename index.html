@@ -10028,10 +10028,8 @@ function renderSelections(){
       <div class="selection-group-controls" aria-label="Selection grouping">
         <button id="jjAppGroupToggle" class="selection-group-toggle" onclick="setSelectionGroupMode(!selectionGroupMode)">${selectionGroupMode?'Show All':'Show Groups'}</button>
       </div>
-      <div class="selection-category-filters" aria-label="Quick filter by category">
-        <button class="selection-filter ${selectionFilter==='All'?'active':''}" onclick="setSelectionFilter('All')">All selections</button>
+      <div class="selection-category-filters" aria-label="Selection status filter">
       <button class="selection-filter ${selectedOnly?'active':''}" aria-pressed="${selectedOnly}" onclick="toggleSelectedSelections()" title="Selected, Ordered, and Received products">${selectedOnly?'Show All Items':'Show Selected'}</button>
-        ${categories.map(category=>{const value=category==='All selections'?'All':category;return `<button class="selection-filter ${selectionFilter===value?'active':''}" onclick="setSelectionFilter('${esc(value).replace(/'/g,"\\'")}')">${esc(category)}</button>`}).join('')}
       </div>
       <div class="selection-view-controls" aria-label="Selections view">
         <button class="selection-view-button ${selectionViewMode==='cards'?'active':''}" aria-label="Card view" title="Card view" aria-pressed="${selectionViewMode==='cards'}" onclick="setSelectionView('cards')">▦</button>

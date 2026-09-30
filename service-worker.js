@@ -1,5 +1,5 @@
 importScripts('./request-work-push-sw.js');
-const CACHE_NAME = 'jj-live-20260930-homeowner-budgets';
+const CACHE_NAME = 'jj-live-20260930-customer-day-night';
 const APP_SHELL = [
  './request-work-push.js','./request-work-push-sw.js',
  './request-work.js','./request-work.css',
