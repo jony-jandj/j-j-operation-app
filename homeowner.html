@@ -6,7 +6,7 @@
 <script src="selections-metadata.js"></script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script>
 const token=new URLSearchParams(location.hash.slice(1)).get('key')||'';
 const client=window.supabase?.createClient('https://mrkvspqwqsmlnhrfllpx.supabase.co','sb_publishable_n5w6Q2b1nvsnOEcYZL2fsQ_u0gGltVk',{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}});
-const $=id=>document.getElementById(id),msg=$('message'),editor=$('editor'),form=$('selectionForm');let lookupGeneration=0,lookupBusy=false;let busy=false,reading=false,items=[],editingId=null,editingOriginal=null,optionParentId=null,photo='',photoLoading=false,photoVersion=0;
+const $=id=>document.getElementById(id),msg=$('message'),editor=$('editor'),form=$('selectionForm');let lookupGeneration=0,lookupBusy=false;let busy=false,reading=false,items=[],selectionGroups=[],editingId=null,editingOriginal=null,optionParentId=null,photo='',photoLoading=false,photoVersion=0;
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const safe=u=>/^https?:\/\//i.test(u||'')?u:'';
 const safeImage=u=>safe(u)||(/^data:image\/(jpeg|jpg|png|webp|gif);base64,/i.test(u||'')?u:'');
@@ -24,7 +24,7 @@ async function refresh(silent=false){
  if(!/^[a-f0-9]{64}$/.test(token)){msg.textContent='Open the private QR code or link provided by J&J.';return;}
  reading=true;
  try{const {data,error}=await client.rpc('jj_portal_read',{p_token:token});if(error)throw error;
- items=data.items||[];$('job').textContent=data.jobName+' · Selections';render();msg.textContent='Your selections are up to date.';$('newSelection').hidden=false;$('refresh').hidden=false;
+ items=data.items||[];selectionGroups=data.selectionGroups||[];$('job').textContent=data.jobName+' · Selections';render();msg.textContent='Your selections are up to date.';$('newSelection').hidden=false;$('refresh').hidden=false;
  }catch(e){if(!silent)msg.textContent='Could not refresh selections. Check your connection or ask J&J to check this link.';}finally{reading=false;}
 }
 function showPhoto(){photo=safeImage(photo);$('preview').src=photo;$('preview').hidden=!photo;}
@@ -64,4 +64,4 @@ async function fillLink(){
 }
 $('fillLink').onclick=fillLink;form.elements.url.addEventListener('change',fillLink);
 $('newSelection').onclick=()=>openEditor();$('closeEditor').onclick=closeEditor;$('cancelEditor').onclick=closeEditor;editor.addEventListener('cancel',e=>{if(busy)e.preventDefault();});$('refresh').onclick=()=>refresh();setInterval(()=>{if(!document.hidden&&!editor.open&&!busy)refresh(true)},8000);document.addEventListener('visibilitychange',()=>{if(!document.hidden&&!editor.open&&!busy)refresh(true)});refresh();
-</script><script src="customer-view.js?v=83.2-style-repair"></script></body></html>
+</script><script src="selection-budgets.js?v=20260930"></script><script src="customer-view.js?v=20260930-budget"></script></body></html>

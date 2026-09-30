@@ -50,6 +50,12 @@ function decorate(){
  });
 }
 function install(){const original=window.renderSelections;if(!original||original.__budgets)return;function wrapped(){const result=original.apply(this,arguments);decorate();return result}wrapped.__budgets=true;window.renderSelections=wrapped;decorate()}
-window.JJGroupBudgets={summary,html};
+function homeownerHtml(group,items){
+ const s=summary(group,items);
+ if(s.budget===null)return '';
+ const unit=group.budgetMode==='unit'&&Number.isSafeInteger(group.budgetUnitCents)&&group.budgetUnitCents>=0;
+ return `<div class="jj-ho-budget" aria-label="Selection group budget">${unit?`<span><small>Budget per unit</small><strong>${money(group.budgetUnitCents)} / ${E(group.budgetUnit)}</strong></span><span><small>Budget quantity</small><strong>${E(group.budgetQuantity)} ${E(group.budgetUnit)}</strong></span>`:''}<span><small>Total budget</small><strong>${money(s.budget)}</strong></span><span><small>Selected total</small><strong>${money(s.total)}</strong></span><span><small>${s.over?'Over budget':'Remaining budget'}</small><strong>${money(s.over||s.budget-s.total)}</strong></span>${s.unpriced?`<span><small>${s.unpriced} selected item(s) still need pricing</small></span>`:''}</div>`;
+}
+window.JJGroupBudgets={summary,html,homeownerHtml};
 window.addEventListener('jj-selections-v82-ready',install);if(window.__JJ_SELECTIONS_V82_READY__)install();
 })();
