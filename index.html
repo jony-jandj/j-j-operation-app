@@ -10002,7 +10002,7 @@ function renderSelections(){
         <div class="selection-heading-actions">
           <button class="selection-header-button" onclick="openHomeownerView()">Customer View</button>
           <button class="selection-header-button" onclick="openHomeownerShare()">Show QR Code</button>
-          <button class="selection-header-button primary" onclick="exportSelectionsPdf()">Export PDF</button>
+          <button class="selection-header-button primary" onclick="exportSelectionsPdf()">Print / PDF</button>
         </div>
       </div>
     </div>
@@ -10793,6 +10793,7 @@ if ('serviceWorker' in navigator) {
 <script src="./customer-view.js?v=83.1"></script>
 <script src="./customer-overlay.js?v=83.1"></script>
 <script src="./qrcode.min.js"></script>
+<script src="selection-print.js"></script>
 
 <script>
 document.addEventListener('click',function(e){

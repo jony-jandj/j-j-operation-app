@@ -1,6 +1,7 @@
 importScripts('./request-work-push-sw.js');
-const CACHE_NAME = 'jj-live-20261007-rw-compact';
+const CACHE_NAME = 'jj-live-20261007-selection-print';
 const APP_SHELL = [
+ './selection-print.js',
  './request-work-push.js','./request-work-push-sw.js',
  './request-work.js','./request-work.css',
   './selection-budgets.js',
