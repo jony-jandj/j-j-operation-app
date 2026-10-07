@@ -1,5 +1,5 @@
 importScripts('./request-work-push-sw.js');
-const CACHE_NAME = 'jj-live-20261001-bulk-history';
+const CACHE_NAME = 'jj-live-20261006-rw-multi';
 const APP_SHELL = [
  './request-work-push.js','./request-work-push-sw.js',
  './request-work.js','./request-work.css',
