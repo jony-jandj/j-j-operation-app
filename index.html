@@ -6976,8 +6976,8 @@ function persistStateLocally(){
   }
 }
 function toast(text){
-  const el=document.createElement('div'); el.className='toast'; el.textContent=text;
-  document.body.appendChild(el); setTimeout(()=>el.remove(),1400);
+  const el=document.createElement('div'); el.className='toast'; el.setAttribute('role','status'); el.setAttribute('aria-live','polite'); el.textContent=text;
+  document.body.appendChild(el); setTimeout(()=>el.remove(),4000);
 }
 
 

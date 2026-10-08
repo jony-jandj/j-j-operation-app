@@ -286,3 +286,15 @@ html body #redesignChrome #redesignMenuToggle:hover,html body #redesignChrome #r
 .jj-budget-dialog{max-height:90dvh;overflow:auto}.jj-budget-dialog label{display:block;margin:12px 0}.jj-budget-dialog select{width:100%;padding:12px;margin-top:8px;box-sizing:border-box}.jj-budget-dialog input,.jj-budget-dialog select{font-size:16px;min-height:44px}.jj-budget-dialog [hidden]{display:none!important}
 
 .jj-budget-tools .jj-budget-edit{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:10px 16px;border:1px solid #d8c69d;border-radius:12px;background:#f7f2e7;color:#14234a;font:600 14px/1.2 system-ui,sans-serif;box-shadow:0 2px 5px #14234a0a;cursor:pointer;transition:background .15s,border-color .15s,box-shadow .15s}.jj-budget-tools .jj-budget-edit:hover{background:#efe4ca;border-color:#b59a62;box-shadow:0 3px 8px #14234a14}.jj-budget-tools .jj-budget-edit:focus-visible{outline:3px solid #b59a62;outline-offset:3px}.jj-budget-edit svg{flex-shrink:0}.jj-budget-help{font-size:13px;line-height:1.5;opacity:.8}html[data-preview-theme=night] .jj-budget-tools .jj-budget-edit{background:#294359;color:#ead5a6;border-color:#8d7a55}html[data-preview-theme=night] .jj-budget-tools .jj-budget-edit:hover{background:#344f64;border-color:#c7aa6d}
+
+/* Toasts need their own surface: --navy becomes light text in night mode. */
+@media screen {
+ html body :is(#jj-toast#jj-theme#jj-priority,.toast) {
+  background:#142b43!important;color:#ffffff!important;
+  border:1px solid #90a3b7;box-shadow:0 6px 24px #0004;
+  width:max-content;max-width:calc(100vw - 32px);box-sizing:border-box;
+  padding:12px 16px;font-size:14px;line-height:1.45;
+  white-space:normal;overflow-wrap:anywhere;text-align:center;
+  bottom:calc(22px + env(safe-area-inset-bottom,0px));z-index:30000;
+ }
+}
