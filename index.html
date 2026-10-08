@@ -8542,6 +8542,7 @@ ${estimateTableHTML(p,'hub')}
 
       <button class="quick-action" data-po-toggle onclick="toggleAllPOCards()">Expand P.O.s</button>
       <button class="quick-action" data-parent-toggle onclick="toggleAllPOParentGroups()">Collapse Parent Groups</button>
+      <button class="quick-action" onclick="openSelectedWorkPreview()">Preview selected work</button>
       <button class="quick-action" onclick="openBulkPayout()">Adjust Selected Payouts</button>
       <button class="quick-action" onclick="openBulkPOTeam()">Change In-house / Sub</button>
       <button class="quick-action" onclick="applyBulkSplit(1)">Single Split</button>
@@ -10794,6 +10795,7 @@ if ('serviceWorker' in navigator) {
 <script src="./customer-overlay.js?v=83.1"></script>
 <script src="./qrcode.min.js"></script>
 <script src="selection-print.js"></script>
+<script src="po-work-preview.js"></script>
 
 <script>
 document.addEventListener('click',function(e){
