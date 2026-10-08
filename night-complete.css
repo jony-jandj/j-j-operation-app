@@ -298,3 +298,21 @@ html body #redesignChrome #redesignMenuToggle:hover,html body #redesignChrome #r
   bottom:calc(22px + env(safe-area-inset-bottom,0px));z-index:30000;
  }
 }
+
+/* Print preview controls share the app's rounded navy/gold actions. */
+@media screen {
+ #jj-selection-print .jj-print-toolbar{display:flex;align-items:end;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+ #jj-selection-print .jj-print-toolbar label{display:grid;gap:5px;font-size:12px;font-weight:600;margin-right:auto;min-width:0}
+ #jj-selection-print .jj-print-toolbar select{min-height:44px;max-width:100%;padding:10px 36px 10px 12px;border:1px solid #b5c2ce;border-radius:10px;font:500 14px/1.4 system-ui;background:#f4f7fa;color:#203044}
+ #jj-selection-print .jj-print-toolbar button{appearance:none;min-height:44px;padding:10px 17px;border:1px solid #b5c2ce;border-radius:10px;font:650 14px/1.4 system-ui;cursor:pointer;transition:box-shadow .15s,transform .15s}
+ html body :is(#jj-print#jj-theme#jj-priority,#jj-selection-print [data-close]){background:#f4f7fa!important;color:#203044!important;border-color:#b5c2ce!important}
+ html body :is(#jj-print#jj-theme#jj-priority,#jj-selection-print [data-print]){background:#b59a62!important;color:#102437!important;border-color:#b59a62!important}
+ html[data-preview-theme=night] body :is(#jj-print#jj-theme#jj-priority,#jj-selection-print [data-close]){background:#203c56!important;color:#e6edf4!important;border-color:#ffffff40!important}
+ #jj-selection-print .jj-print-toolbar button:hover:not(:disabled){box-shadow:0 3px 9px #0002;transform:translateY(-1px)}
+ #jj-selection-print .jj-print-toolbar :is(button,select):focus-visible{outline:2px solid #b59a62;outline-offset:3px}
+ #jj-selection-print .jj-print-toolbar button:disabled{opacity:.55;cursor:wait}
+ #jj-selection-print .jj-print-toolbar [role=status]{width:100%;font-size:12px}
+ #jj-selection-print .jj-print-toolbar [role=status]:empty{display:none}
+ @media(max-width:520px){#jj-selection-print .jj-print-toolbar{display:grid;grid-template-columns:1fr auto}#jj-selection-print .jj-print-toolbar label{grid-column:1/-1;margin:0}#jj-selection-print .jj-print-toolbar select{width:100%;font-size:16px}#jj-selection-print .jj-print-toolbar [role=status]{grid-column:1/-1}}
+ @media(prefers-reduced-motion:reduce){#jj-selection-print .jj-print-toolbar button{transition:none;transform:none!important}}
+}

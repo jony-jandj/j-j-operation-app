@@ -1,5 +1,5 @@
 importScripts('./request-work-push-sw.js');
-const CACHE_NAME = 'jj-live-20261008-toast-contrast';
+const CACHE_NAME = 'jj-live-20261008-print-controls';
 const APP_SHELL = [
  './po-work-preview.js',
  './selection-print.js',

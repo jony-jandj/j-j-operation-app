@@ -33,7 +33,7 @@ function open(){
  document.getElementById('jj-selection-print')?.remove();
  const dialog=document.createElement('dialog');dialog.id='jj-selection-print';
  dialog.style.cssText='width:min(900px,96vw);max-height:94dvh;padding:16px;border:1px solid #aab5c0;border-radius:12px;background:#fff;color:#203044';
- dialog.innerHTML='<div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:12px"><label>Print view <select style="font:inherit;padding:8px" aria-label="Print view"><option value="selected">Selected items only</option><option value="all">Review all options</option></select></label><button type="button" data-print>Print / Save PDF</button><button type="button" data-close>Close</button><span role="status"></span></div><iframe title="Selection print preview" style="width:100%;height:65dvh;border:1px solid #d4dbe1;background:white"></iframe>';
+ dialog.innerHTML='<div class="jj-print-toolbar"><label>Print view <select aria-label="Print view"><option value="selected">Selected items only</option><option value="all">Review all options</option></select></label><button type="button" class="btn btn-gold" data-print>Print / Save PDF</button><button type="button" class="btn" data-close>Close</button><span role="status"></span></div><iframe title="Selection print preview" style="width:100%;height:65dvh;border:1px solid #d4dbe1;background:white"></iframe>';
  document.body.append(dialog);dialog.showModal();
  const frame=dialog.querySelector('iframe'),select=dialog.querySelector('select'),button=dialog.querySelector('[data-print]'),status=dialog.querySelector('[role=status]');
  let generation=0;
