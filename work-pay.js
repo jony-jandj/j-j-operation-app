@@ -501,7 +501,16 @@ function chooseCloseoutPrint(){
  picker.addEventListener('close',()=>picker.remove(),{once:true});
  const dismissPicker=()=>{picker.close();picker.remove();};
  picker.querySelector('[data-print-cancel]').onclick=dismissPicker;
- picker.querySelectorAll('[data-print-audience]').forEach(button=>button.onclick=()=>{const includeBuilder=button.dataset.printAudience==='contractor';dismissPicker();prepareWorkPayPrint(includeBuilder);window.print();});
+ picker.querySelectorAll('[data-print-audience]').forEach(button=>button.onclick=()=>{
+  const includeBuilder=button.dataset.printAudience==='contractor';
+  if(!includeBuilder){dismissPicker();prepareWorkPayPrint(false);window.print();return;}
+  picker.innerHTML='<h2 id="jj-contractor-print-title">Print with builder costs?</h2><p id="jj-contractor-print-message">This contractor printout includes builder cost amounts and percentages. Are you sure you want to continue?</p><div style="display:flex;justify-content:flex-end;flex-wrap:wrap;gap:12px"><button type="button" class="btn btn-light" data-print-cancel>Cancel</button><button type="button" class="btn btn-gold" data-print-confirm>Continue to Print</button></div>';
+  picker.setAttribute('aria-labelledby','jj-contractor-print-title');
+  picker.setAttribute('aria-describedby','jj-contractor-print-message');
+  picker.querySelector('[data-print-cancel]').onclick=dismissPicker;
+  picker.querySelector('[data-print-confirm]').onclick=()=>{dismissPicker();prepareWorkPayPrint(true);window.print();};
+  picker.querySelector('[data-print-cancel]').focus();
+ });
  picker.showModal();
 }
 function prepareWorkPayPrint(includeBuilder=false){
