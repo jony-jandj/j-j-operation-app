@@ -51,7 +51,7 @@ html :is(#jjTheme#jjScope#jjPriority#jjOverride,.jj-customer-view[data-customer-
 .jj-customer-view .jj-help-heading button{flex:0 0 44px;padding:8px!important}
 .jj-customer-view .jj-help-heading h2{margin:0;font-size:22px;line-height:1.25}
 .jj-customer-view .jj-customer-help button{min-width:44px;min-height:44px;border-radius:9px;padding:8px 16px;font:inherit;cursor:pointer}
-.jj-customer-view .jj-customer-help p{font-size:14px;line-height:1.55;margin:8px 0 16px}
+.jj-customer-view .jj-customer-help p{font-size:16px;line-height:1.6;margin:8px 0 16px}
 .jj-customer-view .jj-help-steps{padding-left:24px;margin:24px 0}
 .jj-customer-view .jj-help-steps li{padding-left:6px;margin:16px 0}
 .jj-customer-view .jj-help-steps li::marker{color:#b59a62;font-weight:800}
@@ -87,6 +87,19 @@ html :is(#jjTheme#jjScope#jjPriority#jjOverride,.jj-customer-view[data-customer-
       <details><summary>Why does an option say “Unavailable”?</summary><p>Another product in that group is selected. Tap <b>Selected</b> on that product to undo it. You can then choose a different option.</p><p>If a product is already ordered or its status prevents changes, ask J&J for help.</p></details>
       <details><summary>Prices, saving &amp; finding your items</summary><p>J&J sets prices and who buys each product. New options are added without a price.</p><p>Choosing a product saves your choice. When adding one, finish with the Add button and wait for saving to finish. If an error appears, try again or contact J&J.</p><p>Tap <b>Show All</b> to open every group. If you are viewing only selected items, tap <b>Show All Items</b> to see the rest. The card and list buttons change how you view them.</p></details>
       <button type="button" class="jj-help-done" data-help-close>Got it</button>`;
+    // Staff preview has its own global theme rules. Keep help readable in both hosts.
+    const helpNight=customerTheme==='night';
+    const helpText=helpNight?'#f1f5fa':'#14234a';
+    dialog.style.setProperty('background',helpNight?'#183249':'#ffffff','important');
+    dialog.style.setProperty('color',helpText,'important');
+    dialog.querySelectorAll('*').forEach(element=>{
+      element.style.setProperty('color',helpText,'important');
+      element.style.setProperty('opacity','1','important');
+    });
+    dialog.querySelectorAll('button').forEach(button=>{
+      button.style.setProperty('background',helpNight?'#29475f':'#f1f4f8','important');
+      button.style.setProperty('border','1px solid '+(helpNight?'#8ba2b6':'#b8c5d4'),'important');
+    });
     host.appendChild(dialog);
     dialog.querySelectorAll('[data-help-close]').forEach(button=>button.onclick=()=>dialog.close());
     // Do not let Escape also close the staff customer-preview underneath.
