@@ -1,5 +1,5 @@
 importScripts('./request-work-push-sw.js');
-const CACHE_NAME = 'jj-live-20261009-contractor-print-confirm';
+const CACHE_NAME = 'jj-live-20261015-customer-help';
 const APP_SHELL = [
  './po-work-preview.js',
  './selection-print.js',
