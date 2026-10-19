@@ -45,69 +45,60 @@ html :is(#jjTheme#jjScope#jjPriority#jjOverride,.jj-customer-view[data-customer-
 html :is(#jjTheme#jjScope#jjPriority#jjOverride,.jj-customer-view[data-customer-theme]) button.jj830-group-toggle{background:transparent!important;border:0!important}
 
 .jj-customer-view #jjCustomer830 #jj830AddLink{min-height:44px!important;font-size:14px!important;background:#b59a62!important;color:#102437!important}
-.jj-customer-view #jjCustomer830 #jj830Help{min-height:44px!important;border:1px solid var(--ho-border)!important;background:var(--ho-panel)!important;font-size:13px!important}
-.jj-customer-view .jj-customer-help{box-sizing:border-box;width:min(560px,calc(100% - 28px));max-height:85dvh;margin:auto;padding:24px;border:1px solid var(--ho-border);border-radius:16px;background:var(--ho-panel);color:var(--ho-text);overflow-y:auto;font:15px/1.55 Inter,system-ui,sans-serif;text-align:left}
-.jj-customer-help::backdrop{background:rgba(10,24,43,.6)}
-.jj-customer-view .jj-help-heading{display:flex;align-items:start;gap:16px;justify-content:space-between}
-.jj-customer-view .jj-help-heading button{flex:0 0 44px;padding:8px!important}
-.jj-customer-view .jj-help-heading h2{margin:0;font-size:22px;line-height:1.25}
-.jj-customer-view .jj-customer-help button{min-width:44px;min-height:44px;border-radius:9px;padding:8px 16px;font:inherit;cursor:pointer}
-.jj-customer-view .jj-customer-help p{font-size:16px;line-height:1.6;margin:8px 0 16px}
-.jj-customer-view .jj-help-steps{padding-left:24px;margin:24px 0}
-.jj-customer-view .jj-help-steps li{padding-left:6px;margin:16px 0}
-.jj-customer-view .jj-help-steps li::marker{color:#b59a62;font-weight:800}
-.jj-customer-view .jj-customer-help details{border-top:1px solid var(--ho-border);padding:10px 0}
-.jj-customer-view .jj-customer-help summary{cursor:pointer;padding:10px 0;font-weight:700}
-.jj-customer-view .jj-help-done{width:100%;margin-top:18px}
-.jj-customer-view .jj-customer-help :focus-visible,.jj-customer-view #jj830Help:focus-visible{outline:3px solid #b59a62;outline-offset:3px}
+.jj-customer-view #jjCustomerGuide{padding:20px;border:1px solid #b59a62;border-radius:20px 20px 20px 5px;margin:20px 0 16px;max-width:760px}
+.jj-customer-view #jjCustomerGuide strong{display:block;font-size:19px!important;line-height:1.4;font-weight:750}
+.jj-customer-view #jjCustomerGuide p{font-size:16px!important;line-height:1.6!important;margin:8px 0!important}
+.jj-customer-view #jjCustomer830{display:flex;flex-wrap:wrap;align-items:start;gap:12px}
+.jj-customer-view .jj830-filters{display:flex;gap:8px;flex:1;min-width:0}
+.jj-customer-view .jj830-filters button{flex:1}
+.jj-customer-view #jjCustomer830 button,.jj-customer-view .toolbar button{font-size:15px!important;min-height:48px!important;padding:12px 16px!important;font-weight:650!important}
+.jj-customer-view #jjCustomer830 #jj830AddLink{flex-basis:100%;max-width:760px;font-size:16px!important;min-height:50px!important}
+.jj-customer-view .toolbar{justify-content:flex-start!important;flex-wrap:wrap!important;gap:10px!important}
+.jj-customer-view .toolbar #newSelection{min-height:50px!important;font-size:16px!important;flex:1;max-width:760px}
+.jj-customer-view .jj830-display{margin-left:auto;max-width:100%;color:var(--ho-text)}
+.jj-customer-view .jj830-display summary{padding:12px;min-height:48px;cursor:pointer;font-size:14px}
+.jj-customer-view .jj830-settings{display:flex;flex-wrap:wrap;gap:8px;padding:8px 0}
+.jj-customer-view .jj830-group-toggle{font-size:17px!important;min-height:48px!important;text-transform:none;font-weight:700!important}
+.jj-customer-view .jj830-add{font-size:14px!important;min-height:48px!important;font-weight:650!important}
+.jj-customer-view .jj830-actions button,.jj-customer-view .jj830-actions a{font-size:15px!important;min-height:48px!important;padding:12px!important;font-weight:650!important;justify-content:center}
+.jj-customer-view .jj830-actions button[data-select],.jj-customer-view .jj830-actions button[disabled]{flex-basis:100%}
+.jj-customer-view .jj830-card h2{font-size:19px!important;font-weight:750!important}
+.jj-customer-view .jj830-vendor,.jj-customer-view .jj830-detail{font-size:14px!important;line-height:1.5!important}
+.jj-customer-view .jj830-price{font-size:22px}.jj-customer-view .jj830-buyer,.jj-customer-view .jj830-price small,.jj-customer-view .jj830-catline,.jj-customer-view .jj830-status{font-size:12px!important}
+.jj-customer-view .jj830-buyer b{font-size:14px!important}
+@media(max-width:720px){.jj-customer-view #jjCustomer830{display:block}.jj-customer-view #jj830AddLink{width:100%;margin-bottom:14px}.jj-customer-view .jj830-display{margin-top:8px}.jj-customer-view .jj830-group-head{flex-wrap:wrap}.jj-customer-view .jj830-group-toggle{flex-basis:60%!important}.jj-customer-view .jj830-actions>*{flex:1}.jj-customer-view .jj830-list .jj830-card{display:block}.jj-customer-view .jj830-list .jj830-photo{height:190px;min-height:0}.jj-customer-view .toolbar #newSelection{flex-basis:100%}.jj-customer-view .jj830-settings button{flex:1 1 40%}}
 `;document.head.appendChild(s)}
 
-  function card(i,all){const selected=i.status==='Selected',blocked=unavailable(i,all),locked=!['Pending','Recommended','Selected'].includes(i.status||'Pending'),priced=i.unitPrice!==null&&i.unitPrice!==undefined&&i.unitPrice!==''&&Number.isFinite(Number(i.unitPrice)),total=Number(i.unitPrice||0)*Number(i.quantity||1)*(i.addTax?1.0825:1),image=img(i.image);return `<article class="jj830-card ${selected?'chosen':''}"><div class="jj830-photo"><span class="jj830-status">${E(i.status||'Pending')}</span>${image?`<img src="${E(image)}" alt="${E(i.title||'Product photo')}">`:`<div class="jj830-placeholder">No product photo</div>`}</div><div class="jj830-body"><div class="jj830-catline">${E(cat(i))}</div><h2>${E(i.title||'Selection')}${i.optionLabel?`<span class="jj830-option">${E(i.optionLabel)}</span>`:''}</h2><div class="jj830-vendor">${E(i.vendor||'')}${i.model?` · Model/SKU ${E(i.model)}`:''}</div>${i.description?`<p class="jj830-detail">${E(i.description)}</p>`:''}<div class="jj830-price-row"><div class="jj830-price">${priced?money(total):'Price not set'}<small>${priced?`${E(i.quantity||1)} item${Number(i.quantity||1)===1?'':'s'}${i.addTax?' · tax included':''}`:'J&J will add pricing'}</small></div><div class="jj830-buyer">Purchased by<b>${E(i.purchasedBy||'Not assigned')}</b></div></div><div class="jj830-actions">${selected?`<button data-select="${E(i.id)}" aria-pressed="true">Selected</button>`:blocked?`<button disabled>Unavailable</button>`:locked?`<button disabled>${E(i.status)}</button>`:`<button data-select="${E(i.id)}" aria-pressed="false">Mark Selected</button>`}<button type="button" data-option="${E(i.id)}">+ Add Option</button>${safe(i.url)?`<a href="${E(safe(i.url))}" target="_blank" rel="noopener noreferrer">View product ↗</a>`:''}</div></div></article>`}
+  function card(i,all){const selected=i.status==='Selected',blocked=unavailable(i,all),locked=!['Pending','Recommended','Selected'].includes(i.status||'Pending'),priced=i.unitPrice!==null&&i.unitPrice!==undefined&&i.unitPrice!==''&&Number.isFinite(Number(i.unitPrice)),total=Number(i.unitPrice||0)*Number(i.quantity||1)*(i.addTax?1.0825:1),image=img(i.image);return `<article class="jj830-card ${selected?'chosen':''}"><div class="jj830-photo"><span class="jj830-status">${E(i.status==='Selected'?'Chosen':i.status||'Pending')}</span>${image?`<img src="${E(image)}" alt="${E(i.title||'Product photo')}">`:`<div class="jj830-placeholder">No product photo</div>`}</div><div class="jj830-body"><div class="jj830-catline">${E(cat(i))}</div><h2>${E(i.title||'Selection')}${i.optionLabel?`<span class="jj830-option">${E(i.optionLabel)}</span>`:''}</h2><div class="jj830-vendor">${E(i.vendor||'')}${i.model?` · Model/SKU ${E(i.model)}`:''}</div>${i.description?`<p class="jj830-detail">${E(i.description)}</p>`:''}<div class="jj830-price-row"><div class="jj830-price">${priced?money(total):'Price not set'}<small>${priced?`${E(i.quantity||1)} item${Number(i.quantity||1)===1?'':'s'}${i.addTax?' · tax included':''}`:'J&J will add pricing'}</small></div><div class="jj830-buyer">Purchased by<b>${E(i.purchasedBy||'Not assigned')}</b></div></div><div class="jj830-actions">${selected?`<button data-select="${E(i.id)}" aria-pressed="true">✓ Chosen · tap to undo</button>`:blocked?`<button disabled>Another option is chosen</button>`:locked?`<button disabled>${E(i.status)}</button>`:`<button data-select="${E(i.id)}" aria-pressed="false">Choose this</button>`}<button type="button" data-option="${E(i.id)}">+ Add Option</button>${safe(i.url)?`<a href="${E(safe(i.url))}" target="_blank" rel="noopener noreferrer">View product ↗</a>`:''}</div></div></article>`}
   function filtered(){return getItems().filter(i=>(activeCategory==='All selections'||cat(i)===activeCategory)&&(!selectedOnly||['Selected','Ordered','Received'].includes(i.status)))}
-  function group(group,all){const first=group[0],id=String(first.optionGroupId||first.id),collapsed=mode!=='all'&&!openGroups.has(id);return `<section class="jj830-group ${!first.optionGroupId?'jj830-standalone':''} ${collapsed?'collapsed':''}" data-group="${E(id)}"><div class="jj830-group-head"><button type="button" class="jj830-group-toggle" data-toggle-group="${E(id)}" aria-expanded="${!collapsed}">${E(first.optionGroupTitle||first.title||'Selection Group')}</button><span class="jj830-count">${group.length} option${group.length===1?'':'s'}</span><button type="button" class="jj830-add" data-option="${E(first.id)}">+ Add Option</button></div>${window.JJGroupBudgets&&adapter.getGroups?window.JJGroupBudgets.homeownerHtml(adapter.getGroups().find(g=>String(g.id)===id),all.filter(i=>String(i.optionGroupId||i.id)===id)):""}<div class="jj830-group-items">${group.map(i=>card(i,all)).join('')}</div></section>`}
+  function group(group,all){const first=group[0],id=String(first.optionGroupId||first.id),collapsed=!selectedOnly&&mode!=='all'&&!openGroups.has(id);return `<section class="jj830-group ${!first.optionGroupId?'jj830-standalone':''} ${collapsed?'collapsed':''}" data-group="${E(id)}"><div class="jj830-group-head"><button type="button" class="jj830-group-toggle" data-toggle-group="${E(id)}" aria-expanded="${!collapsed}">${E(first.optionGroupTitle||first.title||'Selection Group')}</button><span class="jj830-count">${group.length} option${group.length===1?'':'s'}</span><button type="button" class="jj830-add" data-option="${E(first.id)}">+ Add Option</button></div>${window.JJGroupBudgets&&adapter.getGroups?window.JJGroupBudgets.homeownerHtml(adapter.getGroups().find(g=>String(g.id)===id),all.filter(i=>String(i.optionGroupId||i.id)===id)):""}<div class="jj830-group-items">${group.map(i=>card(i,all)).join('')}</div></section>`}
 
-  function render830(){const root=host.querySelector('[data-customer-items]');if(!root)return;const data=filtered();root.classList.toggle('jj830-list',viewMode==='list');root.classList.remove('list');if(!data.length){root.innerHTML='<p style="grid-column:1/-1;padding:22px;background:#fff;border:1px solid #dce2e9;border-radius:12px">No selections in this view.</p>';return}const buckets=new Map();data.forEach(i=>{const k=String(i.optionGroupId||i.id);if(!buckets.has(k))buckets.set(k,[]);buckets.get(k).push(i)});root.innerHTML=[...buckets.values()].map(g=>group(g,getItems())).join('');wireImages()}
+  function render830(){const root=host.querySelector('[data-customer-items]');if(!root)return;const data=filtered();root.classList.toggle('jj830-list',viewMode==='list');root.classList.remove('list');if(!data.length){root.innerHTML='<p style="grid-column:1/-1;padding:22px;background:#fff;border:1px solid #dce2e9;border-radius:12px">No selections in this view.</p>';return}const buckets=new Map();data.forEach(i=>{const k=String(i.optionGroupId||i.id);if(!buckets.has(k))buckets.set(k,[]);buckets.get(k).push(i)});root.innerHTML=[...buckets.values()].map(g=>group(g,getItems())).join('');wireImages();host.querySelectorAll('[data-select]').forEach(button=>{const selected=button.getAttribute('aria-pressed')==='true';button.style.setProperty('background',selected?'#285d43':'#14234a','important');button.style.setProperty('color','#ffffff','important');})}
   function wireImages(){host.querySelectorAll('.jj830-photo img').forEach(im=>{im.onerror=()=>{const p=im.parentElement;if(p){im.remove();const d=document.createElement('div');d.className='jj830-placeholder';d.textContent='No product photo';p.appendChild(d)}}})}
 
 
-  // Help is presentation-only: no selection or cloud writes.
-  function openHelp(){
-    if(host.querySelector('.jj-customer-help[open]'))return;
-    const standalone=!!host.querySelector('#newSelection');
-    const dialog=document.createElement('dialog');
-    dialog.className='jj-customer-help';
-    dialog.setAttribute('aria-labelledby','jjCustomerHelpTitle');
-    dialog.innerHTML=`<div class="jj-help-heading"><h2 id="jjCustomerHelpTitle">Add it. Pick it. Done.</h2><button type="button" data-help-close aria-label="Close help" autofocus>×</button></div>
-      <ol class="jj-help-steps">
-        <li><strong>Found something you like?</strong><p>Tap <b>Add a link</b>, paste the product link, check the details, and tap <b>Add Selection</b>.</p></li>
-        <li><strong>Ready to choose?</strong><p>Open a group and tap <b>Mark Selected</b> on your favorite.</p></li>
-        <li><strong>Changed your mind?</strong><p>Tap <b>Selected</b> again to undo. Use <b>+ Add Option</b> to compare another product.</p></li>
-      </ol><button type="button" class="jj-help-done" data-help-close>Got it</button>`;
-    // Staff preview has its own global theme rules. Keep help readable in both hosts.
-    const helpNight=customerTheme==='night';
-    const helpText=helpNight?'#f1f5fa':'#14234a';
-    dialog.style.setProperty('background',helpNight?'#183249':'#ffffff','important');
-    dialog.style.setProperty('color',helpText,'important');
-    dialog.querySelectorAll('*').forEach(element=>{
-      element.style.setProperty('color',helpText,'important');
-      element.style.setProperty('opacity','1','important');
-    });
-    dialog.querySelectorAll('button').forEach(button=>{
-      button.style.setProperty('background',helpNight?'#29475f':'#f1f4f8','important');
-      button.style.setProperty('border','1px solid '+(helpNight?'#8ba2b6':'#b8c5d4'),'important');
-    });
-    host.appendChild(dialog);
-    dialog.querySelectorAll('[data-help-close]').forEach(button=>button.onclick=()=>dialog.close());
-    // Do not let Escape also close the staff customer-preview underneath.
-    dialog.addEventListener('keydown',event=>{if(event.key==='Escape')event.stopPropagation()});
-    dialog.addEventListener('close',()=>{dialog.remove();host.querySelector('#jj830Help')?.focus()},{once:true});
-    dialog.showModal();
+  // Visible instructions only; keeps both adapters' existing save paths.
+  function quickGuide(){
+    host.querySelector('#jjCustomerGuide')?.remove();
+    const anchor=host.querySelector('.toolbar')||host.querySelector('#jjCustomer830');
+    if(!anchor)return;
+    const guide=document.createElement('section');guide.id='jjCustomerGuide';
+    guide.setAttribute('aria-label','Quick instructions');
+    guide.innerHTML='<strong>Let’s make it yours.</strong><p><b>Add:</b> Paste a product link, check the details, then tap Add Selection.</p><p><b>Choose:</b> Open a group and pick your favorite.</p><p><b>Undo:</b> Tap your chosen product again.</p>';
+    const night=customerTheme==='night';
+    guide.style.setProperty('background',night?'#354132':'#faf4e7','important');
+    guide.style.setProperty('color',night?'#f1f5fa':'#14234a','important');
+    guide.querySelectorAll('*').forEach(el=>{el.style.setProperty('color',night?'#f1f5fa':'#14234a','important');el.style.setProperty('opacity','1','important')});
+    anchor.before(guide);
+    const add=host.querySelector('#newSelection')||host.querySelector('#jj830AddLink');
+    if(add){add.style.setProperty('background','#b59a62','important');add.style.setProperty('color','#102437','important');}
+
   }
 
-  function controls(){const root=host.querySelector('[data-customer-items]');if(!root)return;host.querySelector('#jjCustomer830')?.remove();const all=getItems(),pref=['Tile','Plumbing','Vanities','Lighting','Hardware','Doors / Hardware','Cabinetry'],present=[...new Set(all.map(cat).filter(Boolean))],cats=['All selections',...pref.filter(c=>present.includes(c)),...present.filter(c=>!pref.includes(c))];if(!cats.includes(activeCategory))activeCategory='All selections';const c=document.createElement('div');c.id='jjCustomer830';c.innerHTML=`<div class="jj830-left">${adapter.onAddLink?'<button type="button" id="jj830AddLink">+ Add a link</button>':''}<div class="jj830-seg"><button id="jj830GroupMode" aria-pressed="${mode==='all'}" title="${mode==='all'?'Collapse options into groups':'Expand all group options'}">${mode==='all'?'Show Groups':'Show All'}</button><button id="jj830Selected" aria-pressed="${selectedOnly}" title="Selected, Ordered, and Received products">${selectedOnly?'Show All Items':'Show Selected'}</button><button id="jj830Theme" aria-label="Switch to ${customerTheme==='night'?'day':'night'} mode">${customerTheme==='night'?'☀ Day mode':'☾ Night mode'}</button></div></div><div class="jj830-right"><button type="button" id="jj830Help" aria-haspopup="dialog">? Help</button><div class="jj830-seg"><button class="jj830-view" id="jj830Card" title="Card view" aria-label="Card view" aria-pressed="${viewMode==='card'}">▦</button><button class="jj830-view" id="jj830List" title="List view" aria-label="List view" aria-pressed="${viewMode==='list'}">☰</button></div></div>`;root.before(c);c.onclick=e=>{const b=e.target.closest('button');if(!b)return;if(b.id==='jj830AddLink'){adapter.onAddLink(update);return;}if(b.id==='jj830Help'){openHelp();return;}if(b.id==='jj830Theme'){customerTheme=customerTheme==='night'?'day':'night';applyTheme()}else if(b.id==='jj830Selected'){selectedOnly=!selectedOnly}else if(b.id==='jj830GroupMode'){mode=mode==='all'?'groups':'all';if(mode==='groups')openGroups.clear();localStorage.setItem('jj-ho-group-mode',mode)}else if(b.id==='jj830Card'){viewMode='card';localStorage.setItem('jj-ho-view-mode','card')}else if(b.id==='jj830List'){viewMode='list';localStorage.setItem('jj-ho-view-mode','list')}else if(b.dataset.cat)activeCategory=b.dataset.cat;controls();render830()}}
+  function controls(){const root=host.querySelector('[data-customer-items]');if(!root)return;host.querySelector('#jjCustomer830')?.remove();const all=getItems(),pref=['Tile','Plumbing','Vanities','Lighting','Hardware','Doors / Hardware','Cabinetry'],present=[...new Set(all.map(cat).filter(Boolean))],cats=['All selections',...pref.filter(c=>present.includes(c)),...present.filter(c=>!pref.includes(c))];if(!cats.includes(activeCategory))activeCategory='All selections';const c=document.createElement('div');c.id='jjCustomer830';c.innerHTML=`${adapter.onAddLink?'<button type="button" id="jj830AddLink">+ Add a link</button>':''}<div class="jj830-filters" role="group" aria-label="View selections"><button type="button" id="jj830All" aria-pressed="${!selectedOnly}">All selections</button><button type="button" id="jj830Selected" aria-pressed="${selectedOnly}">My choices</button></div><details class="jj830-display"><summary>View options</summary><div class="jj830-settings"><button type="button" id="jj830GroupMode" aria-pressed="${mode==='all'}">${mode==='all'?'Collapse groups':'Expand all groups'}</button><button type="button" id="jj830Theme" aria-label="Switch to ${customerTheme==='night'?'day':'night'} mode">${customerTheme==='night'?'☀ Day mode':'☾ Night mode'}</button><button type="button" id="jj830Card" aria-pressed="${viewMode==='card'}">Card view</button><button type="button" id="jj830List" aria-pressed="${viewMode==='list'}">List view</button></div></details>`;root.before(c);c.onclick=e=>{const b=e.target.closest('button');if(!b)return;if(b.id==='jj830AddLink'){adapter.onAddLink(update);return;}if(b.id==='jj830Theme'){customerTheme=customerTheme==='night'?'day':'night';applyTheme()}else if(b.id==='jj830All'){selectedOnly=false}else if(b.id==='jj830Selected'){selectedOnly=true}else if(b.id==='jj830GroupMode'){mode=mode==='all'?'groups':'all';if(mode==='groups')openGroups.clear();localStorage.setItem('jj-ho-group-mode',mode)}else if(b.id==='jj830Card'){viewMode='card';localStorage.setItem('jj-ho-view-mode','card')}else if(b.id==='jj830List'){viewMode='list';localStorage.setItem('jj-ho-view-mode','list')}else if(b.dataset.cat)activeCategory=b.dataset.cat;controls();quickGuide();render830()}}
 
 
- function update(){controls();render830()}
+ function update(){controls();quickGuide();render830()}
  host.addEventListener('click',event=>{
   const toggle=event.target.closest('[data-toggle-group]');
   if(toggle){if(mode==='all'){mode='groups';host.querySelectorAll('[data-toggle-group]').forEach(button=>openGroups.add(button.dataset.toggleGroup));controls();}const id=toggle.dataset.toggleGroup;openGroups.has(id)?openGroups.delete(id):openGroups.add(id);render830();return;}

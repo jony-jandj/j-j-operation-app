@@ -1,5 +1,5 @@
 importScripts('./request-work-push-sw.js');
-const CACHE_NAME = 'jj-live-20261015-simple-link';
+const CACHE_NAME = 'jj-live-20261019-simple-homeowner';
 const APP_SHELL = [
  './po-work-preview.js',
  './selection-print.js',
