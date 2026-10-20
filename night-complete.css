@@ -316,3 +316,17 @@ html body #redesignChrome #redesignMenuToggle:hover,html body #redesignChrome #r
  @media(max-width:520px){#jj-selection-print .jj-print-toolbar{display:grid;grid-template-columns:1fr auto}#jj-selection-print .jj-print-toolbar label{grid-column:1/-1;margin:0}#jj-selection-print .jj-print-toolbar select{width:100%;font-size:16px}#jj-selection-print .jj-print-toolbar [role=status]{grid-column:1/-1}}
  @media(prefers-reduced-motion:reduce){#jj-selection-print .jj-print-toolbar button{transition:none;transform:none!important}}
 }
+
+/* Per-job internal selection notes, above the print and sharing controls. */
+#selections .selection-heading-right{flex:0 1 560px;display:flex;flex-direction:column;align-items:stretch;gap:10px}
+#selections .selection-heading .selection-summary{margin-top:16px}
+#selections .selection-job-notes{padding:12px 14px;border:1px solid var(--line,#cbd5e1);border-radius:12px;background:var(--panel,#fff);min-width:0}
+#selections .selection-job-notes label{display:block;font-size:13px;font-weight:700;margin-bottom:7px;color:var(--text,#172d42)}
+#selections .selection-job-notes textarea{display:block;width:100%;box-sizing:border-box;min-height:76px;max-height:200px;resize:vertical;overflow:auto;padding:8px 10px;border:1px solid var(--line,#cbd5e1);border-radius:8px;background:transparent;color:inherit;font:inherit;font-size:14px;line-height:1.5}
+#selections .selection-job-notes textarea:focus{outline:2px solid #b59a62;outline-offset:2px}
+#selections .selection-job-notes small{display:block;margin-top:7px;color:var(--muted,#64748b);font-size:11px}
+#selections .selection-heading-actions{justify-content:flex-end}
+html[data-preview-theme=night] #selections .selection-job-notes{background:#172e44;color:#e6edf4;border-color:#51697e}
+html[data-preview-theme=night] #selections .selection-job-notes label{color:#e6edf4}
+html[data-preview-theme=night] #selections .selection-job-notes small{color:#b8c9d9}
+@media(max-width:900px){#selections .selection-heading-right{flex:0 1 auto;width:100%}#selections .selection-heading-actions{justify-content:flex-start}#selections .selection-job-notes textarea{font-size:16px}}

@@ -9969,12 +9969,22 @@ function openSelections(){
 const selectedOnlyProjects=new Set();
 function toggleSelectedSelections(){const id=String(selectedProject().id);selectedOnlyProjects.has(id)?selectedOnlyProjects.delete(id):selectedOnlyProjects.add(id);renderSelections();}
 function selectionIsChosen(item){return ['Selected','Ordered','Received'].includes(item.status);}
+function updateSelectionJobNotes(input){
+  const project=state.projects.find(p=>String(p.id)===input.dataset.projectId);
+  if(!project || project.selectionJobNotes===input.value)return;
+  project.selectionJobNotes=input.value;
+  saveState(false);
+}
+
 function renderSelections(){
   if(!selectedProject()){const empty=document.getElementById('selections');if(empty)empty.innerHTML='<p>Sign in and choose a job to continue.</p>';return;}
   const root=document.getElementById('selections');
   if(!root) return;
   ensureSelectionsData();
   const project=selectedProject();
+  const activeNotes=root.querySelector('#selectionJobNotes');
+  const notesFocus=activeNotes===document.activeElement && activeNotes.dataset.projectId===String(project.id)
+    ? {start:activeNotes.selectionStart,end:activeNotes.selectionEnd,scroll:activeNotes.scrollTop} : null;
   const items=project.selections||[];
   const selectedRoom=project.selectionActiveRoom && project.selectionRooms.includes(project.selectionActiveRoom)
     ? project.selectionActiveRoom
@@ -9993,12 +10003,17 @@ function renderSelections(){
         <div class="eyebrow">${esc(project.jobNo||'Current Job')}</div>
         <h2>Selections</h2>
         <p>${esc(project.name)} · ${esc(project.type)}</p>
-      </div>
-      <div class="selection-heading-right">
         <div class="selection-summary">
           <span><b>${selectedCount}</b>Selected</span>
           <span><b>${pendingCount}</b>Pending</span>
           <span><b>${selectionMoney(total)}</b>Total</span>
+        </div>
+      </div>
+      <div class="selection-heading-right">
+        <div class="selection-job-notes">
+          <label for="selectionJobNotes">Selection notes</label>
+          <textarea id="selectionJobNotes" data-project-id="${esc(String(project.id))}" rows="3" placeholder="Notes, reminders, and ordering details for this job…" oninput="updateSelectionJobNotes(this)" aria-describedby="selectionJobNotesHint">${esc(project.selectionJobNotes||'')}</textarea>
+          <small id="selectionJobNotesHint">Shared with your internal team · Saves automatically</small>
         </div>
         <div class="selection-heading-actions">
           <button class="selection-header-button" onclick="openHomeownerView()">Customer View</button>
@@ -10050,6 +10065,7 @@ function renderSelections(){
     </div>
     <div id="selectionModalBackdrop" class="selection-modal-backdrop" onclick="if(event.target===this)closeSelectionEditor()"></div>
   </div>`;
+  if(notesFocus){const input=root.querySelector('#selectionJobNotes');input.focus({preventScroll:true});input.setSelectionRange(notesFocus.start,notesFocus.end);input.scrollTop=notesFocus.scroll;}
 }
 
 function setSelectionGroupMode(enabled){
