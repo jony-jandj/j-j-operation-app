@@ -1,0 +1,6 @@
+/* Staff group ordering uses the existing shared selectionGroups array. */
+(()=>{'use strict';let dragged=null;
+function groups(p){const list=(p.selectionGroups||[]).slice(),seen=new Set(list.map(g=>String(g.id)));for(const i of p.selections||[]){const id=String(i.optionGroupId||'');if(id&&!seen.has(id)){seen.add(id);list.push({id,name:i.optionGroupTitle||i.title||'Selection Group'})}}return list}
+function move(id,target,offset){const p=window.selectedProject();if(!p)return;const list=groups(p),from=list.findIndex(g=>String(g.id)===String(id));if(from<0)return;const to=target===null?from+offset:list.findIndex(g=>String(g.id)===String(target));if(to<0||to>=list.length||from===to)return;const [item]=list.splice(from,1);list.splice(to,0,item);p.selectionGroups=list;window.saveState(false);window.renderSelections();}
+window.JJGroupOrder={move(id,offset){move(id,null,offset)},start(event,id){dragged={id,job:String(window.selectedProject()?.id)};event.dataTransfer.effectAllowed='move';event.dataTransfer.setData('text/plain',id)},over(event){if(dragged)event.preventDefault()},drop(event,id){if(!dragged)return;event.preventDefault();if(String(window.selectedProject()?.id)===dragged.job)move(dragged.id,id,0);dragged=null},end(){dragged=null}};
+})();
