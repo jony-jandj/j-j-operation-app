@@ -1,5 +1,5 @@
 importScripts('./request-work-push-sw.js');
-const CACHE_NAME = 'jj-live-20261021-link-photo';
+const CACHE_NAME = 'jj-live-20261021-sidebar-order';
 const APP_SHELL = [
  './customer-simple-add.js',
  './selection-group-order.js',

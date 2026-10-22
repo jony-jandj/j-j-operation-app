@@ -10092,9 +10092,8 @@ function selectionNamedGroups(project,items,allItems,collapsed=true){
     if(bucket)bucket.items.push(item);else ungrouped.push(item);
   });
   if(ungrouped.length)buckets.push({id:'ungrouped',name:'Ungrouped selections',items:ungrouped});
-  return buckets.filter(bucket=>bucket.items.length || (selectionFilter==='All'&&!selectedOnlyProjects.has(String(project.id)))).map(bucket=>`<section data-selection-group-id="${esc(bucket.id)}" ondragover="window.JJGroupOrder?.over(event)" ondrop="window.JJGroupOrder?.drop(event,this.dataset.selectionGroupId)" class="selection-room-group named-selection-group ${collapsed?'collapsed':''}">
+  return buckets.filter(bucket=>bucket.items.length || (selectionFilter==='All'&&!selectedOnlyProjects.has(String(project.id)))).map(bucket=>`<section data-selection-group-id="${esc(bucket.id)}" class="selection-room-group named-selection-group ${collapsed?'collapsed':''}">
     <div class="selection-room-heading" style="flex-wrap:wrap;gap:8px">
-      ${bucket.id!=='ungrouped'?`<div style="display:flex;gap:4px;align-items:center" aria-label="Reorder group"><button type="button" draggable="true" ondragstart="window.JJGroupOrder?.start(event,this.closest('[data-selection-group-id]').dataset.selectionGroupId)" ondragend="window.JJGroupOrder?.end()" aria-label="Drag to reorder group" title="Drag to reorder" style="cursor:grab;min-width:44px;min-height:44px">⠿</button><button type="button" aria-label="Move group up" title="Move group up" onclick="window.JJGroupOrder?.move(this.closest('[data-selection-group-id]').dataset.selectionGroupId,-1)" style="min-width:44px;min-height:44px">↑</button><button type="button" aria-label="Move group down" title="Move group down" onclick="window.JJGroupOrder?.move(this.closest('[data-selection-group-id]').dataset.selectionGroupId,1)" style="min-width:44px;min-height:44px">↓</button></div>`:''}
       <button class="selection-room-toggle" type="button" onclick="const group=this.closest('.selection-room-group');group.classList.toggle('collapsed');this.setAttribute('aria-expanded',String(!group.classList.contains('collapsed')))" aria-expanded="${!collapsed}">
         <span><b>${esc(bucket.name)}</b></span>
         <span class="selection-room-chevron" aria-hidden="true">⌄</span>
@@ -10842,7 +10841,7 @@ document.querySelector('.brand')?.addEventListener('keydown',e=>{
 <script src="parity-features.js"></script>
 <link rel="stylesheet" href="parity-features.css">
 
-<script src="selections-navigation.js"></script>
+<script src="selections-navigation.js?v=20261021-sidebar-order"></script>
 
 <link rel="stylesheet" href="request-work.css?v=20260928-card"><script src="request-work.js?v=20260928-card"></script>
 
