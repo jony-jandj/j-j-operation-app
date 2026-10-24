@@ -1,0 +1,12 @@
+Reserve-funded P.O.s — October 24, 2026
+
+Purchase Orders > Create P.O.
+Choose a job-cost category, enter title, description and dollar payout, and assign in-house or sub/supplier. Creates a Draft without an estimate row.
+
+Payouts reduce projected job reserve once, starting in Draft. Approval, completion and payment preserve that deduction. Builder cost and original estimated budget are not increased. Payout cannot exceed the current available reserve shown when saving.
+
+Existing split lines, mixed teams, Job Closeout, bills and payment balances use the same payout records. Estimate linking excludes reserve-funded P.O.s. Completed work history stays locked.
+
+Validation: isolated full-app browser checks with sample records for creation, payout edits, cap rejection, estimate isolation, approval, completion snapshots, partial payments, mixed-team split amounts, cents rounding, reload, original estimated P.O.s and phone layout. Hosted concurrent-device reserve-cap testing was not performed; the displayed capacity uses the latest state available on the device. No real P.O.s or payment records were changed during testing.
+
+No SQL migration is required.

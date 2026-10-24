@@ -8099,6 +8099,7 @@ function estimateRowHasPO(p,row){
   if(!title) return false;
 
   return (p.pos||[]).some(po=>{
+    if(po.fundingSource==='job-reserve')return false;
     // New P.O.s get an exact source key.
     if(po.sourceEstimateKey){
       return po.sourceEstimateKey===sourceKey;
@@ -8397,9 +8398,10 @@ function renderPayByLine(){
       <div>
         <div class="eyebrow">Project P.Os</div>
         <h2>P.O. Splits</h2>
-        <p>Start with the estimate, then generate and manage the labor splits here.</p>
+        <p>Manage estimate P.O.s or create extra work paid from this job’s reserve.</p>
       </div>
       <div class="page-title-actions">
+        <button class="btn btn-gold" onclick="openReservePO()">+ Create P.O.</button>
         <details class="compact-action-menu">
           <summary>Print</summary>
           <div class="compact-menu-panel">
@@ -8990,6 +8992,7 @@ function linkedEstimatePOs(project,row){
     norm(estimateRowTitle(other))===title && norm(other.parentGroup||other.parent_group)===parent
   ).length===1;
   return (project.pos||[]).filter(po=>{
+    if(po.fundingSource==='job-reserve')return false;
     if(po.sourceEstimateKey===source) return true;
     // Recover old links broken by a prior description edit only if unambiguous.
     if(!unique) return false;
@@ -9610,8 +9613,9 @@ function generatePOs(){
   const p=selectedProject();
   const labor=laborLines(p);
   if(!labor.length){alert('Add labor line items first.');return;}
+  const reservePOs=p.pos.filter(po=>po.fundingSource==='job-reserve');
   p.pos=labor.map((r,i)=>{
-    const existing=p.pos.find(x=>x.line===(r.title ?? r.line));
+    const existing=p.pos.find(x=>x.fundingSource!=='job-reserve'&&x.line===(r.title ?? r.line));
     return existing || {
       id:`${p.jobNo}-L${String(i+1).padStart(2,'0')}`,
       line:r.title ?? r.line,builderCost:Number(r.builderCost),status:'Draft',
@@ -9619,6 +9623,7 @@ function generatePOs(){
       splits:[{name:'',pct:100}]
     };
   });
+  p.pos.push(...reservePOs);
   p.precon[1]=Math.max(p.precon[1],95);
   saveState(false); renderAll(); projectTab='laborpos'; renderProject(); toast('Labor P.O.s generated');
 }
