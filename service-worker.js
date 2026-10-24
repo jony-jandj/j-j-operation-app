@@ -1,5 +1,5 @@
 importScripts('./request-work-push-sw.js');
-const CACHE_NAME = 'jj-live-20261024-paid-print';
+const CACHE_NAME = 'jj-live-20261024-balance-summary';
 const APP_SHELL = [
  './customer-simple-add.js',
  './selection-group-order.js',
