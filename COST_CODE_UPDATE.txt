@@ -1,0 +1,7 @@
+Buildertrend cost-code dropdown — October 24, 2026
+
+Create P.O. / Edit reserve P.O. now has a required dropdown with 135 exact cost-code entries grouped under the 22 categories in BTCostCodes_20261024.xlsx, Costs sheet. Variance reasons are separate and are not mixed into cost-code choices.
+
+Selected code and category are stored separately on the P.O., inherited by splits, retained in new completed-work snapshots and shown in detailed P.O. printouts. Existing records are not automatically recategorized. Editing an older reserve P.O. asks for an exact code if one has not been assigned.
+
+Tested in isolated full-app browser with sample records: option counts, exact selected value and category, edit persistence, snapshots/print detail, reserve arithmetic, split teams, partial payments, reload and phone layout. No SQL change. Buildertrend export is not part of this release.
