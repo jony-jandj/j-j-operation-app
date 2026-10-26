@@ -1,5 +1,5 @@
-importScripts('./request-work-push-sw.js');
-const CACHE_NAME = 'jj-live-20261026-weekly-notices';
+importScripts('./request-work-push-sw.js?v=20261026-descriptive');
+const CACHE_NAME = 'jj-live-20261026-homeowner-save-fix';
 const APP_SHELL = [
  './customer-simple-add.js',
  './selection-group-order.js',
