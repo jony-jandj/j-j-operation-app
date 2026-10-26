@@ -1,0 +1,11 @@
+Weekly In-house Report and Notifications
+
+- Dashboard report available to Jony, Adair, and Gio.
+- Monday–Sunday selector, employee earned/paid/balance, totals, P.O. details, Print / Save PDF.
+- Paid amounts include matching ticket payments from any date; voided payments excluded.
+- Homeowner selection changes notify all three internal users with job and group name.
+- Notification links open the matching selection group.
+- R.W. notices identify the person, request, and job.
+- Existing payment records and selection records are preserved.
+
+Backend NOTIFICATIONS_UPDATE.sql and push worker deployed separately.

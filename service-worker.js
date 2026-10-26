@@ -1,5 +1,5 @@
 importScripts('./request-work-push-sw.js');
-const CACHE_NAME = 'jj-live-20261026-rw-edit';
+const CACHE_NAME = 'jj-live-20261026-weekly-notices';
 const APP_SHELL = [
  './customer-simple-add.js',
  './selection-group-order.js',
