@@ -7655,6 +7655,7 @@ function launchPrint(html){
   if(!root) return;
 
   root.innerHTML=html;
+  if(window.JJMobilePrint?.mobile()){JJMobilePrint.node(root,'printing');return;}
   document.body.classList.add('printing');
 
   const cleanup=()=>{
@@ -10815,6 +10816,7 @@ if ('serviceWorker' in navigator) {
 <script src="./customer-view.js?v=20261021-link-photo"></script>
 <script src="./customer-simple-add.js?v=20261021-link-photo"></script><script src="./customer-overlay.js?v=20261021-link-photo"></script>
 <script src="./qrcode.min.js"></script>
+<script src="mobile-print.js"></script>
 <script src="selection-print.js"></script>
 <script src="po-work-preview.js"></script>
 

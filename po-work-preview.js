@@ -21,7 +21,7 @@ function open(data){
  const frame=dialog.querySelector('iframe'),recipient=dialog.querySelector('[data-recipient]'),others=dialog.querySelector('[data-others]'),print=dialog.querySelector('[data-print]');
  function render(){print.disabled=true;frame.srcdoc=documentHTML(data,recipient.value,others.checked)}
  frame.onload=()=>print.disabled=false;recipient.onchange=render;others.onchange=render;
- print.onclick=()=>{frame.contentWindow.focus();frame.contentWindow.print()};dialog.querySelector('[data-close]').onclick=()=>dialog.close();dialog.onclose=()=>dialog.remove();render();
+ print.onclick=()=>{if(window.JJMobilePrint?.mobile()){JJMobilePrint.open(frame.contentDocument.documentElement.outerHTML);return}frame.contentWindow.focus();frame.contentWindow.print()};dialog.querySelector('[data-close]').onclick=()=>dialog.close();dialog.onclose=()=>dialog.remove();render();
 }
 window.JJDraftWorkPreview={open,documentHTML};
 })();
