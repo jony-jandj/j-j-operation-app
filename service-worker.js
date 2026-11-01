@@ -1,5 +1,5 @@
 importScripts('./request-work-push-sw.js?v=20261026-descriptive');
-const CACHE_NAME = 'jj-live-20261101-selection-allowance';
+const CACHE_NAME = 'jj-live-20261101-split-save';
 const APP_SHELL = [
  './mobile-print.js',
  './customer-simple-add.js',
