@@ -1,5 +1,5 @@
 importScripts('./request-work-push-sw.js?v=20261026-descriptive');
-const CACHE_NAME = 'jj-live-20261101-rw-reliability';
+const CACHE_NAME = 'jj-live-20261102-selected-pending';
 const APP_SHELL = [
  './mobile-print.js',
  './customer-simple-add.js',
