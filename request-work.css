@@ -47,3 +47,6 @@ html[data-preview-theme=night] .jj-rw,body[data-theme=night] .jj-rw,body.night .
 #rw-create [hidden]{display:none!important}
 #rw-create .rw-error:empty{display:none}
 @media(max-width:450px){#rw-create .rw-compose-head,#rw-create .rw-compose-body{padding:16px}#rw-create .rw-compose-pair{grid-template-columns:1fr;gap:0}#rw-create .rw-compose-footer{flex-direction:column;align-items:stretch}#rw-create .rw-assignee-grid{gap:6px}}
+
+/* Urgent work stays identifiable in both themes without changing completion colors. */
+.jj-rw .rw-status.rw-overdue{background:#fff0ee;color:#9b302b;border:1px solid #e9b5b0;font-weight:700}
