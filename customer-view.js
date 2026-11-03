@@ -11,6 +11,24 @@ window.JJCustomerView={mount(host,adapter){
   let activeCategory='All selections';
   let selectedOnly=false;
   const openGroups=new Set();
+  let favorites={},favoritesReady=false,favoriteBusy=false,favoriteReading=false;
+  const favoriteAccess=adapter.favoriteAccess;
+  function favoriteMessage(text){const node=host.querySelector('[data-customer-message],#message');if(node)node.textContent=text;}
+  function paintFavorites(){host.querySelectorAll('[data-favorite]').forEach(b=>{const yes=favorites[b.dataset.favorite]===true;const i=getItems().find(i=>String(i.id)===b.dataset.favorite);b.setAttribute('aria-pressed',String(yes));b.setAttribute('aria-label',(yes?'Remove favorite: ':'Favorite: ')+(i?.title||'Selection'));b.title=yes?'Remove favorite':'Save as a favorite';b.style.setProperty('background',yes?'#e1bf6c':'#fffaf0','important');b.style.setProperty('color','#14234a','important');b.querySelector('span').textContent=yes?'★':'☆';b.disabled=!favoritesReady||favoriteBusy||!!adapter.isSaving?.();});}
+  async function loadFavorites(){
+    if(!favoriteAccess||favoriteBusy||favoriteReading||!host.isConnected)return;
+    favoriteReading=true;
+    try{const {data,error}=await favoriteAccess.client.rpc('jj_portal_favorites',favoriteAccess.args);if(error)throw error;favorites=data||{};favoritesReady=true;paintFavorites();}
+    catch(e){favoritesReady=false;favoriteMessage('Favorites could not load. Refresh to try again.');paintFavorites();}
+    finally{favoriteReading=false;}
+  }
+  async function toggleFavorite(id){
+    if(!favoriteAccess||!favoritesReady||favoriteBusy||favoriteReading)return;
+    const previous=favorites[id]===true;favoriteBusy=true;paintFavorites();favoriteMessage('Saving favorite…');
+    try{const {data,error}=await favoriteAccess.client.rpc('jj_portal_favorites',{...favoriteAccess.args,p_item:id,p_favorite:!previous,p_expected:previous});if(error)throw error;favorites=data||{};favoriteMessage(previous?'Favorite removed.':'Favorite saved.');}
+    catch(e){favoriteMessage(e.message||'Could not save favorite. Please try again.');}
+    finally{favoriteBusy=false;paintFavorites();host.querySelectorAll('[data-favorite]').forEach(b=>{if(b.dataset.favorite===id)b.focus({preventScroll:true})});}
+  }
   const E=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const safe=u=>/^https?:\/\//i.test(String(u||''))?String(u):'';
   const img=u=>safe(u)||(/^data:image\/(?:jpeg|jpg|png|webp|gif);base64,/i.test(String(u||''))?String(u):'');
@@ -69,7 +87,7 @@ html :is(#jjTheme#jjScope#jjPriority#jjOverride,.jj-customer-view[data-customer-
 @media(max-width:720px){.jj-customer-view #jjCustomer830{display:block}.jj-customer-view #jj830AddLink{width:100%;margin-bottom:14px}.jj-customer-view .jj830-display{margin-top:8px}.jj-customer-view .jj830-group-head{flex-wrap:wrap}.jj-customer-view .jj830-group-toggle{flex-basis:60%!important}.jj-customer-view .jj830-actions>*{flex:1}.jj-customer-view .jj830-list .jj830-card{display:block}.jj-customer-view .jj830-list .jj830-photo{height:190px;min-height:0}.jj-customer-view .toolbar #newSelection{flex-basis:100%}.jj-customer-view .jj830-settings button{flex:1 1 40%}}
 `;document.head.appendChild(s)}
 
-  function card(i,all){const selected=i.status==='Selected',blocked=unavailable(i,all),locked=!['Pending','Recommended','Selected'].includes(i.status||'Pending'),priced=i.unitPrice!==null&&i.unitPrice!==undefined&&i.unitPrice!==''&&Number.isFinite(Number(i.unitPrice)),total=Number(i.unitPrice||0)*Number(i.quantity||1)*(i.addTax?1.0825:1),image=img(i.image);return `<article class="jj830-card ${selected?'chosen':''}"><div class="jj830-photo"><span class="jj830-status">${E(i.status==='Selected'?'Chosen':i.status||'Pending')}</span>${image?`<img src="${E(image)}" alt="${E(i.title||'Product photo')}">`:`<div class="jj830-placeholder">No product photo</div>`}</div><div class="jj830-body"><div class="jj830-catline">${E(cat(i))}</div><h2>${E(i.title||'Selection')}${i.optionLabel?`<span class="jj830-option">${E(i.optionLabel)}</span>`:''}</h2><div class="jj830-vendor">${E(i.vendor||'')}${i.model?` · Model/SKU ${E(i.model)}`:''}</div>${i.description?`<p class="jj830-detail">${E(i.description)}</p>`:''}<div class="jj830-price-row"><div class="jj830-price">${priced?money(total):'Price not set'}<small>${priced?`${E(i.quantity||1)} item${Number(i.quantity||1)===1?'':'s'}${i.addTax?' · tax included':''}`:'J&J will add pricing'}</small></div><div class="jj830-buyer">Purchased by<b>${E(i.purchasedBy||'Not assigned')}</b></div></div><div class="jj830-actions">${selected?`<button data-select="${E(i.id)}" aria-pressed="true">✓ Chosen · tap to undo</button>`:blocked?`<button disabled>Another option is chosen</button>`:locked?`<button disabled>${E(i.status)}</button>`:`<button data-select="${E(i.id)}" aria-pressed="false">Choose this</button>`}<button type="button" data-option="${E(i.id)}">+ Add Option</button>${safe(i.url)?`<a href="${E(safe(i.url))}" target="_blank" rel="noopener noreferrer">View product ↗</a>`:''}</div></div></article>`}
+  function card(i,all){const selected=i.status==='Selected',blocked=unavailable(i,all),locked=!['Pending','Recommended','Selected'].includes(i.status||'Pending'),priced=i.unitPrice!==null&&i.unitPrice!==undefined&&i.unitPrice!==''&&Number.isFinite(Number(i.unitPrice)),total=Number(i.unitPrice||0)*Number(i.quantity||1)*(i.addTax?1.0825:1),image=img(i.image);return `<article class="jj830-card ${selected?'chosen':''}"><div class="jj830-photo">${favoriteAccess?`<button type="button" class="jj830-favorite" style="background:${favorites[String(i.id)]===true?'#e1bf6c':'#fffaf0'}!important;color:#14234a!important;border-color:#b59a62!important" data-favorite="${E(i.id)}" aria-label="${favorites[String(i.id)]===true?'Remove favorite: ':'Favorite: '}${E(i.title||'Selection')}" aria-pressed="${favorites[String(i.id)]===true}" title="${favorites[String(i.id)]===true?'Remove favorite':'Save as a favorite'}" ${!favoritesReady||favoriteBusy?'disabled':''}><span aria-hidden="true">${favorites[String(i.id)]===true?'★':'☆'}</span></button>`:''}<span class="jj830-status">${E(i.status==='Selected'?'Chosen':i.status||'Pending')}</span>${image?`<img src="${E(image)}" alt="${E(i.title||'Product photo')}">`:`<div class="jj830-placeholder">No product photo</div>`}</div><div class="jj830-body"><div class="jj830-catline">${E(cat(i))}</div><h2>${E(i.title||'Selection')}${i.optionLabel?`<span class="jj830-option">${E(i.optionLabel)}</span>`:''}</h2><div class="jj830-vendor">${E(i.vendor||'')}${i.model?` · Model/SKU ${E(i.model)}`:''}</div>${i.description?`<p class="jj830-detail">${E(i.description)}</p>`:''}<div class="jj830-price-row"><div class="jj830-price">${priced?money(total):'Price not set'}<small>${priced?`${E(i.quantity||1)} item${Number(i.quantity||1)===1?'':'s'}${i.addTax?' · tax included':''}`:'J&J will add pricing'}</small></div><div class="jj830-buyer">Purchased by<b>${E(i.purchasedBy||'Not assigned')}</b></div></div><div class="jj830-actions">${selected?`<button data-select="${E(i.id)}" aria-pressed="true">✓ Chosen · tap to undo</button>`:blocked?`<button disabled>Another option is chosen</button>`:locked?`<button disabled>${E(i.status)}</button>`:`<button data-select="${E(i.id)}" aria-pressed="false">Choose this</button>`}<button type="button" data-option="${E(i.id)}">+ Add Option</button>${safe(i.url)?`<a href="${E(safe(i.url))}" target="_blank" rel="noopener noreferrer">View product ↗</a>`:''}</div></div></article>`}
   function filtered(){return getItems().filter(i=>(activeCategory==='All selections'||cat(i)===activeCategory)&&(!selectedOnly||['Selected','Ordered','Received'].includes(i.status)))}
   function group(group,all){const first=group[0],id=String(first.optionGroupId||first.id),collapsed=!selectedOnly&&mode!=='all'&&!openGroups.has(id);return `<section class="jj830-group ${!first.optionGroupId?'jj830-standalone':''} ${collapsed?'collapsed':''}" data-group="${E(id)}"><div class="jj830-group-head"><button type="button" class="jj830-group-toggle" data-toggle-group="${E(id)}" aria-expanded="${!collapsed}">${E(first.optionGroupTitle||first.title||'Selection Group')}</button><span class="jj830-count">${group.length} option${group.length===1?'':'s'}</span><button type="button" class="jj830-add" data-option="${E(first.id)}">+ Add Option</button></div>${window.JJGroupBudgets&&adapter.getGroups?window.JJGroupBudgets.homeownerHtml(adapter.getGroups().find(g=>String(g.id)===id),all.filter(i=>String(i.optionGroupId||i.id)===id)):""}<div class="jj830-group-items">${group.map(i=>card(i,all)).join('')}</div></section>`}
 
@@ -84,7 +102,7 @@ html :is(#jjTheme#jjScope#jjPriority#jjOverride,.jj-customer-view[data-customer-
     if(!anchor)return;
     const guide=document.createElement('section');guide.id='jjCustomerGuide';
     guide.setAttribute('aria-label','Quick instructions');
-    guide.innerHTML='<strong>Let’s make it yours.</strong><p><b>Add:</b> Paste a link or choose a photo, then tap Add.</p><p><b>Choose:</b> Open a group and pick your favorite.</p><p><b>Undo:</b> Tap your chosen product again.</p>';
+    guide.innerHTML='<strong>Let’s make it yours.</strong><p><b>Add:</b> Paste a link or choose a photo, then tap Add.</p><p><b>☆ Favorite:</b> Tap the star to save an option you like. Tap again to undo. It isn’t your final choice.</p><p><b>Choose:</b> Tap Choose this when you’re ready.</p><p><b>Undo:</b> Tap your chosen product again.</p>';
     const night=customerTheme==='night';
     guide.style.setProperty('background',night?'#354132':'#faf4e7','important');
     guide.style.setProperty('color',night?'#f1f5fa':'#14234a','important');
@@ -111,16 +129,19 @@ html :is(#jjTheme#jjScope#jjPriority#jjOverride,.jj-customer-view[data-customer-
 
  function update(){controls();quickGuide();render830()}
  host.addEventListener('click',event=>{
+  const star=event.target.closest('[data-favorite]');if(star){event.stopPropagation();if(!star.disabled)toggleFavorite(star.dataset.favorite);return;}
   const toggle=event.target.closest('[data-toggle-group]');
   if(toggle){if(mode==='all'){mode='groups';host.querySelectorAll('[data-toggle-group]').forEach(button=>openGroups.add(button.dataset.toggleGroup));controls();}const id=toggle.dataset.toggleGroup;openGroups.has(id)?openGroups.delete(id):openGroups.add(id);render830();return;}
   if(adapter.onSelect){const button=event.target.closest('[data-select]');if(button&&!button.disabled)adapter.onSelect(button.dataset.select,update);}
   if(adapter.onAdd){const button=event.target.closest('[data-option]');if(button)adapter.onAdd(button.dataset.option,update);}
  });
- styles();update();return {update};
+ styles();
+ const starStyle=document.createElement('style');starStyle.textContent='.jj-customer-view .jj830-favorite{position:absolute!important;right:10px!important;top:10px!important;z-index:3!important;display:grid!important;place-items:center!important;width:48px!important;height:48px!important;min-height:48px!important;padding:0!important;border:2px solid #b59a62!important;border-radius:50%!important;background:#fffaf0!important;color:#725410!important;font-size:32px!important;line-height:1!important;cursor:pointer}.jj-customer-view .jj830-favorite[aria-pressed="true"]{background:#e1bf6c!important;color:#14234a!important}.jj-customer-view .jj830-favorite:focus-visible{outline:3px solid #16858c!important;outline-offset:3px}.jj-customer-view .jj830-favorite:disabled{cursor:wait;opacity:.65}.jj-customer-view .jj830-status{max-width:calc(100% - 80px)}';host.appendChild(starStyle);
+ update();loadFavorites();const favoriteTimer=setInterval(()=>{if(!host.isConnected){clearInterval(favoriteTimer);return;}if(!document.hidden)loadFavorites()},8000);return {update};
 }};
 if(/homeowner\.html$/i.test(location.pathname)){
  const root=document.getElementById('items');root.dataset.customerItems='';
- const view=window.JJCustomerView.mount(document.body,{getItems:()=>items,getGroups:()=>selectionGroups});
+ const view=window.JJCustomerView.mount(document.body,{getItems:()=>items,getGroups:()=>selectionGroups,isSaving:()=>busy,favoriteAccess:{client,args:{p_token:token}}});
  window.render=view.update;
 }
 })();

@@ -18,6 +18,7 @@
   const current=()=>state.projects.find(p=>String(p.id)===String(project.id));
   const getItems=()=>current()?.selections||[];
   const view=window.JJCustomerView.mount(host,{getItems,getGroups:()=>current()?.selectionGroups||[],
+   favoriteAccess:typeof cloudClient!=='undefined'&&cloudClient?{client:cloudClient,args:{p_job:String(project.id)}}:null,
    onSelect(id,update){
     const all=getItems(),item=all.find(i=>String(i.id)===id);
     if(!item||!['Pending','Recommended','Selected'].includes(item.status||'Pending'))return;
