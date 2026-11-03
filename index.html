@@ -10261,7 +10261,7 @@ function selectionCard(item,index){
   const status=item.status||'Pending';
   const statusClass=status.toLowerCase().replace(/[^a-z]+/g,'-');
   const statusIcon=status==='Pending'?'◷ ':['Selected','Ordered','Received'].includes(status)?'✓ ':'';
-  return `<article class="selection-card">
+  return `<article class="selection-card" data-staff-selection="${esc(item.id)}">
     <div class="selection-photo"><div class="selection-photo-status ${statusClass}">${statusIcon}${esc(status)}</div><button class="selection-card-menu" onclick="openSelectionEditor(${index})" aria-label="Selection actions">•••</button>${photo}</div>
     <div class="selection-card-body">
       <div class="selection-card-meta">${esc(item.category||'Selection')}</div>
@@ -10868,3 +10868,5 @@ document.querySelector('.brand')?.addEventListener('keydown',e=>{
 <link rel="stylesheet" href="request-work.css?v=20261103-board"><script src="request-work.js?v=20261103-board"></script>
 
 <script src="./request-work-push.js"></script>
+
+<script src="staff-favorites.js?v=20261103-shared-favorites"></script>
