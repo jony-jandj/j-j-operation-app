@@ -97,3 +97,9 @@ html[data-preview-theme] #jj-rw#jj-rw#jj-rw .wb-card .wb-jony{color:#852d22!impo
 html[data-preview-theme] #jj-rw#jj-rw#jj-rw .wb-card .wb-adair{color:#674e08!important}
 html[data-preview-theme] #jj-rw#jj-rw#jj-rw .wb-card .wb-gio{color:#245c35!important}
 html[data-preview-theme] #jj-rw#jj-rw#jj-rw .wb-card .wb-reason{color:#33434d!important}
+
+/* Distinct day boundaries and an open-only Unscheduled queue. */
+#jj-rw .wb-day,#jj-rw .wb-month-day{border:1px solid #b79a5e!important}
+#jj-rw .wb-today{border-width:2px!important}
+#jj-rw .wb-unscheduled-columns{grid-template-columns:repeat(2,minmax(0,1fr))}
+@media(max-width:430px){#jj-rw .wb-unscheduled-columns{grid-template-columns:1fr}}
