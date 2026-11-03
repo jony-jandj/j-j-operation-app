@@ -3,10 +3,10 @@
 #items.list{grid-template-columns:1fr}#items.list article{display:grid;grid-template-columns:150px minmax(0,1fr);align-items:start}#items.list .photo{height:140px;margin-top:20px}#items.list article:not(:has(.photo)) .card-body{grid-column:1/-1}.card-body{min-width:0;overflow-wrap:anywhere;background:#fff}.actions[aria-label="Selections view"]{margin-bottom:16px}.actions button[aria-pressed="true"]{background:#14234a;color:#fff}.option-group{margin:0 0 14px;border:1px solid #d9dce2;border-radius:12px;background:#f8fafb;overflow:hidden}.option-group>summary{cursor:pointer;padding:14px 16px;background:#fff;font-weight:800;list-style:none}.option-group>summary::-webkit-details-marker{display:none}.option-group>summary span{float:right;color:#657080;font-size:13px;font-weight:500}.option-group-items{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;padding:14px}.option-label{display:inline-block;color:#657080;font-size:12px;font-weight:650}.readonly-field{padding:10px;border:1px solid #bbc2ce;border-radius:6px;margin:6px 0 14px;background:#f2f4f7;color:#596579;font-weight:650}@media(max-width:520px){#items.list article{grid-template-columns:85px minmax(0,1fr)}#items.list .photo{height:90px}}
 </style></head><body><header>J&J Home Renovations · Homeowner Selections</header><main><h1 id="job">Your selections</h1><p>Review products and pricing, add photos, and compare linked options. Selecting one option makes the others unavailable until it is unselected.</p><p id="message" role="status">Opening your private link…</p><div class="toolbar"><button id="newSelection" class="primary" hidden>+ Add a link or photo</button><button id="refresh" class="secondary" hidden>Refresh selections</button></div><div class="actions" role="group" aria-label="Selections view"><button id="cardView" class="secondary" aria-pressed="true">Card view</button><button id="listView" class="secondary" aria-pressed="false">List view</button></div><div id="items"></div></main>
 <dialog id="editor" aria-labelledby="editorTitle"><form id="selectionForm"><div class="modal-head"><h2 id="editorTitle">Add Selection</h2><button type="button" id="closeEditor" class="secondary" aria-label="Close editor">×</button></div><div class="form-body"><label>Product link<input name="url" type="url" maxlength="2000" placeholder="https://"></label><button type="button" id="fillLink" class="secondary">Fill from link</button><small id="lookupMessage" role="status">Update the link to fill product details. Pricing stays with J&J.</small><div class="fields"><label>Product name<input name="title" required maxlength="200"></label><label>Room<input name="room" maxlength="150"></label><label>Category<input name="category" maxlength="100"></label><label>Vendor<input name="vendor" maxlength="200"></label><label>Model / SKU<input name="model" maxlength="200"></label><label>Quantity<input name="quantity" type="number" min="1" max="10000" step="any" value="1" required></label></div><label>Description / finish / color<textarea name="description" rows="4" maxlength="4000"></textarea></label><div class="photo-editor"><img id="preview" alt="Product photo preview" hidden><label>Photo<input id="photoFile" type="file" accept="image/*"></label><label>Or photo URL<input id="photoUrl" type="url" placeholder="https://"></label><button type="button" id="removePhoto" class="secondary">Remove photo</button><small>Choose a photo from your phone or computer. Photos are resized for faster loading.</small></div><div class="fields"><label>Purchased by<div class="readonly-field">Staff assigns buyer</div></label><label>Current status<select name="status"><option>Pending</option><option>Selected</option></select></label></div><small>Pricing is set by J&J and is read-only. New products are added without a price. Approval and ordering statuses are managed by J&J.</small><p id="editorMessage" role="status"></p></div><div class="modal-foot"><button type="button" id="cancelEditor" class="secondary">Cancel</button><button id="saveSelection" class="primary">Add Selection</button></div></form></dialog>
-<script src="selections-metadata.js"></script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="customer-simple-add.js?v=20261021-link-photo"></script><script>
+<script src="selections-metadata.js?v=20261103-undo-save"></script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="customer-simple-add.js?v=20261021-link-photo"></script><script>
 const token=new URLSearchParams(location.hash.slice(1)).get('key')||'';
 const client=window.supabase?.createClient('https://mrkvspqwqsmlnhrfllpx.supabase.co','sb_publishable_n5w6Q2b1nvsnOEcYZL2fsQ_u0gGltVk',{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}});
-const $=id=>document.getElementById(id),msg=$('message'),editor=$('editor'),form=$('selectionForm');let lookupGeneration=0,lookupBusy=false;let busy=false,reading=false,items=[],selectionGroups=[],editingId=null,editingOriginal=null,optionParentId=null,photo='',photoLoading=false,photoVersion=0;
+const $=id=>document.getElementById(id),msg=$('message'),editor=$('editor'),form=$('selectionForm');let lookupGeneration=0,lookupBusy=false;let readTask=null,readEpoch=0;let busy=false,reading=false,items=[],selectionGroups=[],editingId=null,editingOriginal=null,optionParentId=null,photo='',photoLoading=false,photoVersion=0;
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const safe=u=>/^https?:\/\//i.test(u||'')?u:'';
 const safeImage=u=>safe(u)||(/^data:image\/(jpeg|jpg|png|webp|gif);base64,/i.test(u||'')?u:'');
@@ -19,13 +19,21 @@ function render(){
  const groups=new Map();items.forEach(i=>{const key=i.optionGroupId||i.id;if(!groups.has(key))groups.set(key,[]);groups.get(key).push(i);});
  $('items').innerHTML=[...groups].map(([key,group])=>group.length>1?`<details class="option-group"><summary>${esc(group[0].optionGroupTitle||group[0].title||'Selection options')} <span>${group.length} options · tap to compare</span></summary><div class="option-group-items">${group.map(renderItem).join('')}</div></details>`:renderItem(group[0])).join('')||'<p>No selections yet. Use + Add Selection to add your first product.</p>';
 }
-async function refresh(silent=false){
- if(reading)return; if(!client){msg.textContent='Unable to connect. Check your connection and refresh.';return;}
- if(!/^[a-f0-9]{64}$/.test(token)){msg.textContent='Open the private QR code or link provided by J&J.';return;}
- reading=true;
+async function refresh(silent=false,afterWrite=false){
+ if(busy&&!afterWrite)return false;
+ if(readTask)return readTask;
+ if(!client){msg.textContent='Unable to connect. Check your connection and refresh.';return false;}
+ if(!/^[a-f0-9]{64}$/.test(token)){msg.textContent='Open the private QR code or link provided by J&J.';return false;}
+ const epoch=readEpoch;reading=true;
+ readTask=(async()=>{
  try{const {data,error}=await client.rpc('jj_portal_read',{p_token:token});if(error)throw error;
- items=data.items||[];selectionGroups=data.selectionGroups||[];$('job').textContent=data.jobName+' · Selections';render();msg.textContent='Your selections are up to date.';$('newSelection').hidden=false;$('refresh').hidden=false;
- }catch(e){if(!silent)msg.textContent='Could not refresh selections. Check your connection or ask J&J to check this link.';}finally{reading=false;}
+ if(epoch!==readEpoch)return false;
+ items=data.items||[];selectionGroups=data.selectionGroups||[];$('job').textContent=data.jobName+' · Selections';render();
+ if(busy)document.querySelectorAll('button').forEach(b=>b.disabled=true);
+ msg.textContent=afterWrite?'Saved. Your selections are up to date.':'Your selections are up to date.';$('newSelection').hidden=false;$('refresh').hidden=false;return true;
+ }catch(e){if(!silent)msg.textContent='Could not confirm the latest selections. Check your connection and refresh.';return false;}
+ finally{reading=false;readTask=null;}
+ })();return readTask;
 }
 function showPhoto(){photo=safeImage(photo);$('preview').src=photo;$('preview').hidden=!photo;}
 function addAnotherOption(id){const base=items.find(i=>String(i.id)===String(id));if(!base)return;optionParentId=id;openEditor(null);}
@@ -39,10 +47,19 @@ function openEditor(id=null){
 }
 function closeEditor(){if(!busy){photoVersion++;optionParentId=null;editor.close();$('newSelection').focus();}}
 async function write(action,item){
- if(busy)return false;busy=true;document.querySelectorAll('button').forEach(b=>b.disabled=true);$('editorMessage').textContent='Saving…';
- try{const {error}=await client.rpc('jj_portal_write',{p_token:token,p_action:action,p_item:item});if(error)throw error;await refresh();return true;}catch(e){msg.textContent=e.message||'Could not save. Please try again.';$('editorMessage').textContent=msg.textContent;return false;}finally{busy=false;document.querySelectorAll('button').forEach(b=>b.disabled=false);}
+ if(busy)return false;busy=true;readEpoch++;
+ const disabled=[...document.querySelectorAll('button')].map(b=>[b,b.disabled]);
+ disabled.forEach(([b])=>b.disabled=true);msg.textContent='Saving your change…';$('editorMessage').textContent='Saving…';
+ try{
+ if(readTask)await readTask;
+ const {error}=await client.rpc('jj_portal_write',{p_token:token,p_action:action,p_item:item});if(error)throw error;
+ const confirmed=await refresh(false,true);
+ if(!confirmed)msg.textContent='Change sent. Refresh to confirm the saved result before making another choice.';
+ return true;
+ }catch(e){msg.textContent=e.message||'Could not save. Please try again.';$('editorMessage').textContent=msg.textContent;return false;}
+ finally{busy=false;disabled.forEach(([b,wasDisabled])=>{if(b.isConnected)b.disabled=wasDisabled});render();}
 }
-$('items').addEventListener('click',e=>{const edit=e.target.closest('[data-edit]'),opt=e.target.closest('[data-option]'),b=e.target.closest('[data-select]');if(edit)openEditor(edit.dataset.edit);if(opt)addAnotherOption(opt.dataset.option);if(b){const i=items.find(i=>String(i.id)===b.dataset.select);write('select',{id:b.dataset.select,expectedStatus:i.status});}});
+$('items').addEventListener('click',e=>{const edit=e.target.closest('[data-edit]'),opt=e.target.closest('[data-option]'),b=e.target.closest('[data-select]');if(edit)openEditor(edit.dataset.edit);if(opt)addAnotherOption(opt.dataset.option);if(b&&!b.disabled&&!busy){const i=items.find(i=>String(i.id)===b.dataset.select);if(i&&['Pending','Recommended','Selected'].includes(i.status||'Pending'))write('select',{id:b.dataset.select,expectedStatus:i.status||'Pending'});}});
 form.addEventListener('submit',async e=>{e.preventDefault();if(lookupBusy){$('editorMessage').textContent='Please wait for product details to finish loading.';return;}if(photoLoading){$('editorMessage').textContent='Please wait for the photo to finish loading.';return;}const data=Object.fromEntries(new FormData(form));delete data.purchasedBy;data.status=form.elements.status.value;data.image=photo;if(editingId!==null){data.id=editingId;data.expected=editingOriginal;}else if(optionParentId!==null){const parent=items.find(i=>String(i.id)===String(optionParentId));data.optionGroupId=parent?.optionGroupId||parent?.id;data.optionGroupTitle=parent?.optionGroupTitle||parent?.title;data.optionLabel='Another option';}if(await write(editingId===null?'add':'edit',data)) {optionParentId=null;closeEditor();}});
 $('photoFile').onchange=async e=>{
  const file=e.target.files[0];if(!file)return;const version=++photoVersion;photoLoading=true;$('editorMessage').textContent='Loading photo…';

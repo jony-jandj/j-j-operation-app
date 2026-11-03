@@ -10751,7 +10751,7 @@ renderAll();
 syncUserSelector();
 restoreLayoutPreferences();
 
-// QR links are rendered by selections-metadata.js after the app shell loads.
+// QR links are rendered by selections-metadata.js?v=20261103-undo-save after the app shell loads.
 // Keeping the legacy renderer out of this path prevents two H.O. overlays from
 // competing with each other during startup.
 
@@ -10826,7 +10826,7 @@ if ('serviceWorker' in navigator) {
 </script>
 
 <!-- Selections / homeowner enhancements. This must load after the app script. -->
-<script src="./selections-metadata.js?v=20261103-bulk-assignee"></script>
+<script src="./selections-metadata.js?v=20261103-undo-save"></script>
 <script src="selection-budgets.js?v=20261101-allowance"></script><script src="selection-group-order.js?v=20261021-link-photo"></script>
 <script src="./customer-view.js?v=20261021-link-photo"></script>
 <script src="./customer-simple-add.js?v=20261021-link-photo"></script><script src="./customer-overlay.js?v=20261021-link-photo"></script>

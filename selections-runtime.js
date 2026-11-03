@@ -73,7 +73,7 @@
     return value !== undefined && value !== null && value !== '';
   }
 
-  function mergeOneSelection(localItem,remoteItem){
+  function mergeOneSelection(localItem,remoteItem,baselineItem){
     // Local/app record wins by default. Only fill information that is missing
     // locally. This prevents older homeowner snapshots from rolling products
     // backward while still allowing recovery of incomplete records.
@@ -91,12 +91,13 @@
       }
     });
 
-    // Homeowner may positively select something. Accept that positive action,
-    // but never downgrade Ordered/Received/Approved or delete the local record.
-    if(remoteItem.homeownerSelected===true){
-      merged.homeownerSelected=true;
-      if(remoteItem.homeownerSelectedAt) merged.homeownerSelectedAt=remoteItem.homeownerSelectedAt;
-      if((merged.status||'Pending')==='Pending') merged.status='Selected';
+    // Accept both choose and undo from the completed portal sync, but never
+    // replace a status edited locally while that request was in flight.
+    const keys=['status','homeownerSelected','homeownerSelectedAt'];
+    const unchanged=baselineItem&&keys.every(key=>JSON.stringify(localItem[key])===JSON.stringify(baselineItem[key]));
+    if(unchanged&&['Pending','Recommended','Selected'].includes(localItem.status||'Pending')
+      &&['Pending','Recommended','Selected'].includes(remoteItem.status||'Pending')){
+      keys.forEach(key=>{if(Object.prototype.hasOwnProperty.call(remoteItem,key))merged[key]=clone(remoteItem[key])});
     }
 
     if(remoteItem.inStock===true && !merged.inStock) merged.inStock=true;
@@ -104,7 +105,7 @@
     return merged;
   }
 
-  function safeMergeRemoteState(remoteState,source='homeowner'){
+  function safeMergeRemoteState(remoteState,source='homeowner',baseline){
     const s=currentState();
     if(!s?.projects || !remoteState?.projects) return {added:0,filled:0};
 
@@ -120,6 +121,9 @@
       if(!Array.isArray(localProject.selections)) localProject.selections=[];
       if(!Array.isArray(localProject.selectionRooms)) localProject.selectionRooms=[];
       if(!Array.isArray(localProject.selectionGroups)) localProject.selectionGroups=[];
+
+      const priorProject=projectMatch(baseline?.projects||[],remoteProject);
+      const priorItem=id=>(priorProject?.selections||[]).find(item=>String(item.id)===String(id));
 
       // Never remove rooms/groups from the app. Union only.
       for(const room of remoteProject.selectionRooms||[]){
@@ -152,7 +156,7 @@
         if(key && byId.has(key)){
           const localItem=byId.get(key);
           const before=JSON.stringify(localItem);
-          const merged=mergeOneSelection(localItem,remoteItem);
+          const merged=mergeOneSelection(localItem,remoteItem,priorItem(localItem.id));
           Object.assign(localItem,merged);
           if(JSON.stringify(localItem)!==before) filled++;
           continue;
@@ -171,7 +175,7 @@
         const existing=localProject.selections.find(item=>fingerprint(item)===fp && fp!=='|||');
         if(existing){
           const before=JSON.stringify(existing);
-          Object.assign(existing,mergeOneSelection(existing,remoteItem));
+          Object.assign(existing,mergeOneSelection(existing,remoteItem,priorItem(existing.id)));
           if(JSON.stringify(existing)!==before) filled++;
         }else{
           localProject.selections.push(clone(remoteItem));
@@ -193,7 +197,12 @@
     return {added,filled};
   }
 
+  function hasPendingSave(){
+    try{return cloudSaveInFlight||cloudSaveQueued}catch{return false}
+  }
+
   async function safeManualSync(){
+    if(hasPendingSave()){try{toast("Please wait for your current save to finish")}catch{};return;}
     if(safeSyncBusy) return;
     if(!safeRpc){
       try{ toast('Cloud is still connecting'); }catch{}
@@ -206,6 +215,7 @@
 
     safeSyncBusy=true;
     try{
+      const baseline=clone(currentState());
       const {data,error}=await safeRpc('jj_portal_sync',{p_job:String(project.id)});
       if(error) throw error;
       if(!data){
@@ -213,7 +223,7 @@
         return;
       }
 
-      const result=safeMergeRemoteState(data,'manual-homeowner-sync');
+      const result=safeMergeRemoteState(data,'manual-homeowner-sync',baseline);
       try{
         toast(result.added
           ? `Recovered ${result.added} missing selection${result.added===1?'':'s'}`
@@ -228,7 +238,7 @@
   }
 
   async function safeAutoSync(){
-    if(safeSyncBusy || document.hidden || !safeRpc) return;
+    if(safeSyncBusy || hasPendingSave() || document.hidden || !safeRpc) return;
 
     // Avoid changing state while the user is editing.
     if(document.querySelector('.selection-modal-backdrop.open')
@@ -239,9 +249,10 @@
 
     safeSyncBusy=true;
     try{
+      const baseline=clone(currentState());
       const {data,error}=await safeRpc('jj_portal_sync_pending');
       if(!error && data){
-        safeMergeRemoteState(data,'auto-homeowner-sync');
+        safeMergeRemoteState(data,'auto-homeowner-sync',baseline);
       }
     }catch(err){
       console.warn('Safe auto homeowner sync:',err);
