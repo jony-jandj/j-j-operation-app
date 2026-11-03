@@ -160,3 +160,32 @@ html body #jj-rw#jj-rw#jj-rw#jj-rw .wb-card .wb-reason{margin-top:5px;padding-to
 @media(max-width:700px){#jj-rw{padding:10px}#jj-rw .wb-day{grid-template-columns:repeat(3,minmax(0,1fr))}#jj-rw .wb-day-name{padding:7px 10px}#jj-rw .wb-cell{padding:5px}#jj-rw#jj-rw#jj-rw#jj-rw .wb-card{display:block}#jj-rw .wb-card .wb-names{justify-content:flex-start;max-width:none}}
 @media(max-width:430px){#jj-rw .wb-day{grid-template-columns:1fr}}
 @media(pointer:coarse){#jj-rw .wb-cell-label button,#jj-rw .wb-card-foot button,#jj-rw .wb-card .wb-title{min-height:44px}}
+
+/* Work Board contrast: separate canvas, day surfaces, and job cards in both themes. */
+html body #jj-rw#jj-rw#jj-rw#jj-rw#jj-rw{
+ --wb-canvas:#edf1f5;--wb-paper:#fff;--wb-alt:#f6f8fa;--wb-ink:#182b40;--wb-border:#acbac7;
+ --wb-card-base:#fff;--wb-card-text:#172b40;--wb-card-muted:#43566a;--wb-card-line:#8799ab;
+ --wb-day-band:#efe1bc;--wb-gold:#a58236;--wb-job-mix:22%;--wb-button:#fff;--wb-selected:#233f55;
+ background:var(--wb-canvas)!important;color:var(--wb-ink)!important;
+}
+:is(html[data-preview-theme=night],html[data-theme=night],body[data-theme=night],body.night) #jj-rw#jj-rw#jj-rw#jj-rw#jj-rw{
+ --wb-canvas:#0c1c2b;--wb-paper:#192e42;--wb-alt:#20374d;--wb-ink:#f3f7fc;--wb-border:#70879b;
+ --wb-card-base:#334d64;--wb-card-text:#fff;--wb-card-muted:#e0e9f1;--wb-card-line:#8fa5b8;
+ --wb-day-band:#594a2b;--wb-gold:#d8b767;--wb-job-mix:24%;--wb-button:#233f56;--wb-selected:#49677e;
+}
+html body #jj-rw#jj-rw#jj-rw#jj-rw#jj-rw :is(.wb-header h2,.wb-header p,.wb-period,.wb-cell-label,.wb-day-name,.wb-day-name strong,.wb-day-name span,.wb-day-name small,.wb-extra summary,.wb-toolbar>label){color:var(--wb-ink)!important}
+html body #jj-rw#jj-rw#jj-rw#jj-rw#jj-rw :is(.wb-day,.wb-month-day,.wb-extra){background:var(--wb-paper)!important;border-color:var(--wb-gold)!important}
+html body #jj-rw#jj-rw#jj-rw#jj-rw#jj-rw .wb-day-name{background:var(--wb-day-band)!important;border-color:var(--wb-gold)!important}
+html body #jj-rw#jj-rw#jj-rw#jj-rw#jj-rw :is(.wb-cell,.wb-cell-label){border-color:var(--wb-border)!important}
+html body #jj-rw#jj-rw#jj-rw#jj-rw#jj-rw .wb-card{background:color-mix(in srgb,var(--job-color) var(--wb-job-mix),var(--wb-card-base))!important;border-color:color-mix(in srgb,var(--job-color) 60%,var(--wb-card-line))!important;border-left-color:var(--job-color)!important;color:var(--wb-card-text)!important}
+html body #jj-rw#jj-rw#jj-rw#jj-rw#jj-rw .wb-card .wb-title{color:var(--wb-card-text)!important}
+html body #jj-rw#jj-rw#jj-rw#jj-rw#jj-rw .wb-card :is(.wb-job,small,.wb-reason,.wb-card-foot,.wb-card-foot span){color:var(--wb-card-muted)!important}
+html body #jj-rw#jj-rw#jj-rw#jj-rw#jj-rw .wb-card .wb-reason{border-color:var(--wb-card-line)!important}
+html body #jj-rw#jj-rw#jj-rw#jj-rw#jj-rw :is(.wb-toolbar button,.wb-toolbar input,.wb-cell-label button,.wb-header button,.wb-card-foot button){background:var(--wb-button)!important;color:var(--wb-ink)!important;border-color:var(--wb-border)!important}
+html body #jj-rw#jj-rw#jj-rw#jj-rw#jj-rw .wb-toolbar button[aria-pressed=true]{background:var(--wb-selected)!important;color:#fff!important;border-color:var(--wb-gold)!important;box-shadow:inset 0 -2px var(--wb-gold)}
+html body #jj-rw#jj-rw#jj-rw#jj-rw#jj-rw .wb-card small.wb-overdue{color:#a12b20!important}
+:is(html[data-preview-theme=night],html[data-theme=night],body[data-theme=night],body.night) #jj-rw#jj-rw#jj-rw#jj-rw#jj-rw .wb-card small.wb-overdue{color:#ffd0c4!important}
+
+/* Keep all three statuses together; only unfinished requests count as open. */
+#jj-rw .wb-unscheduled-columns{grid-template-columns:repeat(3,minmax(0,1fr))}
+@media(max-width:430px){#jj-rw .wb-unscheduled-columns{grid-template-columns:1fr}}
