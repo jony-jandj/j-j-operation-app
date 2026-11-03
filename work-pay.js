@@ -512,7 +512,7 @@ function recipientDetails(list){
 }
 function builderPayoutPercent(amount,builderCost){const paid=Number(amount),cost=Number(builderCost);return Number.isFinite(paid)&&Number.isFinite(cost)&&cost>0?(paid/cost*100).toFixed(2)+'%':'—';}
 // Payment totals include every recorded date and exclude voided records via paid().
-function printPaymentSummary(amount,paidAmount){const balance=amount-paidAmount;return `<div class="jj-payout-summary"><span>Payout: <b>${M(amount)}</b></span><span>Already paid: <b>${M(paidAmount)}</b></span><strong data-left-to-pay>${balance<0?'Credit / overpaid':'Left to pay'}: <b>${M(Math.abs(balance))}</b></strong></div>`;}
+function printPaymentSummary(amount,paidAmount){const balance=amount-paidAmount;return `<div class="jj-payout-summary"><span>Payout: <b>${M(amount)}</b></span><span data-already-paid>Already paid: <b>${M(paidAmount)}</b></span><strong data-left-to-pay>${balance<0?'Credit / overpaid':'Left to pay'}: <b>${M(Math.abs(balance))}</b></strong></div>`;}
 function printRowPayments(list){return printPaymentSummary(list.reduce((n,r)=>n+r.amount,0),list.reduce((n,r)=>n+paid(r.workId,r.person),0));}
 function compactPrintCard(w,workId){
  const amount=w.allocations.reduce((sum,a)=>sum+a.amount,0),alreadyPaid=w.allocations.reduce((sum,a)=>sum+paid(workId,a.person),0);
@@ -641,7 +641,7 @@ function chooseCloseoutPrint(){
  const previous=document.getElementById('jj-closeout-print-choice');if(previous?.open)return;previous?.remove();
  if(workPayPrintRoot)finishWorkPayPrint();
  const picker=document.createElement('dialog');picker.id='jj-closeout-print-choice';picker.className='jj-wp-dialog';
- picker.innerHTML='<h2>'+ (mode==='work'?'Print Job Closeout':'Print Bills') +'</h2><label style="display:flex;align-items:center;gap:8px;margin:14px 0"><input type="checkbox" data-show-print-balance '+(showPrintBalance?'checked':'')+'> Show left to pay</label><p>Choose who this copy is for.</p><div style="display:flex;flex-wrap:wrap;gap:12px"><button type="button" class="btn btn-gold" data-print-audience="crew">Print for Subs / In-house</button><button type="button" class="btn btn-light" data-print-audience="contractor">Print for Contractor</button></div><p><b>Subs / In-house:</b> names, work descriptions, and payout amounts. Builder costs and percentages of builder cost are hidden.</p><p><b>Contractor:</b> the full breakdown, including builder costs and percentages.</p><button type="button" class="btn btn-light" data-print-cancel>Cancel</button>';
+ picker.innerHTML='<h2>'+ (mode==='work'?'Print Job Closeout':'Print Bills') +'</h2><label style="display:flex;align-items:center;gap:8px;margin:14px 0"><input type="checkbox" data-show-print-balance '+(showPrintBalance?'checked':'')+'> Show already paid and left to pay</label><p>Choose who this copy is for.</p><div style="display:flex;flex-wrap:wrap;gap:12px"><button type="button" class="btn btn-gold" data-print-audience="crew">Print for Subs / In-house</button><button type="button" class="btn btn-light" data-print-audience="contractor">Print for Contractor</button></div><p><b>Subs / In-house:</b> names, work descriptions, and payout amounts. Builder costs and percentages of builder cost are hidden.</p><p><b>Contractor:</b> the full breakdown, including builder costs and percentages.</p><button type="button" class="btn btn-light" data-print-cancel>Cancel</button>';
  document.body.append(picker);
  picker.addEventListener('close',()=>picker.remove(),{once:true});
  const dismissPicker=()=>{picker.close();picker.remove();};
@@ -671,7 +671,7 @@ function prepareWorkPayPrint(includeBuilder=false){
  workPayPrintRoot.className='jj-wp-dialog';
  workPayPrintRoot.innerHTML=dialog.innerHTML;
  workPayPrintRoot.querySelectorAll('button').forEach(button=>button.remove());
- if(!showPrintBalance)workPayPrintRoot.querySelectorAll('[data-left-to-pay]').forEach(node=>node.remove());
+ if(!showPrintBalance)workPayPrintRoot.querySelectorAll('[data-left-to-pay],[data-already-paid]').forEach(node=>node.remove());
  // Hide internal builder cost only in Job Closeout's printed copy.
  if(includeBuilder!==true&&['work','inhouse','subs','bills'].includes(mode)&&page.classList.contains('active'))workPayPrintRoot.querySelectorAll('[data-builder-cost],[data-builder-cost-percentage],[data-contractor-only]').forEach(node=>node.remove());
  document.body.append(workPayPrintRoot);
