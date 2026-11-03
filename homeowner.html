@@ -83,4 +83,4 @@ async function fillLink(){
 }
 $('fillLink').onclick=fillLink;form.elements.url.addEventListener('change',fillLink);
 $('newSelection').onclick=()=>{openEditor();};$('closeEditor').onclick=closeEditor;$('cancelEditor').onclick=closeEditor;editor.addEventListener('cancel',e=>{if(busy)e.preventDefault();});$('refresh').onclick=()=>refresh();setInterval(()=>{if(!document.hidden&&!editor.open&&!document.querySelector('.jj-simple-add[open]')&&!busy)refresh(true)},8000);document.addEventListener('visibilitychange',()=>{if(!document.hidden&&!editor.open&&!document.querySelector('.jj-simple-add[open]')&&!busy)refresh(true)});refresh();
-</script><script src="selection-budgets.js?v=20261101-allowance"></script><script src="customer-view.js?v=20261103-favorite-star"></script></body></html>
+</script><script src="selection-budgets.js?v=20261101-allowance"></script><script src="customer-view.js?v=20261103-favorite-status"></script></body></html>
