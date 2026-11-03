@@ -1,5 +1,5 @@
 importScripts('./request-work-push-sw.js?v=20261026-descriptive');
-const CACHE_NAME = 'jj-live-20261102-closeout-save';
+const CACHE_NAME = 'jj-live-20261102-estimate-po-polish';
 const APP_SHELL = [
  './mobile-print.js',
  './customer-simple-add.js',

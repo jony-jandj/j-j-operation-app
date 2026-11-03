@@ -50,3 +50,7 @@ html[data-preview-theme=night] .jj-rw,body[data-theme=night] .jj-rw,body.night .
 
 /* Urgent work stays identifiable in both themes without changing completion colors. */
 .jj-rw .rw-status.rw-overdue{background:#fff0ee;color:#9b302b;border:1px solid #e9b5b0;font-weight:700}
+
+/* Keep urgency text readable above the global night-mode text overrides. */
+html body #jj-rw#jj-rw#jj-rw .rw-status.rw-overdue{background:#fff0ee!important;color:#9b302b!important;border-color:#e9b5b0!important}
+html[data-preview-theme=night] body #jj-rw#jj-rw#jj-rw .rw-status.rw-overdue,html[data-theme=night] body #jj-rw#jj-rw#jj-rw .rw-status.rw-overdue,body[data-theme=night] #jj-rw#jj-rw#jj-rw .rw-status.rw-overdue,body.night #jj-rw#jj-rw#jj-rw .rw-status.rw-overdue{background:#522f38!important;color:#ffe1df!important;border-color:#dc9096!important}

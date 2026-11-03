@@ -8321,7 +8321,7 @@ function estimateTableHTML(p,mode='hub'){
 
                 <td class="col-po">
                   ${poCreated
-                    ? `<span class="estimate-po-created">Created</span>`
+                    ? `<button type="button" class="btn btn-light estimate-po-created" onclick="openLinkedEstimatePO(${i})" aria-label="Open P.O. for ${esc(r.title)}">Open P.O.</button>`
                     : `<input class="estimate-po-check ${poEligible?'':'estimate-po-disabled'}"
                         type="checkbox"
                         ${poSelected?'checked':''}
@@ -8335,7 +8335,7 @@ function estimateTableHTML(p,mode='hub'){
                 <td class="col-title">
                   ${r.parentGroup ? `<div class="estimate-parent-group">${esc(r.parentGroup)}</div>` : ''}
                   <textarea class="estimate-cell-input estimate-item-input" rows="2"
-                    oninput="${updateFn}(${i},'title',this.value);${updateFn}(${i},'line',this.value)">${esc(r.title)}</textarea>
+                    oninput="${updateFn}(${i},'title',this.value)">${esc(r.title)}</textarea>
                 </td>
 
                 <td class="col-description">
@@ -8983,6 +8983,22 @@ function addEstimateLineFromPOHub(){
   renderPayByLine();
   go('paybyline');
 }
+// Use the existing source link, never a new title-based connection.
+async function openLinkedEstimatePO(i){
+ if(window.JJTestWorkPay?.flushEdits&&!await JJTestWorkPay.flushEdits())return;
+ const p=selectedProject(),row=p?.estimate?.[i];if(!row)return;
+ const linked=linkedEstimatePOs(p,row);if(!linked.length){toast('The linked P.O. could not be found. Refresh and try again.');return;}
+ openProjectPOHub(p.id,'splits');linked.forEach(po=>openPOIds.add(po.id));renderPayByLine();
+ requestAnimationFrame(()=>{
+  const k=JSON.stringify([String(p.id),String(linked[0].id)]);
+  const control=[...document.querySelectorAll('#paybyline [data-key],#paybyline [data-wp="stage-toggle"]')].find(el=>el.dataset.key===k||el.dataset.value===k);
+  const card=control?.closest('.po');if(!card)return;
+  for(let parent=card.parentElement;parent;parent=parent.parentElement)if(parent.tagName==='DETAILS')parent.open=true;
+  const toggle=card.querySelector('[data-wp="stage-toggle"]');if(toggle?.getAttribute('aria-expanded')==='false')toggle.click();
+  const target=control.isConnected?card:[...document.querySelectorAll('#paybyline [data-wp="stage-toggle"]')].find(el=>el.dataset.value===k)?.closest('.po');
+  if(target){target.tabIndex=-1;target.focus({preventScroll:true});target.style.scrollMarginTop='180px';target.scrollIntoView({block:'start',behavior:'instant'});}
+ });
+}
 // Capture links before editing: legacy source keys include description and cost.
 function linkedEstimatePOs(project,row){
   const source=estimateRowSourceKey(row);
@@ -9047,7 +9063,6 @@ function updateEstimateFromPOHub(i,key,val){
     });
     if(existing){
       // Existing P.O. costs are preserved; estimate changes do not rewrite payouts.
-      saveState(false);
     }
   }
 
