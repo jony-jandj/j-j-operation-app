@@ -189,3 +189,5 @@ html body #jj-rw#jj-rw#jj-rw#jj-rw#jj-rw .wb-card small.wb-overdue{color:#a12b20
 /* Keep all three statuses together; only unfinished requests count as open. */
 #jj-rw .wb-unscheduled-columns{grid-template-columns:repeat(3,minmax(0,1fr))}
 @media(max-width:430px){#jj-rw .wb-unscheduled-columns{grid-template-columns:1fr}}
+
+html body #jj-rw#jj-rw#jj-rw#jj-rw#jj-rw .wb-card small.wb-time{grid-column:1/-1;color:var(--wb-card-text)!important;font-weight:700;margin:2px 0}
