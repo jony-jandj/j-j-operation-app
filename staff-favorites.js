@@ -20,14 +20,22 @@
    const id=card.dataset.staffSelection||card.querySelector('[data-jj-bulk-id]')?.dataset.jjBulkId;
    const item=all.find(i=>String(i.id)===String(id));if(!item)return;
    const actions=card.querySelector('.selection-card-actions');if(!actions)return;
-   let button=actions.querySelector('[data-staff-favorite]');
-   if(!button){button=document.createElement('button');button.type='button';button.dataset.staffFavorite=String(id);actions.appendChild(button)}
+   actions.querySelectorAll('a,button').forEach(action=>{
+    if(action.hasAttribute('data-staff-favorite'))return;
+    const text=action.textContent.trim();
+    if(!/^View product/i.test(text)&&text!=='Edit')return;
+    action.style.cssText='display:inline-flex!important;align-items:center!important;justify-content:center!important;gap:5px!important;min-height:32px!important;padding:6px 11px!important;border:1px solid #c9d2de!important;border-radius:8px!important;background:#f4f6f9!important;color:#14234a!important;font-size:12px!important;font-weight:650!important;line-height:1.2!important;text-decoration:none!important;box-shadow:none!important;white-space:nowrap!important;cursor:pointer';
+   });
+   const photo=card.querySelector('.selection-photo');if(!photo)return;
+   photo.style.position='relative';
+   let button=card.querySelector('[data-staff-favorite]');
+   if(!button){button=document.createElement('button');button.type='button';button.dataset.staffFavorite=String(id);photo.appendChild(button)}
    const yes=data.values[String(id)]===true;
-   const text=yes?'★ Favorite':'☆ Favorite';if(button.textContent!==text)button.textContent=text;
+   const text=yes?'★':'☆';if(button.textContent!==text)button.textContent=text;
    button.setAttribute('aria-pressed',String(yes));button.setAttribute('aria-label',(yes?'Remove favorite: ':'Favorite: ')+(item.title||'Selection'));
    button.disabled=!data.ready||reading||writing;
    button.title=data.error||(data.ready?'Shared with homeowner':'Loading shared favorites…');
-   button.style.cssText='min-height:44px;padding:8px 12px;border:1px solid #b59a62;border-radius:9px;background:'+(yes?'#e1bf6c':'#fffaf0')+'!important;color:#14234a!important;font-size:13px;font-weight:750;cursor:pointer';
+   button.style.cssText='position:absolute!important;right:10px!important;bottom:10px!important;top:auto!important;z-index:3!important;display:grid!important;place-items:center!important;width:40px!important;height:40px!important;min-height:40px!important;padding:0!important;border:1px solid #b59a62!important;border-radius:50%!important;box-shadow:0 2px 7px #10243724!important;background:'+(yes?'#e1bf6c':'#fffaf0')+'!important;color:#14234a!important;font-size:28px!important;font-weight:650!important;line-height:1!important;cursor:pointer';
    const badge=card.querySelector('.selection-photo-status');
    if(badge&&data.ready){const text=label(item,all,data.values);if(badge.textContent!==text)badge.textContent=text;}
   });
