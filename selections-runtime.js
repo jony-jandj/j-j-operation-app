@@ -1850,6 +1850,22 @@
     },0);
   }
 
+  function bulkAssignee(){
+    const ids=new Set(selectedItems().map(item=>String(item.id)));if(!ids.size)return;
+    openDialog(`Assign Purchaser · ${ids.size} selected`,
+      `<label>Purchased by<select id="jjV82Assignee"><option value="J&amp;J">J&amp;J</option><option value="Homeowner">Homeowner</option><option value="Not assigned">Not assigned</option></select></label>
+       <div class="jj-v82-note">Only the checked selections will change.</div>`,
+      dialog=>{
+        const value=dialog.querySelector('#jjV82Assignee').value;
+        if(!['J&J','Homeowner','Not assigned'].includes(value))return false;
+        const items=(p()?.selections||[]).filter(item=>ids.has(String(item.id)));
+        if(!items.length)return;
+        items.forEach(item=>{item.purchasedBy=value});
+        bulkSet().clear();bulkDeleteArmed=false;
+        save(`${items.length} selection${items.length===1?'':'s'} assigned to ${value}`);
+      },'Assign');
+  }
+
   function bulkLead(){
     const items=selectedItems();if(!items.length)return;
     openDialog(`Change Lead Time · ${items.length} selected`,
@@ -1900,6 +1916,7 @@
       <button class="btn btn-light" data-action="approve" ${count?'':'disabled'}>Approve</button>
       <button class="btn btn-light" data-action="status" ${count?'':'disabled'}>Status</button>
       <button class="btn btn-light" data-action="group" ${count?'':'disabled'}>Group</button>
+      <button class="btn btn-light" data-action="assignee" ${count?'':'disabled'}>Assignee</button>
       <button class="btn btn-light" data-action="lead" ${count?'':'disabled'}>Lead Time</button>
       ${bulkDeleteArmed&&count
         ? `<button class="btn confirm-delete" data-action="confirm-delete">Confirm Delete (${count})</button><button class="btn btn-light" data-action="cancel-delete">Cancel</button>`
@@ -1911,6 +1928,7 @@
       if(action==='clear'){bulkSet().clear();bulkDeleteArmed=false;window.renderSelections?.()}
       if(action==='status')bulkStatus();
       if(action==='group')bulkGroup();
+      if(action==='assignee')bulkAssignee();
       if(action==='lead')bulkLead();
       if(action==='delete'){bulkDeleteArmed=true;renderBulkBar()}
       if(action==='cancel-delete'){bulkDeleteArmed=false;renderBulkBar()}
