@@ -14,7 +14,14 @@ window.JJCustomerView={mount(host,adapter){
   let favorites={},favoritesReady=false,favoriteBusy=false,favoriteReading=false;
   const favoriteAccess=adapter.favoriteAccess;
   function favoriteMessage(text){const node=host.querySelector('[data-customer-message],#message');if(node)node.textContent=text;}
-  function displayStatus(i,all){
+  function statusColors(status){
+  if(status==='Favorite')return ['#ede4ff','#54268a','#a984d8'];
+  if(['Selected','Chosen','Ordered','Received'].includes(status))return ['#d9f2e3','#185c38','#72b58b'];
+  if(['Pending','Recommended'].includes(status))return ['#f6e7b5','#694d0b','#c4a24f'];
+  return ['#e8edf2','#435365','#a9b6c3'];
+ }
+ function paintStatusColor(node,status){const c=statusColors(status);['background','color','border-color'].forEach((key,n)=>node.style.setProperty(key,c[n],'important'));}
+ function displayStatus(i,all){
     const status=i.status||'Pending';
     if(status==='Selected')return 'Chosen';
     if(!['Pending','Recommended'].includes(status))return status;
@@ -25,7 +32,7 @@ window.JJCustomerView={mount(host,adapter){
     const all=getItems();const byId=new Map(all.map(i=>[String(i.id),i]));
     host.querySelectorAll('[data-selection-status]').forEach(b=>{
       const item=byId.get(b.dataset.selectionStatus);
-      if(item)b.textContent=displayStatus(item,all);
+      if(item){const status=displayStatus(item,all);b.textContent=status;paintStatusColor(b,status);}
     });
   }
   function paintFavorites(){paintFavoriteStatuses();host.querySelectorAll('[data-favorite]').forEach(b=>{const yes=favorites[b.dataset.favorite]===true;const i=getItems().find(i=>String(i.id)===b.dataset.favorite);b.setAttribute('aria-pressed',String(yes));b.setAttribute('aria-label',(yes?'Remove favorite: ':'Favorite: ')+(i?.title||'Selection'));b.title=yes?'Remove favorite':'Save as a favorite';b.style.setProperty('background',yes?'#e1bf6c':'#fffaf0','important');b.style.setProperty('color','#14234a','important');b.querySelector('span').textContent=yes?'★':'☆';b.disabled=!favoritesReady||favoriteBusy||!!adapter.isSaving?.();});}
@@ -105,7 +112,7 @@ html :is(#jjTheme#jjScope#jjPriority#jjOverride,.jj-customer-view[data-customer-
   function filtered(){return getItems().filter(i=>(activeCategory==='All selections'||cat(i)===activeCategory)&&(!selectedOnly||['Selected','Ordered','Received'].includes(i.status)))}
   function group(group,all){const first=group[0],id=String(first.optionGroupId||first.id),collapsed=!selectedOnly&&mode!=='all'&&!openGroups.has(id);return `<section class="jj830-group ${!first.optionGroupId?'jj830-standalone':''} ${collapsed?'collapsed':''}" data-group="${E(id)}"><div class="jj830-group-head"><button type="button" class="jj830-group-toggle" data-toggle-group="${E(id)}" aria-expanded="${!collapsed}">${E(first.optionGroupTitle||first.title||'Selection Group')}</button><span class="jj830-count">${group.length} option${group.length===1?'':'s'}</span><button type="button" class="jj830-add" data-option="${E(first.id)}">+ Add Option</button></div>${window.JJGroupBudgets&&adapter.getGroups?window.JJGroupBudgets.homeownerHtml(adapter.getGroups().find(g=>String(g.id)===id),all.filter(i=>String(i.optionGroupId||i.id)===id)):""}<div class="jj830-group-items">${group.map(i=>card(i,all)).join('')}</div></section>`}
 
-  function render830(){const root=host.querySelector('[data-customer-items]');if(!root)return;const data=filtered();root.classList.toggle('jj830-list',viewMode==='list');root.classList.remove('list');if(!data.length){root.innerHTML='<p style="grid-column:1/-1;padding:22px;background:#fff;border:1px solid #dce2e9;border-radius:12px">No selections in this view.</p>';return}const buckets=new Map();data.forEach(i=>{const k=String(i.optionGroupId||i.id);if(!buckets.has(k))buckets.set(k,[]);buckets.get(k).push(i)});const order=new Map((adapter.getGroups?.()||[]).map((g,n)=>[String(g.id),n]));root.innerHTML=[...buckets.values()].sort((a,b)=>(order.get(String(a[0].optionGroupId||a[0].id))??Infinity)-(order.get(String(b[0].optionGroupId||b[0].id))??Infinity)).map(g=>group(g,getItems())).join('');wireImages();host.querySelectorAll('[data-select]').forEach(button=>{const selected=button.getAttribute('aria-pressed')==='true';const night=customerTheme==='night';button.style.setProperty('background',selected?'#285d43':night?'#d5b66f':'#14234a','important');button.style.setProperty('color',!selected&&night?'#14234a':'#ffffff','important');button.style.setProperty('border-color',selected?'#75b890':night?'#d5b66f':'#14234a','important');});if(customerTheme==='night')host.querySelectorAll('[data-option],.jj830-actions a').forEach(button=>{button.style.setProperty('background','#f5eddd','important');button.style.setProperty('color','#14234a','important');button.style.setProperty('border-color','#d6c6a5','important');})}
+  function render830(){const root=host.querySelector('[data-customer-items]');if(!root)return;const data=filtered();root.classList.toggle('jj830-list',viewMode==='list');root.classList.remove('list');if(!data.length){root.innerHTML='<p style="grid-column:1/-1;padding:22px;background:#fff;border:1px solid #dce2e9;border-radius:12px">No selections in this view.</p>';return}const buckets=new Map();data.forEach(i=>{const k=String(i.optionGroupId||i.id);if(!buckets.has(k))buckets.set(k,[]);buckets.get(k).push(i)});const order=new Map((adapter.getGroups?.()||[]).map((g,n)=>[String(g.id),n]));root.innerHTML=[...buckets.values()].sort((a,b)=>(order.get(String(a[0].optionGroupId||a[0].id))??Infinity)-(order.get(String(b[0].optionGroupId||b[0].id))??Infinity)).map(g=>group(g,getItems())).join('');paintFavoriteStatuses();wireImages();host.querySelectorAll('[data-select]').forEach(button=>{const selected=button.getAttribute('aria-pressed')==='true';const night=customerTheme==='night';button.style.setProperty('background',selected?'#285d43':night?'#d5b66f':'#14234a','important');button.style.setProperty('color',!selected&&night?'#14234a':'#ffffff','important');button.style.setProperty('border-color',selected?'#75b890':night?'#d5b66f':'#14234a','important');});if(customerTheme==='night')host.querySelectorAll('[data-option],.jj830-actions a').forEach(button=>{button.style.setProperty('background','#f5eddd','important');button.style.setProperty('color','#14234a','important');button.style.setProperty('border-color','#d6c6a5','important');})}
   function wireImages(){host.querySelectorAll('.jj830-photo img').forEach(im=>{im.onerror=()=>{const p=im.parentElement;if(p){im.remove();const d=document.createElement('div');d.className='jj830-placeholder';d.textContent='No product photo';p.appendChild(d)}}})}
 
 
@@ -141,7 +148,7 @@ html :is(#jjTheme#jjScope#jjPriority#jjOverride,.jj-customer-view[data-customer-
     root.before(c);c.onclick=e=>{const b=e.target.closest('button');if(!b)return;if(b.id==='jj830AddLink'){adapter.onAddLink(update);return;}if(b.id==='jj830Theme'){customerTheme=customerTheme==='night'?'day':'night';applyTheme()}else if(b.id==='jj830All'){selectedOnly=false}else if(b.id==='jj830Selected'){selectedOnly=true}else if(b.id==='jj830GroupMode'){mode=mode==='all'?'groups':'all';if(mode==='groups')openGroups.clear();localStorage.setItem('jj-ho-group-mode',mode)}else if(b.id==='jj830Card'){viewMode='card';localStorage.setItem('jj-ho-view-mode','card')}else if(b.id==='jj830List'){viewMode='list';localStorage.setItem('jj-ho-view-mode','list')}else if(b.dataset.cat)activeCategory=b.dataset.cat;const focusId=b.id;controls();quickGuide();render830();host.querySelector('#'+focusId)?.focus()}}
 
 
- function update(){controls();quickGuide();render830()}
+ function update(){controls();quickGuide();render830();paintFavoriteStatuses()}
  host.addEventListener('click',event=>{
   const star=event.target.closest('[data-favorite]');if(star){event.stopPropagation();if(!star.disabled)toggleFavorite(star.dataset.favorite);return;}
   const toggle=event.target.closest('[data-toggle-group]');

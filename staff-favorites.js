@@ -6,6 +6,13 @@
  const current=()=>{try{return selectedProject()}catch{return null}};
  const client=()=>{try{return cloudClient}catch{return null}};
  function entry(id){id=String(id);if(!cache.has(id))cache.set(id,{values:{},ready:false,error:''});return cache.get(id)}
+ function statusColors(status){
+  if(status==='Favorite')return ['#ede4ff','#54268a','#a984d8'];
+  if(['Selected','Chosen','Ordered','Received'].includes(status))return ['#d9f2e3','#185c38','#72b58b'];
+  if(['Pending','Recommended'].includes(status))return ['#f6e7b5','#694d0b','#c4a24f'];
+  return ['#e8edf2','#435365','#a9b6c3'];
+ }
+ function paintStatusColor(node,status){const c=statusColors(status);['background','color','border-color'].forEach((key,n)=>node.style.setProperty(key,c[n],'important'));}
  function label(item,all,values){
   const status=item.status||'Pending';
   if(!['Pending','Recommended'].includes(status))return status;
@@ -37,7 +44,7 @@
    button.title=data.error||(data.ready?'Shared with homeowner':'Loading shared favorites…');
    button.style.cssText='position:absolute!important;right:10px!important;bottom:10px!important;top:auto!important;z-index:3!important;display:grid!important;place-items:center!important;width:40px!important;height:40px!important;min-height:40px!important;padding:0!important;border:1px solid #b59a62!important;border-radius:50%!important;box-shadow:0 2px 7px #10243724!important;background:'+(yes?'#e1bf6c':'#fffaf0')+'!important;color:#14234a!important;font-size:28px!important;font-weight:650!important;line-height:1!important;cursor:pointer';
    const badge=card.querySelector('.selection-photo-status');
-   if(badge&&data.ready){const text=label(item,all,data.values);if(badge.textContent!==text)badge.textContent=text;}
+   if(badge){const text=label(item,all,data.values);if(badge.textContent!==text)badge.textContent=text;paintStatusColor(badge,text);}
   });
   let message=document.getElementById('jjStaffFavoriteMessage');
   if(!message){const section=document.getElementById('selections');if(!section)return;message=document.createElement('p');message.id='jjStaffFavoriteMessage';message.setAttribute('role','status');section.appendChild(message)}
