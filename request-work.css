@@ -223,3 +223,17 @@ html body #jj-rw#jj-rw#jj-rw#jj-rw#jj-rw .wb-card.wb-general .wb-card-foot butto
 #rw-create textarea{min-height:70px}
 #rw-dialog#rw-dialog input,#rw-dialog#rw-dialog select,#rw-dialog#rw-dialog textarea{border:1px solid #8799ab!important;background:var(--rw-bg)!important;color:var(--rw-text)!important;padding:8px}
 @media(max-width:430px){#jj-rw .wb-day-summary{grid-column:1/-1}#rw-create .rw-compose-body{padding:10px 12px}}
+
+/* Day labels fit beside their boxed arrow; neutral day outlines. */
+html body #jj-rw#jj-rw#jj-rw#jj-rw#jj-rw :is(.wb-day,.wb-month-day){border:1px solid var(--wb-border)!important;box-shadow:none!important;outline:none!important}
+html body #jj-rw#jj-rw#jj-rw#jj-rw#jj-rw .wb-day-name{border-color:var(--wb-border)!important;min-width:0}
+html body #jj-rw#jj-rw#jj-rw#jj-rw#jj-rw .wb-day-toggle{border-color:var(--wb-border)!important;flex-shrink:0}
+#jj-rw .wb-day{grid-template-columns:156px repeat(3,minmax(0,1fr))}
+#jj-rw .wb-day .wb-day-name{display:grid;grid-template-columns:24px minmax(0,1fr);column-gap:8px;align-content:start;align-items:center;padding:8px 10px}
+#jj-rw .wb-day .wb-day-toggle{grid-column:1;grid-row:1/4}
+#jj-rw .wb-day .wb-day-name :is(strong,span,small){grid-column:2;min-width:0;overflow-wrap:normal;white-space:normal}
+@media(max-width:700px){#jj-rw .wb-day{grid-template-columns:repeat(3,minmax(0,1fr))}#jj-rw .wb-day .wb-day-name{grid-column:1/-1;grid-template-columns:24px minmax(0,1fr)}#jj-rw .wb-day-summary{grid-column:1/-1}}
+@media(max-width:430px){#jj-rw .wb-day{grid-template-columns:1fr}}
+
+html body #jj-rw#jj-rw#jj-rw#jj-rw#jj-rw .wb-day-toggle{width:24px!important;min-width:24px!important;height:24px!important;min-height:24px!important;padding:0!important;border-radius:5px!important;font-size:17px!important;font-weight:400!important;line-height:20px!important;background:transparent!important;color:var(--wb-ink)!important;box-shadow:none!important;align-self:start}
+@media(pointer:coarse){html body #jj-rw#jj-rw#jj-rw#jj-rw#jj-rw .wb-day-toggle{width:30px!important;min-width:30px!important;height:30px!important;min-height:30px!important}#jj-rw .wb-day .wb-day-name{grid-template-columns:30px minmax(0,1fr);column-gap:6px}}
