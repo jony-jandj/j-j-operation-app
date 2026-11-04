@@ -1,7 +1,14 @@
-J&J Operations — Bulk Selections — September 24, 2026
+SELECTION PRINT UPDATE
 
-Upload ALL extracted files and folders to the existing GitHub app folder, replacing matching files, including the selections-v82 folder. Do not upload just index.html. After GitHub Pages publishes, reload the app. Expected cache: jj-operations-splits-20260924-22.
+1. Unzip this package.
+2. Upload selection-print.js to the root of jony-jandj/j-j-operation-app on GitHub and commit.
+3. Wait for the deployment to finish, then refresh the app (Mac Chrome: Command + Shift + R).
+4. Open Selections > Print / PDF. Choose Selected + pending groups or Review all options to include favorites. Selected items only continues to show actual selections only.
 
-Selections now has Select All, Clear, Approve, Status, Group, Lead Time and confirmed Delete. Select All follows the category filter, including cards in collapsed groups. Changing category removes hidden cards from the checked set. Approve marks cards Selected and preserves Ordered/Received status.
+Only selection-print.js goes to GitHub. No SQL or database update is needed. This can be installed alongside the prior homeowner-upload and gray Work Board/phone update; it does not replace those files.
 
-No SQL or backup import is required. This update does not replace saved projects or payment history.
+Purple = Favorite. Gold = Pending / Recommended. Green = Selected / Ordered / Received.
+Favorite allowance comparisons use each option’s price, quantity, and applied tax. Favorites do not add to selected totals. Multiple favorites are compared individually, not added together. Missing prices or allowances are clearly marked.
+Fresh shared favorites load before printing. If that read fails, use Retry favorites. Product-title links remain clickable in PDF.
+
+Checked with sample data and a generated PDF. No real job records were edited. Not deployed by this package preparation.
