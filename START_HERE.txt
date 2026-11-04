@@ -1,18 +1,9 @@
-AUTOMATIC PAY PERIODS
+SIGN-IN LOADING FIX
 
-Upload work-pay.js to the root of jony-jandj/j-j-operation-app on GitHub. Commit, wait for deployment, then refresh the app (Mac Chrome: Command + Shift + R). No SQL update is needed.
+Upload work-pay.js to the root of jony-jandj/j-j-operation-app on GitHub and commit. Wait for deployment, then refresh the app (Mac Chrome: Command + Shift + R) and sign in normally. No password reset or SQL change is needed for this error.
 
-When recording payment:
-1. Select unpaid work for one employee or sub.
-2. Review automatically assigned pay periods based on the completed dates. The remaining balance is already filled in.
-3. Confirm the actual payment date, method, amount and any reference, then Save payment record.
+Fixes the crash when an approved reserve-funded subcontractor P.O. renders before the payment ledger loads. Shows a loading label until the subcontractor name is available. Approval validation stays disabled until the ledger is loaded.
 
-Multiple pay periods are saved together, with one history record for each period. They share the actual payment date, method and reference. Subtotals are shown before saving.
+Includes the current automatic pay-period, historical-calendar, and compact P.O. print updates. Use this newest work-pay.js rather than uploading older packages afterward.
 
-Use Change pay period for selected work only if you need a manual exception. It places all selected lines into your chosen period. Missing completed dates require correction or an explicit manual period. Corrected completed dates are checked again before saving. Existing historical payments are not reassigned or rewritten.
-
-The two-week Sunday cycle still uses September 6, 2026 as its reference and extends backward. Payment date remains separate from work period. This records payments already made; it does not send money.
-
-Includes the historical-calendar fix and compact P.O. print/order update. Upload this newest work-pay.js instead of either earlier version.
-
-Sample-data tests passed for period boundaries, older dates, mixed-period batches, manual override, selection changes, batch totals and overpayment prevention. No live payment records were changed. Not deployed yet.
+The original null-companies crash was reproduced with sample data and the fixed loading path passed. Payout amounts and existing records are not modified. Deployment and real-account sign-in have not been verified.
