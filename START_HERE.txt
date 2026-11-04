@@ -1,13 +1,11 @@
-P.O. PRINT LAYOUT + ORDER
+OLDER BILL PAYMENTS + P.O. PRINT UPDATE
 
-Upload work-pay.js to the root of jony-jandj/j-j-operation-app on GitHub, replacing the existing file. Commit, wait for deployment, then refresh the app (Mac Chrome: Command + Shift + R). No SQL update is required.
+1. Upload work-pay.js to the root of jony-jandj/j-j-operation-app on GitHub, replacing the existing file.
+2. Commit, wait for deployment, then refresh the app (Mac Chrome: Command + Shift + R).
+3. In Bills, open the employee payment form. Use the calendar arrows to reach the earlier month and choose the highlighted Sunday for the correct bi-weekly period. Enter the actual payment date, amount and reference, then save the payment record.
 
-Uses the compact Work preview card layout for top-right Print All P.O.s, individual P.O.s, subcontractor statements and the P.O. portion of full project packets. Existing employee and Work/Bills prints retain the same compact cards.
+The September 6, 2026 reference now sets only the two-week cycle; it no longer blocks earlier periods. Existing and future periods keep the same schedule. Historical payments retain their actual date and pay period. Nothing is automatically marked paid, and no existing amounts or records are rewritten.
 
-P.O. print order follows the grouped P.O. screen: jobs and parent groups in their existing display order, original P.O. order within each group, then split-line order. Checkbox selection and completion order do not change printed order. Employee/sub copies remain separate, with the same P.O. order inside each copy. Draft Work preview uses this same order.
+Includes the preceding compact P.O. print layout and ordering update. Use this work-pay.js instead of uploading the older print-update file afterward. No SQL update is needed for this change.
 
-Existing payout amounts, payment records, builder-cost visibility choices, and selected filters are preserved. Payout-only sub copies omit internal cost details. No saved job data is changed by this update.
-
-Sample-data ordering, amounts, cost visibility, syntax and rendered PDF checks passed. Live deployment and real-account printing have not been performed.
-
-This update is independent of the selections print update; upload both files if both updates are needed.
+Sample checks passed: earlier periods and years, off-cycle Sunday rejection, correct period labels, historical payment clearing a sample outstanding balance, and overpayment prevention. Real-account save has not been verified.
