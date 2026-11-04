@@ -1,6 +1,7 @@
 importScripts('./request-work-push-sw.js?v=20261026-descriptive');
-const CACHE_NAME = 'jj-live-20261103-add-safe';
+const CACHE_NAME = 'jj-live-20261104-workflow';
 const APP_SHELL = [
+ './whole-number-controls.js',
  './mobile-print.js',
  './customer-simple-add.js',
  './selection-group-order.js',
