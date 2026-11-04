@@ -29,11 +29,20 @@
    onAddLink(update){this.onAdd(null,update);},
    onAdd(id,update){
     const base=id===null?{}:getItems().find(i=>String(i.id)===id);if(!base)return;
-    window.JJSimpleAdd.open({title:id===null?'Add Selection':'Add Option',onSave(values){
+    window.JJSimpleAdd.open({title:id===null?'Add Selection':'Add Option',onSave:async(values,context)=>{
      const target=current(),parent=id===null?null:target?.selections?.find(i=>String(i.id)===String(id));
      if(!target||(id!==null&&!parent))throw Error('This selection changed. Close and try again.');
-     target.selections.push({...values,id:crypto.randomUUID(),room:parent?.room||'',category:parent?.category||values.category||'',...(parent?{optionGroupId:parent.optionGroupId||parent.id,optionGroupTitle:parent.optionGroupTitle||parent.title,optionLabel:'Another option'}:{}),status:'Pending',unitPrice:'',addTax:false,purchasedBy:'Not assigned'});
-     window.saveState(false);window.renderSelections();update();return true;
+     const itemId=context.requestId;
+     if(!target.selections.some(i=>String(i.id)===itemId))target.selections.push({...values,id:itemId,room:parent?.room||'',category:parent?.category||values.category||'',...(parent?{optionGroupId:parent.optionGroupId||parent.id,optionGroupTitle:parent.optionGroupTitle||parent.title,optionLabel:'Another option'}:{}),status:'Pending',unitPrice:'',addTax:false,purchasedBy:'Not assigned'});
+     window.saveState(false);window.renderSelections();update();
+     if(typeof cloudClient==='undefined'||!cloudClient||!cloudLoadedForUser)throw Error('Sign in to confirm this item in the cloud. It is kept on this device.');
+     const deadline=Date.now()+20000;
+     while(Date.now()<deadline){
+      const saved=cloudBaseState?.projects?.find(p=>String(p.id)===String(project.id))?.selections?.find(i=>String(i.id)===itemId);
+      if(saved&&saved.title===values.title&&String(saved.image||'')===String(values.image||''))return true;
+      await new Promise(resolve=>setTimeout(resolve,250));
+     }
+     throw Error('Cloud saving has not been confirmed yet. The item is kept on this device.');
     }});
    }
   });

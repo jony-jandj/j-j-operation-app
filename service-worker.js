@@ -1,5 +1,5 @@
 importScripts('./request-work-push-sw.js?v=20261026-descriptive');
-const CACHE_NAME = 'jj-live-20261103-board-time';
+const CACHE_NAME = 'jj-live-20261103-add-safe';
 const APP_SHELL = [
  './mobile-print.js',
  './customer-simple-add.js',

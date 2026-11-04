@@ -194,4 +194,13 @@ html body #jj-rw#jj-rw#jj-rw#jj-rw#jj-rw .wb-card small.wb-time{grid-column:1/-1
 
 /* General work has no job color. Keep its surface and border neutral. */
 #jj-rw .wb-card.wb-general{--wb-card-base:#f5f5f5;--wb-card-text:#292929;--wb-card-muted:#505050;--wb-card-line:#a3a3a3;--wb-job-mix:12%}
-:is(html[data-preview-theme=night],html[data-theme=night],body[data-theme=night],body.night) #jj-rw .wb-card.wb-general{--wb-card-base:#353535;--wb-card-text:#ffffff;--wb-card-muted:#e2e2e2;--wb-card-line:#999999;--wb-job-mix:12%}
+:is(html[data-preview-theme=night],html[data-theme=night],body[data-theme=night],body.night) #jj-rw .wb-card.wb-general{--wb-card-base:#f5f5f5;--wb-card-text:#292929;--wb-card-muted:#505050;--wb-card-line:#a3a3a3;--wb-job-mix:12%}
+
+/* Compact six-dot move control on phones and touch devices. */
+#jj-rw .wb-move-dots{display:none}
+@media(max-width:700px),(pointer:coarse){
+ html body #jj-rw#jj-rw#jj-rw#jj-rw#jj-rw .wb-card-foot .wb-move-control{display:inline-flex!important;align-items:center;justify-content:center;width:44px;min-width:44px;min-height:44px;padding:8px!important;border-radius:9px;touch-action:manipulation}
+ #jj-rw .wb-move-control .wb-move-dots{display:block;pointer-events:none}
+ #jj-rw .wb-move-control .wb-move-label{display:none}
+}
+#jj-rw .wb-move-control:focus-visible{outline:3px solid #b79851;outline-offset:2px}
