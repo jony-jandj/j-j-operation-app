@@ -1,11 +1,18 @@
-OLDER BILL PAYMENTS + P.O. PRINT UPDATE
+AUTOMATIC PAY PERIODS
 
-1. Upload work-pay.js to the root of jony-jandj/j-j-operation-app on GitHub, replacing the existing file.
-2. Commit, wait for deployment, then refresh the app (Mac Chrome: Command + Shift + R).
-3. In Bills, open the employee payment form. Use the calendar arrows to reach the earlier month and choose the highlighted Sunday for the correct bi-weekly period. Enter the actual payment date, amount and reference, then save the payment record.
+Upload work-pay.js to the root of jony-jandj/j-j-operation-app on GitHub. Commit, wait for deployment, then refresh the app (Mac Chrome: Command + Shift + R). No SQL update is needed.
 
-The September 6, 2026 reference now sets only the two-week cycle; it no longer blocks earlier periods. Existing and future periods keep the same schedule. Historical payments retain their actual date and pay period. Nothing is automatically marked paid, and no existing amounts or records are rewritten.
+When recording payment:
+1. Select unpaid work for one employee or sub.
+2. Review automatically assigned pay periods based on the completed dates. The remaining balance is already filled in.
+3. Confirm the actual payment date, method, amount and any reference, then Save payment record.
 
-Includes the preceding compact P.O. print layout and ordering update. Use this work-pay.js instead of uploading the older print-update file afterward. No SQL update is needed for this change.
+Multiple pay periods are saved together, with one history record for each period. They share the actual payment date, method and reference. Subtotals are shown before saving.
 
-Sample checks passed: earlier periods and years, off-cycle Sunday rejection, correct period labels, historical payment clearing a sample outstanding balance, and overpayment prevention. Real-account save has not been verified.
+Use Change pay period for selected work only if you need a manual exception. It places all selected lines into your chosen period. Missing completed dates require correction or an explicit manual period. Corrected completed dates are checked again before saving. Existing historical payments are not reassigned or rewritten.
+
+The two-week Sunday cycle still uses September 6, 2026 as its reference and extends backward. Payment date remains separate from work period. This records payments already made; it does not send money.
+
+Includes the historical-calendar fix and compact P.O. print/order update. Upload this newest work-pay.js instead of either earlier version.
+
+Sample-data tests passed for period boundaries, older dates, mixed-period batches, manual override, selection changes, batch totals and overpayment prevention. No live payment records were changed. Not deployed yet.
