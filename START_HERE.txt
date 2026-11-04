@@ -12,3 +12,5 @@ Favorite allowance comparisons use each option’s price, quantity, and applied 
 Fresh shared favorites load before printing. If that read fails, use Retry favorites. Product-title links remain clickable in PDF.
 
 Checked with sample data and a generated PDF. No real job records were edited. Not deployed by this package preparation.
+
+Includes a visible gold View product button for each item with a product link. Both the button and title stay clickable in the PDF.
