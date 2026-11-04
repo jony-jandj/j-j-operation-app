@@ -1,16 +1,13 @@
-SELECTION PRINT UPDATE
+P.O. PRINT LAYOUT + ORDER
 
-1. Unzip this package.
-2. Upload selection-print.js to the root of jony-jandj/j-j-operation-app on GitHub and commit.
-3. Wait for the deployment to finish, then refresh the app (Mac Chrome: Command + Shift + R).
-4. Open Selections > Print / PDF. Choose Selected + pending groups or Review all options to include favorites. Selected items only continues to show actual selections only.
+Upload work-pay.js to the root of jony-jandj/j-j-operation-app on GitHub, replacing the existing file. Commit, wait for deployment, then refresh the app (Mac Chrome: Command + Shift + R). No SQL update is required.
 
-Only selection-print.js goes to GitHub. No SQL or database update is needed. This can be installed alongside the prior homeowner-upload and gray Work Board/phone update; it does not replace those files.
+Uses the compact Work preview card layout for top-right Print All P.O.s, individual P.O.s, subcontractor statements and the P.O. portion of full project packets. Existing employee and Work/Bills prints retain the same compact cards.
 
-Purple = Favorite. Gold = Pending / Recommended. Green = Selected / Ordered / Received.
-Favorite allowance comparisons use each option’s price, quantity, and applied tax. Favorites do not add to selected totals. Multiple favorites are compared individually, not added together. Missing prices or allowances are clearly marked.
-Fresh shared favorites load before printing. If that read fails, use Retry favorites. Product-title links remain clickable in PDF.
+P.O. print order follows the grouped P.O. screen: jobs and parent groups in their existing display order, original P.O. order within each group, then split-line order. Checkbox selection and completion order do not change printed order. Employee/sub copies remain separate, with the same P.O. order inside each copy. Draft Work preview uses this same order.
 
-Checked with sample data and a generated PDF. No real job records were edited. Not deployed by this package preparation.
+Existing payout amounts, payment records, builder-cost visibility choices, and selected filters are preserved. Payout-only sub copies omit internal cost details. No saved job data is changed by this update.
 
-Includes a visible gold View product button for each item with a product link. Both the button and title stay clickable in the PDF.
+Sample-data ordering, amounts, cost visibility, syntax and rendered PDF checks passed. Live deployment and real-account printing have not been performed.
+
+This update is independent of the selections print update; upload both files if both updates are needed.
