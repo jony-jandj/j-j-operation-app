@@ -204,3 +204,23 @@ html body .rd-items-collapsed .rd-calendar-list-item>div{min-width:0;width:100%}
 html body .rd-items-collapsed .rd-calendar-list-item :is(button,p){display:block;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 html body .rd-items-expanded .rd-calendar-list-item :is(button,p){white-space:normal;overflow-wrap:anywhere}
 .rd-calendar-expansion button[aria-pressed=true]{box-shadow:inset 0 -3px #b49a60}
+
+/* Persistent current-job identity and readable save notices in both themes. */
+@media screen{
+html body #redesignJobName#redesignJobName#redesignJobName{display:flex;align-items:center;gap:11px;padding:10px 48px 10px 26px;margin:0;background:#eef3f7!important;color:#172e43!important;border-top:1px solid #c2cfda;border-bottom:1px solid #c2cfda;min-width:0}
+html body #redesignJobName#redesignJobName#redesignJobName .rd-active-job-dot{display:block;width:18px;height:18px;flex:0 0 18px;border-radius:50%;background:var(--active-job-color)!important;box-shadow:0 0 0 2px #fff,0 0 0 3px #70869a}
+html body #redesignJobName#redesignJobName#redesignJobName .rd-active-job-copy{min-width:0;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+html body #redesignJobName#redesignJobName#redesignJobName strong{font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:22px;line-height:1.25;color:#172e43!important;overflow-wrap:anywhere}
+html body #redesignJobName#redesignJobName#redesignJobName small{font-size:12px;color:#4b6075!important}
+html[data-preview-theme=night] body #redesignJobName#redesignJobName#redesignJobName{background:#142b40!important;color:#f1f6fb!important;border-color:#61798f}
+html[data-preview-theme=night] body #redesignJobName#redesignJobName#redesignJobName strong{color:#f1f6fb!important}
+html[data-preview-theme=night] body #redesignJobName#redesignJobName#redesignJobName small{color:#c5d2df!important}
+html[data-preview-theme=night] body #redesignJobName#redesignJobName#redesignJobName .rd-active-job-dot{box-shadow:0 0 0 2px #142b40,0 0 0 3px #a8bdce}
+html body :is(#paybyline#paybyline#paybyline#paybyline,#jj-workpay#jj-workpay#jj-workpay#jj-workpay,#jj-wp-dialog#jj-wp-dialog#jj-wp-dialog#jj-wp-dialog) .jj-ledger-save-notice,
+html body .jj-ledger-save-notice.jj-ledger-save-notice.jj-ledger-save-notice{background:#edf3fa!important;color:#18344e!important;border:1px solid #93abc2!important;opacity:1!important;font-size:14px;line-height:1.5}
+html body :is(#paybyline#paybyline#paybyline#paybyline,#jj-workpay#jj-workpay#jj-workpay#jj-workpay,#jj-wp-dialog#jj-wp-dialog#jj-wp-dialog#jj-wp-dialog) .jj-ledger-save-notice[data-failed=true],
+html body .jj-ledger-save-notice.jj-ledger-save-notice.jj-ledger-save-notice[data-failed=true]{background:#fff1ee!important;color:#8b302b!important;border-color:#c58980!important}
+html[data-preview-theme=night] body :is(#paybyline#paybyline#paybyline#paybyline,#jj-workpay#jj-workpay#jj-workpay#jj-workpay,#jj-wp-dialog#jj-wp-dialog#jj-wp-dialog#jj-wp-dialog) .jj-ledger-save-notice{background:#28475e!important;color:#f1f6fb!important;border-color:#8da8be!important}
+html[data-preview-theme=night] body :is(#paybyline#paybyline#paybyline#paybyline,#jj-workpay#jj-workpay#jj-workpay#jj-workpay,#jj-wp-dialog#jj-wp-dialog#jj-wp-dialog#jj-wp-dialog) .jj-ledger-save-notice[data-failed=true]{background:#542f32!important;color:#ffe0da!important;border-color:#c98e85!important}
+@media(max-width:600px){html body #redesignJobName#redesignJobName#redesignJobName{padding:9px 42px 9px 14px;gap:9px}html body #redesignJobName#redesignJobName#redesignJobName strong{font-size:18px}html body #redesignJobName#redesignJobName#redesignJobName .rd-active-job-dot{width:15px;height:15px;flex-basis:15px}}
+}

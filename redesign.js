@@ -17,7 +17,27 @@ function syncMenuToggle(){toolbar.hidden=menuCollapsed;menuToggle.setAttribute('
 menuToggle.onclick=()=>{menuCollapsed=!menuCollapsed;try{localStorage.setItem('jj_menu_collapsed',String(menuCollapsed))}catch{}syncMenuToggle();};
 syncMenuToggle();
 
-function syncNav(){syncMenuToggle();toolbar.innerHTML=routes.map(([id,icon,label])=>`<button aria-current="${active===id?'page':'false'}" onclick="JJRedesign.navigate('${id}')"><svg class="rd-nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="${iconPaths[id]}"></path></svg>${label}</button>`).join('');const p=selectedProject();let name=document.getElementById('redesignJobName');if(!name){name=document.createElement('div');name.id='redesignJobName';chrome.after(name)}name.textContent=p?`${p.name} · ${p.jobNo||''}`:'Choose a job';document.querySelectorAll('.project-side-wrap').forEach(el=>el.setAttribute('aria-current',el.classList.contains('active')?'true':'false'))}
+function syncJobHeader(){
+ const p=selectedProject();let label=document.getElementById('redesignJobName');
+ if(!label){label=document.createElement('div');label.id='redesignJobName';label.setAttribute('role','status');label.setAttribute('aria-live','polite');label.setAttribute('aria-atomic','true');chrome.append(label);}
+ else if(label.parentElement!==chrome)chrome.append(label);
+ const color=p&&typeof projectColorHex==='function'?projectColorHex(p.color):'#b59a62';
+ const signature=JSON.stringify([p?.id,p?.name,p?.jobNo,color]);
+ if(label.dataset.jobSignature!==signature){
+  label.dataset.jobSignature=signature;label.dataset.jobId=p?String(p.id):'';
+  label.style.setProperty('--active-job-color',/^#[0-9a-f]{6}$/i.test(color)?color:'#b59a62');
+  label.innerHTML='<span class="rd-active-job-dot" aria-hidden="true"></span><div class="rd-active-job-copy"><strong>'+E(p?.name||'Choose a job')+'</strong>'+(p?.jobNo?'<small>'+E(p.jobNo)+'</small>':'')+'</div>';
+ }
+ document.querySelectorAll('.project-side-wrap').forEach(el=>el.setAttribute('aria-current',el.classList.contains('active')?'true':'false'));
+}
+function syncNav(){
+ syncMenuToggle();toolbar.innerHTML=routes.map(([id,icon,label])=>`<button aria-current="${active===id?'page':'false'}" onclick="JJRedesign.navigate('${id}')"><svg class="rd-nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="${iconPaths[id]}"></path></svg>${label}</button>`).join('');
+ syncJobHeader();
+}
+// Later selection compatibility layers can switch jobs without calling navigate.
+// Sidebar renders follow the shared selected job and keep the persistent header aligned.
+const previousBuildProjectSidebar=buildProjectSidebar;
+buildProjectSidebar=function(){try{return previousBuildProjectSidebar.apply(this,arguments)}finally{syncJobHeader()}};
 let scrollResetToken=0;
 function sectionTop(){const token=++scrollResetToken;const reset=()=>{if(token!==scrollResetToken)return;for(const el of [document.scrollingElement,document.documentElement,document.body,document.querySelector('.operations-main'),document.querySelector('main.content')]){if(el){el.scrollTop=0;el.scrollLeft=0;}}window.scrollTo({top:0,left:0,behavior:'instant'});};reset();requestAnimationFrame(()=>requestAnimationFrame(reset));}
 if(window.history&&'scrollRestoration' in window.history)window.history.scrollRestoration='manual';
@@ -25,7 +45,7 @@ window.addEventListener('pageshow',()=>sectionTop());
 window.addEventListener('load',()=>sectionTop());
 const originalGo=go;go=function(id){if(!document.getElementById(id))return;const before=document.querySelector('.page.active')?.id;originalGo(id);const map={dashboard:'dashboard',preconstruction:'preconstruction',selections:'selections',paybyline:poHubView==='estimate'?'estimate':'pos',estimates:'estimate',project:projectTab==='jobcost'?'costing':projectTab==='files'?'files':active,'jj-workpay':'pos','redesign-costing':'costing','redesign-schedule':'schedule'};active=map[id]||active;syncNav();if(before!==id)sectionTop()};
 async function navigate(id){if(window.JJTestWorkPay?.flushEdits&&!await JJTestWorkPay.flushEdits())return;const changed=active!==id;active=id;if(changed)sectionTop();if(id==='dashboard'){renderDashboard();go('dashboard')}else if(id==='preconstruction'){renderPreconstruction();go('preconstruction')}else if(id==='selections'){renderSelections();go('selections')}else if(id==='estimate'||id==='pos'){openProjectPOHub(selectedProject().id,id==='estimate'?'estimate':'splits')}else if(id==='files'){projectTab='files';renderProject();go('project')}else if(id==='costing'){go('redesign-costing');await renderCosts()}else if(id==='schedule'){renderDashboard();go('dashboard');document.getElementById('jj-rw')?.scrollIntoView({block:'start'});active='schedule'}syncNav();if(changed)sectionTop()}
-openProjectFromSidebar=async function(id){if(window.JJTestWorkPay?.flushEdits&&!await JJTestWorkPay.flushEdits())return;const p=state.projects.find(p=>String(p.id)===String(id));if(!p)return;const route=active;state.selectedProjectId=p.id;saveState(false);renderAll();navigate(route);document.body.classList.remove('redesign-sidebar-open')};
+openProjectFromSidebar=async function(id){if(window.JJTestWorkPay?.flushEdits&&!await JJTestWorkPay.flushEdits())return;const p=state.projects.find(p=>String(p.id)===String(id));if(!p)return;const route=active;state.selectedProjectId=p.id;syncJobHeader();saveState(false);renderAll();await navigate(route);document.body.classList.remove('redesign-sidebar-open')};
 function moneyCents(n){return money(n/100)}
 async function costs(filter=team){if(!window.JJTestWorkPay)throw Error('Job costs are still loading. Please retry.');await JJTestWorkPay.refresh();const list=JJTestWorkPay.costEntries();return state.projects.map(p=>{const totals={builder:0,baseline:0,committed:0,touchup:0,pending:0};for(const r of list.filter(r=>r.projectId===String(p.id)&&(filter==='all'||r.kind===filter))){totals.estimatedBaseline||=r.estimatedBaseline;totals.builder+=r.builder;totals.baseline+=r.baseline;totals.committed+=r.committed;totals.touchup+=r.touchup;totals.pending+=r.pending}return {p,...totals}})}
 function sumRows(list){return list.reduce((a,r)=>{for(const k of ['builder','baseline','committed','touchup','pending'])a[k]+=r[k];a.estimatedBaseline||=r.estimatedBaseline;return a},{builder:0,baseline:0,committed:0,touchup:0,pending:0})}
@@ -133,7 +153,7 @@ function expandCalendar(expanded){
  document.querySelectorAll('.rd-reference-calendar').forEach(el=>{el.classList.toggle('rd-items-expanded',calendarExpanded);el.classList.toggle('rd-items-collapsed',!calendarExpanded)});
  document.querySelectorAll('[data-calendar-expand]').forEach(el=>el.setAttribute('aria-pressed',String((el.dataset.calendarExpand==='true')===calendarExpanded)));
 }
-window.JJRedesign={expandCalendar,navigate,theme,scheduleView:v=>{if(!['month','week','list'].includes(v))return;scheduleView=v;showCalendar()},today:()=>{month=new Date();showCalendar()},refreshCalendar,subscription,openJob:(id,section)=>{const p=state.projects.find(p=>String(p.id)===id);if(!p)return;state.selectedProjectId=p.id;saveState(false);renderAll();navigate(section)},dashboardTeam:v=>{dashboardTeam=v;renderDashboard()},costView:v=>{costMode=v;renderCosts()},costTeam:v=>{team=v;renderCosts()},compareJob:(id,on)=>{on?chosen.add(id):chosen.delete(id);renderCosts()},month:n=>{month=scheduleView==='week'?new Date(month.getFullYear(),month.getMonth(),month.getDate()+n*7):new Date(month.getFullYear(),month.getMonth()+n,1);active==='dashboard'?renderDashboard():renderSchedule()},importCalendar,event:calendarEvent};
+window.JJRedesign={expandCalendar,navigate,theme,scheduleView:v=>{if(!['month','week','list'].includes(v))return;scheduleView=v;showCalendar()},today:()=>{month=new Date();showCalendar()},refreshCalendar,subscription,openJob:async(id,section)=>{if(window.JJTestWorkPay?.flushEdits&&!await JJTestWorkPay.flushEdits())return;const p=state.projects.find(p=>String(p.id)===String(id));if(!p)return;state.selectedProjectId=p.id;syncJobHeader();saveState(false);renderAll();await navigate(section)},dashboardTeam:v=>{dashboardTeam=v;renderDashboard()},costView:v=>{costMode=v;renderCosts()},costTeam:v=>{team=v;renderCosts()},compareJob:(id,on)=>{on?chosen.add(id):chosen.delete(id);renderCosts()},month:n=>{month=scheduleView==='week'?new Date(month.getFullYear(),month.getMonth(),month.getDate()+n*7):new Date(month.getFullYear(),month.getMonth()+n,1);active==='dashboard'?renderDashboard():renderSchedule()},importCalendar,event:calendarEvent};
 window.addEventListener('jj-workpay-ready',()=>{if(active==='dashboard')dashboardCosts()});
 function autoCalendar(){/* Existing imported schedule data is retained; Work Board replaces automatic calendar refresh. */}
 setInterval(autoCalendar,30000);document.addEventListener('visibilitychange',autoCalendar);window.addEventListener('jj-workpay-ready',autoCalendar);
