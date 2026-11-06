@@ -286,12 +286,15 @@ document.addEventListener('input',e=>{const t=e.target;if(!['lineAmount','linePc
 
 function refreshSavedSplit(form,x){
  const parent=form.closest('.jj-split-parent');if(!parent)return;
- const focused=document.activeElement,selection=focused?.selectionStart,scroll=window.scrollY;
  const template=document.createElement('template');template.innerHTML=splitParentHTML(x.p,x.parent);
- const replacement=template.content.firstElementChild,placeholder=replacement.querySelector('[data-form="stage-edit"]');
- if(!placeholder)return;placeholder.replaceWith(form);parent.replaceWith(replacement);
- if(focused&&form.contains(focused)){focused.focus({preventScroll:true});if(typeof selection==='number')try{focused.setSelectionRange(selection,selection)}catch{}}
- window.scrollTo({top:scroll,behavior:'instant'});
+ const replacement=template.content.firstElementChild;if(!replacement)return;
+ const oldHead=parent.querySelector(':scope > .po-head'),newHead=replacement.querySelector(':scope > .po-head');if(oldHead&&newHead)oldHead.replaceWith(newHead);
+ const oldTotals=parent.querySelector('.jj-split-totals'),newTotals=replacement.querySelector('.jj-split-totals');if(oldTotals&&newTotals)oldTotals.replaceWith(newTotals);
+ for(const section of parent.querySelectorAll('[data-stage-key]')){
+  if(section.contains(form))continue;
+  const fresh=[...replacement.querySelectorAll('[data-stage-key]')].find(el=>el.dataset.stageKey===section.dataset.stageKey);
+  if(fresh)section.replaceWith(fresh);
+ }
 }
 const autosaveTimers=new Map();
 function setStageSaveStatus(form,message,retry=false){
@@ -319,7 +322,7 @@ async function closeStageEditor(k){
 function scheduleStageAutosave(form,edited=true){
  if(edited){const snapshot=JSON.stringify([...new FormData(form)]);if(form.dataset.editSnapshot===snapshot)return;form.dataset.editSnapshot=snapshot;}
  const key=form.dataset.key;clearTimeout(autosaveTimers.get(key));if(edited)form.dataset.editVersion=String(Number(form.dataset.editVersion||0)+1);form.dataset.saved='false';
- const status=form.querySelector('[data-autosave-status]');setStageSaveStatus(form,'Unsaved changes');
+ rememberStageForm(form);const status=form.querySelector('[data-autosave-status]');setStageSaveStatus(form,'Unsaved changes');
  autosaveTimers.set(key,setTimeout(async()=>{
    autosaveTimers.delete(key);if(!form.isConnected)return;
    if(busy){scheduleStageAutosave(form,false);return;}
@@ -336,7 +339,44 @@ window.addEventListener('beforeunload',e=>{if(autosaveTimers.size||document.quer
 function scopeSections(items){return [...new Set(items.map(x=>String(x.p.id)))].flatMap(id=>[false,true].map(material=>({label:material?'Materials':'Labor',lines:items.filter(x=>String(x.p.id)===id&&!!x.po.material===material)})).filter(section=>section.lines.length));}
 function approvedEntries(){return entries().filter(x=>x.po.status==='Approved');}
 function entry(k){return entries().find(x=>x.key===k);}
-function cfg(x){if(x.stage)return {sub:x.stage.kind==='Sub',subPct:reservePO(x.po)?100:x.po.builderCost?100*(x.stage.budgetCents/100)/x.po.builderCost:0,company:x.stage.company||'',splits:clone(x.stage.crew||[])};const c=doc?.configs?.[x.key]||{sub:!!x.po.subs,subPct:x.po.subPct??(x.po.material?60:75),company:x.po.subId||'',splits:clone(x.po.splits||[])};return x.po.material?{...c,sub:true}:c;}
+const crewNameDrafts=new Map();let crewNameFlush=null,crewNameTimer=null;
+function crewNameStatus(key,text,retry=false){
+ for(const box of document.querySelectorAll('[data-key]')){if(box.dataset.key!==key||!box.querySelector('[data-crew]'))continue;
+ let el=box.querySelector('[data-crew-name-save]');if(!el){el=document.createElement('p');el.dataset.crewNameSave='';el.setAttribute('role','status');el.setAttribute('aria-live','polite');box.append(el);}
+ el.textContent=text;if(retry){const b=document.createElement('button');b.type='button';b.className='btn';b.textContent='Retry save';b.onclick=()=>flushCrewNames();el.append(' ',b);}
+ }
+}
+function queueCrewName(key,index,value){
+ const old=crewNameDrafts.get(key)||{names:{},version:0};old.names[index]=value;old.version++;crewNameDrafts.set(key,old);
+ crewNameStatus(key,'Employee changes waiting to save…');clearTimeout(crewNameTimer);crewNameTimer=setTimeout(()=>flushCrewNames(),350);
+}
+async function flushCrewNames(){
+ clearTimeout(crewNameTimer);if(crewNameFlush)return crewNameFlush;
+ crewNameFlush=(async()=>{
+  while(crewNameDrafts.size){
+   while(busy)await new Promise(resolve=>setTimeout(resolve,60));
+   const [key,draft]=crewNameDrafts.entries().next().value,version=draft.version,names={...draft.names};
+   crewNameStatus(key,'Saving employees…');
+   const saved=await change(d=>{
+    const x=entry(key);if(!x||x.po.status==='Approved'||d.work[key])throw Error('Undo approval before changing employees.');
+    const config=clone(d.configs[key]||{sub:!!x.po.subs,subPct:x.po.subPct??75,housePct:60,company:x.po.subId||'',splits:clone(x.po.splits||[])});
+    for(const [index,name]of Object.entries(names)){if(!config.splits[+index])throw Error('Crew rows changed. Review the current split.');config.splits[+index].name=name;}
+    d.configs[key]=config;
+   },false,true);
+   if(!saved){crewNameStatus(key,'Employees not saved. Your choices are still here.',true);return false;}
+   const latest=crewNameDrafts.get(key);
+   if(latest?.version===version){crewNameDrafts.delete(key);crewNameStatus(key,'Saved at '+new Date().toLocaleTimeString([],{hour:'numeric',minute:'2-digit'}));}
+  }return true;
+ })().finally(()=>{crewNameFlush=null});return crewNameFlush;
+}
+document.addEventListener('change',e=>{
+ const t=e.target;if(!t.matches('[data-crew][data-field="name"]'))return;
+ const box=t.closest('[data-key]'),x=box&&entry(box.dataset.key);if(!x||x.stage)return;
+ e.stopImmediatePropagation();if(x.po.status==='Approved'||doc.work[x.key])return err(Error('Undo approval before changing employees.'));
+ queueCrewName(x.key,Number(t.dataset.crew),t.value);
+},true);
+window.addEventListener('beforeunload',e=>{if(crewNameDrafts.size){e.preventDefault();e.returnValue='';}});
+function cfg(x){if(x.stage)return {sub:x.stage.kind==='Sub',subPct:reservePO(x.po)?100:x.po.builderCost?100*(x.stage.budgetCents/100)/x.po.builderCost:0,company:x.stage.company||'',splits:clone(x.stage.crew||[])};let c=doc?.configs?.[x.key]||{sub:!!x.po.subs,subPct:x.po.subPct??(x.po.material?60:75),company:x.po.subId||'',splits:clone(x.po.splits||[])};const draft=crewNameDrafts.get(x.key);if(draft){c=clone(c);for(const [index,name]of Object.entries(draft.names))if(c.splits[+index])c.splits[+index].name=name;}return x.po.material?{...c,sub:true}:c;}
 function description(x){if(typeof x.po.description==='string')return x.po.description;const rows=(x.p.estimate||[]).filter(r=>x.po.sourceEstimateKey?estimateRowSourceKey(r)===x.po.sourceEstimateKey:(String(r.title||r.line||'')===getPOBaseTitle(x.po)&&String(r.parentGroup||'').toLowerCase()===String(x.po.parentGroup||'').toLowerCase()&&estimatePOEligible(r)));return rows.length===1?rows[0].description||'':'';}
 function reservePO(po){return po?.fundingSource==='job-reserve';}
 function payoutBudget(x){if(x.stage)return x.stage.budgetCents;const c=cfg(x);return reservePO(x.po)?Number(c.reserveBudgetCents??x.po.reserveBudgetCents):Math.round(cents(x.po.builderCost)*Number(c.sub?c.subPct:c.housePct??60)/100);}
@@ -386,11 +426,11 @@ function ledgerSaveNotice(message,failed=false){
   notice.textContent=message;notice.dataset.failed=String(failed);
  }
 }
-async function change(fn,repaint=true){
+async function change(fn,repaint=true,keepInputs=false){
  if(busy){toast('A save is still running. Please wait for Saved, then try this action again.');return false;}
  busy=true;let committed=false;
  // Keep date/payee inputs and the close button stable until the cloud responds.
- const locked=dialog.open?[...dialog.querySelectorAll('input,select,textarea,button')].filter(el=>!el.disabled):[];
+ const locked=dialog.open&&!keepInputs?[...dialog.querySelectorAll('input,select,textarea,button')].filter(el=>!el.disabled):[];
  locked.forEach(el=>el.disabled=true);
  ledgerSaveNotice('Saving changes…');
  const slow=setTimeout(()=>ledgerSaveNotice('Still saving to cloud… Keep this window open. No need to click again.'),4000);
@@ -629,9 +669,9 @@ bulkApprove=function(){if(busy){toast('The payout is still saving. Wait for Save
 printSinglePO=function(i){const p=selectedProject(),po=p.pos[i];if(!po)return;if(!doc)return alert('Connect Job Closeout before printing payout details.');const k=key(p,po);printContent('J&J Home Renovations',printEntriesHTML(entries().filter(x=>x.key===k||x.parentKey===k)));};
 printAllPOs=function(){if(!doc)return alert('Connect Job Closeout before printing payout details.');const p=selectedProject();printContent('J&J · '+p.name+' · P.O.s',printEntriesHTML(entries().filter(x=>String(x.p.id)===String(p.id))));};
 document.addEventListener('input',event=>{const t=event.target,container=t.closest('.jj-work-controls');if(!container||t.type!=='number'||t.value==='')return;const x=entry(container.dataset.key);if(!x||x.stage||x.po.status==='Approved'||doc?.work[x.key])return;let peer,base,amount=false;if(t.dataset.config==='subAmount'||t.dataset.config==='subPct'){base=cents(x.po.builderCost);amount=t.dataset.config==='subAmount';peer=container.querySelector('[data-config="'+(amount?'subPct':'subAmount')+'"]');}else if(t.hasAttribute('data-crew')&&['amount','pct'].includes(t.dataset.field)){base=(reservePO(x.po)?payoutBudget(x):Math.round(cents(x.po.builderCost)*Number(cfg(x).housePct??60)/100));amount=t.dataset.field==='amount';peer=container.querySelector('[data-crew="'+t.dataset.crew+'"][data-field="'+(amount?'pct':'amount')+'"]');}if(!peer)return;const value=Number(t.value);if(!Number.isFinite(value)||value<0||value>(amount?base/100:100))return;peer.value=(amount?(base?cents(value)/base*100:0):Math.round(base*Math.round(value*100)/10000)/100).toFixed(2);});
-document.addEventListener('change',async event=>{const t=event.target;if(t.name==='stageSub'){const f=t.closest('[data-form="stage-edit"]');if(f){const x=entry(f.dataset.key);if(x){f.dataset.typeReset=reservePO(x.po)?'false':'true';const amount=reservePO(x.po)?x.stage.budgetCents:Math.round(cents(x.po.builderCost)*(t.checked?75:60)/100),total=x.plan.budgetCents-x.stage.budgetCents+amount;f.elements.stageBudget.value=(amount/100).toFixed(2);f.elements.stageBudget.max=(total-1)/100;f.elements.stagePercent.value=(amount/total*100).toFixed(2);refreshCrewTotal(f);}f.querySelector('[data-stage-sub-fields]').hidden=!t.checked;f.querySelector('[data-stage-employee-fields]').hidden=t.checked;f.elements.stageCompany.required=t.checked;rememberStageForm(f);}return;}if(t.hasAttribute('data-sub-select')){t.checked?subSelected.add(t.value):subSelected.delete(t.value);render();return;}if(t.dataset.filter){const v=t.value;switch(t.dataset.filter){case 'kind':kind=v;closeoutSub='';person='';if(['inhouse','subs','bills'].includes(mode))mode=v==='Sub'?'subs':v==='In-house'?'inhouse':'bills';break;case 'job':job=v;closeoutSub='';break;case 'closeoutSub':closeoutSub=v;break;case 'person':person=v;break;case 'period':period=v;start=period==='Monthly'?start.slice(0,7)+'-01':period==='Yearly'?start.slice(0,4)+'-01-01':period==='Bi-weekly'?currentPayPeriod(start):ds(day(start)-new Date(start+'T00:00:00Z').getUTCDay());break;case 'year':start=v+'-01-01';break;case 'historyStatus':historyStatus=v;break;case 'historyMethod':historyMethod=v;break;case 'historyFrom':historyFrom=v;break;case 'historyTo':historyTo=v;break;case 'query':query=v;}render();return;}const container=t.closest('[data-key]');if(!container||(!t.dataset.config&&!t.hasAttribute('data-crew')))return;const x=entry(container.dataset.key);if(!x||doc.work[x.key])return;const c=clone(cfg(x));if(t.dataset.config){if(t.dataset.config==='lineAmount'||t.dataset.config==='linePct'){const n=Number(t.value),base=cents(x.po.builderCost),pct=t.dataset.config==='lineAmount'?(base?cents(n)/base*100:0):n;if(t.value===''||!Number.isFinite(pct)||pct<0||pct>100)return err(Error('Use a payout from 0% to 100% of builder cost.'));c[c.sub?'subPct':'housePct']=pct;}else if(t.dataset.config==='subAmount'){const base=cents(x.po.builderCost),amount=cents(t.value);if(t.value===''||!Number.isFinite(amount)||amount<0||amount>base)return err(Error('Enter a payout between zero and builder cost.'));c.subPct=base?amount/base*100:0;}else if(t.dataset.config==='sub'){c.sub=t.checked;c.subPct=75;c.housePct=60;}else c[t.dataset.config]=t.dataset.config==='subPct'?Math.round(Number(t.value)*100)/100:t.value;if(!Number.isFinite(c.subPct)||c.subPct<0||c.subPct>100)return err(Error('Use a percentage from 0 to 100.'));}else{const s=c.splits[Number(t.dataset.crew)];if(t.dataset.field==='amount'){const base=(reservePO(x.po)?payoutBudget(x):Math.round(cents(x.po.builderCost)*Number(cfg(x).housePct??60)/100)),amount=cents(t.value);if(t.value===''||!Number.isFinite(amount)||amount<0||amount>base)return err(Error('Enter an amount within the in-house payout.'));s.pct=base?amount/base*100:0;}else s[t.dataset.field]=t.dataset.field==='pct'?Math.round(Number(t.value)*100)/100:t.value;if(c.splits.some(v=>!Number.isFinite(Number(v.pct))||v.pct<0||v.pct>100))return err(Error('Use percentages from 0 to 100.'));}if(x.po.status==='Approved')return err(Error('Undo approval before changing this split.'));await change(d=>{d.configs[x.key]=c;});});
+document.addEventListener('change',async event=>{const t=event.target;if(t.name==='stageSub'){const f=t.closest('[data-form="stage-edit"]');if(f){const x=entry(f.dataset.key);if(x){f.dataset.typeReset=reservePO(x.po)?'false':'true';const amount=reservePO(x.po)?x.stage.budgetCents:Math.round(cents(x.po.builderCost)*(t.checked?75:60)/100),total=x.plan.budgetCents-x.stage.budgetCents+amount;f.elements.stageBudget.value=(amount/100).toFixed(2);f.elements.stageBudget.max=(total-1)/100;f.elements.stagePercent.value=(amount/total*100).toFixed(2);refreshCrewTotal(f);}f.querySelector('[data-stage-sub-fields]').hidden=!t.checked;f.querySelector('[data-stage-employee-fields]').hidden=t.checked;f.elements.stageCompany.required=t.checked;rememberStageForm(f);}return;}if(t.hasAttribute('data-sub-select')){t.checked?subSelected.add(t.value):subSelected.delete(t.value);render();return;}if(t.dataset.filter){const v=t.value;switch(t.dataset.filter){case 'kind':kind=v;closeoutSub='';person='';if(['inhouse','subs','bills'].includes(mode))mode=v==='Sub'?'subs':v==='In-house'?'inhouse':'bills';break;case 'job':job=v;closeoutSub='';break;case 'closeoutSub':closeoutSub=v;break;case 'person':person=v;break;case 'period':period=v;start=period==='Monthly'?start.slice(0,7)+'-01':period==='Yearly'?start.slice(0,4)+'-01-01':period==='Bi-weekly'?currentPayPeriod(start):ds(day(start)-new Date(start+'T00:00:00Z').getUTCDay());break;case 'year':start=v+'-01-01';break;case 'historyStatus':historyStatus=v;break;case 'historyMethod':historyMethod=v;break;case 'historyFrom':historyFrom=v;break;case 'historyTo':historyTo=v;break;case 'query':query=v;}render();return;}const container=t.closest('[data-key]');if(!container||(!t.dataset.config&&!t.hasAttribute('data-crew')))return;if(crewNameDrafts.size&&!await flushCrewNames())return;const x=entry(container.dataset.key);if(!x||doc.work[x.key])return;const c=clone(cfg(x));if(t.dataset.config){if(t.dataset.config==='lineAmount'||t.dataset.config==='linePct'){const n=Number(t.value),base=cents(x.po.builderCost),pct=t.dataset.config==='lineAmount'?(base?cents(n)/base*100:0):n;if(t.value===''||!Number.isFinite(pct)||pct<0||pct>100)return err(Error('Use a payout from 0% to 100% of builder cost.'));c[c.sub?'subPct':'housePct']=pct;}else if(t.dataset.config==='subAmount'){const base=cents(x.po.builderCost),amount=cents(t.value);if(t.value===''||!Number.isFinite(amount)||amount<0||amount>base)return err(Error('Enter a payout between zero and builder cost.'));c.subPct=base?amount/base*100:0;}else if(t.dataset.config==='sub'){c.sub=t.checked;c.subPct=75;c.housePct=60;}else c[t.dataset.config]=t.dataset.config==='subPct'?Math.round(Number(t.value)*100)/100:t.value;if(!Number.isFinite(c.subPct)||c.subPct<0||c.subPct>100)return err(Error('Use a percentage from 0 to 100.'));}else{const s=c.splits[Number(t.dataset.crew)];if(t.dataset.field==='amount'){const base=(reservePO(x.po)?payoutBudget(x):Math.round(cents(x.po.builderCost)*Number(cfg(x).housePct??60)/100)),amount=cents(t.value);if(t.value===''||!Number.isFinite(amount)||amount<0||amount>base)return err(Error('Enter an amount within the in-house payout.'));s.pct=base?amount/base*100:0;}else s[t.dataset.field]=t.dataset.field==='pct'?Math.round(Number(t.value)*100)/100:t.value;if(c.splits.some(v=>!Number.isFinite(Number(v.pct))||v.pct<0||v.pct>100))return err(Error('Use percentages from 0 to 100.'));}if(x.po.status==='Approved')return err(Error('Undo approval before changing this split.'));await change(d=>{d.configs[x.key]=c;});});
 document.addEventListener('keydown',e=>{if(e.target.matches('[data-wp="stage-quick"]')&&e.key==='Enter'){e.preventDefault();e.target.click();return;}if(e.target.matches('[data-wp="stage-toggle"]')&&(e.key==='Enter'||e.key===' ')){e.preventDefault();e.target.click();}});
-document.addEventListener('click',async event=>{const b=event.target.closest('[data-wp]');if(!b)return;let a=b.dataset.wp;const v=b.dataset.value;if(a==='print-subs')a='print-subs-detail';else if(a==='print-sub')a='print-sub-detail';try{
+document.addEventListener('click',async event=>{const b=event.target.closest('[data-wp]');if(!b)return;let a=b.dataset.wp;const v=b.dataset.value;if(crewNameDrafts.size&&!await flushCrewNames())return;if(a==='print-subs')a='print-subs-detail';else if(a==='print-sub')a='print-sub-detail';try{
  if(!['stage-crew-add','stage-crew-remove','stage-cancel','stage-retry'].includes(a)&&document.querySelector('[data-form="stage-edit"][data-saved="false"]')){if(!await flushEdits())return;}
 
  if(a==='back-po-splits'){const p=(state.projects||[]).find(p=>String(p.id)===String(summaryReturnProjectId))||selectedProject();if(p)openProjectPOHub(p.id,'splits');else go('paybyline');return;}if(a==='export'){await load();const url=URL.createObjectURL(new Blob([JSON.stringify({version:1,exportedAt:new Date().toISOString(),revision,document:doc},null,2)],{type:'application/json'}));const link=document.createElement('a');link.href=url;link.download='JJ-Work-Pay-'+today()+'.json';link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);return;}if(a==='close'){if(busy){toast('Saving — please keep this window open.');return;}return dialog.close();}if(a==='print'){if(['work','inhouse','subs','bills'].includes(mode)&&page.classList.contains('active'))chooseCloseoutPrint();else{prepareWorkPayPrint();printPreparedWorkPay();}return;}if(a==='open')return open(v);if(a==='mode'){mode=v;person='';closeoutSub='';kind='Everyone';render();return;}if(a==='connect'){await load();renderPayByLine();return;}if(a==='refresh'){await load();render();renderPayByLine();return;}
@@ -770,7 +810,7 @@ async function bulkAction(actionName){const ids=[...bulkChosen];if(!ids.length)r
  if(actionName==='bulk-incomplete'){if(await change(d=>{for(const id of ids){if(!d.work[id]||d.lifecycle?.[id]?.incomplete)throw Error('A selected line is no longer a completed bill.');if(Object.values(d.payments).some(p=>!p.voided&&p.lines.some(l=>l.workId===id&&l.amount>0)))throw Error('A selected line has a recorded payment.');d.lifecycle||={};d.lifecycle[id]={...(d.lifecycle[id]||{}),incomplete:true,history:[...(d.lifecycle[id]?.history||[]),{action:'incomplete',at:new Date().toISOString(),by:state.currentUser}]};}})){bulkChosen.clear();mode='work';render();}return;}
  if(actionName==='bulk-unapprove'){if(!confirm('Return '+ids.length+' selected lines to draft for editing?'))return;for(const id of ids){if(!await undoWorkApproval(id))break;bulkChosen.delete(id)}render();}
 }
-const flushEdits=async()=>{for(const [key,timer]of autosaveTimers){clearTimeout(timer);autosaveTimers.delete(key)}if(busy){toast('Saving — please try again in a moment.');return false}for(const form of document.querySelectorAll('[data-form="stage-edit"][data-saved="false"]')){if(!await saveStageNow(form))return false}return true;};
+const flushEdits=async()=>{if(crewNameDrafts.size&&!await flushCrewNames())return false;for(const [key,timer]of autosaveTimers){clearTimeout(timer);autosaveTimers.delete(key)}if(busy){toast('Saving — please try again in a moment.');return false}for(const form of document.querySelectorAll('[data-form="stage-edit"][data-saved="false"]')){if(!await saveStageNow(form))return false}return true;};
 
 buildNav();renderPayByLine();
 

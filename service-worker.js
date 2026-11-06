@@ -1,5 +1,5 @@
 importScripts('./request-work-push-sw.js?v=20261026-descriptive');
-const CACHE_NAME = 'jj-live-20261104-neutral-days';
+const CACHE_NAME = 'jj-live-20261106-fast-crew';
 const APP_SHELL = [
  './whole-number-controls.js',
  './mobile-print.js',
