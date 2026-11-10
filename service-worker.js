@@ -1,6 +1,7 @@
 importScripts('./request-work-push-sw.js?v=20261026-descriptive');
-const CACHE_NAME = 'jj-live-20261109-missing-selections';
+const CACHE_NAME = 'jj-live-20261109-missing-fast-load';
 const APP_SHELL = [
+ './homeowner-app.js','./homeowner-ready.js',
  './whole-number-controls.js',
  './mobile-print.js',
  './customer-simple-add.js',
