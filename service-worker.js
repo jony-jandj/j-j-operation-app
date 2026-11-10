@@ -1,5 +1,5 @@
 importScripts('./request-work-push-sw.js?v=20261026-descriptive');
-const CACHE_NAME = 'jj-live-20261109-smooth-po-approval';
+const CACHE_NAME = 'jj-live-20261109-missing-selections';
 const APP_SHELL = [
  './whole-number-controls.js',
  './mobile-print.js',

@@ -10038,7 +10038,7 @@ function renderSelections(){
         </div>
         <div class="selection-heading-actions">
           <button class="selection-header-button" onclick="openHomeownerView()">Customer View</button>
-          <button class="selection-header-button" onclick="openHomeownerShare()">Show QR Code</button>
+          <button class="selection-header-button" onclick="openHomeownerShare()">Show QR Code</button><button class="selection-header-button" onclick="openHomeownerShare(selectedProject(),false,true)">Send missing selections</button>
           <button class="selection-header-button primary" onclick="exportSelectionsPdf()">Print / PDF</button>
         </div>
       </div>
@@ -10204,7 +10204,7 @@ function openHomeownerView(project=selectedProject()){
   document.body.appendChild(overlay);
 }
 
-async function openHomeownerShare(project=selectedProject(),regenerate=false){
+async function openHomeownerShare(project=selectedProject(),regenerate=false,missingOnly=false){
   if(!project)return;
   document.getElementById('qrBackdrop')?.remove();
   const backdrop=document.createElement('div');
@@ -10214,9 +10214,11 @@ async function openHomeownerShare(project=selectedProject(),regenerate=false){
   backdrop.addEventListener('click',e=>{if(e.target===backdrop)backdrop.remove()});
   document.body.appendChild(backdrop);
   try{
-    const url=await homeownerShareUrl(project,regenerate);
+    let url=await homeownerShareUrl(project,regenerate);
+    if(missingOnly){const direct=new URL(url),hash=new URLSearchParams(direct.hash.slice(1));hash.set('view','missing');direct.hash=hash.toString();url=direct.href;}
     if(!backdrop.isConnected)return;
-    backdrop.querySelector('[data-qr-message]').textContent=`Scan this code to open only the customer selections page for ${project.name}.`;
+    backdrop.querySelector('[data-qr-message]').textContent=missingOnly?`Copy this link and send it to ${project.name}. They can choose missing selections one at a time or view all selections.`:`Scan this code to open only the customer selections page for ${project.name}.`;
+    if(missingOnly)backdrop.querySelector('h3').textContent='Send missing selections';
     backdrop.querySelector('.qr-link').textContent=url;
     // Generate locally so private customer tokens are not sent to a QR service.
     new QRCode(backdrop.querySelector('[data-qr-image]'),{text:url,width:220,height:220,correctLevel:QRCode.CorrectLevel.M});
@@ -10225,7 +10227,7 @@ async function openHomeownerShare(project=selectedProject(),regenerate=false){
     const regenerateButton=backdrop.querySelector('[data-qr-regenerate]');
     regenerateButton.disabled=false;
     regenerateButton.onclick=()=>{
-      if(confirm('Regenerate this customer QR code? The previous QR code and link will stop working.'))openHomeownerShare(project,true);
+      if(confirm('Regenerate this customer QR code? The previous QR code and link will stop working.'))openHomeownerShare(project,true,missingOnly);
     };
     copy.onclick=()=>copyHomeownerLink(url);
     open.onclick=()=>{location.assign(url)};
@@ -10828,7 +10830,7 @@ if ('serviceWorker' in navigator) {
 <!-- Selections / homeowner enhancements. This must load after the app script. -->
 <script src="./selections-metadata.js?v=20261103-undo-save"></script>
 <script src="selection-budgets.js?v=20261101-allowance"></script><script src="selection-group-order.js?v=20261021-link-photo"></script>
-<script src="./customer-view.js?v=20261103-status-colors"></script>
+<script src="./customer-view.js?v=20261109-missing"></script>
 <script src="./customer-simple-add.js?v=20261103-add-safe"></script><script src="./customer-overlay.js?v=20261103-add-safe"></script>
 <script src="./qrcode.min.js"></script>
 <script src="mobile-print.js"></script>
