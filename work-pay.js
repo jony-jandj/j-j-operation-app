@@ -266,19 +266,19 @@ async function persistStageForm(form,approve=false,auto=false){
  const x=entry(form.dataset.key);if(!x?.stage)return;
  const editVersion=form.dataset.editVersion||'0';
  const title=form.elements.stageTitle.value.trim(),description=form.elements.stageDescription.value.trim(),budget=x.plan.stages.some(stage=>stage.status==='Approved')?x.stage.budgetCents:cents(form.elements.stageBudget.value);
- if(!title||!description)return err(Error('Title and description are required.'));
+ if(!title||!description)return stageSaveProblem(form,'Title and description are required.');
  const typeReset=form.dataset.typeReset==='true'&&!reservePO(x.po);const nextKind=form.elements.stageSub.checked?'Sub':'In-house',crew=readStageCrew(form),company=form.elements.stageCompany.value;
- if(x.parent.material&&nextKind!=='Sub')return err(Error('Materials must stay assigned to a supplier / sub.'));
- if(nextKind==='Sub'&&!doc.companies[company])return err(Error('Choose a subcontractor.'));
- if(nextKind==='In-house'&&(crew.some(c=>!c.name||!Number.isFinite(c.pct)||c.pct<0||c.pct>100)||Math.round(crew.reduce((n,c)=>n+c.pct,0)*1e8)/1e8>100||new Set(crew.map(c=>c.name)).size!==crew.length))return err(Error('Choose distinct employees and percentages totaling at most 100%.'));
- if(await change(d=>{
+ if(x.parent.material&&nextKind!=='Sub')return stageSaveProblem(form,'Materials must stay assigned to a supplier / sub.');
+ if(nextKind==='Sub'&&!doc.companies[company])return stageSaveProblem(form,'Choose a subcontractor.');
+ if(nextKind==='In-house'&&(crew.some(c=>!c.name||!Number.isFinite(c.pct)||c.pct<0||c.pct>100)||Math.round(crew.reduce((n,c)=>n+c.pct,0)*1e8)/1e8>100||new Set(crew.map(c=>c.name)).size!==crew.length))return stageSaveProblem(form,'Choose distinct employees and percentages totaling at most 100%.');
+ const committed=await change(d=>{
   const plan=d.stagePlans[x.parentKey],s=stageRecord(d,x);if(s.status!=='Draft'||d.work[x.key])throw Error('Undo Approval before editing.');
   for(const sibling of entries().filter(e=>e.parentKey===x.parentKey)){const target=plan.stages.find(s=>s.id===sibling.stage.id);if(!Number.isSafeInteger(target.scopeBuilderCents)){target.scopeBuilderCents=cents(sibling.po.builderCost);target.scopeEstimated=true;}}
   if(typeReset){if(s.status!=='Draft'||ledgerHistoryFor(d,x.key))throw Error('This line has protected history.');for(const sibling of entries().filter(e=>e.parentKey===x.parentKey)){const target=plan.stages.find(s=>s.id===sibling.stage.id);target.scopeBuilderCents??=cents(sibling.po.builderCost);}const reset=Math.round(s.scopeBuilderCents*(nextKind==='Sub'?75:60)/100);if(reset<1)throw Error('Payout must be positive.');s.budgetCents=reset;plan.budgetCents=plan.stages.reduce((n,s)=>n+s.budgetCents,0);}
   else if(budget!==s.budgetCents){if(plan.stages.length!==2||plan.stages.some(s=>s.status==='Approved'))throw Error('Undo all approvals before changing line budgets.');if(!Number.isSafeInteger(budget)||budget<=0||budget>=plan.budgetCents)throw Error('Use an amount within the original payout.');s.budgetCents=budget;plan.stages.find(other=>other.id!==s.id).budgetCents=plan.budgetCents-budget;}
   s.title=title;s.description=description;s.kind=nextKind;s.crew=crew;if(nextKind==='Sub'&&!d.companies[company])throw Error('Choose a subcontractor.');s.company=company;
   if(approve){if(!canApprovePO())throw Error('Approval permission required.');if(!validAlloc({...x,stage:s,po:{...x.po,builderCost:x.parent.builderCost*s.budgetCents/plan.budgetCents}}))throw Error('Enter a title, work description, payees and valid payout before approval.');s.status='Approved';s.approvedBy=state.currentUser;s.approvedDate=today();}
- },!auto)){if(auto){if((form.dataset.editVersion||'0')!==editVersion){form.dataset.saved='false';return false;}delete form.dataset.typeReset;form.dataset.saved='true';stageDrafts.delete(x.key);const fresh=entry(x.key);if(fresh){form.elements.stageBudget.max=(fresh.plan.budgetCents-1)/100;form.elements.stagePercent.value=(fresh.stage.budgetCents/fresh.plan.budgetCents*100).toFixed(2);const reference=form.querySelector('.jj-payout-reference');if(reference)reference.innerHTML='Total payout to split <strong>'+M(fresh.plan.budgetCents)+'</strong>'; }setStageSaveStatus(form,'Saved at '+new Date().toLocaleTimeString([], {hour:'numeric',minute:'2-digit',second:'2-digit'}));if(typeof refreshSavedSplit==='function')refreshSavedSplit(form,x);return true;}editingStageKey=null;stageDrafts.delete(x.key);for(const sibling of entries().filter(e=>e.parentKey===x.parentKey)){const draft=stageDrafts.get(sibling.key);if(draft)draft.budgetCents=sibling.stage.budgetCents;}renderPayByLine();}
+ },false,auto);if(committed){delete form.dataset.saveFailed;if(auto){if((form.dataset.editVersion||'0')!==editVersion){form.dataset.saved='false';return false;}delete form.dataset.typeReset;form.dataset.saved='true';stageDrafts.delete(x.key);const fresh=entry(x.key);if(fresh){form.elements.stageBudget.max=(fresh.plan.budgetCents-1)/100;form.elements.stagePercent.value=(fresh.stage.budgetCents/fresh.plan.budgetCents*100).toFixed(2);const reference=form.querySelector('.jj-payout-reference');if(reference)reference.innerHTML='Total payout to split <strong>'+M(fresh.plan.budgetCents)+'</strong>'; }setStageSaveStatus(form,'Saved at '+new Date().toLocaleTimeString([], {hour:'numeric',minute:'2-digit',second:'2-digit'}));if(typeof refreshSavedSplit==='function')refreshSavedSplit(form,x);return true;}editingStageKey=null;stageDrafts.delete(x.key);for(const sibling of entries().filter(e=>e.parentKey===x.parentKey)){const draft=stageDrafts.get(sibling.key);if(draft)draft.budgetCents=sibling.stage.budgetCents;}renderPayByLine();return true;}form.dataset.saveFailed='true';return false;
 }
 
 
@@ -302,16 +302,39 @@ function setStageSaveStatus(form,message,retry=false){
  const button=form.querySelector('[data-save-retry]');if(button)button.hidden=!retry;
 }
 async function saveStageNow(form){
- const key=form.dataset.key;clearTimeout(autosaveTimers.get(key));autosaveTimers.delete(key);
- const pending=stageSaveFlights.get(key);
- if(pending){setStageSaveStatus(form,'Saving…');const saved=await pending;if(!saved)setStageSaveStatus(form,'Not saved — your edits are still here. Retry save.',true);return !!saved&&form.dataset.saved==='true';}
- if(busy){setStageSaveStatus(form,'Another save is in progress. Retry in a moment.',true);return false;}
- if(!form.checkValidity()){form.reportValidity();setStageSaveStatus(form,'Complete the required fields before saving.',true);return false;}
- setStageSaveStatus(form,'Saving…');
- const saved=await saveStageForm(form,false,true);
- if(!saved)setStageSaveStatus(form,'Not saved — your edits are still here. Retry save.',true);
- return !!saved;
+ const key=form.dataset.key;
+ for(;;){
+  clearTimeout(autosaveTimers.get(key));autosaveTimers.delete(key);
+  const pending=stageSaveFlights.get(key);
+  if(pending){setStageSaveStatus(form,'Saving latest changes…');await pending;if(form.dataset.saveFailed==='true')return false;if(form.dataset.saved==='true')return true;continue;}
+  await waitForLedger();
+  if(!form.checkValidity()){form.reportValidity();setStageSaveStatus(form,'Complete the required fields before saving.',true);return false;}
+  setStageSaveStatus(form,'Saving…');
+  const saved=await saveStageForm(form,false,true);
+  if(form.dataset.saveFailed==='true'){setStageSaveStatus(form,'Not saved — your edits are still here. Retry save.',true);return false;}
+  if(saved&&form.dataset.saved==='true')return true;
+ }
 }
+const stageApprovalFlights=new Map();
+function approveStageForm(form){
+ const key=form.dataset.key;if(stageApprovalFlights.has(key))return stageApprovalFlights.get(key);
+ const task=(async()=>{
+  if(!form.checkValidity()){form.reportValidity();return false;}
+  clearTimeout(autosaveTimers.get(key));autosaveTimers.delete(key);rememberStageForm(form);
+  const controls=[...form.querySelectorAll('input,select,textarea,button')].filter(el=>!el.disabled);
+  const button=form.querySelector('[name=approveAfterSave]'),oldText=button?.textContent;
+  controls.forEach(el=>el.disabled=true);form.dataset.approving='true';form.setAttribute('aria-busy','true');if(button)button.textContent='Saving & approving…';
+  try{
+   const pending=stageSaveFlights.get(key);if(pending){await pending;if(form.dataset.saveFailed==='true')return false;}
+   await waitForLedger();
+   setStageSaveStatus(form,'Saving latest changes & approving…');
+   const saved=await saveStageForm(form,true,false);
+   if(!saved)setStageSaveStatus(form,'Not approved — your edits are still here. Retry save.',true);
+   return !!saved;
+  }finally{delete form.dataset.approving;form.removeAttribute('aria-busy');controls.forEach(el=>{if(el.isConnected)el.disabled=false});if(button?.isConnected)button.textContent=oldText;}
+ })().finally(()=>stageApprovalFlights.delete(key));stageApprovalFlights.set(key,task);return task;
+}
+function stageSaveProblem(form,message){form.dataset.saveFailed='true';setStageSaveStatus(form,message,true);return false;}
 async function closeStageEditor(k){
  const form=[...document.querySelectorAll('[data-form="stage-edit"]')].find(f=>f.dataset.key===k);
  if(form&&(form.dataset.saved==='false'||autosaveTimers.has(k))&&!await saveStageNow(form))return false;
@@ -324,12 +347,12 @@ function scheduleStageAutosave(form,edited=true){
  const key=form.dataset.key;clearTimeout(autosaveTimers.get(key));if(edited)form.dataset.editVersion=String(Number(form.dataset.editVersion||0)+1);form.dataset.saved='false';
  rememberStageForm(form);const status=form.querySelector('[data-autosave-status]');setStageSaveStatus(form,'Unsaved changes');
  autosaveTimers.set(key,setTimeout(async()=>{
-   autosaveTimers.delete(key);if(!form.isConnected)return;
+   autosaveTimers.delete(key);if(!form.isConnected||form.dataset.approving==='true')return;
    if(busy){scheduleStageAutosave(form,false);return;}
    if(!form.checkValidity()||!form.elements.stageTitle.value.trim()||!form.elements.stageDescription.value.trim()){if(status)status.textContent='Complete the required fields to save';return;}
    setStageSaveStatus(form,'Saving…');
    const saved=await saveStageForm(form,false,true);
-   if(!saved)setStageSaveStatus(form,'Not saved — your edits are still here. Retry save.',true);
+   if(!saved&&form.dataset.saveFailed==='true')setStageSaveStatus(form,'Not saved — your edits are still here. Retry save.',true);
  },650));
 }
 document.addEventListener('input',e=>{const f=e.target.closest?.('[data-form="stage-edit"]');if(f)scheduleStageAutosave(f)});
@@ -368,6 +391,19 @@ async function flushCrewNames(){
    if(latest?.version===version){crewNameDrafts.delete(key);crewNameStatus(key,'Saved at '+new Date().toLocaleTimeString([],{hour:'numeric',minute:'2-digit'}));}
   }return true;
  })().finally(()=>{crewNameFlush=null});return crewNameFlush;
+}
+const crewRowFlights=new Map();
+function adjustCrewRows(key,delta){
+ const previous=crewRowFlights.get(key)||Promise.resolve(true);
+ const task=previous.then(async succeeded=>{if(succeeded===false)return false;
+  if(crewNameDrafts.size&&!await flushCrewNames())return false;
+  await waitForLedger();
+  const x=entry(key);if(!x||doc.work[key]||x.po.status==='Approved'){err(Error('Undo approval before editing crew.'));return false;}
+  const c=clone(cfg(x)),n=c.splits.length+delta;if(n<1||n>4)return true;
+  const pct=Math.floor(10000/n);c.splits=Array.from({length:n},(_,i)=>({name:c.splits[i]?.name||'',pct:(pct+(i===n-1?10000-pct*n:0))/100}));
+  return change(d=>{if(d.work[key]||entry(key)?.po.status==='Approved')throw Error('This P.O. is now locked.');d.configs[key]=c;});
+ }).finally(()=>{if(crewRowFlights.get(key)===task)crewRowFlights.delete(key)});
+ crewRowFlights.set(key,task);return task;
 }
 document.addEventListener('change',e=>{
  const t=e.target;if(!t.matches('[data-crew][data-field="name"]'))return;
@@ -417,7 +453,16 @@ function applyPaymentRecord(d,payment){
 }
 
 function err(e){alert(e?.message||String(e));}
-async function load(){if(!cloudClient)throw Error('Sign in to cloud before using Job Closeout.');const r=await cloudClient.rpc('jj_work_pay_read');if(r.error)throw Error('Job Closeout storage is not ready. Run WORK_PAY_SETUP.sql, then refresh. '+r.error.message);if(!doc||Number(r.data.revision)>=revision){doc=r.data.document;revision=Number(r.data.revision)}return doc;}
+const LEDGER_WAIT_MS=20000;
+async function ledgerRPC(name,args){
+ if(navigator.onLine===false)throw Error('You are offline. Reconnect and retry; your edits are still here.');
+ const controller=new AbortController();let timer,call=cloudClient.rpc(name,args);
+ if(typeof call.abortSignal==='function')call=call.abortSignal(controller.signal);
+ try{return await Promise.race([Promise.resolve(call),new Promise((_,reject)=>{timer=setTimeout(()=>{controller.abort();reject(Error('Connection did not confirm the save. Your edits are still here. Refresh the record before retrying.'));},LEDGER_WAIT_MS);})]);}
+ finally{clearTimeout(timer);}
+}
+async function waitForLedger(){while(busy)await new Promise(resolve=>setTimeout(resolve,40));}
+async function load(){if(!cloudClient)throw Error('Sign in to cloud before using Job Closeout.');const r=await ledgerRPC('jj_work_pay_read');if(r.error)throw Error('Job Closeout storage is not ready. Run WORK_PAY_SETUP.sql, then refresh. '+r.error.message);if(!doc||Number(r.data.revision)>=revision){doc=r.data.document;revision=Number(r.data.revision)}return doc;}
 let ledgerNeedsRefresh=false;
 function ledgerSaveNotice(message,failed=false){
  for(const root of [document.getElementById('paybyline'),document.getElementById('jj-workpay'),document.getElementById('jj-wp-dialog')]){
@@ -437,7 +482,7 @@ async function change(fn,repaint=true,keepInputs=false){
  try{
   if(!doc||ledgerNeedsRefresh){await load();ledgerNeedsRefresh=false;}
   const next=clone(doc);fn(next);
-  let r;try{r=await cloudClient.rpc('jj_work_pay_save',{expected_revision:revision,new_document:next});}catch(e){ledgerNeedsRefresh=true;throw e;}
+  let r;try{r=await ledgerRPC('jj_work_pay_save',{expected_revision:revision,new_document:next});}catch(e){ledgerNeedsRefresh=true;throw e;}
   if(r.error){ledgerNeedsRefresh=true;throw r.error;}
   const previous=doc;doc=r.data.document;revision=Number(r.data.revision);committed=true;
   let changedSplits=false;for(const x of entries()){if(x.stage)continue;const c=doc.configs[x.key];if(c&&JSON.stringify(c)!==JSON.stringify(previous?.configs?.[x.key])){if(!c.sub)x.po.splits=clone(c.splits);x.po.subs=c.sub;x.po.subPct=c.subPct;x.po.subId=c.company;changedSplits=true;}}
@@ -664,15 +709,32 @@ if(originalPacketPrint)printFullProjectPacket=function(){
 const oldBulk=applyBulkSplit;applyBulkSplit=function(n){if(selectedPOs().some(reservePO))return alert('Edit the crew on each reserve-funded P.O. individually.');if(!doc)return alert('Connect Job Closeout before editing P.O.s.');if(lockedSelected()||selectedPOs().some(po=>po.status==='Approved'))return alert('Undo approval before changing these P.O. splits.');if(doc&&selectedPOs().some(po=>doc.configs[key(selectedProject(),po)]))return alert('Edit these crew splits on their individual P.O.s.');return oldBulk(n);};
 const oldDelete=confirmBulkDelete;confirmBulkDelete=function(){if(!doc)return alert('Connect Job Closeout before deleting P.O.s.');if(lockedSelected())return alert('Completed P.O.s cannot be deleted.');return oldDelete();};
 function validAlloc(x){if(!doc)return false;if(reservePO(x.po)&&(!getPOBaseTitle(x.po).trim()||!description(x).trim()||!x.po.parentGroup?.trim()||!Number.isSafeInteger(payoutBudget(x))||payoutBudget(x)<=0||(!cfg(x).sub&&Math.abs((cfg(x).splits||[]).reduce((n,c)=>n+Number(c.pct),0)-100)>.000001)))return false;if(x.stage&&(!x.stage.title?.trim()||!x.stage.description?.trim()||!Number.isSafeInteger(x.stage.budgetCents)||x.stage.budgetCents<=0))return false;const c=cfg(x),a=alloc(x),total=c.sub?Number(c.subPct):Math.round((c.splits||[]).reduce((s,v)=>s+Number(v.pct||0),0)*1e8)/1e8;return Number.isFinite(total)&&total>0&&total<=100&&a.length>0&&a.every(v=>Number.isSafeInteger(v.amount)&&v.amount>0)&&(c.sub?!!doc.companies[c.company]:c.splits.every(v=>!Number(v.pct)||!!v.name))&&new Set(a.map(v=>v.person)).size===a.length;}
-const oldStatus=setPOStatus;setPOStatus=function(i,status){if(busy){toast('The payout is still saving. Wait for Saved before approving.');return;}if(!doc)return alert('Connect Job Closeout before approving P.O.s.');const x={p:selectedProject(),po:selectedProject().pos[i]};x.key=key(x.p,x.po);if(hasStagePlan(x.p,x.po))return alert('Approve the individual split lines.');if(status==='Approved'&&doc&&!validAlloc(x))return alert('Choose the payee(s) and a valid percentage before approval.');if(doc&&status==='Approved'){if(!canApprovePO())return alert('You do not have approval permission.');x.po.status='Approved';x.po.approvedBy=state.currentUser;x.po.approvedDate=today();saveState(false);renderAll();return;}return oldStatus(i,status);};
-bulkApprove=function(){if(busy){toast('The payout is still saving. Wait for Saved before approving.');return;}if(!doc)return alert('Connect Job Closeout first.');if(!canApprovePO())return alert('Approval permission required.');let n=0;for(const po of selectedPOs()){const x={p:selectedProject(),po,key:key(selectedProject(),po)};if(!hasStagePlan(x.p,po)&&!doc.work[x.key]&&validAlloc(x)){po.status='Approved';po.approvedBy=state.currentUser;po.approvedDate=today();n++;}}saveState(false);renderAll();toast(n+' P.O.s approved');};
+const oldStatus=setPOStatus,poApprovalFlights=new Map();
+setPOStatus=function(i,status){
+ const p=selectedProject(),po=p?.pos[i];if(!po)return Promise.resolve(false);const k=key(p,po),flightKey=k+':'+status;
+ if(poApprovalFlights.has(flightKey))return poApprovalFlights.get(flightKey);
+ const task=(async()=>{
+  if(!await flushEdits())return false;await waitForLedger();
+  if(!doc)return alert('Connect Job Closeout before approving P.O.s.');
+  const x=entry(k);if(!x||x.po!==po)return false;
+  if(hasStagePlan(p,po))return alert('Approve the individual split lines.');
+  if(status==='Approved'&&!validAlloc(x))return alert('Choose the payee(s) and a valid percentage before approval.');
+  if(status==='Approved'){
+   if(!canApprovePO())return alert('You do not have approval permission.');
+   po.status='Approved';po.approvedBy=state.currentUser;po.approvedDate=today();saveState(false);renderAll();return true;
+  }
+  return oldStatus(i,status);
+ })().catch(e=>{err(e);return false}).finally(()=>poApprovalFlights.delete(flightKey));
+ poApprovalFlights.set(flightKey,task);return task;
+};
+bulkApprove=async function(){if(!await flushEdits())return;await waitForLedger();if(!doc)return alert('Connect Job Closeout first.');if(!canApprovePO())return alert('Approval permission required.');let n=0;for(const po of selectedPOs()){const x={p:selectedProject(),po,key:key(selectedProject(),po)};if(!hasStagePlan(x.p,po)&&!doc.work[x.key]&&validAlloc(x)){po.status='Approved';po.approvedBy=state.currentUser;po.approvedDate=today();n++;}}saveState(false);renderAll();toast(n+' P.O.s approved');};
 printSinglePO=function(i){const p=selectedProject(),po=p.pos[i];if(!po)return;if(!doc)return alert('Connect Job Closeout before printing payout details.');const k=key(p,po);printContent('J&J Home Renovations',printEntriesHTML(entries().filter(x=>x.key===k||x.parentKey===k)));};
 printAllPOs=function(){if(!doc)return alert('Connect Job Closeout before printing payout details.');const p=selectedProject();printContent('J&J · '+p.name+' · P.O.s',printEntriesHTML(entries().filter(x=>String(x.p.id)===String(p.id))));};
 document.addEventListener('input',event=>{const t=event.target,container=t.closest('.jj-work-controls');if(!container||t.type!=='number'||t.value==='')return;const x=entry(container.dataset.key);if(!x||x.stage||x.po.status==='Approved'||doc?.work[x.key])return;let peer,base,amount=false;if(t.dataset.config==='subAmount'||t.dataset.config==='subPct'){base=cents(x.po.builderCost);amount=t.dataset.config==='subAmount';peer=container.querySelector('[data-config="'+(amount?'subPct':'subAmount')+'"]');}else if(t.hasAttribute('data-crew')&&['amount','pct'].includes(t.dataset.field)){base=(reservePO(x.po)?payoutBudget(x):Math.round(cents(x.po.builderCost)*Number(cfg(x).housePct??60)/100));amount=t.dataset.field==='amount';peer=container.querySelector('[data-crew="'+t.dataset.crew+'"][data-field="'+(amount?'pct':'amount')+'"]');}if(!peer)return;const value=Number(t.value);if(!Number.isFinite(value)||value<0||value>(amount?base/100:100))return;peer.value=(amount?(base?cents(value)/base*100:0):Math.round(base*Math.round(value*100)/10000)/100).toFixed(2);});
 document.addEventListener('change',async event=>{const t=event.target;if(t.name==='stageSub'){const f=t.closest('[data-form="stage-edit"]');if(f){const x=entry(f.dataset.key);if(x){f.dataset.typeReset=reservePO(x.po)?'false':'true';const amount=reservePO(x.po)?x.stage.budgetCents:Math.round(cents(x.po.builderCost)*(t.checked?75:60)/100),total=x.plan.budgetCents-x.stage.budgetCents+amount;f.elements.stageBudget.value=(amount/100).toFixed(2);f.elements.stageBudget.max=(total-1)/100;f.elements.stagePercent.value=(amount/total*100).toFixed(2);refreshCrewTotal(f);}f.querySelector('[data-stage-sub-fields]').hidden=!t.checked;f.querySelector('[data-stage-employee-fields]').hidden=t.checked;f.elements.stageCompany.required=t.checked;rememberStageForm(f);}return;}if(t.hasAttribute('data-sub-select')){t.checked?subSelected.add(t.value):subSelected.delete(t.value);render();return;}if(t.dataset.filter){const v=t.value;switch(t.dataset.filter){case 'kind':kind=v;closeoutSub='';person='';if(['inhouse','subs','bills'].includes(mode))mode=v==='Sub'?'subs':v==='In-house'?'inhouse':'bills';break;case 'job':job=v;closeoutSub='';break;case 'closeoutSub':closeoutSub=v;break;case 'person':person=v;break;case 'period':period=v;start=period==='Monthly'?start.slice(0,7)+'-01':period==='Yearly'?start.slice(0,4)+'-01-01':period==='Bi-weekly'?currentPayPeriod(start):ds(day(start)-new Date(start+'T00:00:00Z').getUTCDay());break;case 'year':start=v+'-01-01';break;case 'historyStatus':historyStatus=v;break;case 'historyMethod':historyMethod=v;break;case 'historyFrom':historyFrom=v;break;case 'historyTo':historyTo=v;break;case 'query':query=v;}render();return;}const container=t.closest('[data-key]');if(!container||(!t.dataset.config&&!t.hasAttribute('data-crew')))return;if(crewNameDrafts.size&&!await flushCrewNames())return;const x=entry(container.dataset.key);if(!x||doc.work[x.key])return;const c=clone(cfg(x));if(t.dataset.config){if(t.dataset.config==='lineAmount'||t.dataset.config==='linePct'){const n=Number(t.value),base=cents(x.po.builderCost),pct=t.dataset.config==='lineAmount'?(base?cents(n)/base*100:0):n;if(t.value===''||!Number.isFinite(pct)||pct<0||pct>100)return err(Error('Use a payout from 0% to 100% of builder cost.'));c[c.sub?'subPct':'housePct']=pct;}else if(t.dataset.config==='subAmount'){const base=cents(x.po.builderCost),amount=cents(t.value);if(t.value===''||!Number.isFinite(amount)||amount<0||amount>base)return err(Error('Enter a payout between zero and builder cost.'));c.subPct=base?amount/base*100:0;}else if(t.dataset.config==='sub'){c.sub=t.checked;c.subPct=75;c.housePct=60;}else c[t.dataset.config]=t.dataset.config==='subPct'?Math.round(Number(t.value)*100)/100:t.value;if(!Number.isFinite(c.subPct)||c.subPct<0||c.subPct>100)return err(Error('Use a percentage from 0 to 100.'));}else{const s=c.splits[Number(t.dataset.crew)];if(t.dataset.field==='amount'){const base=(reservePO(x.po)?payoutBudget(x):Math.round(cents(x.po.builderCost)*Number(cfg(x).housePct??60)/100)),amount=cents(t.value);if(t.value===''||!Number.isFinite(amount)||amount<0||amount>base)return err(Error('Enter an amount within the in-house payout.'));s.pct=base?amount/base*100:0;}else s[t.dataset.field]=t.dataset.field==='pct'?Math.round(Number(t.value)*100)/100:t.value;if(c.splits.some(v=>!Number.isFinite(Number(v.pct))||v.pct<0||v.pct>100))return err(Error('Use percentages from 0 to 100.'));}if(x.po.status==='Approved')return err(Error('Undo approval before changing this split.'));await change(d=>{d.configs[x.key]=c;});});
 document.addEventListener('keydown',e=>{if(e.target.matches('[data-wp="stage-quick"]')&&e.key==='Enter'){e.preventDefault();e.target.click();return;}if(e.target.matches('[data-wp="stage-toggle"]')&&(e.key==='Enter'||e.key===' ')){e.preventDefault();e.target.click();}});
 document.addEventListener('click',async event=>{const b=event.target.closest('[data-wp]');if(!b)return;let a=b.dataset.wp;const v=b.dataset.value;if(crewNameDrafts.size&&!await flushCrewNames())return;if(a==='print-subs')a='print-subs-detail';else if(a==='print-sub')a='print-sub-detail';try{
- if(!['stage-crew-add','stage-crew-remove','stage-cancel','stage-retry'].includes(a)&&document.querySelector('[data-form="stage-edit"][data-saved="false"]')){if(!await flushEdits())return;}
+ if(!['stage-crew-add','stage-crew-remove','stage-cancel','stage-retry','stage-approve'].includes(a)&&document.querySelector('[data-form="stage-edit"][data-saved="false"]')){if(!await flushEdits())return;}
 
  if(a==='back-po-splits'){const p=(state.projects||[]).find(p=>String(p.id)===String(summaryReturnProjectId))||selectedProject();if(p)openProjectPOHub(p.id,'splits');else go('paybyline');return;}if(a==='export'){await load();const url=URL.createObjectURL(new Blob([JSON.stringify({version:1,exportedAt:new Date().toISOString(),revision,document:doc},null,2)],{type:'application/json'}));const link=document.createElement('a');link.href=url;link.download='JJ-Work-Pay-'+today()+'.json';link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);return;}if(a==='close'){if(busy){toast('Saving — please keep this window open.');return;}return dialog.close();}if(a==='print'){if(['work','inhouse','subs','bills'].includes(mode)&&page.classList.contains('active'))chooseCloseoutPrint();else{prepareWorkPayPrint();printPreparedWorkPay();}return;}if(a==='open')return open(v);if(a==='mode'){mode=v;person='';closeoutSub='';kind='Everyone';render();return;}if(a==='connect'){await load();renderPayByLine();return;}if(a==='refresh'){await load();render();renderPayByLine();return;}
  if(a==='stage-crew-add'||a==='stage-crew-remove'){let form=b.closest('[data-form="stage-edit"]');if(!form){stageEditor(v);form=[...document.querySelectorAll('[data-form="stage-edit"]')].find(f=>f.dataset.key===v);if(!form)return;}const crew=readStageCrew(form),n=crew.length+(a==='stage-crew-add'?1:-1);if(n<1||n>4)return;const part=Math.floor(10000/n),next=Array.from({length:n},(_,i)=>({name:crew[i]?.name||names.find(name=>!crew.some(c=>c.name===name))||names[0],pct:(part+(i===n-1?10000-part*n:0))/100}));form.querySelector('[data-stage-crew]').innerHTML=stageCrewHTML(next,cents(form.elements.stageBudget.value));refreshCrewTotal(form);scheduleStageAutosave(form);return;}
@@ -682,7 +744,7 @@ document.addEventListener('click',async event=>{const b=event.target.closest('[d
  if(a==='stage-retry'){const form=[...document.querySelectorAll('[data-form="stage-edit"]')].find(f=>f.dataset.key===v);if(form)await saveStageNow(form);return;}
  if(a==='stage-quick'){const field=b.dataset.field,checked=b.type==='checkbox'?b.checked:null;stageEditor(v);const f=[...document.querySelectorAll('[data-form="stage-edit"]')].find(f=>f.dataset.key===v),input=f?.elements[field];if(input){if(checked!==null){input.checked=checked;input.dispatchEvent(new Event('change',{bubbles:true}));}input.focus({preventScroll:true});input.scrollIntoView({block:'nearest'});if(input.tagName==='SELECT'){try{input.showPicker?.();}catch(e){}}}return;}
  if(a==='stage-edit'){stageEditor(v);return;}
- if(a==='stage-approve'){if(stageDrafts.has(v)&&editingStageKey!==v){stageEditor(v);return;}if(editingStageKey===v)return err(Error('Save or cancel your changes before approving this line.'));const x=entry(v);if(!x?.stage)return;if(!canApprovePO())return err(Error('Approval permission required.'));if(!validAlloc(x))return err(Error('Enter a title, work description, payees and valid payout before approval.'));await change(d=>{const s=stageRecord(d,x);if(s.status!=='Draft')throw Error('Already approved.');s.status='Approved';s.approvedBy=state.currentUser;s.approvedDate=today();});return;}
+ if(a==='stage-approve'){if(stageDrafts.has(v)&&editingStageKey!==v){stageEditor(v);return;}if(editingStageKey===v){const f=[...document.querySelectorAll('[data-form=stage-edit]')].find(f=>f.dataset.key===v);if(f)await approveStageForm(f);return;}const x=entry(v);if(!x?.stage)return;if(!canApprovePO())return err(Error('Approval permission required.'));if(!validAlloc(x))return err(Error('Enter a title, work description, payees and valid payout before approval.'));await change(d=>{const s=stageRecord(d,x);if(s.status!=='Draft')throw Error('Already approved.');s.status='Approved';s.approvedBy=state.currentUser;s.approvedDate=today();});return;}
  if(a==='po-detail'){const x=entry(v);if(x)modal('P.O. details',detail(x,['subs','inhouse','bills'].includes(mode)?billWork(v):effectiveWork(v))+billReturnAction(v));return;}if(a==='work-detail'){if(doc.work[v])modal('P.O. details',detail(null,billWork(v))+billReturnAction(v));return;}
  if(a==='calendar'||a==='calendar-month')return calendar(v||undefined);if(a==='date'){if(!validDate(v)||new Date(v+'T00:00:00Z').getUTCDay()!==0||(period==='Bi-weekly'&&!validPayPeriod(v)))return;start=v;render();return;}if(a==='month'){start=ds(Date.UTC(+start.slice(0,4),+start.slice(5,7)-1+Number(v),1)/86400000);render();return;}
  if(a==='view-all-employees'){person='';mode='inhouse';render();return;}if(a==='print-employee'){const list=rows().filter(r=>(!person||r.person===person)&&r.w.kind==='In-house'&&matches(r.w));printContent('J&J · '+(person||'All employees')+' · Work & Payouts',employeeStatements(list));return;}
@@ -707,7 +769,7 @@ document.addEventListener('click',async event=>{const b=event.target.closest('[d
   printContent('J&J Home Renovations',html);return;
  }
 
- if(a==='crew-add'||a==='crew-remove'){const x=entry(v);if(!x||doc.work[v]||x.po.status==='Approved')return err(Error('Undo approval before editing crew.'));const c=clone(cfg(x)),n=c.splits.length+(a==='crew-add'?1:-1);if(n<1||n>4)return;const pct=Math.floor(10000/n);c.splits=Array.from({length:n},(_,i)=>({name:c.splits[i]?.name||'',pct:(pct+(i===n-1?10000-pct*n:0))/100}));await change(d=>{d.configs[v]=c;});return;}
+ if(a==='crew-add'||a==='crew-remove'){await adjustCrewRows(v,a==='crew-add'?1:-1);return;}
  if(a==='company-new'||a==='company-edit'){const name=prompt('Supplier / Sub company name',a==='company-edit'?doc.companies[v]?.name||'':'');if(!name?.trim())return;const id=a==='company-edit'?v:crypto.randomUUID();const x=entry(v);const saved=await change(d=>{d.companies[id]={name:name.trim()};if(a==='company-new'&&x&&!x.stage&&!d.work[v])d.configs[v]={...clone(cfg(x)),company:id};});if(saved&&a==='company-new'&&x?.stage&&editingStageKey===v){const draft=stageDrafts.get(v)||clone(x.stage);draft.company=id;stageDrafts.set(v,draft);renderPayByLine();}return;}
  if(a==='unapprove-edit'){const x=entry(v);if(x&&await undoWorkApproval(v)){if(x.stage){stageEditor(v);return;}openProjectPOHub(x.p.id,'splits');openPOIds.add(x.po.id);renderPayByLine();}return;}
  if(a==='incomplete'){await returnBillToCloseout(v);return;}
@@ -723,7 +785,7 @@ document.addEventListener('click',async event=>{const b=event.target.closest('[d
  if(a==='confirm-delete-payment'){const reason=dialog.querySelector('#jj-delete-payment-reason')?.value||'';if(!reason.trim())return err(Error('Enter a reason for deleting this payment record.'));if(await change(d=>deletePaymentRecord(d,v,reason))){dialog.close();historyStatus='Recorded';render();}return;}
  if(a==='void'){const reason=prompt('Reason for voiding this record (does not reverse a bank payment):');if(!reason?.trim())return;if(await change(d=>{const p=d.payments[v];if(!p||p.voided)throw Error('Record already changed.');p.voided=true;p.voidReason=reason.trim();p.voidedAt=new Date().toISOString();p.voidedBy=state.currentUser;}))dialog.close();return;}
  }catch(e){err(e);}});
-document.addEventListener('submit',async event=>{const form=event.target;if(!form.dataset.form)return;event.preventDefault();if(form.dataset.form==='stage-edit'){if(busy){toast('Saving your latest edit — click Approve again once Saved appears.');return;}clearTimeout(autosaveTimers.get(form.dataset.key));autosaveTimers.delete(form.dataset.key);await saveStageForm(form,event.submitter?.name==='approveAfterSave');return;}const date=form.dataset.form==='complete'?form.elements.completedDate.value:form.elements.date.value;if(!validDate(date))return err(Error('Choose a valid date (MM/DD/YYYY).'));if(form.dataset.form==='complete'){const x=entry(form.dataset.key);if(!x||x.po.status!=='Approved'||!validAlloc(x))return err(Error('P.O. approval or payees changed. Refresh before continuing.'));if(await change(d=>{if(d.work[x.key]){if(!incomplete(x.key))throw Error('Work is already complete.');d.lifecycle||={};const prior=d.lifecycle[x.key]||{history:[]};d.lifecycle[x.key]={...prior,incomplete:false,completedDate:date,history:[...(prior.history||[]),{action:'complete',completedDate:date,at:new Date().toISOString(),by:state.currentUser}]};return;}d.work[x.key]={...(x.stage?{stageId:x.stage.id,parentKey:x.parentKey}:{}),fundingSource:x.po.fundingSource||'estimate',costCategory:x.po.parentGroup||'',costCode:x.po.costCode||'',jobId:String(x.p.id),job:x.p.name,po:String(x.po.id),line:getPOBaseTitle(x.po),description:description(x),builderCost:cents(x.po.builderCost),kind:cfg(x).sub?'Sub':'In-house',completedDate:date,status:'Approved',allocations:alloc(x),recordedAt:new Date().toISOString(),recordedBy:state.currentUser};}))dialog.close();return;}
+document.addEventListener('submit',async event=>{const form=event.target;if(!form.dataset.form)return;event.preventDefault();if(form.dataset.form==='stage-edit'){if(event.submitter?.name==='approveAfterSave')await approveStageForm(form);else await saveStageNow(form);return;}const date=form.dataset.form==='complete'?form.elements.completedDate.value:form.elements.date.value;if(!validDate(date))return err(Error('Choose a valid date (MM/DD/YYYY).'));if(form.dataset.form==='complete'){const x=entry(form.dataset.key);if(!x||x.po.status!=='Approved'||!validAlloc(x))return err(Error('P.O. approval or payees changed. Refresh before continuing.'));if(await change(d=>{if(d.work[x.key]){if(!incomplete(x.key))throw Error('Work is already complete.');d.lifecycle||={};const prior=d.lifecycle[x.key]||{history:[]};d.lifecycle[x.key]={...prior,incomplete:false,completedDate:date,history:[...(prior.history||[]),{action:'complete',completedDate:date,at:new Date().toISOString(),by:state.currentUser}]};return;}d.work[x.key]={...(x.stage?{stageId:x.stage.id,parentKey:x.parentKey}:{}),fundingSource:x.po.fundingSource||'estimate',costCategory:x.po.parentGroup||'',costCode:x.po.costCode||'',jobId:String(x.p.id),job:x.p.name,po:String(x.po.id),line:getPOBaseTitle(x.po),description:description(x),builderCost:cents(x.po.builderCost),kind:cfg(x).sub?'Sub':'In-house',completedDate:date,status:'Approved',allocations:alloc(x),recordedAt:new Date().toISOString(),recordedBy:state.currentUser};}))dialog.close();return;}
  if(form.dataset.form==='payment'){
   const name=form.elements.person.value,lines=paymentFormLines(form);
   if(!lines.length)return err(Error('Select at least one P.O.'));
@@ -810,7 +872,7 @@ async function bulkAction(actionName){const ids=[...bulkChosen];if(!ids.length)r
  if(actionName==='bulk-incomplete'){if(await change(d=>{for(const id of ids){if(!d.work[id]||d.lifecycle?.[id]?.incomplete)throw Error('A selected line is no longer a completed bill.');if(Object.values(d.payments).some(p=>!p.voided&&p.lines.some(l=>l.workId===id&&l.amount>0)))throw Error('A selected line has a recorded payment.');d.lifecycle||={};d.lifecycle[id]={...(d.lifecycle[id]||{}),incomplete:true,history:[...(d.lifecycle[id]?.history||[]),{action:'incomplete',at:new Date().toISOString(),by:state.currentUser}]};}})){bulkChosen.clear();mode='work';render();}return;}
  if(actionName==='bulk-unapprove'){if(!confirm('Return '+ids.length+' selected lines to draft for editing?'))return;for(const id of ids){if(!await undoWorkApproval(id))break;bulkChosen.delete(id)}render();}
 }
-const flushEdits=async()=>{if(crewNameDrafts.size&&!await flushCrewNames())return false;for(const [key,timer]of autosaveTimers){clearTimeout(timer);autosaveTimers.delete(key)}if(busy){toast('Saving — please try again in a moment.');return false}for(const form of document.querySelectorAll('[data-form="stage-edit"][data-saved="false"]')){if(!await saveStageNow(form))return false}return true;};
+const flushEdits=async()=>{for(const pending of [...crewRowFlights.values()])if(!await pending)return false;if(crewNameDrafts.size&&!await flushCrewNames())return false;for(const [key,timer]of autosaveTimers){clearTimeout(timer);autosaveTimers.delete(key)}await waitForLedger();for(const form of document.querySelectorAll('[data-form="stage-edit"][data-saved="false"]')){if(!await saveStageNow(form))return false}return true;};
 
 buildNav();renderPayByLine();
 
