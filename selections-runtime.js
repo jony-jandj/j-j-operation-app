@@ -109,10 +109,12 @@
     const s=currentState();
     if(!s?.projects || !remoteState?.projects) return {added:0,filled:0};
 
-    saveRecoverySnapshot('before-'+source);
+    let recoverySaved=false;
+    const beforeChange=()=>{if(!recoverySaved){saveRecoverySnapshot('before-'+source);recoverySaved=true;}};
 
     let added=0;
     let filled=0;
+    let structureChanged=false;
 
     remoteState.projects.forEach(remoteProject=>{
       const localProject=projectMatch(s.projects,remoteProject);
@@ -128,7 +130,9 @@
       // Never remove rooms/groups from the app. Union only.
       for(const room of remoteProject.selectionRooms||[]){
         if(room && !localProject.selectionRooms.includes(room)){
+          beforeChange();
           localProject.selectionRooms.push(room);
+          structureChanged=true;
         }
       }
 
@@ -136,7 +140,9 @@
       for(const group of remoteProject.selectionGroups||[]){
         if(!group?.id) continue;
         if(!localGroups.has(String(group.id))){
+          beforeChange();
           localProject.selectionGroups.push(clone(group));
+          structureChanged=true;
           localGroups.set(String(group.id),group);
         }
       }
@@ -157,8 +163,7 @@
           const localItem=byId.get(key);
           const before=JSON.stringify(localItem);
           const merged=mergeOneSelection(localItem,remoteItem,priorItem(localItem.id));
-          Object.assign(localItem,merged);
-          if(JSON.stringify(localItem)!==before) filled++;
+          if(JSON.stringify(merged)!==before){beforeChange();Object.assign(localItem,merged);filled++;}
           continue;
         }
 
@@ -175,14 +180,17 @@
         const existing=localProject.selections.find(item=>fingerprint(item)===fp && fp!=='|||');
         if(existing){
           const before=JSON.stringify(existing);
-          Object.assign(existing,mergeOneSelection(existing,remoteItem,priorItem(existing.id)));
-          if(JSON.stringify(existing)!==before) filled++;
+          const merged=mergeOneSelection(existing,remoteItem,priorItem(existing.id));
+          if(JSON.stringify(merged)!==before){beforeChange();Object.assign(existing,merged);filled++;}
         }else{
+          beforeChange();
           localProject.selections.push(clone(remoteItem));
           added++;
         }
       }
     });
+
+    if(!added&&!filled&&!structureChanged)return {added,filled};
 
     // Persist the merged/union state. This intentionally pushes the union back
     // to cloud so an incomplete portal copy cannot remain authoritative.
@@ -201,6 +209,12 @@
     try{return cloudSaveInFlight||cloudSaveQueued}catch{return false}
   }
 
+  function selectionSyncRequest(name,args){
+    const controller=new AbortController();let call=safeRpc(name,args),timer;
+    if(typeof call.abortSignal==='function')call=call.abortSignal(controller.signal);
+    return Promise.race([Promise.resolve(call),new Promise((_,reject)=>{timer=setTimeout(()=>{controller.abort();reject(Error('Homeowner sync timed out. Please retry.'));},20000)})]).finally(()=>clearTimeout(timer));
+  }
+
   async function safeManualSync(){
     if(hasPendingSave()){try{toast("Please wait for your current save to finish")}catch{};return;}
     if(safeSyncBusy) return;
@@ -216,7 +230,7 @@
     safeSyncBusy=true;
     try{
       const baseline=clone(currentState());
-      const {data,error}=await safeRpc('jj_portal_sync',{p_job:String(project.id)});
+      const {data,error}=await selectionSyncRequest('jj_portal_sync',{p_job:String(project.id)});
       if(error) throw error;
       if(!data){
         try{ toast('No new homeowner updates'); }catch{}
@@ -250,7 +264,7 @@
     safeSyncBusy=true;
     try{
       const baseline=clone(currentState());
-      const {data,error}=await safeRpc('jj_portal_sync_pending');
+      const {data,error}=await selectionSyncRequest('jj_portal_sync_pending');
       if(!error && data){
         safeMergeRemoteState(data,'auto-homeowner-sync',baseline);
       }

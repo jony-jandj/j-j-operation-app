@@ -1,24 +1,43 @@
-P.O. Partial Completion and Cloud Saving — November 11, 2026
+J&J App — Workflow and Speed Update — November 11, 2026
 
-Upload these three files to the root of the existing j-j-operation-app GitHub repository, replacing the matching files:
+Upload these SIX files to the ROOT of the existing j-j-operation-app GitHub repository, replacing the matching files:
   index.html
-  work-pay.js
+  request-work.js
+  selections-metadata.js
+  selections-runtime.js
   service-worker.js
+  work-pay.js
 
-No SQL/database setup is required. No payment or project data is included in this ZIP.
+No SQL/database changes are required. No project records, payment entries, credentials, or backups are included.
+This update preserves the current live version and the November 11 partial-completion fixes.
 
-After GitHub Pages finishes updating, reload the app. If an older screen persists, close and reopen the app.
+After GitHub Pages finishes deploying, reload the app. Close and reopen the installed app if it still displays the older version.
 
-Partially Complete means send completed work to Bills, not record payment:
-- Enter the total completed percentage (50%, then 75% sends only the additional 25%).
-- The P.O. stays in Job Closeout, showing Sent to Bills and Remaining to send to Bills.
-- Bills shows only the portion sent there. Record the actual payment in Bills.
-- Paid, Due in Bills, and Total left to pay remain separate.
-- Fully completed tickets with a mixture of fully paid and unpaid crew members remain visible as partially paid.
+What changed:
+- Shared updates rebuild the visible section. Hidden sections refresh when opened, reducing unnecessary work in Dashboard, Estimates, Selections, Preconstruction, and project screens.
+- Background app-state updates defer while you are typing or have an editor open, then catch up through polling.
+- Startup sign-in, profile lookup, and live-data loading have bounded waits instead of hanging indefinitely on a stalled connection.
+- Unchanged homeowner selection sync does not write to cloud, create redundant recovery snapshots, or redraw screens. Changed data still receives a recovery snapshot and the safe union merge.
+- Homeowner sync can recover from a timeout rather than staying busy forever.
+- Work Board keeps its cards and expanded Done list stable during unchanged refreshes. A successful move closes without waiting on a second network refresh.
+- Concurrent ledger refreshes share one request. Bill listings index payees and payments instead of repeatedly scanning all records for every row.
+- Previously installed app pages/assets can load from the app cache when a connection stalls. Old app-owned caches are cleaned up; unrelated caches are preserved.
+- Updated script versions keep the changed modules loading together.
 
-Cloud saving:
-- Cloud sign-in, reads, writes, and polling have bounded waits so a stalled connection cannot hold the save lock forever.
-- Existing local data, merge safeguards, revision checks, and retry behavior are preserved.
-- Transient load errors no longer incorrectly instruct you to run setup SQL.
+Validation:
+- Full app browser checks: Dashboard / Work Board, Preconstruction, Selections, Estimates, P.O.s, Files, and Job Costing; job switching; phone/tablet/desktop viewport checks; no uncaught browser errors on those paths.
+- Rapid crew entry, latest-edit approval, failed approval/retry, and partial-completion accounting regression checks passed.
+- Simulated cloud timeouts release locks, preserve local changes, and allow retry. Initial-load timeouts do not replace local records.
+- Selection sync checks cover unchanged data, added products/groups, local edits made during sync, and timeout recovery.
+- App-cache tests cover slow network, offline fallback, healthy network updates, first load, and obsolete-cache cleanup.
 
-Validated with local browser fixtures and simulated cloud failures. Live connectivity and your real records were not modified or verified. This ZIP is ready for upload; it has not been deployed.
+Local redraw benchmark (median of seven updates, same saved-job fixture, Chrome):
+Dashboard: 12.9 ms before / 2.8 ms after
+Estimate: 16.4 ms before / 10.1 ms after
+Selections: 15.8 ms before / 1.8 ms after
+Preconstruction: 15.7 ms before / 1.1 ms after
+These measure screen-update work, not live cloud response times; actual device and network speeds vary.
+
+All checks used local fixtures or simulated cloud responses. Live cloud connectivity and real write operations were not exercised. This is a tested update package, not a guarantee that every possible app bug has been eliminated.
+
+This ZIP has NOT been deployed.

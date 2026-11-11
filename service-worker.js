@@ -1,8 +1,8 @@
 importScripts('./request-work-push-sw.js?v=20261026-descriptive');
-const CACHE_NAME = 'jj-live-20261111-partial-closeout-sync';
+const CACHE_NAME = 'jj-live-20261111-workflow-speed';
 const APP_SHELL = [
  './homeowner-app.js','./homeowner-ready.js',
- './whole-number-controls.js',
+ './whole-number-controls.js','./staff-favorites.js',
  './mobile-print.js',
  './customer-simple-add.js',
  './selection-group-order.js',
@@ -23,17 +23,26 @@ self.addEventListener('install', event => {
 });
 self.addEventListener('activate', event => {
   event.waitUntil(caches.keys().then(keys=>Promise.all(
-    keys.filter(key=>key.startsWith('jj-live-redesign-')&&key!==CACHE_NAME).map(key=>caches.delete(key))
+    keys.filter(key=>key.startsWith('jj-live-')&&key!==CACHE_NAME).map(key=>caches.delete(key))
   )).then(()=>self.clients.claim()));
 });
 self.addEventListener('fetch', event => {
   const url=new URL(event.request.url);
   if(event.request.method!=='GET'||url.origin!==self.location.origin||!APP_SHELL.some(path=>new URL(path,self.registration.scope).pathname===url.pathname))return;
-  event.respondWith(fetch(event.request).then(response=>{
-    if(response.ok){
-      const copy=response.clone();
-      event.waitUntil(caches.open(CACHE_NAME).then(cache=>cache.put(event.request,copy)).catch(()=>{}));
-    }
+  // A slow connection must not hold an already installed app on a blank screen.
+  const cached=()=>caches.open(CACHE_NAME).then(async cache=>await cache.match(event.request)||await cache.match(event.request,{ignoreSearch:true}));
+  const network=fetch(event.request).then(async response=>{
+    if(response.ok){try{const cache=await caches.open(CACHE_NAME);await cache.put(event.request,response.clone());}catch{}}
     return response;
-  }).catch(async()=>{const cache=await caches.open(CACHE_NAME);return await cache.match(event.request)||await cache.match(event.request,{ignoreSearch:true})||Response.error()}));
+  });
+  event.waitUntil(network.then(()=>{},()=>{}));
+  event.respondWith((async()=>{
+    let timer;
+    try{
+      const response=await Promise.race([network,new Promise(resolve=>{timer=setTimeout(()=>resolve(null),4000);})]);
+      if(response)return response;
+      const saved=await cached();return saved||await network;
+    }catch{return await cached()||Response.error();}
+    finally{clearTimeout(timer);}
+  })());
 });

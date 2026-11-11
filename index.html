@@ -6035,7 +6035,19 @@ function buildProjectSidebar(){
   }).join('');
 }
 
+const pendingSectionRenders=new Set();
+let sectionRenderingStarted=false;
+function renderSection(id){
+ pendingSectionRenders.delete(id);
+ if(id==='dashboard')renderDashboard();
+ else if(id==='preconstruction')renderPreconstruction();
+ else if(id==='selections')renderSelections();
+ else if(id==='estimates')renderEstimates();
+ else if(id==='paybyline')renderPayByLine();
+ else if(id==='project')renderProject();
+}
 function go(id){
+ if(pendingSectionRenders.has(id))renderSection(id);
   document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
   document.getElementById(id).classList.add('active');
   buildNav();
@@ -6398,7 +6410,7 @@ async function initCloud(forceLogin=false){
   let sessionError=null;
 
   try{
-    const sessionResult=await cloudClient.auth.getSession();
+    const sessionResult=await cloudSaveStep(cloudClient.auth.getSession(),'Reconnect sign-in');
     session=sessionResult?.data?.session||null;
     sessionError=sessionResult?.error||null;
   }catch(err){
@@ -6637,11 +6649,11 @@ async function finishCloudLogin(user){
   let appRole='';
 
   try{
-    const {data:profile,error}=await cloudClient
+    const {data:profile,error}=await cloudStateRequest(cloudClient
       .from('profiles')
       .select('display_name,app_role')
       .eq('id',user.id)
-      .single();
+      .single(),'Load your profile');
 
     if(!error && profile){
       displayName=profile.display_name||'';
@@ -6686,16 +6698,16 @@ async function finishCloudLogin(user){
 async function loadCloudState(){
   cloudLoadedForUser=null;
   if(!cloudClient) throw new Error('Sign in before loading live data.');
-  const {data:{user:loadingUser}}=await cloudClient.auth.getUser();
+  const {data:{user:loadingUser}}=await cloudSaveStep(cloudClient.auth.getUser(),'Check sign-in before loading');
   if(!loadingUser) throw new Error('Sign in before loading live data.');
 
   setCloudStatus('Syncing','saving');
 
-  const {data,error}=await cloudClient
+  const {data,error}=await cloudStateRequest(cloudClient
     .from('app_state')
     .select('state,updated_at')
     .eq('org_id',CLOUD_ORG_ID)
-    .maybeSingle();
+    .maybeSingle(),'Load live app data');
 
   if(error){
     setCloudStatus('Offline','offline');
@@ -6733,8 +6745,12 @@ function cloudStateRequest(query,label){
  const controller=new AbortController();if(typeof query.abortSignal==='function')query=query.abortSignal(controller.signal);
  return cloudSaveStep(query,label,controller);
 }
+function cloudEditorActive(){
+ return !!document.querySelector('dialog[open],.selection-modal-backdrop.open,[data-form="stage-edit"][data-saved="false"]')
+  || ['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName);
+}
 async function pollCloudState(){
-  if(!cloudClient || cloudPollInFlight || cloudApplying || cloudSaveInFlight || cloudSaveQueued || document.hidden) return;
+  if(!cloudClient || cloudPollInFlight || cloudApplying || cloudSaveInFlight || cloudSaveQueued || document.hidden || cloudEditorActive()) return;
   cloudPollInFlight=true;
   try{
     // Check only the version first: unchanged polls must not download project photos/data.
@@ -6750,7 +6766,7 @@ async function pollCloudState(){
       .eq('org_id',CLOUD_ORG_ID)
       .maybeSingle(),'Refresh cloud data');
     if(error) throw error;
-    if(!incoming?.state || cloudSaveInFlight || cloudSaveQueued) return;
+    if(!incoming?.state || cloudSaveInFlight || cloudSaveQueued || cloudEditorActive()) return;
     const incomingAt=Date.parse(incoming.updated_at||0)||0;
     if(incomingAt<=cloudLastRemoteAt){
       setCloudStatus('Live','saved');
@@ -6802,7 +6818,7 @@ function subscribeCloudState(){
       },
       payload=>{
         const incoming=payload.new;
-        if(!incoming?.state || cloudSaveInFlight || cloudSaveQueued) return;
+        if(!incoming?.state || cloudSaveInFlight || cloudSaveQueued || cloudEditorActive()) return;
 
         const incomingAt=Date.parse(incoming.updated_at||0)||Date.now();
         if(incomingAt<=cloudLastRemoteAt) return;
@@ -7172,6 +7188,7 @@ function closeIssuesQuickView(){
 }
 
 function renderDashboard(){
+  pendingSectionRenders.delete('dashboard');
   ensureUserData();
 
   const active=state.projects.length;
@@ -7770,6 +7787,7 @@ function printFullProjectPacket(){
 }
 
 function renderPreconstruction(){
+  pendingSectionRenders.delete('preconstruction');
   if(!selectedProject()){const empty=document.getElementById('preconstruction');if(empty)empty.innerHTML='<p>Sign in and choose a job to continue.</p>';return;}
   ensurePreconData();
   const p=selectedProject();
@@ -7995,6 +8013,7 @@ function renderPreconstruction(){
 }
 
 function renderEstimates(){
+  pendingSectionRenders.delete('estimates');
   const projectsWithEstimate=state.projects.filter(p=>p.estimate.length);
   const estimateTotal=state.projects.reduce((sum,p)=>sum+p.estimate.reduce((s,r)=>s+Number(r.builderCost||0),0),0);
   const laborTotal=state.projects.reduce((sum,p)=>sum+laborBuilderCost(p),0);
@@ -8391,6 +8410,7 @@ function estimateTableHTML(p,mode='hub'){
 }
 
 function renderPayByLine(){
+  pendingSectionRenders.delete('paybyline');
   if(!selectedProject()){const empty=document.getElementById('paybyline');if(empty)empty.innerHTML='<p>Sign in and choose a job to continue.</p>';return;}
   const p=selectedProject();
   const color=projectColorHex(p.color);
@@ -9096,6 +9116,7 @@ function generatePOsFromPOHub(){
 }
 
 function renderProject(){
+  pendingSectionRenders.delete('project');
   if(!selectedProject()){const empty=document.getElementById('project');if(empty)empty.innerHTML='<p>Sign in and choose a job to continue.</p>';return;}
   if(projectTab==='estimate'){
     openPOHub('estimate');
@@ -10006,6 +10027,7 @@ function updateSelectionJobNotes(input){
 }
 
 function renderSelections(){
+  pendingSectionRenders.delete('selections');
   if(!selectedProject()){const empty=document.getElementById('selections');if(empty)empty.innerHTML='<p>Sign in and choose a job to continue.</p>';return;}
   const root=document.getElementById('selections');
   if(!root) return;
@@ -10747,12 +10769,15 @@ function renderAll(){
   ensureProjectColors();
   ensureUserData();
   ensureSelectionsData();
-  renderDashboard();
-  renderPreconstruction();
-  renderSelections();
-  renderEstimates();
-  renderPayByLine();
-  renderProject();
+  const selected=selectedProject();
+  if(selected){syncLinkedPreconItems(selected);syncPreconProgress(selected);}
+  const sections=['dashboard','preconstruction','selections','estimates','paybyline','project'];
+  const activePage=document.querySelector('.page.active')?.id;
+  for(const id of sections){
+    if(!sectionRenderingStarted||id===activePage)renderSection(id);
+    else pendingSectionRenders.add(id);
+  }
+  sectionRenderingStarted=true;
   buildProjectSidebar();
   syncUserSelector();
 }
@@ -10761,7 +10786,7 @@ renderAll();
 syncUserSelector();
 restoreLayoutPreferences();
 
-// QR links are rendered by selections-metadata.js?v=20261103-undo-save after the app shell loads.
+// QR links are rendered by selections-metadata.js?v=20261111-workflow after the app shell loads.
 // Keeping the legacy renderer out of this path prevents two H.O. overlays from
 // competing with each other during startup.
 
@@ -10836,7 +10861,7 @@ if ('serviceWorker' in navigator) {
 </script>
 
 <!-- Selections / homeowner enhancements. This must load after the app script. -->
-<script src="./selections-metadata.js?v=20261103-undo-save"></script>
+<script src="./selections-metadata.js?v=20261111-workflow"></script>
 <script src="selection-budgets.js?v=20261101-allowance"></script><script src="selection-group-order.js?v=20261021-link-photo"></script>
 <script src="./customer-view.js?v=20261109-missing"></script>
 <script src="./customer-simple-add.js?v=20261103-add-safe"></script><script src="./customer-overlay.js?v=20261103-add-safe"></script>
@@ -10868,14 +10893,14 @@ document.querySelector('.brand')?.addEventListener('keydown',e=>{
 
 <style>.estimate-buildertrend .col-description{min-width:380px;width:380px}.estimate-buildertrend .col-description textarea{height:84px!important;min-height:84px!important;max-height:84px!important;overflow:auto!important;resize:none!important}.estimate-buildertrend th{position:sticky;top:0;background:#edf1f6}.estimate-buildertrend tbody tr:nth-child(even){background:#f8fafc}</style>
 <script src="estimate-full-parser.js"></script>
-<script src="work-pay.js"></script>
+<script src="work-pay.js?v=20261111-workflow"></script>
 
 <script src="parity-features.js"></script>
 <link rel="stylesheet" href="parity-features.css">
 
 <script src="selections-navigation.js?v=20261021-reorder-mode"></script>
 
-<link rel="stylesheet" href="request-work.css?v=20261103-add-safe"><script src="request-work.js?v=20261103-add-safe"></script>
+<link rel="stylesheet" href="request-work.css?v=20261103-add-safe"><script src="request-work.js?v=20261111-workflow"></script>
 
 <script src="./request-work-push.js"></script>
 

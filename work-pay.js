@@ -431,12 +431,18 @@ function ticketProgress(id){
  const w=effectiveWork(id),x=entry(id),allocations=w?.allocations|| (x?alloc(x):[]);
  return allocations.reduce((t,a)=>{const billed=billedAmount(doc,id,a),already=paid(id,a.person);t.payout+=a.amount;t.billed+=billed;t.paid+=already;t.remaining+=Math.max(0,a.amount-already);t.unfinished+=Math.max(0,a.amount-billed);t.due+=Math.max(0,billed-already);return t;},{payout:0,billed:0,paid:0,remaining:0,unfinished:0,due:0});
 }
-function effectiveWork(id){const w=doc?.work?.[id],x=entry(id);return w?{...w,line:x?.stage?x.stage.title:w.line,builderCost:x?.stage?cents(x.po.builderCost):w.builderCost,description:x?description(x):w.description,completedDate:doc?.lifecycle?.[id]?.completedDate||w.completedDate}:null;}
+function effectiveWork(id,x=entry(id)){const w=doc?.work?.[id];return w?{...w,line:x?.stage?x.stage.title:w.line,builderCost:x?.stage?cents(x.po.builderCost):w.builderCost,description:x?description(x):w.description,completedDate:doc?.lifecycle?.[id]?.completedDate||w.completedDate}:null;}
 function billedAmount(d,id,a){const w=d.work[id],life=d.lifecycle?.[id];if(!w||life?.incomplete)return 0;if(life?.completedDate||w.completedDate)return a.amount;return Math.min(a.amount,Math.max(0,Number(life?.partialComplete?.amounts?.[a.person]||0)));}
 function hasBill(id){return !!doc?.work[id]&&doc.work[id].allocations.some(a=>billedAmount(doc,id,a)>0);}
-function billWork(id){const w=effectiveWork(id);if(!w)return null;return {...w,partialComplete:incomplete(id),completedDate:w.completedDate||doc.lifecycle?.[id]?.partialComplete?.date,allocations:w.allocations.map(a=>({...a,agreedAmount:a.amount,amount:billedAmount(doc,id,a)})).filter(a=>a.amount>0)};}
+function billWork(id,x=entry(id)){const w=effectiveWork(id,x);if(!w)return null;return {...w,partialComplete:incomplete(id),completedDate:w.completedDate||doc.lifecycle?.[id]?.partialComplete?.date,allocations:w.allocations.map(a=>({...a,agreedAmount:a.amount,amount:billedAmount(doc,id,a)})).filter(a=>a.amount>0)};}
 function remainingToPay(list){return list.reduce((sum,r)=>sum+Math.max(0,r.balance),0);}
-function rows(){return Object.keys(doc?.work||{}).filter(id=>entry(id)?.po.status==='Approved'&&hasBill(id)).flatMap(workId=>{const w=billWork(workId);return w.allocations.map(a=>({...a,workId,w,balance:a.amount-paid(workId,a.person)}));});}
+function rows(){
+ const byKey=new Map(entries().map(x=>[x.key,x])),paymentTotals=new Map();
+ for(const p of Object.values(doc?.payments||{}))if(!p.voided)for(const line of p.lines||[]){const k=JSON.stringify([line.workId,line.person]);paymentTotals.set(k,(paymentTotals.get(k)||0)+line.amount);}
+ return Object.keys(doc?.work||{}).filter(id=>byKey.get(id)?.po.status==='Approved'&&hasBill(id)).flatMap(workId=>{
+  const w=billWork(workId,byKey.get(workId));return w.allocations.map(a=>({...a,workId,w,balance:a.amount-(paymentTotals.get(JSON.stringify([workId,a.person]))||0)}));
+ });
+}
 // An advance locks the agreed allocation, without inventing a completion date.
 function payoutSnapshot(x){return {...(x.stage?{stageId:x.stage.id,parentKey:x.parentKey}:{}),fundingSource:x.po.fundingSource||'estimate',costCategory:x.po.parentGroup||'',costCode:x.po.costCode||'',jobId:String(x.p.id),job:x.p.name,po:String(x.po.id),line:getPOBaseTitle(x.po),description:description(x),builderCost:cents(x.po.builderCost),kind:cfg(x).sub?'Sub':'In-house',workState:'In progress',status:'Approved',allocations:alloc(x),recordedAt:new Date().toISOString(),recordedBy:state.currentUser};}
 function payableRows(){return rows();}
@@ -477,7 +483,9 @@ async function ledgerRPC(name,args){
  finally{clearTimeout(timer);}
 }
 async function waitForLedger(){while(busy)await new Promise(resolve=>setTimeout(resolve,40));}
-async function load(){if(!cloudClient)throw Error('Sign in to cloud before using Job Closeout.');const r=await ledgerRPC('jj_work_pay_read');if(r.error)throw Error((['PGRST202','42P01','42883'].includes(r.error.code)?'Job Closeout setup is missing. ':'Could not load Job Closeout. Retry Refresh; your local entries are kept. ')+(r.error.message||'Check your connection.'));if(!doc||Number(r.data.revision)>=revision){doc=r.data.document;revision=Number(r.data.revision)}return doc;}
+let ledgerLoadFlight=null;
+function load(){if(!ledgerLoadFlight)ledgerLoadFlight=readLedger().finally(()=>{ledgerLoadFlight=null});return ledgerLoadFlight;}
+async function readLedger(){if(!cloudClient)throw Error('Sign in to cloud before using Job Closeout.');const r=await ledgerRPC('jj_work_pay_read');if(r.error)throw Error((['PGRST202','42P01','42883'].includes(r.error.code)?'Job Closeout setup is missing. ':'Could not load Job Closeout. Retry Refresh; your local entries are kept. ')+(r.error.message||'Check your connection.'));if(!doc||Number(r.data.revision)>=revision){doc=r.data.document;revision=Number(r.data.revision)}return doc;}
 let ledgerNeedsRefresh=false;
 function ledgerSaveNotice(message,failed=false){
  for(const root of [document.getElementById('paybyline'),document.getElementById('jj-workpay'),document.getElementById('jj-wp-dialog')]){

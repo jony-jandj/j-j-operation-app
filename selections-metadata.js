@@ -36,7 +36,7 @@ window.JJProduct = (() => {
    are split only so GitHub updates remain small/reliable; they execute together. */
 window.__JJ_SELECTIONS_V82_LOADING__ = /homeowner\.html$/i.test(location.pathname) ? Promise.resolve() : new Promise((resolve,reject)=>{
   const script=document.createElement('script');
-  script.src=new URL('selections-runtime.js?v=20261103-undo-save',document.currentScript.src).href;
+  script.src=new URL('selections-runtime.js?v=20261111-workflow',document.currentScript.src).href;
   script.onload=()=>{window.__JJ_SELECTIONS_V82_READY__=true;window.dispatchEvent(new CustomEvent('jj-selections-v82-ready'));resolve();};
   script.onerror=()=>reject(new Error('Could not load the Selections runtime. Refresh the test app.'));
   document.head.append(script);
