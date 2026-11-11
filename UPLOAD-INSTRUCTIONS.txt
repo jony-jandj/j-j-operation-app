@@ -1,0 +1,24 @@
+P.O. Partial Completion and Cloud Saving — November 11, 2026
+
+Upload these three files to the root of the existing j-j-operation-app GitHub repository, replacing the matching files:
+  index.html
+  work-pay.js
+  service-worker.js
+
+No SQL/database setup is required. No payment or project data is included in this ZIP.
+
+After GitHub Pages finishes updating, reload the app. If an older screen persists, close and reopen the app.
+
+Partially Complete means send completed work to Bills, not record payment:
+- Enter the total completed percentage (50%, then 75% sends only the additional 25%).
+- The P.O. stays in Job Closeout, showing Sent to Bills and Remaining to send to Bills.
+- Bills shows only the portion sent there. Record the actual payment in Bills.
+- Paid, Due in Bills, and Total left to pay remain separate.
+- Fully completed tickets with a mixture of fully paid and unpaid crew members remain visible as partially paid.
+
+Cloud saving:
+- Cloud sign-in, reads, writes, and polling have bounded waits so a stalled connection cannot hold the save lock forever.
+- Existing local data, merge safeguards, revision checks, and retry behavior are preserved.
+- Transient load errors no longer incorrectly instruct you to run setup SQL.
+
+Validated with local browser fixtures and simulated cloud failures. Live connectivity and your real records were not modified or verified. This ZIP is ready for upload; it has not been deployed.

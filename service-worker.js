@@ -1,5 +1,5 @@
 importScripts('./request-work-push-sw.js?v=20261026-descriptive');
-const CACHE_NAME = 'jj-live-20261109-missing-fast-load';
+const CACHE_NAME = 'jj-live-20261111-partial-closeout-sync';
 const APP_SHELL = [
  './homeowner-app.js','./homeowner-ready.js',
  './whole-number-controls.js',

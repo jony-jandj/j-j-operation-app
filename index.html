@@ -6725,22 +6725,30 @@ async function loadCloudState(){
   }
 }
 
+// Bound each cloud step so a suspended mobile connection cannot hold sync forever.
+function cloudSaveStep(operation,label,controller){
+ let timer;return Promise.race([Promise.resolve(operation),new Promise((_,reject)=>{timer=setTimeout(()=>{controller?.abort();reject(new Error(label+' timed out. Your changes remain on this device.'));},20000);})]).finally(()=>clearTimeout(timer));
+}
+function cloudStateRequest(query,label){
+ const controller=new AbortController();if(typeof query.abortSignal==='function')query=query.abortSignal(controller.signal);
+ return cloudSaveStep(query,label,controller);
+}
 async function pollCloudState(){
   if(!cloudClient || cloudPollInFlight || cloudApplying || cloudSaveInFlight || cloudSaveQueued || document.hidden) return;
   cloudPollInFlight=true;
   try{
     // Check only the version first: unchanged polls must not download project photos/data.
-    const {data:version,error:versionError}=await cloudClient
-      .from('app_state').select('updated_at').eq('org_id',CLOUD_ORG_ID).maybeSingle();
+    const {data:version,error:versionError}=await cloudStateRequest(cloudClient
+      .from('app_state').select('updated_at').eq('org_id',CLOUD_ORG_ID).maybeSingle(),'Check cloud version');
     if(versionError) throw versionError;
     const versionAt=Date.parse(version?.updated_at||0)||0;
     if(!versionAt || cloudSaveInFlight || cloudSaveQueued) return;
     if(versionAt<=cloudLastRemoteAt){setCloudStatus('Live','saved');return;}
-    const {data:incoming,error}=await cloudClient
+    const {data:incoming,error}=await cloudStateRequest(cloudClient
       .from('app_state')
       .select('state,updated_at')
       .eq('org_id',CLOUD_ORG_ID)
-      .maybeSingle();
+      .maybeSingle(),'Refresh cloud data');
     if(error) throw error;
     if(!incoming?.state || cloudSaveInFlight || cloudSaveQueued) return;
     const incomingAt=Date.parse(incoming.updated_at||0)||0;
@@ -6863,7 +6871,7 @@ async function pushCloudState(){
   cloudSaveQueued=false;
 
   try{
-    const {data:{user}}=await cloudClient.auth.getUser();
+    const {data:{user}}=await cloudSaveStep(cloudClient.auth.getUser(),'Cloud sign-in check');
     if(!user){
       setCloudStatus('Sign In','offline');
       return;
@@ -6874,11 +6882,11 @@ async function pushCloudState(){
 
     // Re-read the row before writing. If another browser saved first, merge
     // its changes into this browser's local edits instead of overwriting them.
-    const {data:latest,error:latestError}=await cloudClient
+    const {data:latest,error:latestError}=await cloudStateRequest(cloudClient
       .from('app_state')
       .select('state,updated_at')
       .eq('org_id',CLOUD_ORG_ID)
-      .maybeSingle();
+      .maybeSingle(),'Read latest cloud data');
     if(latestError) throw latestError;
     if(!latest?.state || !Array.isArray(latest.state.projects)){cloudLoadedForUser=null;throw new Error('Live data is missing or invalid. Saving is blocked.');}
 
@@ -6912,7 +6920,7 @@ async function pushCloudState(){
     }else{
       throw new Error('Creating replacement live data is disabled.');
     }
-    const {data:saved,error}=await write.select('state,updated_at').maybeSingle();
+    const {data:saved,error}=await cloudStateRequest(write.select('state,updated_at').maybeSingle(),'Save cloud data');
     if(error) throw error;
     if(!saved) throw new Error('Another device saved changes. Retrying your pending changes.');
     // Database validation must not silently turn an approval back into Draft.
