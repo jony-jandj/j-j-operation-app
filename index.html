@@ -8571,16 +8571,11 @@ ${estimateTableHTML(p,'hub')}
         Select All
       </label>
 
-      <button class="quick-action" data-po-toggle onclick="toggleAllPOCards()">Expand P.O.s</button>
-      <button class="quick-action" data-parent-toggle onclick="toggleAllPOParentGroups()">Collapse Parent Groups</button>
       <button class="quick-action" onclick="openSelectedWorkPreview()">Preview selected work</button>
       <button class="quick-action" onclick="openBulkPayout()">Adjust Selected Payouts</button>
       <button class="quick-action" onclick="openBulkPOTeam()">Change In-house / Sub</button>
-      <button class="quick-action" onclick="applyBulkSplit(1)">Single Split</button>
-      <button class="quick-action" onclick="applyBulkSplit(2)">2-Way Pay Split</button>
-      <button class="quick-action" onclick="applyBulkSplit(3)">3-Way Pay Split</button>
-      <button class="quick-action" onclick="applyBulkSplit(4)">4-Way Pay Split</button>
       <button class="quick-action primary" onclick="bulkApprove()">Approve</button>
+      <button class="quick-action" onclick="bulkUnapprove()">Unapprove</button>
       <button class="btn btn-danger" style="padding:8px 10px;font-size:11px" onclick="requestBulkDelete()">Delete Selected</button>
       <div class="po-bulk-count">${selectedPOs().length} selected</div>
     </div>
