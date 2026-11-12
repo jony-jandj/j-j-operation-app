@@ -19,29 +19,35 @@ async function refresh(silent=false,afterWrite=false){
  if(readTask)return readTask;
  if(!client){msg.textContent='Unable to connect. Check your connection and refresh.';return false;}
  if(!/^[a-f0-9]{64}$/.test(token)){msg.textContent='Open the private QR code or link provided by J&J.';return false;}
- const epoch=readEpoch;reading=true;portalLoadFailed=false;portalRulesReady=false;render();
+ const epoch=readEpoch,hadData=portalLoaded,hadRules=portalRulesReady;
+ const before=JSON.stringify([items,selectionGroups,portalRules,portalRulesReady]);
+ reading=true;portalLoadFailed=false;if(!hadData)render();
  readTask=(async()=>{
  let timer;
  const rulesRequest=Promise.resolve().then(()=>client.rpc('jj_selection_rules',{p_token:token})).catch(error=>({error}));
  const rulesResult=Promise.race([rulesRequest,new Promise(resolve=>{timer=setTimeout(()=>resolve({error:{message:'Settings request timed out'}}),8000);})]);
+ const publish=data=>{portalLoaded=true;portalLoadFailed=false;items=data.items||[];selectionGroups=data.selectionGroups||[];$('job').textContent=data.jobName+' · Selections';$('refresh').hidden=false;$('newSelection').hidden=false;};
  try{
  const {data,error}=await client.rpc('jj_portal_read',{p_token:token});if(error)throw error;
  if(epoch!==readEpoch)return false;
- portalLoaded=true;portalLoadFailed=false;items=data.items||[];selectionGroups=data.selectionGroups||[];
- $('job').textContent=data.jobName+' · Selections';$('refresh').hidden=false;$('newSelection').hidden=false;
- msg.textContent='Your selections are loaded. Checking choice settings…';render();
+ // Show first-load products promptly; later refreshes publish one consistent update.
+ if(!hadData){publish(data);msg.textContent='Your selections are loaded. Checking choice settings…';render();}
  const rules=await rulesResult;
  if(epoch!==readEpoch)return false;
+ publish(data);
  if(rules.error){
   console.warn('Selection settings unavailable',rules.error.code||rules.error.message);
-  msg.textContent='Your selections are loaded. Choosing is temporarily unavailable. Tap Refresh selections to try again.';
+  if(!portalRulesReady)msg.textContent='Your selections are loaded. Choosing is temporarily unavailable. Tap Refresh selections to try again.';
+  else if(!silent)msg.textContent=afterWrite?'Your choice is saved. Choice settings could not refresh; showing the last confirmed settings.':'Showing your selections with the last confirmed choice settings.';
  }else{
   portalRules=rules.data||{};portalRulesReady=true;
-  msg.textContent=afterWrite?'Saved. Your selections are up to date.':'Your selections are up to date.';
+  if(!silent||!hadData||!hadRules)msg.textContent=afterWrite?'Saved. Your selections are up to date.':'Your selections are up to date.';
  }
- render();return true;
- }catch(e){if(epoch!==readEpoch)return false;portalLoadFailed=true;$('refresh').hidden=false;if(!silent)msg.textContent='Could not load the latest selections. Tap Refresh selections to try again.';return false;}
- finally{clearTimeout(timer);reading=false;readTask=null;if(!portalLoaded)render();}
+ // Avoid replacing the buttons under the homeowner's finger on unchanged polling.
+ if(!silent||!hadData||before!==JSON.stringify([items,selectionGroups,portalRules,portalRulesReady]))render();
+ return true;
+ }catch(e){if(epoch!==readEpoch)return false;portalLoadFailed=true;$('refresh').hidden=false;if(!silent||!hadData)msg.textContent='Could not load the latest selections. Tap Refresh selections to try again.';return false;}
+ finally{clearTimeout(timer);if(epoch===readEpoch){reading=false;readTask=null;if(!portalLoaded)render();}}
  })();return readTask;
 }
 function showPhoto(){photo=safeImage(photo);$('preview').src=photo;$('preview').hidden=!photo;}
@@ -56,11 +62,10 @@ function openEditor(id=null){
 }
 function closeEditor(){if(!busy){photoVersion++;optionParentId=null;editor.close();$('newSelection').focus();}}
 async function write(action,item,requestId=null){
- if(busy)return false;if(action==='select'&&!portalRulesReady){msg.textContent='Tap Refresh selections before choosing.';return false;}busy=true;readEpoch++;
+ if(busy)return false;if(action==='select'&&!portalRulesReady){msg.textContent='Tap Refresh selections before choosing.';return false;}busy=true;readEpoch++;readTask=null;reading=false;
  const disabled=[...document.querySelectorAll('button')].map(b=>[b,b.disabled]);
  disabled.forEach(([b])=>b.disabled=true);msg.textContent='Saving your change…';$('editorMessage').textContent='Saving…';
  try{
- if(readTask)await readTask;
  const {error}=action==='add'
   ?await client.rpc('jj_portal_add_once',{p_token:token,p_request_id:requestId||crypto.randomUUID(),p_item:item})
   :action==='select'?await client.rpc('jj_selection_choose',{p_token:token,p_item:item.id,p_expected:item.expectedStatus}):await client.rpc('jj_portal_write',{p_token:token,p_action:action,p_item:item});
