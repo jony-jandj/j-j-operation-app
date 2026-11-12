@@ -1170,6 +1170,8 @@
       return;
     }
 
+    const groupError=window.JJGroupRules?.validate(project.id,[...project.selections,...added])??'Group settings are loading. Please try again.';
+    if(groupError){window.toast?.(groupError);return;}
     project.selections.push(...added);
     project.selectionImports.push({
       id:'pdf-import-'+Date.now(),
@@ -1842,6 +1844,11 @@
        <div class="jj-v82-note">Only the checked selections will change.</div>`,
       dialog=>{
         const value=dialog.querySelector('#jjV82Status').value;
+        if(['Selected','Ordered','Received'].includes(value)){
+          const ids=new Set(items.map(i=>String(i.id)));
+          const error=window.JJGroupRules?.validate(p().id,p().selections.map(i=>ids.has(String(i.id))?{...i,status:value}:i))??'Group settings are loading. Please try again.';
+          if(error){toast(error);return false;}
+        }
         items.forEach(item=>{
           item.status=value;
           if(value!=='Selected'){item.homeownerSelected=false;item.homeownerSelectedAt=null}
@@ -1858,6 +1865,11 @@
        <div class="jj-v82-note">This moves the checked selections without duplicating them.</div>`,
       dialog=>{
         let id=dialog.querySelector('#jjV82Group').value,g=null;
+        if(id){
+          const ids=new Set(items.map(i=>String(i.id)));
+          const error=window.JJGroupRules?.validate(project.id,project.selections.map(i=>ids.has(String(i.id))?{...i,optionGroupId:id}:i))??'Group settings are loading. Please try again.';
+          if(error){toast(error);return false;}
+        }
         if(id==='__new__'){
           const name=dialog.querySelector('#jjV82NewGroupName').value.trim();
           if(!name)return false;
@@ -1913,6 +1925,15 @@
     openDialog(`Approve · ${items.length} selected`,
       '<p>Mark the checked selections as Selected. Ordered and Received items keep their current status.</p>',
       ()=>{
+        if(!window.JJGroupRules?.ready(String(p()?.id))){toast('Group settings are loading. Please try again.');return false;}
+        const picked=new Set(items.map(i=>String(i.id))),counts=new Map();
+        for(const item of p()?.selections||[]){
+          if(!item.optionGroupId||(!picked.has(String(item.id))&&!['Selected','Ordered','Received'].includes(item.status)))continue;
+          const key=String(item.optionGroupId);counts.set(key,(counts.get(key)||0)+1);
+        }
+        for(const [key,count] of counts)if(count>1&&!window.JJGroupRules.multiple(key)){
+          toast('Choose one item per group, or enable Allow multiple selections for that group.');return false;
+        }
         items.forEach(item=>{if(!['Ordered','Received'].includes(item.status))item.status='Selected'});
         bulkSet().clear();bulkDeleteArmed=false;save(`${items.length} selections approved`);
       },'Approve selections');

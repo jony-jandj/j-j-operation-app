@@ -10295,7 +10295,7 @@ function selectionCard(item,index){
       <h3>${esc(item.title||'Untitled product')}</h3>
       <div class="selection-vendor">${esc(item.vendor||'Vendor not entered')} · ${esc(identifier)}</div>
       <div class="selection-card-bottom">
-        <div class="selection-price">${selectionMoney(selectionTotal(item))}<small>${Math.max(1,Number(item.quantity||1))} item${Number(item.quantity||1)===1?'':'s'}${taxNote}</small></div>
+        <div class="selection-price">${item.unitPrice===null||item.unitPrice===undefined||item.unitPrice===''?'Price needed':selectionMoney(selectionTotal(item))}<small>${Math.max(1,Number(item.quantity||1))} item${Number(item.quantity||1)===1?'':'s'}${taxNote}</small></div>
         <span class="selection-purchased">Purchased by<br><b>${esc(item.purchasedBy||'Not assigned')}</b>${lead?`<small> · ${esc(lead)}</small>`:''}</span>
       </div>
       <div class="selection-card-actions">
@@ -10553,6 +10553,7 @@ async function fetchSelectionMetadata(url){
     if(!response.ok) return null;
     const payload=await response.json();
     const data=payload?.data||{};
+    if(payload.status==='fail'||payload.status==='error'||Number(payload.statusCode)>=400||/access denied|captcha|^error page$|request blocked/i.test(String(data.title||'')))return {blocked:true};
     const image=typeof data.image==='string'?data.image:data.image?.url||'';
     return {
       title:selectionMetadataTitle(data.title),
@@ -10582,10 +10583,13 @@ function fillSelectionField(id,value,overwrite=false){
   if(field && value && (overwrite || !String(field.value||'').trim())) field.value=value;
 }
 
+let selectionLookupGeneration=0;
 async function enrichSelectionEditorFromUrl(url,overwrite=false){
   const normalized=String(url||'').trim();
   if(!normalized) return;
   if(!overwrite && (selectionLookupInFlight===normalized || selectionLookupCompleted===normalized)) return;
+  const generation=++selectionLookupGeneration;
+  const field=document.getElementById('selectionEditUrl');
   selectionLookupInFlight=normalized;
   const guess=productGuessFromUrl(normalized);
   fillSelectionField('selectionEditTitle',guess.title,overwrite);
@@ -10593,18 +10597,22 @@ async function enrichSelectionEditorFromUrl(url,overwrite=false){
   fillSelectionField('selectionEditCategory',guess.category,overwrite);
   fillSelectionField('selectionEditModel',guess.model,overwrite);
   setSelectionLookupStatus('Reading the product link…','loading');
+  const snapshots=new Map([...document.querySelectorAll('[id^="selectionEdit"]')].map(n=>[n.id,n.value]));
   const metadata=await fetchSelectionMetadata(normalized);
-  if(metadata){
-    fillSelectionField('selectionEditTitle',metadata.title,overwrite);
-    fillSelectionField('selectionEditDescription',metadata.description,overwrite);
-    selectionImageSetValue(metadata.image,'Image from product link',overwrite);
-    fillSelectionField('selectionEditModel',selectionCombinedIdentifier(metadata.model,metadata.upc),overwrite);
-    if(metadata.unitPrice) fillSelectionField('selectionEditPrice',metadata.unitPrice.toFixed(2),overwrite);
+  if(generation!==selectionLookupGeneration||!field?.isConnected||field!==document.getElementById('selectionEditUrl')||field.value.trim()!==normalized)return;
+  const fillUnchanged=(id,value,force)=>{if(document.getElementById(id)?.value===snapshots.get(id))fillSelectionField(id,value,force);};
+  if(metadata&&!metadata.blocked){
+    fillUnchanged('selectionEditTitle',metadata.title,overwrite);
+    fillUnchanged('selectionEditDescription',metadata.description,overwrite);
+    if(document.getElementById('selectionEditImage')?.value===snapshots.get('selectionEditImage'))selectionImageSetValue(metadata.image,'Image from product link',overwrite);
+    fillUnchanged('selectionEditModel',selectionCombinedIdentifier(metadata.model,metadata.upc),overwrite);
+    if(metadata.unitPrice) fillUnchanged('selectionEditPrice',metadata.unitPrice.toFixed(2),overwrite);
   }
   const hasPrice=Number(document.getElementById('selectionEditPrice')?.value||0)>0;
     const hasIdentifier=Boolean(document.getElementById('selectionEditModel')?.value.trim());
     const hasDetails=Boolean(document.getElementById('selectionEditTitle')?.value.trim() && document.getElementById('selectionEditCategory')?.value.trim());
-  if(hasPrice && hasDetails) setSelectionLookupStatus('Product details and price found — review before saving.','success');
+  if(metadata?.blocked)setSelectionLookupStatus('This store blocked lookup. Check the current price and add the product photo manually.','warn');
+  else if(hasPrice && hasDetails) setSelectionLookupStatus('Product details and price found — review before saving.','success');
   else if(hasDetails) setSelectionLookupStatus(`Product details filled${hasIdentifier?' with SKU/model or UPC':''}. This retailer did not expose a live price, so enter it below.`,'warn');
   else setSelectionLookupStatus('We could not read this link. You can still enter the product details manually.','warn');
   updateSelectionTotals();
@@ -10664,7 +10672,7 @@ function openSelectionEditor(index=null,prefillUrl=''){
         <input id="selectionImageFile" type="file" accept="image/*" hidden onchange="selectionImageFileSelected(event)">
         <input id="selectionEditImage" type="hidden" value="${esc(safeSelectionImageUrl(item.image))}">
       </div></div>
-      <div class="selection-field"><label>Unit price</label><input id="selectionEditPrice" type="number" min="0" step="0.01" inputmode="decimal" value="${Number(item.unitPrice||0)||''}" oninput="updateSelectionTotals()"></div>
+      <div class="selection-field"><label>Unit price</label><input id="selectionEditPrice" type="number" min="0" step="0.01" inputmode="decimal" value="${item.unitPrice===null||item.unitPrice===undefined||item.unitPrice===''?'':Number(item.unitPrice)}" oninput="updateSelectionTotals()"></div>
       <div class="selection-field"><label>Quantity</label><input id="selectionEditQuantity" type="number" min="1" step="1" value="${Math.max(1,Number(item.quantity||1))}" oninput="updateSelectionTotals()"></div>
       <div class="selection-tax-row"><label><input id="selectionEditTax" type="checkbox" ${item.addTax?'checked':''} onchange="updateSelectionTotals()"> Add taxes (8.25%)</label><span id="selectionEditTaxText">Tax: $0.00</span></div>
       <div class="selection-field"><label>Purchased by</label><select id="selectionEditPurchasedBy">${['J&J','Homeowner','Not assigned'].map(v=>`<option ${v===(item.purchasedBy||'J&J')?'selected':''}>${v}</option>`).join('')}</select></div>
@@ -10691,6 +10699,7 @@ function openSelectionEditor(index=null,prefillUrl=''){
 }
 
 function closeSelectionEditor(){
+  selectionLookupGeneration++;selectionLookupInFlight='';
   document.getElementById('selectionModalBackdrop')?.classList.remove('open');
   selectionEditIndex=null;
 }
@@ -10722,6 +10731,11 @@ function saveSelectionEditor(){
   if(!title){toast('Enter the product name');return;}
   if(!category){toast('Enter a category');return;}
   const status=document.getElementById('selectionEditStatus')?.value||'Pending';
+  const editGroup=document.getElementById('jjEditGroupV82')?.value??selectedProject().selections[selectionEditIndex]?.optionGroupId??'';
+  if(['Selected','Ordered','Received'].includes(status)&&editGroup){
+    if(!window.JJGroupRules?.ready(String(selectedProject().id))){toast('Group settings are loading. Please try again.');return;}
+    if(!window.JJGroupRules.multiple(editGroup)&&selectedProject().selections.some((i,n)=>n!==selectionEditIndex&&String(i.optionGroupId||'')===String(editGroup)&&['Selected','Ordered','Received'].includes(i.status))){toast('This group allows one choice. Enable Allow multiple selections, or unselect the other item first.');return;}
+  }
   const item={
     id:selectionEditIndex===null?Date.now():(selectedProject().selections[selectionEditIndex]?.id||Date.now()),
     url:safeSelectionUrl(document.getElementById('selectionEditUrl')?.value.trim()||''),
@@ -10733,7 +10747,7 @@ function saveSelectionEditor(){
     model:document.getElementById('selectionEditModel')?.value.trim()||'',
     upc:'', // Identifiers are preserved together in model by the single-field editor.
     image:safeSelectionImageUrl(document.getElementById('selectionEditImage')?.value.trim()||''),
-    unitPrice:Number(document.getElementById('selectionEditPrice')?.value||0),
+    unitPrice:document.getElementById('selectionEditPrice')?.value.trim()===''?null:Number(document.getElementById('selectionEditPrice')?.value),
     quantity:Math.max(1,Number(document.getElementById('selectionEditQuantity')?.value||1)),
     addTax:!!document.getElementById('selectionEditTax')?.checked,
     purchasedBy:document.getElementById('selectionEditPurchasedBy')?.value||'J&J',
@@ -10785,7 +10799,7 @@ renderAll();
 syncUserSelector();
 restoreLayoutPreferences();
 
-// QR links are rendered by selections-metadata.js?v=20261111-workflow after the app shell loads.
+// QR links are rendered by selections-metadata.js?v=20261111-multiple after the app shell loads.
 // Keeping the legacy renderer out of this path prevents two H.O. overlays from
 // competing with each other during startup.
 
@@ -10860,10 +10874,10 @@ if ('serviceWorker' in navigator) {
 </script>
 
 <!-- Selections / homeowner enhancements. This must load after the app script. -->
-<script src="./selections-metadata.js?v=20261111-workflow"></script>
+<script src="./selections-metadata.js?v=20261111-multiple"></script>
 <script src="selection-budgets.js?v=20261101-allowance"></script><script src="selection-group-order.js?v=20261021-link-photo"></script>
-<script src="./customer-view.js?v=20261109-missing"></script>
-<script src="./customer-simple-add.js?v=20261103-add-safe"></script><script src="./customer-overlay.js?v=20261103-add-safe"></script>
+<script src="./customer-view.js?v=20261111-multiple"></script>
+<script src="./customer-simple-add.js?v=20261103-add-safe"></script><script src="./customer-overlay.js?v=20261111-multiple"></script>
 <script src="./qrcode.min.js"></script>
 <script src="mobile-print.js"></script>
 <script src="selection-print.js?v=20261102-selected-pending"></script>
@@ -10878,7 +10892,7 @@ document.addEventListener('click',function(e){
   }
 });
 </script>
-<script src="ical.js"></script><script src="calendar-engine.js?v=20260924-event-details"></script><script src="redesign.js?v=20261103-board"></script></body>
+<script src="ical.js"></script><script src="calendar-engine.js?v=20260924-event-details"></script><script src="redesign.js?v=20261103-board"></script><script src="selection-group-rules.js?v=20261111-multiple"></script></body>
 </html>
 
 <script>

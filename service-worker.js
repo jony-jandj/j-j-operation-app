@@ -1,6 +1,7 @@
 importScripts('./request-work-push-sw.js?v=20261026-descriptive');
-const CACHE_NAME = 'jj-live-20261111-workflow-speed';
+const CACHE_NAME = 'jj-live-20261111-safe-multiple';
 const APP_SHELL = [
+ './selection-group-rules.js',
  './homeowner-app.js','./homeowner-ready.js',
  './whole-number-controls.js','./staff-favorites.js',
  './mobile-print.js',

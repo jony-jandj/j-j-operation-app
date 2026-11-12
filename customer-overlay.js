@@ -17,12 +17,16 @@
   // Resolve by the captured project ID, never by whichever job is selected later.
   const current=()=>state.projects.find(p=>String(p.id)===String(project.id));
   const getItems=()=>current()?.selections||[];
-  const view=window.JJCustomerView.mount(host,{getItems,getGroups:()=>current()?.selectionGroups||[],
+  const view=window.JJCustomerView.mount(host,{getItems,getRules:()=>window.JJGroupRules?.getRules()||{},getGroups:()=>current()?.selectionGroups||[],
    favoriteAccess:typeof cloudClient!=='undefined'&&cloudClient?{client:cloudClient,args:{p_job:String(project.id)}}:null,
+   async onGroupDone(key,update){
+    try{const result=await cloudClient.rpc('jj_selection_rules',{p_job:String(project.id),p_group:key,p_done:true});if(result.error)throw result.error;await window.JJGroupRules.reload();update();}catch(e){message.textContent=e.message||'Could not save. Try again.';}
+   },
    onSelect(id,update){
     const all=getItems(),item=all.find(i=>String(i.id)===id);
     if(!item||!['Pending','Recommended','Selected'].includes(item.status||'Pending'))return;
-    if(item.status!=='Selected'&&all.some(i=>String(i.id)!==id&&String(i.optionGroupId||i.id)===String(item.optionGroupId||item.id)&&i.status==='Selected'))return;
+    if(!window.JJGroupRules?.ready(String(project.id))){message.textContent='Group settings are loading. Please try again.';return;}
+    if(item.status!=='Selected'&&!window.JJGroupRules.multiple(item.optionGroupId||item.id)&&all.some(i=>String(i.id)!==id&&String(i.optionGroupId||i.id)===String(item.optionGroupId||item.id)&&['Selected','Ordered','Received'].includes(i.status)))return;
     item.status=item.status==='Selected'?'Pending':'Selected';item.homeownerSelected=item.status==='Selected';item.homeownerSelectedAt=item.homeownerSelected?new Date().toISOString():null;
     window.saveState(false);window.renderSelections();update();
    },
