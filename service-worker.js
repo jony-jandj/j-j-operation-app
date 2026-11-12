@@ -1,6 +1,7 @@
 importScripts('./request-work-push-sw.js?v=20261026-descriptive');
-const CACHE_NAME = 'jj-live-20261112-steady-buttons';
+const CACHE_NAME = 'jj-live-20261112-copy-selections';
 const APP_SHELL = [
+ './selection-copy.js',
  './selection-group-rules.js',
  './homeowner-app.js','./homeowner-ready.js',
  './whole-number-controls.js','./staff-favorites.js',
