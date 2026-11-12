@@ -195,7 +195,7 @@
     // Persist the merged/union state. This intentionally pushes the union back
     // to cloud so an incomplete portal copy cannot remain authoritative.
     try{
-      localStorage.setItem('jj_full_proto',JSON.stringify(s));
+      if(window.JJLocalBackup)JJLocalBackup.write(s);else localStorage.setItem('jj_full_proto',JSON.stringify(s));
       if(typeof saveState==='function') saveState(false);
       if(typeof renderAll==='function') renderAll();
     }catch(err){
@@ -1311,6 +1311,16 @@
         text-transform:uppercase!important;
       }
 
+      #selections .jj-bulk-group-select{
+        display:flex!important;align-items:center;justify-content:center;
+        flex:0 0 36px;min-height:36px;margin:0!important;cursor:pointer;
+      }
+      #selections .jj-bulk-group-select input{
+        appearance:auto!important;-webkit-appearance:checkbox!important;
+        width:20px!important;height:20px!important;margin:0!important;
+        accent-color:#B59A62!important;opacity:1!important;visibility:visible!important;
+      }
+
       /* Bulk checkbox on every card */
       #selections .jj-bulk-card-select{
         display:flex!important;align-items:center!important;gap:7px!important;
@@ -1939,6 +1949,48 @@
       },'Approve selections');
   }
 
+  // Work only on cards in this view, just like the existing Select All action.
+  // Checking a header selects items for bulk editing; it never chooses products.
+  function renderGroupCheckboxes(){
+    const root=document.getElementById('selections');
+    if(!root)return;
+    root.querySelectorAll('.named-selection-group').forEach(group=>{
+      const heading=group.querySelector('.selection-room-heading');
+      if(!heading)return;
+      let label=heading.querySelector('.jj-bulk-group-select');
+      if(!label){
+        label=document.createElement('label');label.className='jj-bulk-group-select';
+        const input=document.createElement('input');input.type='checkbox';
+        input.dataset.jjBulkGroup='1';label.appendChild(input);
+        label.addEventListener('click',event=>event.stopPropagation());
+        heading.prepend(label);
+      }
+      const box=label.querySelector('input');
+      const cards=[...group.querySelectorAll('[data-jj-bulk-id]')];
+      const count=cards.filter(card=>bulkSet().has(String(card.dataset.jjBulkId))).length;
+      box.checked=cards.length>0&&count===cards.length;
+      box.indeterminate=count>0&&count<cards.length;
+      box.disabled=!cards.length;
+      const name=heading.querySelector('b')?.textContent||'group';
+      box.setAttribute('aria-label','Select '+name+' for bulk edit');
+      label.title='Select all '+cards.length+' items in this group for bulk edit';
+    });
+  }
+
+  function toggleBulkGroup(box){
+    const group=box.closest('.named-selection-group');
+    if(!group)return;
+    group.querySelectorAll('[data-jj-bulk-id]').forEach(card=>{
+      const id=String(card.dataset.jjBulkId);
+      if(box.checked)bulkSet().add(id);else bulkSet().delete(id);
+      card.checked=box.checked;
+      const label=card.closest('.jj-bulk-card-select')?.querySelector('span');
+      if(label)label.textContent=box.checked?'Selected':'Select';
+    });
+    bulkDeleteArmed=false;
+    renderBulkBar();
+  }
+
   let bulkRenderedProjectId=null;
   function renderBulkBar(){
     const projectId=String(p()?.id??'');
@@ -1955,6 +2007,7 @@
     // Limit bulk actions to this project's current category, including collapsed groups.
     const visibleIds=new Set([...root.querySelectorAll('[data-jj-bulk-id]')].map(n=>n.dataset.jjBulkId));
     for(const id of bulkSet())if(!visibleIds.has(id)){bulkSet().delete(id);bulkDeleteArmed=false}
+    renderGroupCheckboxes();
     const count=selectedItems().length;
     bar.innerHTML=`<span class="count">${count} of ${visibleIds.size} selected</span>
       <button class="btn btn-light" data-action="all" ${visibleIds.size?'':'disabled'}>Select All</button>
@@ -2142,6 +2195,8 @@
     };
 
     document.addEventListener('change',e=>{
+      const groupBox=e.target?.closest?.('#selections [data-jj-bulk-group]');
+      if(groupBox){toggleBulkGroup(groupBox);return;}
       const box=e.target?.closest?.('#selections [data-jj-bulk-id]');
       if(!box)return;
       const id=String(box.dataset.jjBulkId);
@@ -2349,7 +2404,7 @@
         return;
       }
     }catch{}
-    try{localStorage.setItem('jj_full_proto',JSON.stringify(state))}catch{}
+    try{if(window.JJLocalBackup)JJLocalBackup.write(state);else localStorage.setItem('jj_full_proto',JSON.stringify(state))}catch{}
   }
 
   function updateSidebarActive(project){

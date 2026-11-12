@@ -1,6 +1,7 @@
 importScripts('./request-work-push-sw.js?v=20261026-descriptive');
-const CACHE_NAME = 'jj-live-20261112-copy-selections';
+const CACHE_NAME = 'jj-live-20261112-group-checkboxes';
 const APP_SHELL = [
+ './lz-string.min.js','./local-backup.js',
  './selection-copy.js',
  './selection-group-rules.js',
  './homeowner-app.js','./homeowner-ready.js',
