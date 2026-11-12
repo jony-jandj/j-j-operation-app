@@ -1,6 +1,6 @@
 const token=new URLSearchParams(location.hash.slice(1)).get('key')||'';
 const client=window.supabase?.createClient('https://mrkvspqwqsmlnhrfllpx.supabase.co','sb_publishable_n5w6Q2b1nvsnOEcYZL2fsQ_u0gGltVk',{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}});
-const $=id=>document.getElementById(id),msg=$('message'),editor=$('editor'),form=$('selectionForm');let lookupGeneration=0,lookupBusy=false;let readTask=null,readEpoch=0;let portalRules={};let portalLoaded=false,portalLoadFailed=false;let busy=false,reading=false,items=[],selectionGroups=[],editingId=null,editingOriginal=null,optionParentId=null,photo='',photoLoading=false,photoVersion=0;
+const $=id=>document.getElementById(id),msg=$('message'),editor=$('editor'),form=$('selectionForm');let lookupGeneration=0,lookupBusy=false;let readTask=null,readEpoch=0;let portalRules={};let portalRulesReady=false;let portalLoaded=false,portalLoadFailed=false;let busy=false,reading=false,items=[],selectionGroups=[],editingId=null,editingOriginal=null,optionParentId=null,photo='',photoLoading=false,photoVersion=0;
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const safe=u=>/^https?:\/\//i.test(u||'')?u:'';
 const safeImage=u=>safe(u)||(/^data:image\/(jpeg|jpg|png|webp|gif);base64,/i.test(u||'')?u:'');
@@ -19,15 +19,29 @@ async function refresh(silent=false,afterWrite=false){
  if(readTask)return readTask;
  if(!client){msg.textContent='Unable to connect. Check your connection and refresh.';return false;}
  if(!/^[a-f0-9]{64}$/.test(token)){msg.textContent='Open the private QR code or link provided by J&J.';return false;}
- const epoch=readEpoch;reading=true;portalLoadFailed=false;if(!portalLoaded)render();
+ const epoch=readEpoch;reading=true;portalLoadFailed=false;portalRulesReady=false;render();
  readTask=(async()=>{
- try{const [{data,error},rules]=await Promise.all([client.rpc('jj_portal_read',{p_token:token}),client.rpc('jj_selection_rules',{p_token:token})]);if(error)throw error;if(rules.error)throw rules.error;
- if(epoch!==readEpoch)return false;portalRules=rules.data||{};
- portalLoaded=true;portalLoadFailed=false;items=data.items||[];selectionGroups=data.selectionGroups||[];$('job').textContent=data.jobName+' · Selections';render();
- if(busy)document.querySelectorAll('button').forEach(b=>b.disabled=true);
- msg.textContent=afterWrite?'Saved. Your selections are up to date.':'Your selections are up to date.';$('newSelection').hidden=false;$('refresh').hidden=false;return true;
- }catch(e){portalLoadFailed=true;$('refresh').hidden=false;if(!silent)msg.textContent='Could not confirm the latest selections. Check your connection and refresh.';return false;}
- finally{reading=false;readTask=null;if(!portalLoaded)render();}
+ let timer;
+ const rulesRequest=Promise.resolve().then(()=>client.rpc('jj_selection_rules',{p_token:token})).catch(error=>({error}));
+ const rulesResult=Promise.race([rulesRequest,new Promise(resolve=>{timer=setTimeout(()=>resolve({error:{message:'Settings request timed out'}}),8000);})]);
+ try{
+ const {data,error}=await client.rpc('jj_portal_read',{p_token:token});if(error)throw error;
+ if(epoch!==readEpoch)return false;
+ portalLoaded=true;portalLoadFailed=false;items=data.items||[];selectionGroups=data.selectionGroups||[];
+ $('job').textContent=data.jobName+' · Selections';$('refresh').hidden=false;$('newSelection').hidden=false;
+ msg.textContent='Your selections are loaded. Checking choice settings…';render();
+ const rules=await rulesResult;
+ if(epoch!==readEpoch)return false;
+ if(rules.error){
+  console.warn('Selection settings unavailable',rules.error.code||rules.error.message);
+  msg.textContent='Your selections are loaded. Choosing is temporarily unavailable. Tap Refresh selections to try again.';
+ }else{
+  portalRules=rules.data||{};portalRulesReady=true;
+  msg.textContent=afterWrite?'Saved. Your selections are up to date.':'Your selections are up to date.';
+ }
+ render();return true;
+ }catch(e){if(epoch!==readEpoch)return false;portalLoadFailed=true;$('refresh').hidden=false;if(!silent)msg.textContent='Could not load the latest selections. Tap Refresh selections to try again.';return false;}
+ finally{clearTimeout(timer);reading=false;readTask=null;if(!portalLoaded)render();}
  })();return readTask;
 }
 function showPhoto(){photo=safeImage(photo);$('preview').src=photo;$('preview').hidden=!photo;}
@@ -42,7 +56,7 @@ function openEditor(id=null){
 }
 function closeEditor(){if(!busy){photoVersion++;optionParentId=null;editor.close();$('newSelection').focus();}}
 async function write(action,item,requestId=null){
- if(busy)return false;busy=true;readEpoch++;
+ if(busy)return false;if(action==='select'&&!portalRulesReady){msg.textContent='Tap Refresh selections before choosing.';return false;}busy=true;readEpoch++;
  const disabled=[...document.querySelectorAll('button')].map(b=>[b,b.disabled]);
  disabled.forEach(([b])=>b.disabled=true);msg.textContent='Saving your change…';$('editorMessage').textContent='Saving…';
  try{

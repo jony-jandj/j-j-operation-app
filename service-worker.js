@@ -1,5 +1,5 @@
 importScripts('./request-work-push-sw.js?v=20261026-descriptive');
-const CACHE_NAME = 'jj-live-20261111-safe-multiple';
+const CACHE_NAME = 'jj-live-20261112-loading-repair';
 const APP_SHELL = [
  './selection-group-rules.js',
  './homeowner-app.js','./homeowner-ready.js',
