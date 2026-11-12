@@ -10277,7 +10277,7 @@ function exportSelectionsPdf(){
 function selectionCard(item,index){
   const productUrl=safeSelectionUrl(item.url);
   const imageUrl=safeSelectionImageUrl(item.image);
-  const identifier=[item.model?`Model/SKU ${item.model}`:'',item.upc?`UPC ${item.upc}`:''].filter(Boolean).join(' · ') || 'Model/SKU/UPC not entered';
+  const identifier=selectionCombinedIdentifier(item.model,item.upc)?`Model / SKU / UPC: ${selectionCombinedIdentifier(item.model,item.upc)}`:'Model / SKU / UPC not entered';
   const taxNote=item.addTax?' · tax included':'';
   const lead=item.leadTimeValue
     ? `${item.leadTimeValue} ${String(item.leadTimeUnit||'days').toLowerCase()}`
@@ -10598,12 +10598,11 @@ async function enrichSelectionEditorFromUrl(url,overwrite=false){
     fillSelectionField('selectionEditTitle',metadata.title,overwrite);
     fillSelectionField('selectionEditDescription',metadata.description,overwrite);
     selectionImageSetValue(metadata.image,'Image from product link',overwrite);
-    fillSelectionField('selectionEditModel',metadata.model,overwrite);
-    fillSelectionField('selectionEditUpc',metadata.upc,overwrite);
+    fillSelectionField('selectionEditModel',selectionCombinedIdentifier(metadata.model,metadata.upc),overwrite);
     if(metadata.unitPrice) fillSelectionField('selectionEditPrice',metadata.unitPrice.toFixed(2),overwrite);
   }
   const hasPrice=Number(document.getElementById('selectionEditPrice')?.value||0)>0;
-    const hasIdentifier=Boolean(document.getElementById('selectionEditModel')?.value.trim() || document.getElementById('selectionEditUpc')?.value.trim());
+    const hasIdentifier=Boolean(document.getElementById('selectionEditModel')?.value.trim());
     const hasDetails=Boolean(document.getElementById('selectionEditTitle')?.value.trim() && document.getElementById('selectionEditCategory')?.value.trim());
   if(hasPrice && hasDetails) setSelectionLookupStatus('Product details and price found — review before saving.','success');
   else if(hasDetails) setSelectionLookupStatus(`Product details filled${hasIdentifier?' with SKU/model or UPC':''}. This retailer did not expose a live price, so enter it below.`,'warn');
@@ -10658,8 +10657,7 @@ function openSelectionEditor(index=null,prefillUrl=''){
       <div class="selection-field"><label>Quality</label><select id="selectionEditQuality">
         ${['Budget','Standard','Premium','Luxury'].map(q=>`<option ${q===(item.quality||'Standard')?'selected':''}>${q}</option>`).join('')}
       </select></div>
-      <div class="selection-field"><label>Model / SKU</label><input id="selectionEditModel" value="${esc(item.model||'')}"></div>
-      <div class="selection-field"><label>UPC / GTIN</label><input id="selectionEditUpc" value="${esc(item.upc||'')}" inputmode="numeric"></div>
+      <div class="selection-field"><label for="selectionEditModel">Model / SKU / UPC</label><input id="selectionEditModel" value="${esc(selectionCombinedIdentifier(item.model,item.upc))}" placeholder="Model, SKU, or UPC"></div>
       <div class="selection-field full"><label>Product picture</label><div id="selectionImageDrop" class="selection-image-drop" ondragover="selectionImageDragOver(event)" ondragleave="selectionImageDragLeave(event)" ondrop="selectionImageDrop(event)">
         <div id="selectionImagePreview" class="selection-image-preview">${selectionImageMarkup(item.image)}</div>
         <div class="selection-image-copy"><strong>Drag and drop an image here</strong><span>or choose one from your computer</span><button type="button" onclick="document.getElementById('selectionImageFile')?.click()">Choose image</button><span id="selectionImageName" class="selection-image-name">${item.image?'Image ready':'No image selected'}</span></div>
@@ -10712,6 +10710,12 @@ function updateSelectionTotals(){
   if(total) total.value=selectionMoney(subtotal+tax);
 }
 
+function selectionCombinedIdentifier(model,upc){
+  model=String(model||'').trim();upc=String(upc||'').trim();
+  if(!model)return upc;
+  if(!upc||model===upc)return model;
+  return model+' · UPC: '+upc;
+}
 function saveSelectionEditor(){
   const title=document.getElementById('selectionEditTitle')?.value.trim();
   const category=document.getElementById('selectionEditCategory')?.value.trim();
@@ -10727,7 +10731,7 @@ function saveSelectionEditor(){
     room:document.getElementById('selectionEditRoom')?.value||selectedProject().selectionRooms[0],
     quality:document.getElementById('selectionEditQuality')?.value||'Standard',
     model:document.getElementById('selectionEditModel')?.value.trim()||'',
-    upc:document.getElementById('selectionEditUpc')?.value.trim()||'',
+    upc:'', // Identifiers are preserved together in model by the single-field editor.
     image:safeSelectionImageUrl(document.getElementById('selectionEditImage')?.value.trim()||''),
     unitPrice:Number(document.getElementById('selectionEditPrice')?.value||0),
     quantity:Math.max(1,Number(document.getElementById('selectionEditQuantity')?.value||1)),
