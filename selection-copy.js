@@ -4,7 +4,8 @@
 const E=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const clone=v=>JSON.parse(JSON.stringify(v));
 const chosenFields=['title','vendor','category','room','quality','model','upc','identifiers','image','description','unitPrice','quantity','addTax','purchasedBy','leadTimeValue','leadTimeUnit','inStock','notes','url','additionalLinks','optionLabel','budget'];
-function plan(source,destination,ids,rules,uuid=()=>crypto.randomUUID()){
+function stableCopyId(prefix,parts){return prefix+encodeURIComponent(JSON.stringify(parts));}
+function plan(source,destination,ids,rules){
  if(!source||!destination||String(source.id)===String(destination.id))throw Error('Choose a different destination job.');
  const selected=(source.selections||[]).filter(i=>ids.has(String(i.id)));
  if(!selected.length)throw Error('Choose at least one selection.');
@@ -12,7 +13,7 @@ function plan(source,destination,ids,rules,uuid=()=>crypto.randomUUID()){
  const groups=[],mapping=new Map(),settings=[];
  const items=selected.map(item=>{
   const out={};for(const key of chosenFields)if(item[key]!==undefined)out[key]=clone(item[key]);
-  out.id='copy-'+uuid();out.status='Pending';out.homeownerSelected=false;out.homeownerSelectedAt=null;
+  out.id=stableCopyId('copy-',[source.id,destination.id,item.id]);out.status='Pending';out.homeownerSelected=false;out.homeownerSelectedAt=null;
   out.copiedFromJobId=String(source.id);out.copiedFromSelectionId=String(item.id);
   // An ungrouped parent with alternatives uses its item ID as the group key.
   const key=String(item.optionGroupId||item.id);
@@ -20,7 +21,7 @@ function plan(source,destination,ids,rules,uuid=()=>crypto.randomUUID()){
   if(grouped){
    if(!mapping.has(key)){
     const original=(source.selectionGroups||[]).find(g=>String(g.id)===key);
-    const group={...(original?clone(original):{}),id:'copy-group-'+uuid(),name:original?.name||item.optionGroupTitle||item.title||'Selections'};
+    const group={...(original?clone(original):{}),id:stableCopyId('copy-group-',[source.id,destination.id,key]),name:original?.name||item.optionGroupTitle||item.title||'Selections'};
     mapping.set(key,group);groups.push(group);
     if(rules?.[key]?.allowMultiple===true)settings.push(group.id);
    }
@@ -32,13 +33,15 @@ function plan(source,destination,ids,rules,uuid=()=>crypto.randomUUID()){
 }
 function append(destination,copy){
  destination.selections??=[];destination.selectionGroups??=[];destination.selectionRooms??=[];
- for(const group of copy.groups)if(!destination.selectionGroups.some(g=>String(g.id)===group.id))destination.selectionGroups.push(clone(group));
- for(const item of copy.items){if(!destination.selections.some(i=>String(i.id)===item.id))destination.selections.push(clone(item));if(item.room&&!destination.selectionRooms.includes(item.room))destination.selectionRooms.push(item.room);}
+ for(const group of copy.groups)if(!destination.selectionGroups.some(g=>String(g.id)===String(group.id)))destination.selectionGroups.push(clone(group));
+ for(const item of copy.items){if(!destination.selections.some(i=>String(i.id)===String(item.id)))destination.selections.push(clone(item));if(item.room&&!destination.selectionRooms.includes(item.room))destination.selectionRooms.push(item.room);}
 }
 const project=id=>state.projects.find(p=>String(p.id)===String(id));
+const confirmationFields=[...chosenFields,'status','optionGroupId','optionGroupTitle','copiedFromJobId','copiedFromSelectionId'];
 function confirmed(copy){
  const saved=typeof cloudBaseState==='undefined'?null:cloudBaseState?.projects?.find(p=>String(p.id)===copy.destinationId);
- return !!saved&&copy.items.every(i=>{const found=saved.selections?.find(s=>String(s.id)===i.id);return found&&['title','url','image','unitPrice','quantity','status','optionGroupId'].every(k=>JSON.stringify(found[k])===JSON.stringify(i[k]));})&&copy.groups.every(g=>saved.selectionGroups?.some(s=>String(s.id)===g.id));
+ const same=(a,b)=>(a==null&&b==null)||JSON.stringify(a)===JSON.stringify(b);
+ return !!saved&&copy.items.every(item=>{const found=saved.selections?.find(s=>String(s.id)===String(item.id));return !!found&&confirmationFields.every(key=>same(found[key],item[key]));})&&copy.groups.every(group=>saved.selectionGroups?.some(s=>String(s.id)===String(group.id)&&s.name===group.name));
 }
 function open(){
  const source=selectedProject();if(!source)return;
@@ -57,7 +60,7 @@ function open(){
   copyButton.disabled=busy||complete||(!operation&&(!selected.size||!dest.value));
   copyButton.textContent=busy?'Copying…':complete?'Copied':operation?'Retry confirmation':`Copy ${selected.size||''} selection${selected.size===1?'':'s'}`;
  }
- function lock(value){busy=value;dialog.querySelectorAll('input,select,[data-all],[data-clear]').forEach(n=>n.disabled=value||!!operation);dialog.querySelectorAll('[data-close]').forEach(n=>n.disabled=value);update();}
+ function lock(value){busy=value;dialog.querySelectorAll('input,select,[data-all],[data-clear]').forEach(n=>n.disabled=value||!!operation);dialog.querySelectorAll('[data-close]').forEach(n=>n.disabled=value&&!operation);update();}
  dialog.addEventListener('change',e=>{if(e.target.matches('[data-item]'))e.target.checked?selected.add(e.target.dataset.item):selected.delete(e.target.dataset.item);if(e.target.matches('[data-group]'))for(const i of buckets.get(e.target.dataset.group)||[])e.target.checked?selected.add(String(i.id)):selected.delete(String(i.id));update();});
  dialog.querySelector('[data-all]').onclick=()=>{for(const i of initial.selections||[])selected.add(String(i.id));update();};
  dialog.querySelector('[data-clear]').onclick=()=>{selected.clear();update();};
@@ -74,18 +77,21 @@ function open(){
    }
    const target=project(operation.destinationId);if(!target)throw Error('The destination job is unavailable.');
    append(target,operation);saveState(false);
-   result.textContent='Confirming the copied selections are saved…';
+   if(cloudSaveQueued&&!cloudSaveInFlight){clearTimeout(cloudSaveTimer);Promise.resolve(pushCloudState()).catch(error=>console.warn('Copied selections are still syncing',error));}
+   result.textContent='Copied on this device; syncing to the cloud now. You can close this window and keep working.';
+   dialog.querySelectorAll('[data-close]').forEach(button=>button.disabled=false);
+   const continueButton=dialog.querySelector('footer [data-close]');if(continueButton)continueButton.textContent='Continue';
    const deadline=Date.now()+45000;
    while(!confirmed(operation)&&Date.now()<deadline)await new Promise(r=>setTimeout(r,250));
    if(!confirmed(operation))throw Error('Copies are kept on this device, but cloud saving is not confirmed yet. Retry confirmation here; it will not add them twice.');
-   for(const groupId of operation.settings){
+   await Promise.all(operation.settings.map(async groupId=>{
     result.textContent='Saving copied group settings…';
     const r=await cloudClient.rpc('jj_selection_rules',{p_job:operation.destinationId,p_group:groupId,p_allow:true,p_expected:false});
     if(r.error){const check=await cloudClient.rpc('jj_selection_rules',{p_job:operation.destinationId});if(check.error||check.data?.[groupId]?.allowMultiple!==true)throw Error('Products are copied. Some group settings still need confirmation. Tap Retry confirmation.');}
-   }
-   complete=true;result.textContent=`Copied ${operation.items.length} selections in ${operation.groups.length} groups to ${target.name}. They are Pending and ready to review.`;
+   }));
+   complete=true;const message='Copied '+operation.items.length+' selections in '+operation.groups.length+' groups to '+target.name+'. They are Pending and ready to review.';result.textContent=message;toast(message);
    dialog.querySelector('footer [data-close]').textContent='Done';renderSelections();
-  }catch(e){result.textContent=e.message||'Could not copy. Please try again.';}finally{lock(false);}
+  }catch(e){const message=e.message||'Could not copy. Please try again.';if(dialog.isConnected)result.textContent=message;else toast('The copy was added locally, but cloud confirmation is still pending. Reopen Copy selections and tap Retry confirmation.');}finally{lock(false);}
  };
  update();dialog.showModal();dialog.querySelector('[data-all]').focus();
 }
