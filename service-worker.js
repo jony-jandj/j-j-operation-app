@@ -1,5 +1,5 @@
 importScripts('./request-work-push-sw.js?v=20261026-descriptive');
-const CACHE_NAME = 'jj-live-20261114-homeowner-instructions';
+const CACHE_NAME = 'jj-live-20261114-view-instructions';
 const APP_SHELL = [
  './lz-string.min.js','./local-backup.js',
  './selection-copy.js',

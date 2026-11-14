@@ -144,7 +144,12 @@ html :is(#jjTheme#jjScope#jjPriority#jjOverride,.jj-customer-view[data-customer-
 
   // Visible instructions only; keeps both adapters' existing save paths.
   function quickGuide(){
-    host.querySelector('#jjCustomerGuide')?.remove();if(host.querySelector('#hoNavigationHelp')||guided)return;
+    host.querySelector('#jjCustomerGuide')?.remove();
+    const missingHelp=host.querySelector('#hoNavigationHelp');
+    const allDescription=host.querySelector('#hoAllDescription');
+    if(missingHelp)missingHelp.hidden=!guided;
+    if(allDescription)allDescription.hidden=guided;
+    if(guided)return;
     const anchor=host.querySelector('.toolbar')||host.querySelector('#jjCustomer830');
     if(!anchor)return;
     const guide=document.createElement('section');guide.id='jjCustomerGuide';
