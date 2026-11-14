@@ -144,7 +144,7 @@ html :is(#jjTheme#jjScope#jjPriority#jjOverride,.jj-customer-view[data-customer-
 
   // Visible instructions only; keeps both adapters' existing save paths.
   function quickGuide(){
-    host.querySelector('#jjCustomerGuide')?.remove();if(guided)return;
+    host.querySelector('#jjCustomerGuide')?.remove();if(host.querySelector('#hoNavigationHelp')||guided)return;
     const anchor=host.querySelector('.toolbar')||host.querySelector('#jjCustomer830');
     if(!anchor)return;
     const guide=document.createElement('section');guide.id='jjCustomerGuide';
