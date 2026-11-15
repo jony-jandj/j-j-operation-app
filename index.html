@@ -6755,12 +6755,12 @@ async function loadCloudState(){
 }
 
 // Bound each cloud step so a suspended mobile connection cannot hold sync forever.
-function cloudSaveStep(operation,label,controller){
- let timer;return Promise.race([Promise.resolve(operation),new Promise((_,reject)=>{timer=setTimeout(()=>{controller?.abort();reject(new Error(label+' timed out. Your changes remain on this device.'));},20000);})]).finally(()=>clearTimeout(timer));
+function cloudSaveStep(operation,label,controller,timeoutMs=20000){
+ let timer;return Promise.race([Promise.resolve(operation),new Promise((_,reject)=>{timer=setTimeout(()=>{controller?.abort();reject(new Error(label+' timed out. Your changes remain on this device.'));},timeoutMs);})]).finally(()=>clearTimeout(timer));
 }
-function cloudStateRequest(query,label){
+function cloudStateRequest(query,label,timeoutMs=20000){
  const controller=new AbortController();if(typeof query.abortSignal==='function')query=query.abortSignal(controller.signal);
- return cloudSaveStep(query,label,controller);
+ return cloudSaveStep(query,label,controller,timeoutMs);
 }
 function cloudEditorActive(){
  return !!document.querySelector('dialog[open],.selection-modal-backdrop.open,[data-form="stage-edit"][data-saved="false"]')
@@ -6951,6 +6951,12 @@ async function pushCloudState(){
     const sentState=sharedCloudState(sharedState);
     const now=new Date(Math.max(Date.now(),(Date.parse(latest?.updated_at)||0)+1)).toISOString();
     const row={org_id:CLOUD_ORG_ID,state:sentState,updated_at:now,updated_by:user.id};
+    let saved;
+    // A lost response can follow a committed write. Confirm that snapshot
+    // before issuing another full photo-containing update.
+    if(cloudValuesEqual(sharedCloudState(latest.state),sentState)){
+      saved=latest;
+    }else{
     let write=cloudClient.from('app_state');
     if(latest){
       write=write.update(row).eq('org_id',CLOUD_ORG_ID);
@@ -6958,9 +6964,18 @@ async function pushCloudState(){
     }else{
       throw new Error('Creating replacement live data is disabled.');
     }
-    const {data:saved,error}=await cloudStateRequest(write.select('state,updated_at').maybeSingle(),'Save cloud data');
+    // Return only the version from the write transaction. Read back the exact
+    // version separately so photo serialization cannot prolong that transaction.
+    const {data:receipt,error}=await cloudStateRequest(write.select('updated_at').maybeSingle(),'Save cloud data',45000);
     if(error) throw error;
-    if(!saved) throw new Error('Another device saved changes. Retrying your pending changes.');
+    if(!receipt) throw new Error('Another device saved changes. Retrying your pending changes.');
+    const verification=await cloudStateRequest(cloudClient.from('app_state')
+      .select('state,updated_at').eq('org_id',CLOUD_ORG_ID)
+      .eq('updated_at',receipt.updated_at).maybeSingle(),'Verify saved cloud data',45000);
+    if(verification.error) throw verification.error;
+    saved=verification.data;
+    if(!saved) throw new Error('Another device saved while verifying. Retrying your pending changes.');
+    }
     // Database validation must not silently turn an approval back into Draft.
     if(!cloudValuesEqual(sharedCloudState(saved.state),sentState)){
       throw new Error('Cloud validation changed the save. Your changes remain on this device; check the P.O. approval database update.');
