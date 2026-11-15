@@ -941,6 +941,6 @@ const compactPrintStyle=document.createElement('style');compactPrintStyle.textCo
 :is(#jj-wp-dialog#jj-wp-dialog#jj-wp-dialog,#jj-wp-print#jj-wp-print#jj-wp-print,#printRoot#printRoot#printRoot) .jj-compact-po .jj-payout-summary b{font-size:15px!important;display:block!important}
 :is(#jj-wp-dialog#jj-wp-dialog#jj-wp-dialog,#jj-wp-print#jj-wp-print#jj-wp-print,#printRoot#printRoot#printRoot) .jj-compact-po .jj-payout-summary>strong{border-left:3px solid #b59a62!important;padding-left:10px!important;font-weight:700!important}
 @media screen and (max-width:600px){#jj-wp-dialog#jj-wp-dialog#jj-wp-dialog .jj-compact-main{grid-template-columns:1fr;gap:10px}}
-.jj-print-group-heading{break-after:avoid;page-break-after:avoid} @media print{.jj-compact-main{grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr)!important}.jj-print-recipient{break-before:page}.jj-print-recipient:first-child{break-before:auto}}
+.jj-print-group-heading{break-after:avoid;page-break-after:avoid} @media print{.jj-compact-main{grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr)!important}:is(#jj-wp-print,#printRoot) .jj-print-recipient{break-before:auto;page-break-before:auto} :is(#jj-wp-print,#printRoot) .jj-print-recipient ~ .jj-print-recipient{break-before:page;page-break-before:always}}
 `;document.head.append(compactPrintStyle);
 })();
