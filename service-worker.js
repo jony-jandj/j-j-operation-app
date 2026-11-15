@@ -1,7 +1,7 @@
 importScripts('./request-work-push-sw.js?v=20261026-descriptive');
-const CACHE_NAME = 'jj-live-20261114-first-page-repair';
+const CACHE_NAME = 'jj-live-20261115-photo-repair';
 const APP_SHELL = [
- './lz-string.min.js','./local-backup.js',
+ './selection-photo-safety.js','./lz-string.min.js','./local-backup.js',
  './selection-copy.js',
  './selection-group-rules.js',
  './homeowner-app.js','./homeowner-ready.js',

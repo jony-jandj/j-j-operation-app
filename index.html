@@ -15,6 +15,9 @@ if (/^#homeowner=/.test(location.hash)) {
 </script>
 
 <meta charset="utf-8">
+<script src="lz-string.min.js"></script>
+<script src="local-backup.js?v=20261115-photos"></script>
+<script src="selection-photo-safety.js?v=20261115-photos"></script>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>J&J Operations App Prototype</title>
 <style>
@@ -4589,6 +4592,7 @@ body.topbar-collapsed .operations-app > .sidebar{top:0;min-height:100vh}
   <button onclick="saveState();closeTabletTools()">Save Now</button>
   <button onclick="exportAppBackup();closeTabletTools()">Export Backup</button>
   <button onclick="openBackupImport();closeTabletTools()">Import Backup</button>
+  <button onclick="openSelectionPhotoRecovery();closeTabletTools()">Restore selection photos</button>
   <button onclick="openAssistant();closeTabletTools()">J&J Assistant</button>
   <button onclick="cloudSignOut();closeTabletTools()">Sign Out</button>
 </div>
@@ -4788,6 +4792,7 @@ body.topbar-collapsed .operations-app > .sidebar{top:0;min-height:100vh}
         <button class="btn btn-light save-desktop desktop-action" onclick="saveState()">Save</button>
         <button class="btn btn-light desktop-action" onclick="exportAppBackup()">Export Backup</button>
         <button class="btn btn-light desktop-action" onclick="openBackupImport()">Import Backup</button>
+        <button class="btn btn-light desktop-action" onclick="openSelectionPhotoRecovery()">Restore selection photos</button>
         <input id="backupImportInput" type="file" accept=".json,application/json" style="display:none" onchange="importAppBackup(this)">
         <button class="btn btn-gold desktop-action" onclick="openAssistant()">J&J Assistant</button>
         <button class="mobile-tools-button" onclick="toggleMobileTools()" aria-label="More tools">•••</button>
@@ -4799,6 +4804,7 @@ body.topbar-collapsed .operations-app > .sidebar{top:0;min-height:100vh}
       <button onclick="cloudSignOut();closeMobileTools()">Sign Out</button>
       <button onclick="exportAppBackup();closeMobileTools()">Export Backup</button>
       <button onclick="openBackupImport();closeMobileTools()">Import Backup</button>
+  <button onclick="openSelectionPhotoRecovery();closeMobileTools()">Restore selection photos</button>
       <button class="gold" onclick="openAssistant();closeMobileTools()">J&J Assistant</button>
     </div>
 
@@ -5107,7 +5113,7 @@ const defaultState = {
 
 function loadLocalState(){
   try{
-    return JSON.parse(localStorage.getItem('jj_full_proto')||'null');
+    return window.JJLocalBackup?JJLocalBackup.read():JSON.parse(localStorage.getItem('jj_full_proto')||'null');
   }catch(err){
     console.warn('Saved browser data could not be parsed; cloud or backup recovery will be used.',err);
     return null;
@@ -6371,7 +6377,14 @@ async function disconnectCloud(){
   return cloudSignOut();
 }
 
+let localPhotoBackupRestored=false;
 async function initCloud(forceLogin=false){
+  if(!localPhotoBackupRestored){
+    await JJLocalBackup.ready;
+    const saved=JJLocalBackup.read();
+    if(saved?.projects){state=saved;ensureUserData();ensurePreconData();renderAll();}
+    localPhotoBackupRestored=true;
+  }
   const cfg=cloudConfig();
   if(!cfg){
     setCloudStatus('Local','local');
@@ -6719,6 +6732,8 @@ async function loadCloudState(){
     try{
 
     const sessionUser=state.currentUser;
+    const remotePhotoBaseline=sharedCloudState(data.state);
+    const restoredPhotos=JJSelectionPhotos.recover(data.state,state);
     state=data.state;
 
     if(USERS.some(u=>u.name===sessionUser)){
@@ -6728,10 +6743,12 @@ async function loadCloudState(){
     ensureUserData();
     ensurePreconData();
     persistStateLocally();
-    cloudBaseState=sharedCloudState(state);
+    cloudBaseState=remotePhotoBaseline;
+    if(restoredPhotos) cloudSaveQueued=true;
     }finally{cloudApplying=false;}
     cloudLastRemoteAt=Date.parse(data.updated_at||0)||Date.now();
     cloudLoadedForUser=loadingUser.id;
+    if(cloudSaveQueued) queueCloudSave();
   }else{
     throw new Error('Existing live data could not be found. Saving is blocked. Do not import a backup; check the connection and account first.');
   }
@@ -6779,6 +6796,7 @@ async function pollCloudState(){
     const localShared=sharedCloudState(state);
     const remoteShared=sharedCloudState(incoming.state);
     const merged=cloudBaseState?mergeCloudValues(cloudBaseState,localShared,remoteShared):remoteShared;
+    JJSelectionPhotos.recover(merged,state);
     state=merged;
     if(USERS.some(user=>user.name===currentLocalUser)) state.currentUser=currentLocalUser;
     ensureUserData();
@@ -6832,7 +6850,8 @@ function subscribeCloudState(){
         const merged=cloudBaseState
           ? mergeCloudValues(cloudBaseState,localShared,remoteShared)
           : remoteShared;
-        state=merged;
+        JJSelectionPhotos.recover(merged,state);
+    state=merged;
 
         // Shared project data is global, but "who am I" is device/session-specific.
         if(USERS.some(u=>u.name===currentLocalUser)) state.currentUser=currentLocalUser;
@@ -6912,7 +6931,10 @@ async function pushCloudState(){
       const latestAt=Date.parse(latest.updated_at||0)||0;
       if(!cloudBaseState) cloudBaseState=latestShared;
       if(latestAt>cloudLastRemoteAt || !cloudValuesEqual(latestShared,cloudBaseState)){
+        const photoSource=sharedState;
         sharedState=mergeCloudValues(cloudBaseState,sharedState,latestShared);
+        JJSelectionPhotos.recover(sharedState,photoSource);
+        JJSelectionPhotos.recover(sharedState,latestShared);
         state=sharedState;
         state.currentUser=USERS.some(u=>u.name===localUserName)?localUserName:'Jony';
         cloudBaseState=latestShared;
@@ -6970,34 +6992,12 @@ async function pushCloudState(){
 function saveState(show=true){
   const fullLocalSave=persistStateLocally();
   queueCloudSave();
-  if(show) toast(cloudClient?'Saving to cloud…':(fullLocalSave?'Saved on this device':'Saved locally without embedded photos'));
-}
-
-function stateWithoutEmbeddedPhotos(source=state){
-  const compact=JSON.parse(JSON.stringify(source||{}));
-  (compact.projects||[]).forEach(project=>{
-    (project.selections||[]).forEach(item=>{
-      if(/^data:image\//i.test(String(item.image||''))) item.image='';
-    });
-  });
-  return compact;
+  if(show) toast(cloudClient?'Saving to cloud…':(fullLocalSave?'Saved on this device':'Saving complete device backup…'));
 }
 
 function persistStateLocally(){
-  try{
-    localStorage.setItem('jj_full_proto',JSON.stringify(state));
-    return true;
-  }catch(err){
-    // Image-heavy backups can exceed the browser's small localStorage quota.
-    // Keep every job and field locally, omit only embedded photo bytes, and
-    // let the full state (including photos) continue to sync to the cloud.
-    try{
-      localStorage.setItem('jj_full_proto',JSON.stringify(stateWithoutEmbeddedPhotos(state)));
-    }catch(storageErr){
-      console.warn('Local state storage is unavailable',storageErr);
-    }
-    return false;
-  }
+  try{return JJLocalBackup.write(state);}
+  catch(err){console.error('Full device backup failed',err);window.dispatchEvent(new CustomEvent('jj-backup-status',{detail:{ok:false}}));return false;}
 }
 function toast(text){
   const el=document.createElement('div'); el.className='toast'; el.setAttribute('role','status'); el.setAttribute('aria-live','polite'); el.textContent=text;
@@ -10284,7 +10284,7 @@ function selectionCard(item,index){
     ? `${item.leadTimeValue} ${String(item.leadTimeUnit||'days').toLowerCase()}`
     : '';
   const photo=imageUrl
-    ? `<img src="${esc(imageUrl)}" alt="${esc(item.title)}" loading="lazy" onerror="selectionPhotoFallback(this)">`
+    ? `<img src="${esc(imageUrl)}" alt="${esc(item.title)}" loading="lazy" referrerpolicy="no-referrer" onerror="selectionPhotoFallback(this)">`
     : selectionPhotoPlaceholder();
   const status=item.status||'Pending';
   const statusClass=status.toLowerCase().replace(/[^a-z]+/g,'-');
@@ -10312,7 +10312,13 @@ function selectionPhotoPlaceholder(){
 }
 
 function selectionPhotoFallback(image){
-  if(image?.parentElement) image.parentElement.innerHTML=selectionPhotoPlaceholder();
+  if(!image?.parentElement)return;
+  if(!image.dataset.photoRetried && /^https?:/i.test(image.src)){
+    image.dataset.photoRetried='1';image.referrerPolicy='no-referrer';
+    const source=image.src;image.removeAttribute('src');image.src=source;return;
+  }
+  const holder=image.parentElement;image.remove();
+  if(!holder.querySelector('.selection-photo-empty'))holder.insertAdjacentHTML('beforeend',selectionPhotoPlaceholder());
 }
 
 function setSelectionFilter(value){
@@ -10759,6 +10765,9 @@ function saveSelectionEditor(){
     notes:document.getElementById('selectionEditNotes')?.value.trim()||''
   };
   const project=selectedProject();
+  const previous=selectionEditIndex===null?null:project.selections[selectionEditIndex];
+  if(previous?.image&&!item.image)item.imageRemovedAt=new Date().toISOString();
+  else if(!item.image&&previous?.imageRemovedAt)item.imageRemovedAt=previous.imageRemovedAt;
   if(selectionEditIndex===null) project.selections.push(item);
   else project.selections[selectionEditIndex]=item;
   saveState(false);
@@ -10877,7 +10886,7 @@ if ('serviceWorker' in navigator) {
 <!-- Selections / homeowner enhancements. This must load after the app script. -->
 <script src="./selections-metadata.js?v=20261111-multiple"></script>
 <script src="selection-budgets.js?v=20261101-allowance"></script><script src="selection-group-order.js?v=20261021-link-photo"></script>
-<script src="./customer-view.js?v=20261111-multiple"></script>
+<script src="./customer-view.js?v=20261115-photos"></script>
 <script src="./customer-simple-add.js?v=20261103-add-safe"></script><script src="./customer-overlay.js?v=20261111-multiple"></script>
 <script src="./qrcode.min.js"></script>
 <script src="mobile-print.js"></script>

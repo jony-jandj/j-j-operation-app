@@ -195,7 +195,6 @@
     // Persist the merged/union state. This intentionally pushes the union back
     // to cloud so an incomplete portal copy cannot remain authoritative.
     try{
-      if(window.JJLocalBackup)JJLocalBackup.write(s);else localStorage.setItem('jj_full_proto',JSON.stringify(s));
       if(typeof saveState==='function') saveState(false);
       if(typeof renderAll==='function') renderAll();
     }catch(err){
