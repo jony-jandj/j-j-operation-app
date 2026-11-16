@@ -4589,6 +4589,7 @@ body.topbar-collapsed .operations-app > .sidebar{top:0;min-height:100vh}
 <div id="tabletToolsMenu">
   <button onclick="openJobsFromTools()">Jobs</button>
   <button onclick="retryCloudSave();closeTabletTools()">Save Now</button>
+  <button onclick="closeTabletTools();JJSyncLatestJobs()">Sync latest jobs</button>
   <button onclick="exportAppBackup();closeTabletTools()">Export Backup</button>
   <button onclick="openBackupImport();closeTabletTools()">Import Backup</button>
   <button onclick="openSelectionPhotoRecovery();closeTabletTools()">Restore selection photos</button>
@@ -4800,6 +4801,7 @@ body.topbar-collapsed .operations-app > .sidebar{top:0;min-height:100vh}
 
     <div id="mobileToolsMenu" class="mobile-tools-menu">
       <button onclick="retryCloudSave();closeMobileTools()">Save Now</button>
+      <button onclick="closeMobileTools();JJSyncLatestJobs()">Sync latest jobs</button>
       <button onclick="cloudSignOut();closeMobileTools()">Sign Out</button>
       <button onclick="exportAppBackup();closeMobileTools()">Export Backup</button>
       <button onclick="openBackupImport();closeMobileTools()">Import Backup</button>
@@ -10970,7 +10972,8 @@ document.addEventListener('click',function(e){
   }
 });
 </script>
-<script src="ical.js"></script><script src="calendar-engine.js?v=20260924-event-details"></script><script src="redesign.js?v=20261103-board"></script><script src="save-conflicts.js?v=20261115-combined"></script><script src="selection-group-rules.js?v=20261115-combined"></script><script src="selection-copy.js?v=20261112-copy"></script></body>
+<script src="ical.js"></script><script src="calendar-engine.js?v=20260924-event-details"></script><script src="redesign.js?v=20261103-board"></script><script src="staff-job-sync.js?v=20261116"></script>
+<script src="save-conflicts.js?v=20261115-combined"></script><script src="selection-group-rules.js?v=20261115-combined"></script><script src="selection-copy.js?v=20261112-copy"></script></body>
 </html>
 
 <script>

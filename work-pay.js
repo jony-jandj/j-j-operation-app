@@ -625,7 +625,32 @@ function render(){if(!doc){page.innerHTML=summaryBackButton()+'<h2>Job Closeout<
  const pending=awaiting.filter(x=>{const a=closeoutAssignment(x);return (kind==='Everyone'||(a.isSub?'Sub':'In-house')===kind)&&(!closeoutSub||(a.isSub&&(a.company||'__unassigned__')===closeoutSub));});
  page.innerHTML+=`<h3>Approved work awaiting completion</h3><p>Mark finished work complete to move it into In-house bills or Subs bills.</p>${groupedCloseout(pending,x=>x,items=>`<div class="table-wrap"><table>${items.map(x=>{const assigned=closeoutAssignment(x);return `<tr><td>${closeoutParentGroup(x)}${action('po-detail',x.key,getPOBaseTitle(x.po)+' · '+x.p.name+' · '+x.po.id)}<br>${E(x.p.name)} · ${E(getPOBaseTitle(x.po))}<div class="jj-po-owner">${assigned.isSub?'Sub':'In-house'}: ${E(assigned.names)}</div></td><td><strong>${hasBill(x.key)?'Partially Complete':'In progress'}</strong>${progressPaymentHTML(x)}${action('scope-print',x.key,'Print scope')}${action('complete',x.key,'Work complete')}${canApprovePO()?action('unapprove-edit',x.key,'Undo Approval'):''}</td></tr>`;}).join('')}</table></div>`,'closeout-pending')||'<p>No approved work awaiting completion matches these filters.</p>'}`;const partial=rows().filter(r=>{const t=ticketProgress(r.workId);return !incomplete(r.workId)&&t.paid>0&&t.remaining>0&&(!job||String(r.w.jobId)===String(job))&&(kind==='Everyone'||r.w.kind===kind)&&(!closeoutSub||(r.w.kind==='Sub'&&(r.companyId||'__unassigned__')===closeoutSub));});if(partial.length)page.innerHTML+='<h3>Completed work · Partially paid</h3>'+recordsTable(partial);}
 
-async function open(m){summaryReturnProjectId=selectedProject()?.id??null;mode=m;closeoutSub='';if(window.innerWidth<=1180){if(typeof closeMobileSidebar==='function')closeMobileSidebar();if(typeof closeSidebarDrawer==='function')closeSidebarDrawer();}go('jj-workpay');page.classList.add('active');try{await load();}catch(e){err(e);}render();}
+let openingView=0,checkingView=false,viewReadFailed=false;
+function viewLoadNotice(message,failed=false){
+ let notice=page.querySelector('[data-ledger-load]');if(!notice){notice=document.createElement('div');notice.dataset.ledgerLoad='';notice.className='toolbar';notice.setAttribute('role','status');notice.setAttribute('aria-live','polite');page.prepend(notice)}
+ notice.replaceChildren(document.createTextNode(message));
+ if(failed){const retry=document.createElement('button');retry.className='btn';retry.textContent='Retry loading';retry.onclick=()=>open(mode);notice.append(' ',retry)}
+ page.setAttribute('aria-busy',String(checkingView));
+ if(checkingView||viewReadFailed)for(const control of page.querySelectorAll('button,input,select,textarea'))if(!control.closest('[data-ledger-load]')&&control.dataset.wp!=='back-po-splits')control.disabled=true;
+}
+// Previously loaded figures are a preview until the current read is confirmed.
+page.addEventListener('click',e=>{
+ if(!(checkingView||viewReadFailed)||e.target.closest('[data-ledger-load]'))return;
+ const control=e.target.closest('button,input,select,a');if(!control)return;
+ if(control.dataset.wp==='back-po-splits')return;
+ e.preventDefault();e.stopImmediatePropagation();toast(checkingView?'Checking the latest payment records…':'Retry loading before using these figures.');
+},true);
+page.addEventListener('submit',e=>{if(checkingView||viewReadFailed){e.preventDefault();e.stopImmediatePropagation();}},true);
+async function open(m){
+ const request=++openingView;summaryReturnProjectId=selectedProject()?.id??null;mode=m;closeoutSub='';
+ if(window.innerWidth<=1180){if(typeof closeMobileSidebar==='function')closeMobileSidebar();if(typeof closeSidebarDrawer==='function')closeSidebarDrawer();}
+ go('jj-workpay');page.classList.add('active');checkingView=true;viewReadFailed=false;
+ if(doc)render();else page.innerHTML=summaryBackButton()+'<h2>'+E(m==='inhouse'?'In-house bills':m==='subs'?'Subs bills':'Job Closeout')+'</h2>';
+ viewLoadNotice(doc?'Showing previously loaded records · checking the latest balances…':'Loading payment records…');
+ try{await load();if(request!==openingView)return;checkingView=false;render();viewLoadNotice('Latest payment records loaded.');}
+ catch(e){if(request!==openingView)return;checkingView=false;viewReadFailed=true;viewLoadNotice((doc?'Previously loaded records only. ':'')+'Could not check the latest balances. Retry loading before printing or recording a payment.',true);}
+}
+
 function printContent(title,html){modal(title,html+`<p>${action('print','','Print copy')}</p>`);if(['work','inhouse','subs','bills'].includes(mode)&&page.classList.contains('active'))chooseCloseoutPrint();}
 function employeeStatements(list){list=printOrder(list,r=>r.workId);return [...new Set(list.map(r=>r.person))].map(name=>'<section class="jj-print-recipient"><h2>'+E(name)+'</h2>'+statement(list.filter(r=>r.person===name))+'</section>').join('');}
 function recipientDetails(list){
