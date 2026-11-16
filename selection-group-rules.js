@@ -1,19 +1,4 @@
 (()=>{
-  // Large app_state saves can exceed the default request timeout.
-  const defaultCloudSaveStep=cloudSaveStep;
-  cloudSaveStep=function(operation,label,controller){
-    if(label!=='Save cloud data')return defaultCloudSaveStep(operation,label,controller);
-    let timer;
-    return Promise.race([
-      Promise.resolve(operation),
-      new Promise((_,reject)=>{
-        timer=setTimeout(()=>{
-          controller?.abort();
-          reject(new Error(label+' timed out. Your changes remain on this device.'));
-        },120000);
-      })
-    ]).finally(()=>clearTimeout(timer));
-  };
 
   let job='',rules={},ready=false,loading=false;
   function validate(projectId,items){
@@ -357,7 +342,8 @@
     try { hasPending = localStorage.getItem(PENDING_KEY) === '1' || recovery?.pending === true; }
     catch (error) { warnStorage(error); hasPending = recovery?.pending === true; }
     const localRecovery = Array.isArray(localBeforeLoad?.projects) ? localBeforeLoad : recovery?.state;
-    const baseline = Array.isArray(recovery?.base?.projects) ? recovery.base : null;
+    const deviceBase=window.JJLocalBackup?.recovery?.()?.base;
+    const baseline = Array.isArray(recovery?.base?.projects) ? recovery.base : Array.isArray(deviceBase?.projects) ? deviceBase : null;
     const localUser = localBeforeLoad?.currentUser;
 
     let result;
@@ -378,12 +364,13 @@
       setCloudStatus('Saved on this device · waiting for connection', 'offline');
       return undefined;
     }
-    const cloudState = clone(sharedCloudState(state));
+    // The main loader may already have merged local edits. Its baseline is the actual cloud snapshot.
+    const cloudState = clone(cloudBaseState || sharedCloudState(state));
 
     if (hasPending && Array.isArray(localRecovery?.projects)) {
-      const merged = baseline
-        ? mergeCloudValues(baseline, sharedCloudState(localRecovery), cloudState)
-        : mergeWithoutBaseline(sharedCloudState(localRecovery), cloudState);
+      // An older device may have no baseline. Review differing shared fields rather than guessing.
+      const mergeBaseline=baseline||{projects:[]};
+      const merged = mergeCloudValues(mergeBaseline, sharedCloudState(localRecovery), cloudState);
       state = merged;
       if (USERS.some(user => user.name === localUser)) state.currentUser = localUser;
       ensureUserData();
@@ -392,14 +379,16 @@
       if (!state.projects.some(project => String(project.id) === String(state.selectedProjectId))) {
         state.selectedProjectId = state.projects[0]?.id ?? null;
       }
-      cloudBaseState = cloudState;
+      const conflicts = window.JJSaveConflicts && !window.JJSaveConflicts.check(mergeBaseline, sharedCloudState(localRecovery), cloudState);
+      cloudBaseState = conflicts ? mergeBaseline : cloudState;
+      if(conflicts) cloudLastRemoteAt=0; // The retained baseline is older; force a fresh cloud read.
       persistStateLocally();
 
       const needsSync = !cloudValuesEqual(sharedCloudState(state), cloudState);
       if (needsSync) {
         markPending();
         setCloudStatus('Restored local changes · syncing…', 'saving');
-        queueSnapshot(true, state, cloudState);
+        queueSnapshot(true, state, cloudBaseState);
         await flushSnapshot();
         queueCloudSave();
       } else {
@@ -425,9 +414,11 @@
     return result;
   };
 
+  window.JJSaveRecovery={flush:flushSnapshot,hasPending:()=>!!snapshotTimer||!!queuedSnapshot||snapshotWritesInFlight>0};
+
   let retryInFlight = false;
   async function retryPendingSave() {
-    if (retryInFlight || !navigator.onLine || !cloudClient || cloudApplying || cloudSaveInFlight) return;
+    if (window.JJSaveConflicts?.hasPending() || retryInFlight || !navigator.onLine || !cloudClient || cloudApplying || cloudSaveInFlight) return;
     let isPending = false;
     try { isPending = localStorage.getItem(PENDING_KEY) === '1' || !!cloudSaveQueued; }
     catch (error) { warnStorage(error); isPending = !!cloudSaveQueued; }

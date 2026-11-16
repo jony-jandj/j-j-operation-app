@@ -16,7 +16,7 @@ if (/^#homeowner=/.test(location.hash)) {
 
 <meta charset="utf-8">
 <script src="lz-string.min.js"></script>
-<script src="local-backup.js?v=20261115-photos"></script>
+<script src="local-backup.js?v=20261115-reliability"></script>
 <script src="selection-photo-safety.js?v=20261115-photos"></script>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>J&J Operations App Prototype</title>
@@ -4565,9 +4565,8 @@ body.topbar-collapsed .operations-app > .sidebar{top:0;min-height:100vh}
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
 
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"
-  onerror="this.onerror=null;this.src='https://unpkg.com/@supabase/supabase-js@2';"></script>
+<script defer src="vendor/xlsx.full.min.js"></script>
+<script src="vendor/supabase-js.umd.js"></script>
 <link rel="stylesheet" href="redesign.css"><link rel="stylesheet" href="design-alignment.css?v=20260924-calendar-expand"><link rel="stylesheet" href="night-complete.css"></head>
 <body>
 
@@ -4589,7 +4588,7 @@ body.topbar-collapsed .operations-app > .sidebar{top:0;min-height:100vh}
 
 <div id="tabletToolsMenu">
   <button onclick="openJobsFromTools()">Jobs</button>
-  <button onclick="saveState();closeTabletTools()">Save Now</button>
+  <button onclick="retryCloudSave();closeTabletTools()">Save Now</button>
   <button onclick="exportAppBackup();closeTabletTools()">Export Backup</button>
   <button onclick="openBackupImport();closeTabletTools()">Import Backup</button>
   <button onclick="openSelectionPhotoRecovery();closeTabletTools()">Restore selection photos</button>
@@ -4800,7 +4799,7 @@ body.topbar-collapsed .operations-app > .sidebar{top:0;min-height:100vh}
     </header>
 
     <div id="mobileToolsMenu" class="mobile-tools-menu">
-      <button onclick="saveState();closeMobileTools()">Save Now</button>
+      <button onclick="retryCloudSave();closeMobileTools()">Save Now</button>
       <button onclick="cloudSignOut();closeMobileTools()">Sign Out</button>
       <button onclick="exportAppBackup();closeMobileTools()">Export Backup</button>
       <button onclick="openBackupImport();closeMobileTools()">Import Backup</button>
@@ -6073,7 +6072,7 @@ function openProject(id){
 
 function exportAppBackup(){
   try{
-    saveState(false);
+    persistStateLocally();
 
     const backup={
       app:'J&J Home Renovations Operations Prototype',
@@ -6093,9 +6092,9 @@ function exportAppBackup(){
     document.body.appendChild(a);
     a.click();
     a.remove();
-    URL.revokeObjectURL(url);
+    setTimeout(()=>URL.revokeObjectURL(url),60000);
 
-    toast('Backup exported');
+    toast('Job backup exported, including selection photos. Payment records and R.W. files need the full operations backup.');
   }catch(err){
     console.error(err);
     alert('Could not export the backup. Please try again.');
@@ -6127,6 +6126,7 @@ function importAppBackup(input){
   reader.onload=function(){
     try{
       const parsed=JSON.parse(reader.result);
+      if(parsed?.type==='jj-complete-operations')throw Error('This full backup includes payment and R.W. records. It needs a coordinated recovery; the job-only importer cannot safely restore it. Keep the file and contact your app administrator.');
       const importedState=parsed && parsed.data ? parsed.data : parsed;
 
       if(!importedState || !Array.isArray(importedState.projects)){
@@ -6217,8 +6217,16 @@ function cloneCloudValue(value){
 
 function sharedCloudState(source=state){
   const shared=cloneCloudValue(source||{});
-  if(shared && typeof shared==='object') delete shared.currentUser;
+  if(shared && typeof shared==='object'){delete shared.currentUser;delete shared.selectedProjectId;}
   return shared;
+}
+
+// Navigation belongs to this device, not the last person who saved the cloud row.
+function applySharedState(next){
+  const user=state.currentUser,selected=state.selectedProjectId;
+  state=next;
+  state.currentUser=USERS.some(u=>u.name===user)?user:'Jony';
+  state.selectedProjectId=state.projects?.find(p=>String(p.id)===String(selected))?.id??state.projects?.[0]?.id??null;
 }
 
 function cloudValuesEqual(a,b){
@@ -6232,7 +6240,7 @@ function cloudValuesEqual(a,b){
 
 // Merge at the field/item level so a remote edit to another P.O. or project is
 // kept while this browser's unsaved edit remains intact. When both people edit
-// the exact same field, the local value wins and is sent back on the next save.
+// the exact same field, keep the local draft until JJSaveConflicts reviews both versions before saving.
 function mergeCloudValues(base,local,incoming){
   if(cloudValuesEqual(local,base)) return cloneCloudValue(incoming);
   if(cloudValuesEqual(incoming,base)) return cloneCloudValue(local);
@@ -6263,7 +6271,7 @@ function mergeCloudValues(base,local,incoming){
     const keys=[...new Set([...Object.keys(baseObject),...Object.keys(local),...Object.keys(incoming)])];
     const merged={};
     keys.forEach(key=>{
-      if(key==='currentUser') return;
+      if(key==='currentUser'||key==='selectedProjectId') return;
       const value=mergeCloudValues(baseObject[key],local[key],incoming[key]);
       if(value!==undefined) merged[key]=value;
     });
@@ -6733,8 +6741,12 @@ async function loadCloudState(){
 
     const sessionUser=state.currentUser;
     const remotePhotoBaseline=sharedCloudState(data.state);
-    const restoredPhotos=JJSelectionPhotos.recover(data.state,state);
-    state=data.state;
+    const recovery=JJLocalBackup.recovery?.();
+    const localShared=sharedCloudState(state);
+    const recovered=recovery?.base?.projects
+      ?mergeCloudValues(recovery.base,localShared,remotePhotoBaseline):data.state;
+    const restoredPhotos=JJSelectionPhotos.recover(recovered,state);
+    applySharedState(recovered);
 
     if(USERS.some(u=>u.name===sessionUser)){
       state.currentUser=sessionUser;
@@ -6742,9 +6754,9 @@ async function loadCloudState(){
 
     ensureUserData();
     ensurePreconData();
-    persistStateLocally();
     cloudBaseState=remotePhotoBaseline;
-    if(restoredPhotos) cloudSaveQueued=true;
+    persistStateLocally();
+    if(restoredPhotos || !cloudValuesEqual(sharedCloudState(state),remotePhotoBaseline)) cloudSaveQueued=true;
     }finally{cloudApplying=false;}
     cloudLastRemoteAt=Date.parse(data.updated_at||0)||Date.now();
     cloudLoadedForUser=loadingUser.id;
@@ -6756,6 +6768,8 @@ async function loadCloudState(){
 
 // Bound each cloud step so a suspended mobile connection cannot hold sync forever.
 function cloudSaveStep(operation,label,controller,timeoutMs=20000){
+ // Large photo-containing snapshots need room for the database and download.
+ if(/cloud data|live app data/i.test(label)) timeoutMs=Math.max(timeoutMs,120000);
  let timer;return Promise.race([Promise.resolve(operation),new Promise((_,reject)=>{timer=setTimeout(()=>{controller?.abort();reject(new Error(label+' timed out. Your changes remain on this device.'));},timeoutMs);})]).finally(()=>clearTimeout(timer));
 }
 function cloudStateRequest(query,label,timeoutMs=20000){
@@ -6795,14 +6809,17 @@ async function pollCloudState(){
     const currentLocalUser=state.currentUser;
     const localShared=sharedCloudState(state);
     const remoteShared=sharedCloudState(incoming.state);
+    const mergeBase=cloudBaseState;
+    const hasConflicts=!!(mergeBase&&globalThis.JJSaveConflicts&&!globalThis.JJSaveConflicts.check(mergeBase,localShared,remoteShared));
     const merged=cloudBaseState?mergeCloudValues(cloudBaseState,localShared,remoteShared):remoteShared;
     JJSelectionPhotos.recover(merged,state);
-    state=merged;
+    applySharedState(merged);
     if(USERS.some(user=>user.name===currentLocalUser)) state.currentUser=currentLocalUser;
     ensureUserData();
     ensurePreconData();
+    cloudBaseState=hasConflicts?mergeBase:remoteShared;
+    if(hasConflicts) cloudLastRemoteAt=0;
     persistStateLocally();
-    cloudBaseState=remoteShared;
     cloudApplying=false;
     renderAll();
     buildNav();
@@ -6847,19 +6864,22 @@ function subscribeCloudState(){
         const currentLocalUser=state.currentUser;
         const localShared=sharedCloudState(state);
         const remoteShared=sharedCloudState(incoming.state);
+    const mergeBase=cloudBaseState;
+    const hasConflicts=!!(mergeBase&&globalThis.JJSaveConflicts&&!globalThis.JJSaveConflicts.check(mergeBase,localShared,remoteShared));
         const merged=cloudBaseState
           ? mergeCloudValues(cloudBaseState,localShared,remoteShared)
           : remoteShared;
         JJSelectionPhotos.recover(merged,state);
-    state=merged;
+    applySharedState(merged);
 
         // Shared project data is global, but "who am I" is device/session-specific.
         if(USERS.some(u=>u.name===currentLocalUser)) state.currentUser=currentLocalUser;
 
         ensureUserData();
         ensurePreconData();
+        cloudBaseState=hasConflicts?mergeBase:remoteShared;
+    if(hasConflicts) cloudLastRemoteAt=0;
         persistStateLocally();
-        cloudBaseState=remoteShared;
         cloudApplying=false;
 
         renderAll();
@@ -6873,7 +6893,8 @@ function subscribeCloudState(){
       }
     )
     .subscribe(status=>{
-      if(status==='SUBSCRIBED') setCloudStatus('Live','saved');
+      // Realtime connectivity does not acknowledge pending or failed saves.
+      if(status==='SUBSCRIBED' && !cloudSaveInFlight && !cloudSaveQueued && cloudRetryCount===0) setCloudStatus('Live','saved');
       if(status==='CHANNEL_ERROR' || status==='TIMED_OUT'){
         setCloudStatus('Reconnecting','saving');
         pollCloudState();
@@ -6884,12 +6905,20 @@ function subscribeCloudState(){
   cloudPollTimer=setInterval(pollCloudState,2500);
   if(!window.jjCloudVisibilityBound){
     window.jjCloudVisibilityBound=true;
-    document.addEventListener('visibilitychange',()=>{if(!document.hidden)pollCloudState()});
+    const resume=()=>{
+      if(document.hidden||cloudSaveInFlight)return;
+      if(cloudSaveQueued){cloudRetryCount=0;queueCloudSave();}else pollCloudState();
+    };
+    document.addEventListener('visibilitychange',resume);
+    window.addEventListener('online',resume);
   }
 }
 
 function queueCloudSave(){
   if(cloudApplying || !cloudClient || !cloudLoadedForUser) return;
+  if(!cloudSaveInFlight && !cloudSaveQueued && cloudRetryCount===0 && cloudBaseState && cloudValuesEqual(sharedCloudState(state),cloudBaseState)){
+    clearTimeout(cloudSaveTimer);cloudSaveQueued=false;return;
+  }
   cloudSaveQueued=true;
   clearTimeout(cloudSaveTimer);
   setCloudStatus('Saving…','saving');
@@ -6897,6 +6926,7 @@ function queueCloudSave(){
 }
 
 async function pushCloudState(){
+  if(typeof navigator!=='undefined' && !navigator.onLine){cloudSaveQueued=true;setCloudStatus('Saved on this device · waiting for connection','offline');return;}
   if(cloudApplying || !cloudClient || !cloudLoadedForUser) return;
   if(cloudSaveInFlight){
     cloudSaveQueued=true;
@@ -6908,7 +6938,7 @@ async function pushCloudState(){
   try{
     const {data:{user}}=await cloudSaveStep(cloudClient.auth.getUser(),'Cloud sign-in check');
     if(!user){
-      setCloudStatus('Sign In','offline');
+      cloudSaveQueued=true;cloudRetryCount=4;setCloudStatus('Sign in to finish saving','offline');
       return;
     }
 
@@ -6917,12 +6947,21 @@ async function pushCloudState(){
 
     // Re-read the row before writing. If another browser saved first, merge
     // its changes into this browser's local edits instead of overwriting them.
-    const {data:latest,error:latestError}=await cloudStateRequest(cloudClient
-      .from('app_state')
-      .select('state,updated_at')
-      .eq('org_id',CLOUD_ORG_ID)
-      .maybeSingle(),'Read latest cloud data');
-    if(latestError) throw latestError;
+    // Most edits start from the version we already hold. Check its small version
+    // before downloading every job/photo again. The write still compares that
+    // exact version, so a concurrent change cannot be overwritten.
+    const versionResult=await cloudStateRequest(cloudClient.from('app_state')
+      .select('updated_at').eq('org_id',CLOUD_ORG_ID).maybeSingle(),'Check save version');
+    if(versionResult.error)throw versionResult.error;
+    if(!versionResult.data)throw Error('Live data is missing. Saving is blocked.');
+    let latest;
+    if(cloudBaseState && Date.parse(versionResult.data.updated_at)===cloudLastRemoteAt){
+      latest={state:cloudBaseState,updated_at:versionResult.data.updated_at};
+    }else{
+      const result=await cloudStateRequest(cloudClient.from('app_state')
+        .select('state,updated_at').eq('org_id',CLOUD_ORG_ID).maybeSingle(),'Read latest cloud data');
+      if(result.error)throw result.error;latest=result.data;
+    }
     if(!latest?.state || !Array.isArray(latest.state.projects)){cloudLoadedForUser=null;throw new Error('Live data is missing or invalid. Saving is blocked.');}
 
     let sharedState=sharedCloudState(state);
@@ -6930,19 +6969,22 @@ async function pushCloudState(){
       const latestShared=sharedCloudState(latest.state);
       const latestAt=Date.parse(latest.updated_at||0)||0;
       if(!cloudBaseState) cloudBaseState=latestShared;
+      if(globalThis.JJSaveConflicts && !globalThis.JJSaveConflicts.check(cloudBaseState,sharedState,latestShared)){
+        const error=new Error('Another device changed the same information. Use Review changes before saving.');error.code='JJ_SAVE_CONFLICT';throw error;
+      }
       if(latestAt>cloudLastRemoteAt || !cloudValuesEqual(latestShared,cloudBaseState)){
         const photoSource=sharedState;
         sharedState=mergeCloudValues(cloudBaseState,sharedState,latestShared);
         JJSelectionPhotos.recover(sharedState,photoSource);
         JJSelectionPhotos.recover(sharedState,latestShared);
-        state=sharedState;
+        applySharedState(sharedState);
         state.currentUser=USERS.some(u=>u.name===localUserName)?localUserName:'Jony';
         cloudBaseState=latestShared;
         persistStateLocally();
         renderAll();
       }
       sharedState=protectPOApprovalFields(sharedState,latestShared,localUserName);
-      state=sharedState;
+      applySharedState(sharedState);
       state.currentUser=USERS.some(u=>u.name===localUserName)?localUserName:'Jony';
     }
 
@@ -6984,9 +7026,14 @@ async function pushCloudState(){
     cloudLastRemoteAt=Date.parse(saved.updated_at)||Date.parse(now);
     cloudRetryCount=0;
     cloudSaveQueued=!cloudValuesEqual(sharedCloudState(state),sentState);
+    persistStateLocally();
     setCloudStatus(cloudSaveQueued?'Saving…':'Saved',cloudSaveQueued?'saving':'saved');
   }catch(err){
     console.error('Cloud save failed',err);
+    if(err.code==='JJ_SAVE_CONFLICT'){
+      cloudRetryCount=4;cloudSaveQueued=true;clearTimeout(cloudSaveTimer);
+      setCloudStatus('Review conflicting changes','offline');toast(err.message);return;
+    }
     cloudRetryCount+=1;
     if(cloudRetryCount<=3){
       cloudSaveQueued=true;
@@ -7004,6 +7051,11 @@ async function pushCloudState(){
   }
 }
 
+function retryCloudSave(){
+ if(globalThis.JJSaveConflicts?.hasPending()){globalThis.JJSaveConflicts.review();return;}
+ cloudRetryCount=0;saveState();
+}
+
 function saveState(show=true){
   const fullLocalSave=persistStateLocally();
   queueCloudSave();
@@ -7011,7 +7063,7 @@ function saveState(show=true){
 }
 
 function persistStateLocally(){
-  try{return JJLocalBackup.write(state);}
+  try{return JJLocalBackup.write(state,{base:cloudBaseState});}
   catch(err){console.error('Full device backup failed',err);window.dispatchEvent(new CustomEvent('jj-backup-status',{detail:{ok:false}}));return false;}
 }
 function toast(text){
@@ -10886,7 +10938,8 @@ if ('serviceWorker' in navigator) {
   navigator.serviceWorker.addEventListener('controllerchange',()=>{
     if(jjReloadingForUpdate) return;
     jjReloadingForUpdate=true;
-    window.location.reload();
+    window.jjAppUpdateReady=true;
+    if(window.JJSaveRefresh)void JJSaveRefresh.reload(true);
   });
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('./service-worker.js')
@@ -10901,7 +10954,7 @@ if ('serviceWorker' in navigator) {
 <!-- Selections / homeowner enhancements. This must load after the app script. -->
 <script src="./selections-metadata.js?v=20261111-multiple"></script>
 <script src="selection-budgets.js?v=20261101-allowance"></script><script src="selection-group-order.js?v=20261021-link-photo"></script>
-<script src="./customer-view.js?v=20261115-photos"></script>
+<script src="./customer-view.js?v=20261115-performance"></script>
 <script src="./customer-simple-add.js?v=20261103-add-safe"></script><script src="./customer-overlay.js?v=20261111-multiple"></script>
 <script src="./qrcode.min.js"></script>
 <script src="mobile-print.js"></script>
@@ -10917,7 +10970,7 @@ document.addEventListener('click',function(e){
   }
 });
 </script>
-<script src="ical.js"></script><script src="calendar-engine.js?v=20260924-event-details"></script><script src="redesign.js?v=20261103-board"></script><script src="selection-group-rules.js?v=20261111-multiple"></script><script src="selection-copy.js?v=20261112-copy"></script></body>
+<script src="ical.js"></script><script src="calendar-engine.js?v=20260924-event-details"></script><script src="redesign.js?v=20261103-board"></script><script src="save-conflicts.js?v=20261115-combined"></script><script src="selection-group-rules.js?v=20261115-combined"></script><script src="selection-copy.js?v=20261112-copy"></script></body>
 </html>
 
 <script>
@@ -10931,17 +10984,19 @@ document.querySelector('.brand')?.addEventListener('keydown',e=>{
 
 <style>.estimate-buildertrend .col-description{min-width:380px;width:380px}.estimate-buildertrend .col-description textarea{height:84px!important;min-height:84px!important;max-height:84px!important;overflow:auto!important;resize:none!important}.estimate-buildertrend th{position:sticky;top:0;background:#edf1f6}.estimate-buildertrend tbody tr:nth-child(even){background:#f8fafc}</style>
 <script src="estimate-full-parser.js"></script>
-<script src="work-pay.js?v=20261114-first-page-repair"></script>
+<script src="work-pay.js?v=20261115-reliability"></script>
 
 <script src="parity-features.js"></script>
 <link rel="stylesheet" href="parity-features.css">
 
 <script src="selections-navigation.js?v=20261021-reorder-mode"></script>
 
-<link rel="stylesheet" href="request-work.css?v=20261103-add-safe"><script src="request-work.js?v=20261111-workflow"></script>
+<link rel="stylesheet" href="request-work.css?v=20261103-add-safe"><script src="request-work.js?v=20261115-reliability"></script>
 
 <script src="./request-work-push.js"></script>
 
 <script src="staff-favorites.js?v=20261103-status-colors"></script>
 
 <script src="whole-number-controls.js?v=20261104"></script>
+<script src="save-before-refresh.js?v=20261115-reliability"></script>
+<script src="operations-backup.js?v=20261115"></script>

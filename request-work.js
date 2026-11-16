@@ -107,5 +107,10 @@ host.addEventListener('keydown',e=>{if(e.target.dataset.rw!=='view'||!['ArrowLef
 host.addEventListener('click',action);bellWrap.addEventListener('click',action);dialog.addEventListener('click',action);dialog.addEventListener('input',e=>{const f=e.target.closest('form');if(f)f.dataset.dirty='true'});dialog.addEventListener('cancel',e=>{if(!canClose())e.preventDefault()});bellWrap.querySelector('#rw-bell').onclick=()=>{const open=bellWrap.querySelector('#rw-inbox').hidden;setInbox(open);if(open)refresh(true)};document.addEventListener('click',e=>{if(!e.composedPath().includes(bellWrap))setInbox(false)});document.addEventListener('keydown',e=>{if(e.key==='Escape')setInbox(false)});
 const old=window.renderDashboard;window.renderDashboard=function(){const result=old.apply(this,arguments);mount();return result};
 function tick(){const c=client();if(c&&hooked!==c){hooked=c;c.auth.onAuthStateChange((event)=>{if(event==='SIGNED_OUT'){clear();return}setTimeout(()=>refresh(true),0)})}if(!document.hidden)refresh();}
+window.JJRequestWorkSaveGuard=()=>busy||(dialog.open&&(
+ dialog.querySelector('form')?.dataset.dirty==='true'||
+ dialog.querySelector('#rw-notes')&&dialog.querySelector('#rw-notes').value!==notesBaseline
+))||[...noteDrafts.values()].some(d=>String(d.text||'').trim());
+window.addEventListener('beforeunload',e=>{if(window.JJRequestWorkSaveGuard()){e.preventDefault();e.returnValue='';}});
 window.addEventListener('online',()=>refresh(true));window.addEventListener('pageshow',e=>{if(e.persisted)refresh(true)});mount();tick();setInterval(tick,15000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)refresh(true)});
 })();

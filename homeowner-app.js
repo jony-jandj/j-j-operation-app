@@ -1,13 +1,13 @@
 const token=new URLSearchParams(location.hash.slice(1)).get('key')||'';
 const client=window.supabase?.createClient('https://mrkvspqwqsmlnhrfllpx.supabase.co','sb_publishable_n5w6Q2b1nvsnOEcYZL2fsQ_u0gGltVk',{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}});
-const $=id=>document.getElementById(id),msg=$('message'),editor=$('editor'),form=$('selectionForm');let lookupGeneration=0,lookupBusy=false;let readTask=null,readEpoch=0;let portalRules={};let portalRulesReady=false;let portalLoaded=false,portalLoadFailed=false;let busy=false,reading=false,items=[],selectionGroups=[],editingId=null,editingOriginal=null,optionParentId=null,photo='',photoLoading=false,photoVersion=0;
+const $=id=>document.getElementById(id),msg=$('message'),editor=$('editor'),form=$('selectionForm');let editorOpenVersion=0;let lookupGeneration=0,lookupBusy=false;let readTask=null,readEpoch=0;let portalRules={};let portalRulesReady=false;let portalLoaded=false,portalLoadFailed=false;let busy=false,reading=false,items=[],selectionGroups=[],editingId=null,editingOriginal=null,optionParentId=null,photo='',photoLoading=false,photoVersion=0;
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const safe=u=>/^https?:\/\//i.test(u||'')?u:'';
 const safeImage=u=>safe(u)||(/^data:image\/(jpeg|jpg|png|webp|gif);base64,/i.test(u||'')?u:'');
 const money=v=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(v);
 function optionGroupKey(i){return i.optionGroupId||i.id}
 function optionUnavailable(i){const key=optionGroupKey(i);return portalRules[key]?.allowMultiple!==true&&!['Selected','Ordered','Received'].includes(i.status)&&items.some(other=>other.id!==i.id&&optionGroupKey(other)===key&&['Selected','Ordered','Received'].includes(other.status))}
-function renderItem(i){const selected=i.status==='Selected',unavailable=optionUnavailable(i),price=i.unitPrice!==null&&i.unitPrice!==undefined&&i.unitPrice!==''&&Number.isFinite(Number(i.unitPrice)),subtotal=Number(i.unitPrice)*Number(i.quantity||1),total=subtotal*(i.addTax?1.0825:1);return `<article class="${selected?'chosen':''}">${(JJProduct.image(i.image)||/^data:image\//.test(i.image||''))&&safeImage(i.image)?`<img class="photo" onerror="this.remove()" referrerpolicy="no-referrer" src="${esc(safeImage(i.image))}" alt="${esc(i.title)}">`:''}<div class="card-body"><small>${esc(i.room)} · ${esc(i.category)}</small><h2>${esc(i.title)}${i.optionLabel?` <small class="option-label">${esc(i.optionLabel)}</small>`:''}</h2><p class="detail">${esc(i.description)}</p><small>${esc(i.vendor)} ${esc(i.model)}</small><p>Quantity: ${esc(i.quantity||1)}</p><div class="price">${price?money(total):'Price not set'}<small>${price?'Tax included':'J&J will add pricing'}</small></div><p><b>Purchased by:</b> ${esc(i.purchasedBy||'Not assigned')}</p><p class="${selected?'badge':''}">Status: ${unavailable?'Unavailable — another option is selected':esc(i.status||'Pending')}</p>${safe(i.url)?`<p><a href="${esc(safe(i.url))}" target="_blank" rel="noopener noreferrer">View product ↗</a></p>`:''}<div class="actions">${selected?`<button data-select="${esc(i.id)}" aria-pressed="true">Selected</button>`:unavailable?`<button disabled aria-disabled="true">Unavailable</button>`:`<button data-select="${esc(i.id)}" aria-pressed="false">Mark Selected</button>`}<button class="secondary" data-option="${esc(i.id)}">＋ Another option</button></div></div></article>`}
+function renderItem(i){const selected=i.status==='Selected',unavailable=optionUnavailable(i),price=i.unitPrice!==null&&i.unitPrice!==undefined&&i.unitPrice!==''&&Number.isFinite(Number(i.unitPrice)),subtotal=Number(i.unitPrice)*Number(i.quantity||1),total=subtotal*(i.addTax?1.0825:1);return `<article class="${selected?'chosen':''}">${(JJProduct.image(i.image)||/^data:image\//.test(i.image||''))&&safeImage(i.image)?`<img loading="lazy" decoding="async" class="photo" onerror="this.remove()" referrerpolicy="no-referrer" src="${esc(safeImage(i.image))}" alt="${esc(i.title)}">`:''}<div class="card-body"><small>${esc(i.room)} · ${esc(i.category)}</small><h2>${esc(i.title)}${i.optionLabel?` <small class="option-label">${esc(i.optionLabel)}</small>`:''}</h2><p class="detail">${esc(i.description)}</p><small>${esc(i.vendor)} ${esc(i.model)}</small><p>Quantity: ${esc(i.quantity||1)}</p><div class="price">${price?money(total):'Price not set'}<small>${price?'Tax included':'J&J will add pricing'}</small></div><p><b>Purchased by:</b> ${esc(i.purchasedBy||'Not assigned')}</p><p class="${selected?'badge':''}">Status: ${unavailable?'Unavailable — another option is selected':esc(i.status||'Pending')}</p>${safe(i.url)?`<p><a href="${esc(safe(i.url))}" target="_blank" rel="noopener noreferrer">View product ↗</a></p>`:''}<div class="actions">${selected?`<button data-select="${esc(i.id)}" aria-pressed="true">Selected</button>`:unavailable?`<button disabled aria-disabled="true">Unavailable</button>`:`<button data-select="${esc(i.id)}" aria-pressed="false">Mark Selected</button>`}<button class="secondary" data-option="${esc(i.id)}">＋ Another option</button></div></div></article>`}
 
 function render(){
  if(!portalLoaded){$('items').innerHTML='<p role="status">'+(portalLoadFailed?'Could not load your choices. Tap Refresh selections to try again.':'Loading your choices…')+'</p>';return;}
@@ -28,7 +28,9 @@ async function refresh(silent=false,afterWrite=false){
  const rulesResult=Promise.race([rulesRequest,new Promise(resolve=>{timer=setTimeout(()=>resolve({error:{message:'Settings request timed out'}}),8000);})]);
  const publish=data=>{portalLoaded=true;portalLoadFailed=false;items=data.items||[];selectionGroups=data.selectionGroups||[];$('job').textContent=data.jobName+' · Selections';$('refresh').hidden=false;$('newSelection').hidden=false;};
  try{
- const {data,error}=await client.rpc('jj_portal_read',{p_token:token});if(error)throw error;
+ const result=await JJPortalRead.read(client,token,{force:!silent||afterWrite||!hadData});
+ const data=result.data;
+ if(!Array.isArray(data?.items))throw Error('Incomplete selections response');
  if(epoch!==readEpoch)return false;
  // Show first-load products promptly; later refreshes publish one consistent update.
  if(!hadData){publish(data);msg.textContent='Your selections are loaded. Checking choice settings…';render();}
@@ -52,23 +54,25 @@ async function refresh(silent=false,afterWrite=false){
 }
 function showPhoto(){photo=safeImage(photo);$('preview').src=photo;$('preview').hidden=!photo;}
 function addAnotherOption(id){const base=items.find(i=>String(i.id)===String(id));if(!base)return;optionParentId=id;openEditor(null);}
-function openEditor(id=null){
+async function openEditor(id=null){
+ const opening=++editorOpenVersion;
  if(id===null){const parentId=optionParentId;optionParentId=null;window.JJSimpleAdd.open({title:parentId===null?'Add Selection':'Add Option',onSave:async (data,context)=>{if(parentId!==null){const parent=items.find(i=>String(i.id)===String(parentId));if(!parent)throw Error('This selection changed. Close and try again.');data.optionGroupId=parent.optionGroupId||parent.id;data.optionGroupTitle=parent.optionGroupTitle||parent.title;data.optionLabel='Another option';data.room=parent.room||'';data.category=parent.category||data.category;}return write('add',data,context.requestId);}});return;}
 
+ try{await JJPortalRead.ensurePhoto(id);if(opening!==editorOpenVersion)return;}catch(e){if(opening===editorOpenVersion)msg.textContent=e.message;return;}
  const item=id===null?{}:items.find(i=>String(i.id)===String(id));if(!item)return;lookupGeneration++;lookupBusy=false;$('lookupMessage').textContent='Update the link to fill product details. Pricing stays with J&J.';editingId=id;editingOriginal=JSON.parse(JSON.stringify(item));form.reset();photoVersion++;photoLoading=false;
  for(const name of ['title','room','category','vendor','model','quantity','url','description'])form.elements[name].value=item[name]??(name==='quantity'?1:'');
  const status=item.status||'Pending';form.elements.status.innerHTML=['Pending','Selected',...(!['Pending','Selected'].includes(status)?[status]:[])].map(s=>`<option>${esc(s)}</option>`).join('');form.elements.status.value=status;form.elements.status.disabled=true;form.elements.status.title='Use Choose this or Undo on the product card to change your choice.';
  photo=item.image||'';$('photoUrl').value=safe(photo);showPhoto();$('editorMessage').textContent='';$('editorTitle').textContent=id===null?'Add Selection':'Edit Selection';$('saveSelection').textContent=id===null?'Add Selection':'Save changes';editor.showModal();form.elements.title.focus();
 }
-function closeEditor(){if(!busy){photoVersion++;optionParentId=null;editor.close();$('newSelection').focus();}}
+function closeEditor(){if(!busy){editorOpenVersion++;photoVersion++;optionParentId=null;editor.close();$('newSelection').focus();}}
 async function write(action,item,requestId=null){
  if(busy)return false;if(action==='select'&&!portalRulesReady){msg.textContent='Tap Refresh selections before choosing.';return false;}busy=true;readEpoch++;readTask=null;reading=false;
  const disabled=[...document.querySelectorAll('button')].map(b=>[b,b.disabled]);
  disabled.forEach(([b])=>b.disabled=true);msg.textContent='Saving your change…';$('editorMessage').textContent='Saving…';
  try{
  const {error}=action==='add'
-  ?await client.rpc('jj_portal_add_once',{p_token:token,p_request_id:requestId||crypto.randomUUID(),p_item:item})
-  :action==='select'?await client.rpc('jj_selection_choose',{p_token:token,p_item:item.id,p_expected:item.expectedStatus}):await client.rpc('jj_portal_write',{p_token:token,p_action:action,p_item:item});
+  ?await JJPortalRead.request(client,'jj_portal_add_once',{p_token:token,p_request_id:requestId||crypto.randomUUID(),p_item:item})
+  :action==='select'?await JJPortalRead.request(client,'jj_selection_choose',{p_token:token,p_item:item.id,p_expected:item.expectedStatus}):await JJPortalRead.request(client,'jj_portal_write',{p_token:token,p_action:action,p_item:item});
  if(error){if(error.code==='PGRST202')throw Error('Adding is being updated. Please contact J&J and keep this window open.');throw error;}
  const confirmed=await refresh(false,true);
  if(!confirmed)msg.textContent='Change sent. Refresh to confirm the saved result before making another choice.';

@@ -923,7 +923,7 @@ const flushEdits=async()=>{for(const pending of [...crewRowFlights.values()])if(
 
 buildNav();renderPayByLine();
 
-window.JJTestWorkPay={flushEdits,refresh:async()=>{if(busy&&doc)return doc;return load()},costEntries(){return entries().map(costEntry)},openForJob:async m=>{job=String(selectedProject().id);await open(m)}};
+window.JJTestWorkPay={hasPendingEdits:()=>busy||crewNameDrafts.size>0||crewRowFlights.size>0||autosaveTimers.size>0||!!document.querySelector('[data-form="stage-edit"][data-saved="false"]'),flushEdits,refresh:async()=>{if(busy&&doc)return doc;return load()},costEntries(){return entries().map(costEntry)},openForJob:async m=>{job=String(selectedProject().id);await open(m)}};
 window.dispatchEvent(new CustomEvent('jj-workpay-ready'));
 const compactPrintStyle=document.createElement('style');compactPrintStyle.textContent=`
 :is(#jj-wp-dialog#jj-wp-dialog#jj-wp-dialog,#jj-wp-print#jj-wp-print#jj-wp-print,#printRoot#printRoot#printRoot) .jj-compact-po{background:#f0f5f9!important;color:#203044!important;border:1px solid #bccbd8!important;border-radius:8px!important;margin:14px 0!important;overflow:visible!important;break-inside:avoid!important;page-break-inside:avoid!important;font:13px/1.45 Arial,sans-serif!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
