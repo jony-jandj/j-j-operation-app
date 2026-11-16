@@ -1,22 +1,28 @@
-J&J save request update — November 15, 2026
+IN-HOUSE FASTER OPENING — November 15, 2026
 
-Status: locally tested; not deployed or verified against the live timeout.
-Upload index.html and service-worker.js together to the existing repository root.
-Do not upload any private backup JSON to GitHub.
+Small follow-up to the combined reliability release already published at
+commit e6b2f7086025b11435a4a8bfbc59e9a6ee87d4d2. No database update required.
 
-Before reloading J&J, export a fresh backup from the app and keep it locally.
-The previously verified backup contains 156 selection images.
-After deployment, reload only after the backup export is complete, then use Save now.
-Check the cloud photo count and saved status before considering the repair complete.
-Do not clear browser storage or import a whole backup over newer cloud changes.
+What changes:
+- In-house/Bills/Closeout opens its title and loading state immediately.
+- If payment records are already in memory, show that preview immediately
+  while checking current cloud balances. No new persistent financial cache.
+- Clearly label previously loaded figures. Disable payment/printing/filter
+  controls until fresh records arrive; keep Back available.
+- On a failed read, retain the preview with an inline Retry loading button.
+- Rapid view changes reuse the pending cloud read and keep the newest view.
 
-Changes:
-- Save transaction returns only the saved version, not all photo data.
-- Separate read-back verifies the exact saved version and all its contents.
-- A retry recognizes an already-saved identical snapshot without another write.
-- Write/verification client timeout is 45 seconds, allowing the existing 30-second database limit to respond. No server timeout, access policy, or approval rule is changed.
-- Concurrent edits and failed verification remain pending.
+The cloud request itself still takes the connection's normal response time.
+This removes the blank/stale-screen wait, not the underlying network delay.
 
-Validation: eight simulated save scenarios and inline JavaScript syntax passed.
-Local PostgreSQL benchmark: full-response save 773ms; version-only response 516ms.
-That benchmark does not reproduce the production timeout and does not prove this update will resolve it.
+Local checks passed: slow first open, immediate cached preview, disabled
+payment actions, failed-read/retry, rapid navigation, no payment writes,
+partial Closeout/Bills reconciliation, rapid crew input, approval ordering,
+retry retention and existing release-feature checks.
+
+Install: upload CONTENTS of web-files/ to the existing GitHub app root,
+replacing only work-pay.js and service-worker.js. Retain all other files.
+Wait for publishing, finish any open edits and confirm they saved before
+refreshing. Verify on actual phone/iPad after installation.
+
+Status: prepared and tested locally; not uploaded or live.

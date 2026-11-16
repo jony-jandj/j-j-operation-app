@@ -1,0 +1,18 @@
+{
+  "baseCommit": "e6b2f7086025b11435a4a8bfbc59e9a6ee87d4d2",
+  "status": "locally-tested-not-deployed",
+  "files": [
+    {
+      "file": "README.txt",
+      "sha256": "d120d02e8b4f6215f678fd20b0aa765030c52724e18d763cfa0b8ef285bc4e0b"
+    },
+    {
+      "file": "web-files/service-worker.js",
+      "sha256": "d65c941f724f27d800c8cefedb6f6d3648350f08d0a7a80d0a6eb63f3f45b727"
+    },
+    {
+      "file": "web-files/work-pay.js",
+      "sha256": "69cb4b4a56b7f9cc3d7446d5a62710af2883514d49b48395139fd8f523b5f98f"
+    }
+  ]
+}
