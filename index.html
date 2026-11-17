@@ -2909,7 +2909,7 @@ textarea.estimate-cell-input{
 }
 @media(max-width:560px){
     #cloudStatus.cloud-status{
-    cursor:pointer;
+    cursor:pointer;max-width:120px;white-space:normal;text-align:center;
   }
 }
 
@@ -6347,11 +6347,17 @@ function cloudConfig(){
   return BUILT_IN_CLOUD_CONFIG;
 }
 
+let cloudAccountChanged=false;
 function setCloudStatus(label,kind='local'){
   const el=document.getElementById('cloudStatus');
   if(!el) return;
-  el.textContent=label;
-  el.className=`cloud-status ${kind}`;
+  const needsReview=globalThis.JJSaveConflicts?.hasPending();
+  if(cloudAccountChanged&&!needsReview){label='Sign-in changed · edits kept on this device';kind='offline';}
+  el.textContent=needsReview?'Review changes':label;
+  el.title=needsReview?'Changes from two devices need review before saving. Both versions are kept.':label;
+  el.className=`cloud-status ${needsReview?'offline':kind}`;
+  if(needsReview){el.setAttribute('role','button');el.tabIndex=0;el.onclick=()=>globalThis.JJSaveConflicts.review();el.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();globalThis.JJSaveConflicts.review();}};}
+  else{el.removeAttribute('role');el.removeAttribute('tabindex');el.onclick=null;el.onkeydown=null;}
 }
 
 function openCloudSetup(){ return; }
@@ -6762,6 +6768,7 @@ async function loadCloudState(){
     }finally{cloudApplying=false;}
     cloudLastRemoteAt=Date.parse(data.updated_at||0)||Date.now();
     cloudLoadedForUser=loadingUser.id;
+    cloudAccountChanged=false;
     if(cloudSaveQueued) queueCloudSave();
   }else{
     throw new Error('Existing live data could not be found. Saving is blocked. Do not import a backup; check the connection and account first.');
@@ -6923,11 +6930,13 @@ function queueCloudSave(){
   }
   cloudSaveQueued=true;
   clearTimeout(cloudSaveTimer);
+  if(globalThis.JJSaveConflicts?.hasPending()){setCloudStatus('Review changes to finish saving','offline');return;}
   setCloudStatus('Saving…','saving');
   cloudSaveTimer=setTimeout(pushCloudState,450);
 }
 
 async function pushCloudState(){
+  if(globalThis.JJSaveConflicts?.hasPending()){cloudSaveQueued=true;clearTimeout(cloudSaveTimer);setCloudStatus('Review changes to finish saving','offline');return;}
   if(typeof navigator!=='undefined' && !navigator.onLine){cloudSaveQueued=true;setCloudStatus('Saved on this device · waiting for connection','offline');return;}
   if(cloudApplying || !cloudClient || !cloudLoadedForUser) return;
   if(cloudSaveInFlight){
@@ -6944,7 +6953,7 @@ async function pushCloudState(){
       return;
     }
 
-    if(user.id!==cloudLoadedForUser) throw new Error('Reload the existing live data before saving with this account.');
+    if(user.id!==cloudLoadedForUser){const error=new Error('This device is signed in with a different account. Your edits are kept here. Use your usual staff sign-in before retrying.');error.code='JJ_ACCOUNT_CHANGED';throw error;}
     const localUserName=state.currentUser;
 
     // Re-read the row before writing. If another browser saved first, merge
@@ -7024,6 +7033,7 @@ async function pushCloudState(){
     if(!cloudValuesEqual(sharedCloudState(saved.state),sentState)){
       throw new Error('Cloud validation changed the save. Your changes remain on this device; check the P.O. approval database update.');
     }
+    cloudAccountChanged=false;
     cloudBaseState=cloneCloudValue(sentState);
     cloudLastRemoteAt=Date.parse(saved.updated_at)||Date.parse(now);
     cloudRetryCount=0;
@@ -7036,6 +7046,7 @@ async function pushCloudState(){
       cloudRetryCount=4;cloudSaveQueued=true;clearTimeout(cloudSaveTimer);
       setCloudStatus('Review conflicting changes','offline');toast(err.message);return;
     }
+    if(err.code==='JJ_ACCOUNT_CHANGED'){cloudAccountChanged=true;cloudRetryCount=4;cloudSaveQueued=true;clearTimeout(cloudSaveTimer);setCloudStatus('Sign-in changed · edits kept on this device','offline');toast(err.message);return;}
     cloudRetryCount+=1;
     if(cloudRetryCount<=3){
       cloudSaveQueued=true;
@@ -10972,7 +10983,7 @@ document.addEventListener('click',function(e){
   }
 });
 </script>
-<script src="ical.js"></script><script src="calendar-engine.js?v=20260924-event-details"></script><script src="redesign.js?v=20261103-board"></script><script src="staff-job-sync.js?v=20261116"></script>
+<script src="ical.js"></script><script src="calendar-engine.js?v=20260924-event-details"></script><script src="redesign.js?v=20261103-board"></script><script src="staff-job-sync.js?v=20261116b"></script>
 <script src="save-conflicts.js?v=20261115-combined"></script><script src="selection-group-rules.js?v=20261115-combined"></script><script src="selection-copy.js?v=20261112-copy"></script></body>
 </html>
 

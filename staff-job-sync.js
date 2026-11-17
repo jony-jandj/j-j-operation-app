@@ -6,11 +6,18 @@
   let done=false;const finish=()=>{if(!done){done=true;resolve()}};const timer=setTimeout(finish,1500);
   try{const r=indexedDB.open('jj-staff-job-sync-v1',1);r.onupgradeneeded=()=>r.result.createObjectStore('jobs');r.onerror=r.onblocked=finish;r.onsuccess=()=>{db=r.result;db.onversionchange=()=>{db.close();db=null};clearTimeout(timer);finish()}}catch{finish()}
  });
- async function cached(hash){await ready;if(!db)return memory.has(hash)?clone(memory.get(hash)):null;
-  return new Promise(resolve=>{try{const tx=db.transaction('jobs','readonly'),r=tx.objectStore('jobs').get(hash);r.onsuccess=()=>resolve(r.result||null);r.onerror=()=>resolve(null);tx.onabort=()=>resolve(null)}catch{resolve(null)}});
+ function keepMemory(hash,project){memory.set(hash,clone(project));while(memory.size>32)memory.delete(memory.keys().next().value)}
+ async function cached(hash){await ready;if(memory.has(hash))return clone(memory.get(hash));if(!db)return null;
+  return new Promise(resolve=>{let done=false;const finish=value=>{if(done)return;done=true;clearTimeout(timer);resolve(value)};
+   const timer=setTimeout(()=>{db=null;finish(null)},1500);
+   try{const tx=db.transaction('jobs','readonly'),r=tx.objectStore('jobs').get(hash);r.onsuccess=()=>finish(r.result||null);r.onerror=()=>finish(null);tx.onabort=()=>finish(null)}catch{finish(null)}
+  });
  }
- async function remember(hash,project){if(!db){memory.set(hash,clone(project));while(memory.size>32)memory.delete(memory.keys().next().value);return}
-  await new Promise(resolve=>{try{const tx=db.transaction('jobs','readwrite');tx.objectStore('jobs').put(project,hash);tx.oncomplete=tx.onerror=tx.onabort=resolve}catch{resolve()}});
+ async function remember(hash,project){keepMemory(hash,project);if(!db)return;
+  await new Promise(resolve=>{let done=false;const finish=()=>{if(done)return;done=true;clearTimeout(timer);resolve()};
+   const timer=setTimeout(()=>{db=null;finish()},1500);
+   try{const tx=db.transaction('jobs','readwrite');tx.objectStore('jobs').put(project,hash);tx.oncomplete=tx.onerror=tx.onabort=finish}catch{finish()}
+  });
  }
  async function prune(hashes){if(!db)return;try{const tx=db.transaction('jobs','readwrite'),store=tx.objectStore('jobs'),r=store.openKeyCursor();r.onsuccess=()=>{const c=r.result;if(c){if(!hashes.has(c.key))store.delete(c.key);c.continue()}}}catch{}}
  const stamp=v=>Date.parse(v)*1000+Number((String(v).match(/\.(\d+)/)?.[1]||'').padEnd(6,'0').slice(3,6));
@@ -52,7 +59,7 @@
   if(!flight||flight.client!==client){flight={client,promise:snapshot(client,expected)};flights.set(key,flight);flight.promise.finally(()=>{if(flights.get(key)===flight)flights.delete(key)}).catch(()=>{})}
   try{return clone(await flight.promise)}catch(e){if(missing(e)){missingUntil=Date.now()+60000;return oldRequest(query,label,timeout)}throw e}
  };
- function resume(){if(document.hidden||!cloudLoadedForUser)return;if(cloudSaveQueued){if(!cloudSaveInFlight){cloudRetryCount=0;queueCloudSave()}}else pollCloudState()}
+ function resume(){if(document.hidden||!cloudLoadedForUser)return;if(typeof cloudAccountChanged!=='undefined'&&cloudAccountChanged){setCloudStatus('Sign-in changed','offline');return;}if(window.JJSaveConflicts?.hasPending()){setCloudStatus('Review changes to finish saving','offline');return;}if(cloudSaveQueued){if(!cloudSaveInFlight){cloudRetryCount=0;queueCloudSave()}}else pollCloudState()}
  window.addEventListener('pageshow',resume);window.addEventListener('focus',resume);
  document.addEventListener('focusout',()=>setTimeout(resume,0));
  let manual=false;
