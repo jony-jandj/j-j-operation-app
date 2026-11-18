@@ -2011,6 +2011,7 @@
     bar.innerHTML=`<span class="count">${count} of ${visibleIds.size} selected</span>
       <button class="btn btn-light" data-action="all" ${visibleIds.size?'':'disabled'}>Select All</button>
       <button class="btn btn-light" data-action="clear" ${count?'':'disabled'}>Clear</button>
+      <button class="btn btn-light" type="button" data-action="print" ${count?'':'disabled'}>Print checked${count?` (${count})`:''}</button>
       <button class="btn btn-light" data-action="approve" ${count?'':'disabled'}>Approve</button>
       <button class="btn btn-light" data-action="status" ${count?'':'disabled'}>Status</button>
       <button class="btn btn-light" data-action="group" ${count?'':'disabled'}>Group</button>
@@ -2023,6 +2024,13 @@
       const action=e.target.closest('button')?.dataset.action;if(!action)return;
       if(action==='all'){bulkSet().clear();visibleIds.forEach(id=>bulkSet().add(id));bulkDeleteArmed=false;window.renderSelections?.()}
       if(action==='approve')bulkApprove();
+      if(action==='print'){
+        if(String(p()?.id??'')!==projectId)return;
+        const checkedIds=selectedItems().map(item=>String(item.id));
+        if(!checkedIds.length)return;
+        if(!window.JJSelectionPrint?.open){window.toast?.('Print tools are still loading. Try again in a moment.');return;}
+        window.JJSelectionPrint.open({projectId,checkedIds});
+      }
       if(action==='clear'){bulkSet().clear();bulkDeleteArmed=false;window.renderSelections?.()}
       if(action==='status')bulkStatus();
       if(action==='group')bulkGroup();
@@ -2183,6 +2191,12 @@
     installCardWrapper();
     installEditorWrappers();
     installRenderWrapper();
+
+    // Read-only checkbox scope for printing; this never changes product status.
+    window.JJSelectionBulk={snapshot:()=>({
+      projectId:String(p()?.id??''),
+      checkedIds:selectedItems().map(item=>String(item.id))
+    })};
 
     // API expected by the CURRENT native index.html group header.
     window.JJSelectionGroups={
