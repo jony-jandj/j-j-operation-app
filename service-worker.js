@@ -1,5 +1,5 @@
 importScripts('./request-work-push-sw.js?v=20261026-descriptive');
-const CACHE_NAME = 'jj-live-20261117-homeowner-choices';
+const CACHE_NAME = 'jj-live-20261118-homeowner-choice-recovery';
 const APP_SHELL = [
  './vendor/supabase-js.umd.js','./vendor/xlsx.full.min.js',
  './staff-job-sync.js','./save-conflicts.js','./portal-performance.js','./save-before-refresh.js','./operations-backup.js',

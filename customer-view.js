@@ -32,7 +32,7 @@ window.JJCustomerView={mount(host,adapter){
     if(!groups.some(([k])=>k===guidedKey))guidedKey=missing[0]?.[0]||null;
     const current=groups.find(([k])=>k===guidedKey),done=current&&decided(current[1]),saving=!!adapter.isSaving?.(),choiceReady=adapter.canChoose?.()!==false;
     const p=document.createElement('section');p.id='jjMissingGuide';p.setAttribute('aria-label','Choose your selections');
-    p.innerHTML=`<h2>Still need your choice</h2><p role="status" aria-live="polite">${saving?'Saving your choice…':!choiceReady?'Your products are available to view. Refresh selections before choosing.':done?'Your choice is saved ✓':missing.length?`${missing.length} ${missing.length===1?'choice':'choices'} left`:'You’re all done! All available choices are complete.'}</p><div class="jj830-actions"><button type="button" data-guide-all ${saving?'disabled':''}>View all selections</button>${current&&multi(guidedKey)&&!done?`<button type="button" data-guide-done ${saving||!choiceReady?'disabled':''}>Done with this group</button>`:''}${current?`<button type="button" data-guide-next ${saving?'disabled':''}>${done?(missing.length?'Next choice':'Finish'):'Skip for now'}</button>`:''}</div>`;
+    p.innerHTML=`<h2>Still need your choice</h2><p role="status" aria-live="polite">${saving?'Saving your choice…':adapter.getChoice?.()?.phase==='failed'?'Retry your unconfirmed choice to continue.':!choiceReady?'Your products are available to view. Refresh selections before choosing.':done?'Your choice is saved ✓':missing.length?`${missing.length} ${missing.length===1?'choice':'choices'} left`:'You’re all done! All available choices are complete.'}</p><div class="jj830-actions"><button type="button" data-guide-all ${saving?'disabled':''}>View all selections</button>${current&&multi(guidedKey)&&!done?`<button type="button" data-guide-done ${saving||!choiceReady?'disabled':''}>Done with this group</button>`:''}${current?`<button type="button" data-guide-next ${saving?'disabled':''}>${done?(missing.length?'Next choice':'Finish'):'Skip for now'}</button>`:''}</div>`;
     p.style.cssText='padding:18px;margin:16px 0;border:1px solid #b59a62;border-radius:12px;background:var(--ho-panel);color:var(--ho-text)';
     root.before(p);p.onclick=async e=>{if(adapter.isSaving?.())return;if(e.target.closest('[data-guide-done]')){if(adapter.canChoose?.()===false)return;if(adapter.onGroupDone)await adapter.onGroupDone(guidedKey,update);return;}if(e.target.closest('[data-guide-all]'))setGuided(false);else if(e.target.closest('[data-guide-next]')){const at=missing.findIndex(([k])=>k===guidedKey);guidedKey=missing.length?missing[(at+1)%missing.length][0]:null;}else return;update();host.querySelector('#jjMissingGuide')?.scrollIntoView({block:'start',behavior:'smooth'});};
   }
@@ -63,7 +63,7 @@ window.JJCustomerView={mount(host,adapter){
   }
   function paintFavorites(){paintFavoriteStatuses();host.querySelectorAll('[data-favorite]').forEach(b=>{const yes=favorites[b.dataset.favorite]===true;const i=getItems().find(i=>String(i.id)===b.dataset.favorite);b.setAttribute('aria-pressed',String(yes));b.setAttribute('aria-label',(yes?'Remove favorite: ':'Favorite: ')+(i?.title||'Selection'));b.title=yes?'Remove favorite':'Save as a favorite';b.style.setProperty('background',yes?'#e1bf6c':'#fffaf0','important');b.style.setProperty('color','#14234a','important');b.querySelector('span').textContent=yes?'★':'☆';b.disabled=!favoritesReady||favoriteBusy||!!adapter.isSaving?.();});}
   async function loadFavorites(){
-    if(!favoriteAccess||favoriteBusy||favoriteReading||!host.isConnected)return;
+    if(!favoriteAccess||favoriteBusy||favoriteReading||adapter.isSaving?.()||!host.isConnected)return;
     favoriteReading=true;
     try{const {data,error}=await favoriteAccess.client.rpc('jj_portal_favorites',favoriteAccess.args);if(error)throw error;favorites=data||{};favoritesReady=true;paintFavorites();}
     catch(e){favoritesReady=false;favoriteMessage('Favorites could not load. Refresh to try again.');paintFavorites();}
@@ -184,12 +184,14 @@ if(nodes.length!==root.children.length||nodes.some((n,i)=>root.children[i]!==n))
 
  function paintChoice(){
  const attempt=adapter.getChoice?.();
+ const recovery=host.querySelector('#retryChoice');
+ if(recovery){recovery.hidden=attempt?.phase!=='failed';recovery.disabled=!!adapter.isSaving?.()||!portalRulesReady;}
  host.querySelectorAll('[data-select]').forEach(b=>{b.disabled=!!adapter.isSaving?.()||adapter.canChoose?.()===false;const selected=b.getAttribute('aria-pressed')==='true';b.textContent=selected?'✓ Chosen · tap to undo':'Choose this';});
  host.querySelectorAll('[data-choice-note]').forEach(n=>n.remove());
  if(!attempt)return;const card=[...host.querySelectorAll('.jj830-card')].find(n=>n.querySelector('[data-selection-status]')?.dataset.selectionStatus===attempt.id);if(!card)return;
  const note=document.createElement('p');note.dataset.choiceNote='';note.setAttribute('role','status');note.style.cssText='margin:10px 0 0;font-size:14px;font-weight:700;line-height:1.5';
  const saving=['saving','checking'].includes(attempt.phase);
- note.textContent=saving?(attempt.phase==='checking'?'Checking saved choice…':attempt.target==='Selected'?'Saving your choice…':'Removing your choice…'):attempt.phase==='saved'?(attempt.target==='Selected'?'✓ Choice saved':'✓ Choice removed'):'Not saved yet. '+(attempt.message||'Please retry.');
+ note.textContent=saving?(attempt.phase==='checking'?'Checking saved choice…':attempt.target==='Selected'?'Saving your choice…':'Removing your choice…'):attempt.phase==='saved'?(attempt.target==='Selected'?'✓ Choice saved':'✓ Choice removed'):(attempt.message||'Please retry.');
  const b=card.querySelector('[data-select]');if(b&&saving){b.textContent=attempt.target==='Selected'?'Saving choice…':'Removing choice…';b.setAttribute('aria-busy','true');}else b?.removeAttribute('aria-busy');
  if(attempt.phase==='failed'){const retry=document.createElement('button');retry.type='button';retry.dataset.choiceRetry=attempt.id;retry.textContent='Retry save';note.append(document.createElement('br'),retry);}
  card.querySelector('.jj830-body').append(note);

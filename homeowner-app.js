@@ -5,6 +5,21 @@ const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 const safe=u=>/^https?:\/\//i.test(u||'')?u:'';
 const safeImage=u=>safe(u)||(/^data:image\/(jpeg|jpg|png|webp|gif);base64,/i.test(u||'')?u:'');
 const money=v=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(v);
+// Keep the direction of an interrupted choice across reloads of this tab.
+// The private link itself is never put in storage.
+const choiceKey='jj-pending-homeowner-choice:'+token.slice(-24);
+try{
+ const pending=JSON.parse(sessionStorage.getItem(choiceKey));
+ if(pending&&typeof pending.id==='string'&&['Pending','Recommended','Selected'].includes(pending.expected)){
+  choiceAttempt={...pending,target:pending.expected==='Selected'?'Pending':'Selected',phase:'failed',message:'Retry to confirm your previous choice.'};
+ }
+}catch{}
+function rememberChoice(attempt){
+ try{
+  if(attempt)sessionStorage.setItem(choiceKey,JSON.stringify({id:attempt.id,expected:attempt.expected}));
+  else sessionStorage.removeItem(choiceKey);
+ }catch{}
+}
 function optionGroupKey(i){return i.optionGroupId||i.id}
 function optionUnavailable(i){const key=optionGroupKey(i);return portalRules[key]?.allowMultiple!==true&&!['Selected','Ordered','Received'].includes(i.status)&&items.some(other=>other.id!==i.id&&optionGroupKey(other)===key&&['Selected','Ordered','Received'].includes(other.status))}
 function renderItem(i){const selected=i.status==='Selected',unavailable=optionUnavailable(i),price=i.unitPrice!==null&&i.unitPrice!==undefined&&i.unitPrice!==''&&Number.isFinite(Number(i.unitPrice)),subtotal=Number(i.unitPrice)*Number(i.quantity||1),total=subtotal*(i.addTax?1.0825:1);return `<article class="${selected?'chosen':''}">${(JJProduct.image(i.image)||/^data:image\//.test(i.image||''))&&safeImage(i.image)?`<img loading="lazy" decoding="async" class="photo" onerror="this.remove()" referrerpolicy="no-referrer" src="${esc(safeImage(i.image))}" alt="${esc(i.title)}">`:''}<div class="card-body"><small>${esc(i.room)} · ${esc(i.category)}</small><h2>${esc(i.title)}${i.optionLabel?` <small class="option-label">${esc(i.optionLabel)}</small>`:''}</h2><p class="detail">${esc(i.description)}</p><small>${esc(i.vendor)} ${esc(i.model)}</small><p>Quantity: ${esc(i.quantity||1)}</p><div class="price">${price?money(total):'Price not set'}<small>${price?'Tax included':'J&J will add pricing'}</small></div><p><b>Purchased by:</b> ${esc(i.purchasedBy||'Not assigned')}</p><p class="${selected?'badge':''}">Status: ${unavailable?'Unavailable — another option is selected':esc(i.status||'Pending')}</p>${safe(i.url)?`<p><a href="${esc(safe(i.url))}" target="_blank" rel="noopener noreferrer">View product ↗</a></p>`:''}<div class="actions">${selected?`<button data-select="${esc(i.id)}" aria-pressed="true">Selected</button>`:unavailable?`<button disabled aria-disabled="true">Unavailable</button>`:`<button data-select="${esc(i.id)}" aria-pressed="false">Mark Selected</button>`}<button class="secondary" data-option="${esc(i.id)}">＋ Another option</button></div></div></article>`}
@@ -23,12 +38,12 @@ async function refresh(silent=false,afterWrite=false){
  const beforeRules=JSON.stringify(portalRules);
  reading=true;portalLoadFailed=false;if(!hadData)render();
  readTask=(async()=>{
- let timer;
- const rulesRequest=Promise.resolve().then(()=>client.rpc('jj_selection_rules',{p_token:token})).catch(error=>({error}));
- const rulesResult=Promise.race([rulesRequest,new Promise(resolve=>{timer=setTimeout(()=>resolve({error:{message:'Settings request timed out'}}),8000);})]);
- const publish=data=>{portalLoaded=true;portalLoadFailed=false;items=data.items||[];selectionGroups=data.selectionGroups||[];if(!silent&&choiceAttempt?.phase==='failed'){const status=items.find(i=>String(i.id)===choiceAttempt.id)?.status;if(status!==choiceAttempt.expected)choiceAttempt=status===choiceAttempt.target?{...choiceAttempt,phase:'saved'}:null;}$('job').textContent=data.jobName+' · Selections';$('refresh').hidden=false;$('newSelection').hidden=false;};
+ const rulesResult=JJPortalRead.request(client,'jj_selection_rules',{p_token:token},8000,!afterWrite).catch(error=>({error}));
+ const publish=data=>{portalLoaded=true;portalLoadFailed=false;items=data.items||[];selectionGroups=data.selectionGroups||[];
+  if(choiceAttempt?.phase==='failed')reconcileChoice(choiceAttempt);
+  $('job').textContent=data.jobName+' · Selections';$('refresh').hidden=false;$('newSelection').hidden=false;};
  try{
- const result=await JJPortalRead.read(client,token,{force:!silent||afterWrite||!hadData});
+ const result=await JJPortalRead.read(client,token,{force:!silent||afterWrite||!hadData,background:!afterWrite});
  const data=result.data;
  if(!Array.isArray(data?.items))throw Error('Incomplete selections response');
  if(epoch!==readEpoch)return false;
@@ -49,7 +64,7 @@ async function refresh(silent=false,afterWrite=false){
  if(!silent||!hadData||!result.unchanged||beforeRules!==JSON.stringify(portalRules)||hadRules!==portalRulesReady)render();
  return true;
  }catch(e){if(epoch!==readEpoch)return false;portalLoadFailed=true;$('refresh').hidden=false;if(!silent||!hadData)msg.textContent='Could not load the latest selections. Tap Refresh selections to try again.';return false;}
- finally{clearTimeout(timer);if(epoch===readEpoch){reading=false;readTask=null;if(!portalLoaded)render();}}
+ finally{if(epoch===readEpoch){reading=false;readTask=null;if(!portalLoaded)render();}}
  })();return readTask;
 }
 function showPhoto(){photo=safeImage(photo);$('preview').src=photo;$('preview').hidden=!photo;}
@@ -65,40 +80,72 @@ async function openEditor(id=null){
  photo=item.image||'';$('photoUrl').value=safe(photo);showPhoto();$('editorMessage').textContent='';$('editorTitle').textContent=id===null?'Add Selection':'Edit Selection';$('saveSelection').textContent=id===null?'Add Selection':'Save changes';editor.showModal();form.elements.title.focus();
 }
 function closeEditor(){if(!busy){editorOpenVersion++;photoVersion++;optionParentId=null;editor.close();$('newSelection').focus();}}
-// A successful choose response confirms a committed status change. Do not reload
-// every photo and choice setting before allowing the next tap.
+function reconcileChoice(attempt){
+ const item=items.find(item=>String(item.id)===attempt.id);
+ if(item&&(item.status||'Pending')===attempt.target){
+  attempt.phase='saved';
+ }else if(!item||(item.status||'Pending')!==attempt.expected){
+  attempt.phase='changed';
+  attempt.message='This selection changed. Review the current options.';
+ }else return;
+ rememberChoice(null);
+}
+async function checkChoice(attempt){
+ attempt.phase='checking';window.JJChoicePaint?.();
+ const {data}=await JJPortalRead.read(client,token,{force:true});
+ if(!Array.isArray(data?.items))throw Error('Could not check this choice.');
+ items=data.items;selectionGroups=data.selectionGroups||[];
+ reconcileChoice(attempt);
+}
+function transientChoiceFailure(error){
+ return error instanceof TypeError||[408,425,429,500,502,503,504].includes(error.status)||
+  ['57014','55P03','40001','40P01','PGRST000','PGRST001','PGRST003'].includes(error.code)||
+  /timed?\s*out|timeout|failed to fetch|fetch failed|network|load failed|connection (?:reset|lost|closed)/i.test(error.message||'');
+}
 async function chooseItem(id,retry=false){
  if(busy||!portalRulesReady)return false;
- const current=items.find(i=>String(i.id)===String(id));if(!current)return false;
- if(!retry){
-  if(choiceAttempt?.phase==='failed')return false;
-  if(!['Pending','Recommended','Selected'].includes(current.status||'Pending'))return false;
+ if(retry){
+  if(choiceAttempt?.phase!=='failed'||choiceAttempt.id!==String(id))return false;
+ }else{
+  const current=items.find(i=>String(i.id)===String(id));
+  if(!current||choiceAttempt?.phase==='failed'||!['Pending','Recommended','Selected'].includes(current.status||'Pending')||optionUnavailable(current))return false;
   choiceAttempt={id:String(id),expected:current.status||'Pending',target:current.status==='Selected'?'Pending':'Selected',phase:'saving'};
+  rememberChoice(choiceAttempt);
  }
- const attempt=choiceAttempt;if(!attempt)return false;let sent=false;
- busy=true;attempt.phase='saving';readEpoch++;readTask=null;reading=false;
- JJPortalRead.setWriting?.(true);window.JJChoicePaint?.();msg.textContent=attempt.target==='Selected'?'Saving your choice…':'Removing your choice…';
- const confirm=()=>{
-  const item=items.find(i=>String(i.id)===attempt.id);if(item){item.status=attempt.target;item.homeownerSelected=attempt.target==='Selected';const key=String(item.optionGroupId||item.id);if(portalRules[key])portalRules[key]={...portalRules[key],completed:false};}
-  attempt.phase='saved';msg.textContent=attempt.target==='Selected'?'Choice saved.':'Choice removed and saved.';return true;
- };
+ const attempt=choiceAttempt;
+ busy=true;readEpoch++;readTask=null;reading=false;JJPortalRead.setWriting(true);
  try{
-  if(retry){
-   const checked=await refresh(true,true);if(!checked)throw Error('Could not check the saved result. Retry when connected.');
-   const status=items.find(i=>String(i.id)===attempt.id)?.status||'Pending';
-   if(status===attempt.target)return confirm();
-   if(status!==attempt.expected)throw Error('This choice has changed. Refresh selections to review it.');
+  if(retry)await checkChoice(attempt);
+  for(let send=0;send<2&&attempt.phase!=='saved'&&attempt.phase!=='changed';send++){
+   attempt.phase='saving';window.JJChoicePaint?.();
+   msg.textContent=attempt.target==='Selected'?'Saving your choice…':'Removing your choice…';
+   try{
+    const result=await JJPortalRead.request(client,'jj_selection_choose',{p_token:token,p_item:attempt.id,p_expected:attempt.expected},45000);
+    if(result.error)throw Object.assign(new Error(result.error.message),{code:result.error.code,status:result.status});
+    const item=items.find(item=>String(item.id)===attempt.id);
+    item.status=attempt.target;item.homeownerSelected=attempt.target==='Selected';
+    const key=optionGroupKey(item);if(portalRules[key])portalRules[key]={...portalRules[key],completed:false};
+    attempt.phase='saved';rememberChoice(null);
+   }catch(error){
+    // A timeout can arrive after commit. Only resend the original expected status
+    // after a fresh server read still shows it. Never infer an undo from a retry.
+    await checkChoice(attempt);
+    if(attempt.phase==='saved'||attempt.phase==='changed')break;
+    if(!transientChoiceFailure(error)){
+     attempt.phase='rejected';attempt.message=error.message||'Review this selection and try again.';
+     rememberChoice(null);break;
+    }
+    if(send===1)throw error;
+   }
   }
-  sent=true;const result=await JJPortalRead.request(client,'jj_selection_choose',{p_token:token,p_item:attempt.id,p_expected:attempt.expected});
-  if(result.error)throw result.error;
-  return confirm();
+  if(attempt.phase==='saved'){
+   msg.textContent=attempt.target==='Selected'?'Choice saved.':'Choice removed and saved.';
+   return true;
+  }
+  msg.textContent=attempt.message;return false;
  }catch(error){
-  // A lost response may follow a successful save. Read before ever retrying a toggle.
-  attempt.phase='checking';window.JJChoicePaint?.();
-  const checked=sent?await refresh(true,true):false;
-  if(checked&&items.find(i=>String(i.id)===attempt.id)?.status===attempt.target)return confirm();
-  attempt.phase='failed';attempt.message=error.message||'Connection interrupted.';
-  msg.textContent='Your choice is not confirmed. Use Retry save on this item.';return false;
+  attempt.phase='failed';attempt.message='Could not confirm your choice. Retry when connected.';
+  msg.textContent=attempt.message;return false;
  }finally{busy=false;JJPortalRead.setWriting?.(false);render();}
 }
 async function write(action,item,requestId=null){
@@ -116,6 +163,7 @@ async function write(action,item,requestId=null){
  }catch(e){msg.textContent=e.message||'Could not save. Please try again.';$('editorMessage').textContent=msg.textContent;return false;}
  finally{busy=false;disabled.forEach(([b,wasDisabled])=>{if(b.isConnected)b.disabled=wasDisabled});render();}
 }
+$('retryChoice')?.addEventListener('click',()=>{if(choiceAttempt?.phase==='failed')chooseItem(choiceAttempt.id,true);});
 $('items').addEventListener('click',e=>{const edit=e.target.closest('[data-edit]'),opt=e.target.closest('[data-option]'),b=e.target.closest('[data-select]');if(edit)openEditor(edit.dataset.edit);if(opt)addAnotherOption(opt.dataset.option);const retry=e.target.closest('[data-choice-retry]');if(retry){chooseItem(retry.dataset.choiceRetry,true);return;}if(b&&!b.disabled&&!busy){const i=items.find(i=>String(i.id)===b.dataset.select);if(i&&['Pending','Recommended','Selected'].includes(i.status||'Pending'))write('select',{id:b.dataset.select,expectedStatus:i.status||'Pending'});}});
 form.addEventListener('submit',async e=>{e.preventDefault();if(lookupBusy){$('editorMessage').textContent='Please wait for product details to finish loading.';return;}if(photoLoading){$('editorMessage').textContent='Please wait for the photo to finish loading.';return;}const data=Object.fromEntries(new FormData(form));delete data.purchasedBy;data.status=editingOriginal?.status||'Pending';data.image=photo;if(editingId!==null){data.id=editingId;data.expected=editingOriginal;}else if(optionParentId!==null){const parent=items.find(i=>String(i.id)===String(optionParentId));data.optionGroupId=parent?.optionGroupId||parent?.id;data.optionGroupTitle=parent?.optionGroupTitle||parent?.title;data.optionLabel='Another option';}if(await write(editingId===null?'add':'edit',data)) {optionParentId=null;closeEditor();}});
 $('photoFile').onchange=async e=>{

@@ -2,11 +2,16 @@
 (()=>{'use strict';
  const versions=new Map();let supported=true,active=null,observer=null,photoTimer,host=null,writing=false;
  const wanted=new Set(),flights=new Map(),failures=new Map(),retryTimers=new Map(),decodeFailures=new Map();
- async function request(client,name,args,timeout=20000){
+ const backgroundRequests=new Set();
+ async function request(client,name,args,timeout=20000,background=false){
   const controller=new AbortController();let timer,query=client.rpc(name,args);
+  if(background)backgroundRequests.add(controller);
   if(query.abortSignal)query=query.abortSignal(controller.signal);
-  try{return await Promise.race([Promise.resolve(query),new Promise((_,reject)=>{timer=setTimeout(()=>{controller.abort();reject(Error('The connection timed out. Keep this window open and retry.'));},timeout);})]);}
-  finally{clearTimeout(timer);}
+  try{
+   const result=await Promise.race([Promise.resolve(query),new Promise((_,reject)=>{timer=setTimeout(()=>{reject(new Error('The connection timed out.'));controller.abort();},timeout);})]);
+   if(controller.signal.aborted)throw new DOMException('Read interrupted','AbortError');
+   return result;
+  }finally{clearTimeout(timer);backgroundRequests.delete(controller);}
  }
  const photoKey=(record,id)=>record?.photoVersions?.[id]||'';
  const failureKey=id=>active?.token+':'+id+':'+photoKey(active?.record,id);
@@ -64,18 +69,22 @@
   const keys=ids.map(failureKey);ids.forEach(id=>wanted.delete(id));
   const flight=(async()=>{
    try{
-    const r=await request(current.client,'jj_portal_photos',{p_token:current.token,p_ids:ids});if(r.error)throw r.error;
+    const r=await request(current.client,'jj_portal_photos',{p_token:current.token,p_ids:ids},20000,true);if(r.error)throw r.error;
     ids.forEach(id=>{const value=r.data?.[id];if(typeof value==='string')acceptPhoto(current,id,value);else photoError(current,id);});
-   }catch(e){ids.forEach(id=>photoError(current,id));}
+   }catch(e){if(e.name==='AbortError')ids.forEach(id=>wanted.add(id));else ids.forEach(id=>photoError(current,id));}
    finally{keys.forEach(key=>flights.delete(key));if(wanted.size)schedule();}
   })();keys.forEach(key=>flights.set(key,flight));
   // Each batch holds three IDs; keep at most two batches (six photos) in flight.
   if(new Set(flights.values()).size<2&&wanted.size)schedule();
   await flight;
  }
- window.JJPortalRead={request,imageVersion(id){const item=active?.record.data.items.find(i=>String(i.id)===String(id));return photoKey(active?.record,String(id))||item?.image||'';},setWriting(value){writing=!!value;if(!writing)schedule();},async read(client,token,{force=false}={}){
+ window.JJPortalRead={request,imageVersion(id){const item=active?.record.data.items.find(i=>String(i.id)===String(id));return photoKey(active?.record,String(id))||item?.image||'';},setWriting(value){
+  writing=!!value;
+  if(writing){for(const controller of backgroundRequests)controller.abort();}
+  else schedule();
+ },async read(client,token,{force=false,background=false}={}){
   if(supported){
-   const r=await request(client,'jj_portal_read_if_changed',{p_token:token,p_version:force?null:versions.get(token)?.version||null});
+   const r=await request(client,'jj_portal_read_if_changed',{p_token:token,p_version:force?null:versions.get(token)?.version||null},20000,background);
    if(!r.error){
     const d=r.data;
     if(!d||typeof d.version!=='string'||(!d.unchanged&&!Array.isArray(d.payload?.items)))throw Error('The selections response was incomplete. Retry Refresh selections.');
@@ -91,7 +100,7 @@
    }
    if(['PGRST202','42883'].includes(r.error.code))supported=false;else throw r.error;
   }
-  const r=await request(client,'jj_portal_read',{p_token:token});if(r.error)throw r.error;
+  const r=await request(client,'jj_portal_read',{p_token:token},20000,background);if(r.error)throw r.error;
   active={client,token,record:{data:r.data,deferred:new Set(),photoVersions:{}}};
   return {data:r.data};
  },async ensurePhoto(id){
