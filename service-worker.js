@@ -1,5 +1,5 @@
 importScripts('./request-work-push-sw.js?v=20261026-descriptive');
-const CACHE_NAME = 'jj-live-20261126-po-payout-percent';
+const CACHE_NAME = 'jj-live-20261126-background-add';
 const APP_SHELL = [
  './vendor/supabase-js.umd.js','./vendor/xlsx.full.min.js',
  './staff-job-sync.js','./save-conflicts.js','./portal-performance.js','./save-before-refresh.js','./operations-backup.js',
@@ -9,7 +9,7 @@ const APP_SHELL = [
  './homeowner-app.js','./homeowner-ready.js',
  './whole-number-controls.js','./staff-favorites.js',
  './mobile-print.js',
- './customer-simple-add.js',
+ './customer-simple-add.js','./homeowner-add-queue.js',
  './selection-group-order.js',
  './po-work-preview.js',
  './selection-print.js',
@@ -51,3 +51,4 @@ self.addEventListener('fetch', event => {
     finally{clearTimeout(timer);}
   })());
 });
+

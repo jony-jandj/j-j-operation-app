@@ -67,11 +67,41 @@ async function refresh(silent=false,afterWrite=false){
  finally{if(epoch===readEpoch){reading=false;readTask=null;if(!portalLoaded)render();}}
  })();return readTask;
 }
+// Add-only background uploads never hold the global choice lock.
+let addQueueTask=null,addSyncTimer;
+function getAddQueue(){
+ if(!addQueueTask){
+  const panel=JJBackgroundAdds.panel($('message').parentElement,{onSaved(){
+   clearTimeout(addSyncTimer);addSyncTimer=setTimeout(()=>{if(!busy)refresh(true);},300);
+  }});
+  // Keep upload progress directly above the product list, including on phones.
+  $('items').before(document.querySelector('.jj-upload-progress'));
+  addQueueTask=JJBackgroundAdds.create({scope:'homeowner:'+token,canSend:()=>!busy,
+   onChange:panel.onChange,
+   enrich:async payload=>{
+    if(!payload.url)return {};
+    let timer;try{
+     const details=await Promise.race([Promise.resolve(window.JJProduct?.lookup(payload.url)).catch(()=>null),new Promise(resolve=>{timer=setTimeout(()=>resolve(null),1500);})]);
+     const extra={};for(const [key,max] of [['title',200],['vendor',200],['model',200],['description',4000]])if(details?.[key])extra[key]=String(details[key]).slice(0,max);
+     if(!payload.category&&details?.category)extra.category=String(details.category).slice(0,100);
+     if(!payload.image&&safe(details?.image))extra.image=safe(details.image);
+     return extra;
+    }finally{clearTimeout(timer);}
+   },
+   send:async(payload,id)=>{
+    const result=await JJPortalRead.request(client,'jj_portal_add_once',{p_token:token,p_request_id:id,p_item:payload},20000);
+    if(result.error)throw Object.assign(new Error(result.error.code==='PGRST202'?'Adding needs an app update. Your entry is kept here; contact J&J.':result.error.message),{code:result.error.code,status:result.status});
+    if(result.data?.saved!==true)throw Error('The server did not confirm this upload. Tap Retry upload.');
+   }
+  }).then(queue=>{panel.setQueue(queue);return queue;}).catch(error=>{panel.remove();addQueueTask=null;throw error;});
+ }
+ return addQueueTask;
+}
 function showPhoto(){photo=safeImage(photo);$('preview').src=photo;$('preview').hidden=!photo;}
 function addAnotherOption(id){const base=items.find(i=>String(i.id)===String(id));if(!base)return;optionParentId=id;openEditor(null);}
 async function openEditor(id=null){
  const opening=++editorOpenVersion;
- if(id===null){const parentId=optionParentId;optionParentId=null;window.JJSimpleAdd.open({title:parentId===null?'Add Selection':'Add Option',onSave:async (data,context)=>{if(parentId!==null){const parent=items.find(i=>String(i.id)===String(parentId));if(!parent)throw Error('This selection changed. Close and try again.');data.optionGroupId=parent.optionGroupId||parent.id;data.optionGroupTitle=parent.optionGroupTitle||parent.title;data.optionLabel='Another option';data.room=parent.room||'';data.category=parent.category||data.category;}return write('add',data,context.requestId);}});return;}
+ if(id===null){const parentId=optionParentId;optionParentId=null;window.JJSimpleAdd.open({background:!!window.JJBackgroundAdds,title:parentId===null?'Add Selection':'Add Option',onSave:async (data,context)=>{if(parentId!==null){const parent=items.find(i=>String(i.id)===String(parentId));if(!parent)throw Error('This selection changed. Close and try again.');data.optionGroupId=parent.optionGroupId||parent.id;data.optionGroupTitle=parent.optionGroupTitle||parent.title;data.optionLabel='Another option';data.room=parent.room||'';data.category=parent.category||data.category;}if(window.JJBackgroundAdds)return (await getAddQueue()).enqueue(data,context.requestId);return write('add',data,context.requestId);}});return;}
 
  try{await JJPortalRead.ensurePhoto(id);if(opening!==editorOpenVersion)return;}catch(e){if(opening===editorOpenVersion)msg.textContent=e.message;return;}
  const item=id===null?{}:items.find(i=>String(i.id)===String(id));if(!item)return;lookupGeneration++;lookupBusy=false;$('lookupMessage').textContent='Update the link to fill product details. Pricing stays with J&J.';editingId=id;editingOriginal=JSON.parse(JSON.stringify(item));form.reset();photoVersion++;photoLoading=false;
@@ -188,3 +218,6 @@ async function fillLink(){
 }
 $('fillLink').onclick=fillLink;form.elements.url.addEventListener('change',fillLink);
 $('newSelection').onclick=()=>{openEditor();};$('closeEditor').onclick=closeEditor;$('cancelEditor').onclick=closeEditor;editor.addEventListener('cancel',e=>{if(busy)e.preventDefault();});$('refresh').onclick=()=>refresh();setInterval(()=>{if(!document.hidden&&!editor.open&&!document.querySelector('.jj-simple-add[open]')&&!busy)refresh(true)},8000);document.addEventListener('visibilitychange',()=>{if(!document.hidden&&!editor.open&&!document.querySelector('.jj-simple-add[open]')&&!busy)refresh(true)});refresh();
+
+
+if(window.JJBackgroundAdds&&client&&/^[a-f0-9]{64}$/.test(token))getAddQueue().catch(e=>{msg.textContent=e.message;});
