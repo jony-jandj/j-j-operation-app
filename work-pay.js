@@ -522,7 +522,7 @@ async function ledgerRPC(name,args){
 async function waitForLedger(){while(busy)await new Promise(resolve=>setTimeout(resolve,40));}
 let ledgerLoadFlight=null;
 function load(){if(!ledgerLoadFlight)ledgerLoadFlight=readLedger().finally(()=>{ledgerLoadFlight=null});return ledgerLoadFlight;}
-async function readLedger(){if(!cloudClient)throw Error('Sign in to cloud before using Job Closeout.');const r=await ledgerRPC('jj_work_pay_read');if(r.error)throw Error((['PGRST202','42P01','42883'].includes(r.error.code)?'Job Closeout setup is missing. ':'Could not load Job Closeout. Retry Refresh; your local entries are kept. ')+(r.error.message||'Check your connection.'));if(!doc||Number(r.data.revision)>=revision){doc=r.data.document;revision=Number(r.data.revision)}return doc;}
+async function readLedger(){const firstLoad=!doc;if(!cloudClient)throw Error('Sign in to cloud before using Job Closeout.');const r=await ledgerRPC('jj_work_pay_read');if(r.error)throw Error((['PGRST202','42P01','42883'].includes(r.error.code)?'Job Closeout setup is missing. ':'Could not load Job Closeout. Retry Refresh; your local entries are kept. ')+(r.error.message||'Check your connection.'));if(!doc||Number(r.data.revision)>=revision){doc=r.data.document;revision=Number(r.data.revision)}if(firstLoad)renderPayByLine();return doc;}
 let ledgerNeedsRefresh=false;
 function ledgerSaveNotice(message,failed=false){
  for(const root of [document.getElementById('paybyline'),document.getElementById('jj-workpay'),document.getElementById('jj-wp-dialog')]){
