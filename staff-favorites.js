@@ -2,7 +2,7 @@
 (() => {
  'use strict';
  const cache=new Map();
- let reading=false,writing=false;
+ let reading=false,writing=false;const generations=new Map();
  const current=()=>{try{return selectedProject()}catch{return null}};
  const client=()=>{try{return cloudClient}catch{return null}};
  function entry(id){id=String(id);if(!cache.has(id))cache.set(id,{values:{},ready:false,error:''});return cache.get(id)}
@@ -17,7 +17,8 @@
   const status=item.status||'Pending';
   if(!['Pending','Recommended'].includes(status))return status;
   const group=String(item.optionGroupId||item.id);
-  if(all.some(other=>String(other.id)!==String(item.id)&&String(other.optionGroupId||other.id)===group&&other.status==='Selected'))return 'Unavailable';
+  const multiple=window.JJGroupRules?.ready?.(current()?.id)&&window.JJGroupRules?.multiple?.(group);
+  if(!multiple&&all.some(other=>String(other.id)!==String(item.id)&&String(other.optionGroupId||other.id)===group&&['Selected','Ordered','Received'].includes(other.status)))return 'Unavailable';
   return values[String(item.id)]===true?'Favorite':status;
  }
  function paint(){
@@ -40,7 +41,7 @@
    const yes=data.values[String(id)]===true;
    const text=yes?'★':'☆';if(button.textContent!==text)button.textContent=text;
    button.setAttribute('aria-pressed',String(yes));button.setAttribute('aria-label',(yes?'Remove favorite: ':'Favorite: ')+(item.title||'Selection'));
-   button.disabled=!data.ready||reading||writing;
+   button.disabled=!data.ready||writing;
    button.title=data.error||(data.ready?'Shared with homeowner':'Loading shared favorites…');
    button.style.cssText='position:absolute!important;right:10px!important;bottom:10px!important;top:auto!important;z-index:3!important;display:grid!important;place-items:center!important;width:40px!important;height:40px!important;min-height:40px!important;padding:0!important;border:1px solid #b59a62!important;border-radius:50%!important;box-shadow:0 2px 7px #10243724!important;background:'+(yes?'#e1bf6c':'#fffaf0')+'!important;color:#14234a!important;font-size:28px!important;font-weight:650!important;line-height:1!important;cursor:pointer';
    const badge=card.querySelector('.selection-photo-status');
@@ -50,20 +51,26 @@
   if(!message){const section=document.getElementById('selections');if(!section)return;message=document.createElement('p');message.id='jjStaffFavoriteMessage';message.setAttribute('role','status');section.appendChild(message)}
   const text=data.error||(writing?'Saving favorite…':'');if(message.textContent!==text)message.textContent=text;
  }
+ async function favoriteRequest(db,args){
+  const controller=new AbortController();let timer,query=db.rpc('jj_portal_favorites',args);
+  if(query.abortSignal)query=query.abortSignal(controller.signal);
+  try{return await Promise.race([Promise.resolve(query),new Promise((_,reject)=>{timer=setTimeout(()=>{controller.abort();reject(Error('Favorites took too long to respond. Please try again.'));},12000);})]);}
+  finally{clearTimeout(timer);}
+ }
  async function refresh(){
   const project=current(),db=client();if(!project||!db||reading||writing||document.hidden)return;
-  const id=String(project.id),data=entry(id);reading=true;
-  try{const result=await db.rpc('jj_portal_favorites',{p_job:id});if(result.error)throw result.error;data.values=result.data||{};data.ready=true;data.error=''}
-  catch(error){data.ready=false;data.error='Shared favorites could not load. Make sure this job has a homeowner link, then refresh.'}
-  finally{reading=false;paint()}
+  const id=String(project.id),data=entry(id),generation=generations.get(id)||0;reading=true;
+  try{const result=await favoriteRequest(db,{p_job:id});if(result.error)throw result.error;if(generation!==(generations.get(id)||0))return;data.values=result.data||{};data.ready=true;data.error=''}
+  catch(error){if(generation!==(generations.get(id)||0))return;data.error=data.ready?'Shared favorites could not refresh. Showing the last saved favorites.':'Shared favorites could not load. Make sure this job has a homeowner link, then refresh.'}
+  finally{reading=false;paint();if(String(current()?.id)!==id)setTimeout(refresh,0)}
  }
  document.addEventListener('click',async event=>{
   const button=event.target.closest('[data-staff-favorite]');if(!button||button.disabled)return;
-  const project=current(),db=client();if(!project||!db||reading||writing)return;
+  const project=current(),db=client();if(!project||!db||writing)return;
   const id=String(project.id),itemId=button.dataset.staffFavorite,data=entry(id);
   if(!data.ready||!(project.selections||[]).some(i=>String(i.id)===itemId))return;
-  const previous=data.values[itemId]===true;writing=true;data.error='';paint();
-  try{const result=await db.rpc('jj_portal_favorites',{p_job:id,p_item:itemId,p_favorite:!previous,p_expected:previous});if(result.error)throw result.error;data.values=result.data||{};data.ready=true;}
+  const previous=data.values[itemId]===true;generations.set(id,(generations.get(id)||0)+1);writing=true;data.error='';paint();
+  try{const result=await favoriteRequest(db,{p_job:id,p_item:itemId,p_favorite:!previous,p_expected:previous});if(result.error)throw result.error;data.values=result.data||{};data.ready=true;}
   catch(error){data.error=error.message||'Favorite did not save. Try again.';}
   finally{writing=false;paint()}
  });
@@ -76,3 +83,4 @@
  document.addEventListener('visibilitychange',()=>{if(!document.hidden)refresh()});
  paint();refresh();setInterval(refresh,8000);
 })();
+

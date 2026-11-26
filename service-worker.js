@@ -1,8 +1,8 @@
 importScripts('./request-work-push-sw.js?v=20261026-descriptive');
-const CACHE_NAME = 'jj-live-20261126-background-add';
+const CACHE_NAME = 'jj-live-20261126-homeowner-reliability';
 const APP_SHELL = [
  './vendor/supabase-js.umd.js','./vendor/xlsx.full.min.js',
- './staff-job-sync.js','./save-conflicts.js','./portal-performance.js','./save-before-refresh.js','./operations-backup.js',
+ './selection-editor-guard.js','./staff-job-sync.js','./save-conflicts.js','./portal-performance.js','./save-before-refresh.js','./operations-backup.js',
  './selection-photo-safety.js','./lz-string.min.js','./local-backup.js',
  './selection-copy.js',
  './selection-group-rules.js',

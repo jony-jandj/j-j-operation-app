@@ -37,7 +37,7 @@ window.JJCustomerView={mount(host,adapter){
     root.before(p);p.onclick=async e=>{if(adapter.isSaving?.())return;if(e.target.closest('[data-guide-done]')){if(adapter.canChoose?.()===false)return;if(adapter.onGroupDone)await adapter.onGroupDone(guidedKey,update);return;}if(e.target.closest('[data-guide-all]'))setGuided(false);else if(e.target.closest('[data-guide-next]')){const at=missing.findIndex(([k])=>k===guidedKey);guidedKey=missing.length?missing[(at+1)%missing.length][0]:null;}else return;update();host.querySelector('#jjMissingGuide')?.scrollIntoView({block:'start',behavior:'smooth'});};
   }
   const openGroups=new Set();
-  let favorites={},favoritesReady=false,favoriteBusy=false,favoriteReading=false;
+  let favorites={},favoritesReady=false,favoriteBusy=false,favoriteReading=false,favoriteGeneration=0;
   const favoriteAccess=adapter.favoriteAccess;
   function favoriteMessage(text){const node=host.querySelector('[data-customer-message],#message');if(node)node.textContent=text;}
   function statusColors(status){
@@ -62,17 +62,23 @@ window.JJCustomerView={mount(host,adapter){
     });
   }
   function paintFavorites(){paintFavoriteStatuses();host.querySelectorAll('[data-favorite]').forEach(b=>{const yes=favorites[b.dataset.favorite]===true;const i=getItems().find(i=>String(i.id)===b.dataset.favorite);b.setAttribute('aria-pressed',String(yes));b.setAttribute('aria-label',(yes?'Remove favorite: ':'Favorite: ')+(i?.title||'Selection'));b.title=yes?'Remove favorite':'Save as a favorite';b.style.setProperty('background',yes?'#e1bf6c':'#fffaf0','important');b.style.setProperty('color','#14234a','important');b.querySelector('span').textContent=yes?'★':'☆';b.disabled=!favoritesReady||favoriteBusy||!!adapter.isSaving?.();});}
+ async function favoriteRequest(db,args){
+  const controller=new AbortController();let timer,query=db.rpc('jj_portal_favorites',args);
+  if(query.abortSignal)query=query.abortSignal(controller.signal);
+  try{return await Promise.race([Promise.resolve(query),new Promise((_,reject)=>{timer=setTimeout(()=>{controller.abort();reject(Error('Favorites took too long to respond. Please try again.'));},12000);})]);}
+  finally{clearTimeout(timer);}
+ }
   async function loadFavorites(){
     if(!favoriteAccess||favoriteBusy||favoriteReading||adapter.isSaving?.()||!host.isConnected)return;
-    favoriteReading=true;
-    try{const {data,error}=await favoriteAccess.client.rpc('jj_portal_favorites',favoriteAccess.args);if(error)throw error;favorites=data||{};favoritesReady=true;paintFavorites();}
-    catch(e){favoritesReady=false;favoriteMessage('Favorites could not load. Refresh to try again.');paintFavorites();}
+    favoriteReading=true;const generation=favoriteGeneration;
+    try{const {data,error}=await favoriteRequest(favoriteAccess.client,favoriteAccess.args);if(error)throw error;if(generation!==favoriteGeneration)return;favorites=data||{};favoritesReady=true;paintFavorites();}
+    catch(e){if(generation!==favoriteGeneration)return;favoriteMessage(favoritesReady?'Favorites could not refresh. Showing the last saved favorites.':'Favorites could not load. Refresh to try again.');paintFavorites();}
     finally{favoriteReading=false;}
   }
   async function toggleFavorite(id){
-    if(!favoriteAccess||!favoritesReady||favoriteBusy||favoriteReading)return;
-    const previous=favorites[id]===true;favoriteBusy=true;paintFavorites();favoriteMessage('Saving favorite…');
-    try{const {data,error}=await favoriteAccess.client.rpc('jj_portal_favorites',{...favoriteAccess.args,p_item:id,p_favorite:!previous,p_expected:previous});if(error)throw error;favorites=data||{};favoriteMessage(previous?'Favorite removed.':'Favorite saved.');}
+    if(!favoriteAccess||!favoritesReady||favoriteBusy)return;
+    const previous=favorites[id]===true;favoriteGeneration++;favoriteBusy=true;paintFavorites();favoriteMessage('Saving favorite…');
+    try{const {data,error}=await favoriteRequest(favoriteAccess.client,{...favoriteAccess.args,p_item:id,p_favorite:!previous,p_expected:previous});if(error)throw error;favorites=data||{};favoriteMessage(previous?'Favorite removed.':'Favorite saved.');}
     catch(e){favoriteMessage(e.message||'Could not save favorite. Please try again.');}
     finally{favoriteBusy=false;paintFavorites();host.querySelectorAll('[data-favorite]').forEach(b=>{if(b.dataset.favorite===id)b.focus({preventScroll:true})});}
   }
@@ -215,3 +221,4 @@ if(/homeowner\.html$/i.test(location.pathname)){
  window.render=view.update;window.JJChoicePaint=view.paintChoice;
 }
 })();
+
