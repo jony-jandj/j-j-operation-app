@@ -2394,7 +2394,10 @@
       const projects=Array.isArray(state?.projects)?state.projects:[];
       if(!projects.length)return null;
 
-      // Name is the most reliable identifier in the currently-rendered sidebar.
+      if(button.dataset.projectId!=null){
+        return projects.find(project=>String(project.id)===button.dataset.projectId)||null;
+      }
+      // Older sidebar markup has no project ID.
       const name=normalize(button.querySelector('b')?.textContent||'');
       if(name){
         const exact=projects.find(project=>normalize(project.name)===name);
@@ -2418,16 +2421,6 @@
       }
     }catch{}
     try{if(window.JJLocalBackup)JJLocalBackup.write(state);else localStorage.setItem('jj_full_proto',JSON.stringify(state))}catch{}
-  }
-
-  function updateSidebarActive(project){
-    try{
-      document.querySelectorAll('.project-side-wrap').forEach(wrap=>{
-        const button=wrap.querySelector('.project-side-open');
-        const name=normalize(button?.querySelector('b')?.textContent||'');
-        wrap.classList.toggle('active',name===normalize(project?.name));
-      });
-    }catch{}
   }
 
   function renderCurrentPage(project){
@@ -2471,8 +2464,8 @@
   function selectProject(project){
     if(!project)return;
     state.selectedProjectId=project.id;
-    updateSidebarActive(project);
     renderCurrentPage(project);
+    buildProjectSidebar();
 
     try{if(typeof closeMobileSidebar==='function')closeMobileSidebar()}catch{}
     try{if(typeof closeJobsDrawer==='function')closeJobsDrawer()}catch{}

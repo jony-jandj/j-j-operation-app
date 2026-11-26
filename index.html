@@ -4230,6 +4230,10 @@ textarea.estimate-cell-input{
   gap:4px;
   padding-right:2px;
 }
+.closed-job-list{margin-top:6px;border-top:1px solid #597087}
+.closed-job-list summary{padding:12px 8px;cursor:pointer;font-weight:700;color:inherit}
+.closed-job-list .closed-job-cards{display:grid;gap:6px}
+.job-list-empty{margin:4px 8px 10px;font-size:14px;color:inherit}
 .operations-app .project-side-wrap{
   border:0;
   border-radius:8px;
@@ -4744,7 +4748,7 @@ body.topbar-collapsed .operations-app > .sidebar{top:0;min-height:100vh}
 
     <section class="sidebar-jobs" aria-label="Jobs">
       <div class="sidebar-jobs-head">
-        <span>Jobs</span>
+        <span>Active Jobs</span>
         <button class="sidebar-add-job" onclick="openNewProject()" aria-label="Add job" title="Add job">+</button>
       </div>
       <div class="project-side-list" id="projectSideList"></div>
@@ -5485,7 +5489,8 @@ function ensurePreconData(){
 }
 ensurePreconData();
 
-function selectedProject(){ return state.projects.find(p=>String(p.id)===String(state.selectedProjectId)) || state.projects[0]; }
+function defaultProject(){ return state.projects?.find(p=>p.isClosed!==true) || state.projects?.[0]; }
+function selectedProject(){ return state.projects.find(p=>String(p.id)===String(state.selectedProjectId)) || defaultProject(); }
 function avg(arr){ return arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : 0; }
 function money(v){ return '$'+Number(v||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}); }
 function sectionPct(p,i){
@@ -5770,7 +5775,7 @@ function confirmDeleteProject(id,event){
   state.projects=state.projects.filter(p=>String(p.id)!==String(id));
 
   if(String(state.selectedProjectId)===String(id)){
-    state.selectedProjectId=state.projects[0].id;
+    state.selectedProjectId=defaultProject().id;
   }
 
   deleteProjectPendingId=null;
@@ -5984,12 +5989,34 @@ function setProjectColor(id,colorKey,event){
   renderPayByLine();
   renderProject();
 }
+function activeProjects(){
+  return state.projects.filter(project=>project.isClosed!==true);
+}
+
+function setJobClosed(id,closed){
+  const project=state.projects.find(item=>String(item.id)===String(id));
+  if(!project || (project.isClosed===true)===closed) return;
+  project.isClosed=closed;
+  openProjectColorMenu=null;
+  deleteProjectPendingId=null;
+  saveState(false);
+  buildProjectSidebar();
+  if(document.getElementById('dashboard')?.classList.contains('active')) renderDashboard();
+  else pendingSectionRenders.add('dashboard');
+  const list=document.getElementById('projectSideList');
+  const button=Array.from(list.querySelectorAll('.project-side-menu-btn')).find(item=>item.dataset.projectId===String(id));
+  const section=button?.closest('details');
+  (section && !section.open ? section.querySelector('summary') : button)?.focus();
+  toast(project.name+(closed?' moved to Closed Jobs':' moved to Active Jobs'));
+}
+
 function buildProjectSidebar(){
   const list=document.getElementById('projectSideList');
   if(!list) return;
   ensureProjectColors();
 
-  list.innerHTML = state.projects.map(p=>{
+  const previousClosedList=list.querySelector('.closed-job-list');
+  function jobCard(p){
     const pct=projectPct(p);
     const isActive=String(p.id)===String(state.selectedProjectId);
     const menuOpen=String(openProjectColorMenu)===String(p.id);
@@ -5999,7 +6026,7 @@ function buildProjectSidebar(){
       <div class="project-side-colorbar" style="background:${color}"></div>
 
       <div class="project-side-main">
-        <button class="project-side-open" onclick="openProjectFromSidebar(${esc(JSON.stringify(p.id))})">
+        <button class="project-side-open" data-project-id="${esc(p.id)}" onclick="openProjectFromSidebar(${esc(JSON.stringify(p.id))})">
           <b><span class="project-color-dot" style="background:${color}"></span>${esc(p.name)}</b>
           <small>${esc(p.type)}</small>
           <div class="project-side-status">
@@ -6008,7 +6035,7 @@ function buildProjectSidebar(){
           </div>
         </button>
 
-        <button class="project-side-menu-btn" title="Project color" onclick="toggleProjectColorMenu(${esc(JSON.stringify(p.id))},event)">
+        <button class="project-side-menu-btn" data-project-id="${esc(p.id)}" aria-label="Job options for ${esc(p.name)}" aria-expanded="${menuOpen}" title="Job options" onclick="toggleProjectColorMenu(${esc(JSON.stringify(p.id))},event)">
           ${menuOpen?'▲':'▼'}
         </button>
       </div>
@@ -6029,6 +6056,7 @@ function buildProjectSidebar(){
 
         <div class="project-delete-area">
           <button class="btn btn-light" onclick="openEditProject(${esc(JSON.stringify(p.id))},event)">Edit Job</button>
+          <button class="btn btn-light" onclick="setJobClosed(${esc(JSON.stringify(p.id))},${p.isClosed!==true})">${p.isClosed===true?'Reopen Job':'Close Job'}</button>
           ${String(deleteProjectPendingId)===String(p.id)
             ? `<div class="project-delete-confirm">
                  <button class="project-delete-btn" onclick="confirmDeleteProject(${esc(JSON.stringify(p.id))},event)">Confirm Delete</button>
@@ -6039,7 +6067,14 @@ function buildProjectSidebar(){
         </div>
       </div>
     </div>`;
-  }).join('');
+  }
+  const active=activeProjects();
+  const closed=state.projects.filter(project=>project.isClosed===true);
+  const expanded=previousClosedList?.open ?? (active.length===0);
+  const archive=closed.length
+    ? `<details class="closed-job-list" ${expanded?'open':''}><summary>Closed Jobs (${closed.length})</summary><div class="closed-job-cards">${closed.map(jobCard).join('')}</div></details>`
+    : '';
+  list.innerHTML=(active.map(jobCard).join('')||'<p class="job-list-empty">No active jobs.</p>')+archive;
 }
 
 const pendingSectionRenders=new Set();
@@ -6153,7 +6188,7 @@ function importAppBackup(input){
       if(typeof ensureSelectionsData==='function') ensureSelectionsData();
 
       if(!state.projects.some(project=>String(project.id)===String(state.selectedProjectId))){
-        state.selectedProjectId=state.projects[0]?.id ?? null;
+        state.selectedProjectId=defaultProject()?.id ?? null;
       }
 
       persistStateLocally();
@@ -6228,7 +6263,7 @@ function applySharedState(next){
   const user=state.currentUser,selected=state.selectedProjectId;
   state=next;
   state.currentUser=USERS.some(u=>u.name===user)?user:'Jony';
-  state.selectedProjectId=state.projects?.find(p=>String(p.id)===String(selected))?.id??state.projects?.[0]?.id??null;
+  state.selectedProjectId=state.projects?.find(p=>String(p.id)===String(selected))?.id??defaultProject()?.id??null;
 }
 
 function cloudValuesEqual(a,b){
@@ -7135,16 +7170,17 @@ function projectNextAction(p){
 }
 
 function companyNextAction(){
-  const withReviews=state.projects.find(p=>p.pos.some(po=>poNeedsReviewForCurrentUser(po)));
+  const projects=activeProjects();
+  const withReviews=projects.find(p=>p.pos.some(po=>poNeedsReviewForCurrentUser(po)));
   if(withReviews) return projectNextAction(withReviews);
 
-  const unfinished=state.projects.find(p=>projectPct(p)<100);
+  const unfinished=projects.find(p=>projectPct(p)<100);
   if(unfinished) return projectNextAction(unfinished);
 
-  const missingEstimate=state.projects.find(p=>!p.estimate?.length);
+  const missingEstimate=projects.find(p=>!p.estimate?.length);
   if(missingEstimate) return projectNextAction(missingEstimate);
 
-  return state.projects.length ? projectNextAction(state.projects[0]) : null;
+  return projects.length ? projectNextAction(projects[0]) : null;
 }
 
 function nextActionCard(action){
@@ -7203,7 +7239,7 @@ function dashboardSummaryText(active,readyCount,issues,avgComplete){
   return {
     active:`${active} current job${active===1?'':'s'}`,
     ready:`${readyCount} ready · ${Math.max(active-readyCount,0)} still preparing`,
-    issues:`${issues} open across all jobs`,
+    issues:`${issues} open across active jobs`,
     complete:`Average Preconstruction progress`
   };
 }
@@ -7236,7 +7272,7 @@ function openIssuesQuickView(){
   const modal=document.getElementById('issuesQuickView');
   if(!body || !modal) return;
 
-  const groups=state.projects
+  const groups=activeProjects()
     .map(p=>({p,items:projectOpenIssueDetails(p)}))
     .filter(x=>x.items.length);
 
@@ -7271,10 +7307,11 @@ function renderDashboard(){
   pendingSectionRenders.delete('dashboard');
   ensureUserData();
 
-  const active=state.projects.length;
-  const readyCount=state.projects.filter(ready).length;
-  const issues=state.projects.reduce((s,p)=>s+Number(p.issues||0),0);
-  const avgComplete=Math.round(avg(state.projects.map(projectPct)));
+  const projects=activeProjects();
+  const active=projects.length;
+  const readyCount=projects.filter(ready).length;
+  const issues=projects.reduce((s,p)=>s+Number(p.issues||0),0);
+  const avgComplete=Math.round(avg(projects.map(projectPct)));
   const summary=dashboardSummaryText(active,readyCount,issues,avgComplete);
 
   dashboard.innerHTML=`
@@ -7318,7 +7355,7 @@ function renderDashboard(){
         </div>
       </div>
       <div class="project-health-list">
-        ${state.projects.map(p=>{
+        ${projects.map(p=>{
           const pct=projectPct(p);
           const color=projectColorHex(p.color);
           const completeSections=(p.precon||[]).filter(x=>Number(x)>=100).length;
@@ -7361,7 +7398,7 @@ function renderDashboard(){
         </div>
       </div>
       <div class="next-actions-list">
-        ${state.projects.map(p=>{
+        ${projects.map(p=>{
           const a=dashboardProjectAction(p);
           const color=projectColorHex(p.color);
           const review=p.pos.filter(po=>poNeedsReviewForCurrentUser(po)).length;
@@ -7398,7 +7435,7 @@ function renderDashboard(){
         <div class="po-job-head">
           <div>Job</div><div>Draft</div><div>Approved</div><div>Review</div><div>Labor Cost</div><div>Crew Payout</div>
         </div>
-        ${state.projects.map(p=>{
+        ${projects.map(p=>{
           const color=projectColorHex(p.color);
           const drafts=p.pos.filter(x=>x.status==='Draft').length;
           const approved=p.pos.filter(x=>x.status==='Approved').length;

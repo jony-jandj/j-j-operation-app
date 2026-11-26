@@ -1,5 +1,5 @@
 importScripts('./request-work-push-sw.js?v=20261026-descriptive');
-const CACHE_NAME = 'jj-live-20261126-po-payout-percent-b';
+const CACHE_NAME = 'jj-live-20261126-job-closing';
 const APP_SHELL = [
  './vendor/supabase-js.umd.js','./vendor/xlsx.full.min.js',
  './staff-job-sync.js','./save-conflicts.js','./portal-performance.js','./save-before-refresh.js','./operations-backup.js',
